@@ -1,44 +1,50 @@
-# Creel Stray Dog Reporting App
+# Creel Stray-Dog Reporting App
 
-Cross-platform mobile app for anonymous reporting and Business Intelligence on
-stray/feral dogs in Creel, Chihuahua, Mexico. Built for the **Asociación de
-Hoteles de Chihuahua, A.C.**
-
-Anyone (tourist or resident) can submit an anonymous, photo-backed sighting
-report. Reports feed a public map and a private BI dashboard used by the
-Association to design strategies for reducing stray dog presence in the tourist
-zone (Barrancas del Cobre region).
+A single React Native/Expo mobile app for anonymous stray-dog reports, a public
+map, Association business intelligence, and Administrator moderation in Creel,
+Chihuahua. The prototype targets the Asociación de Hoteles de Chihuahua, A.C.
 
 ## Status
 
-Prototype. Requirements (SRS Etapa 1) complete; database schema and data
-contracts defined; implementation starting.
+**Implementation-ready target contracts; implementation has not started.** The
+documentation and authoritative SQL schema are aligned. Production report intake
+remains blocked until the Association approves a geofence version.
 
-## Documentation map
+## Read first
 
-Start here, then drill down:
+1. [`docs/product/APPROVED-CLARIFICATIONS.md`](docs/product/APPROVED-CLARIFICATIONS.md)
+2. [`docs/architecture/OVERVIEW.md`](docs/architecture/OVERVIEW.md)
+3. [`docs/API.md`](docs/API.md) and [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md)
+4. [`db/schema.sql`](db/schema.sql)
+5. [`docs/TRACEABILITY.md`](docs/TRACEABILITY.md)
 
-- `docs/README.md` — index of all documentation
-- `docs/product/` — the "why" and "what": problem, vision, requirements, roadmap
-- `docs/architecture/` — high-level system overview and decision records (ADRs)
-- `docs/DATA-MODEL.md` — database schema, tables, and the dynamic-form JSON contract
-- `docs/STACK.md` — technology choices
-- `docs/SECURITY.md` — security model (RLS, anti-abuse, hardening)
-- `docs/DEPLOYMENT.md` — how it's deployed (Dokploy + Supabase self-hosted)
-- `AGENTS.md` / `CLAUDE.md` — guidance for AI coding agents working in this repo
+The immutable Spanish SRS remains the origin of RF01–RF24, RNF01–RNF36, and
+HU-01–HU-24. Approved clarifications govern implementation where that source is
+ambiguous or superseded. See [`docs/README.md`](docs/README.md) for full
+precedence and navigation.
 
-## Tech stack (short version)
+## Architecture at a glance
 
-React Native (Expo) · Supabase self-hosted (Docker, via Dokploy) on an OVHcloud
-VPS · PostgreSQL + PostGIS · Row Level Security. See `docs/STACK.md` for the full
-picture and rationale.
+- **Actors:** anonymous public reporter, Association, Administrator.
+- **Accounts:** multiple manually provisioned accounts per authenticated role;
+  public signup and in-app account administration are disabled.
+- **Client:** one Expo app with role-protected navigation, an Expo SQLite durable
+  queue, local photo files, MapLibre React Native with MapTiler Cloud, and a
+  bundled MobileNetV3-Small INT8 TFLite model.
+- **Backend:** separate Production and Staging self-hosted Supabase stacks
+  (`self-hosted/v0.8.0`, Envoy gateway) on one Dokploy-managed OVH VPS.
+- **Data access:** minimized RPCs and audited commands; no broad client table CRUD.
+- **Images:** private quarantine, server validation/re-encoding, then approved
+  storage. Raw EXIF is never persisted.
+- **Privacy:** stable 50 m approximate public locations; exact coordinates only in
+  authorized projections.
+- **Availability:** best effort for the single-VPS prototype; 99.9% is future work.
 
-## Key constraints to keep in mind
+## Constraints
 
-- **Offline-first**: reports are created and stored offline, synced on reconnect.
-- **Anonymous public layer**: no personal data collected from reporters.
-- **Single-tenant**: the Association is the only administrator; two authenticated
-  roles (Association, Administrator) plus anonymous public access.
-- **Bilingual**: Spanish/English across all flows.
-- **Modest hardware**: 4 vCPU / 8 GB RAM VPS — heavy ML (e.g. visual
-  re-identification) is explicitly out of scope for the prototype.
+- Reporting and its queue work offline; the map requires connectivity and must
+  show an explicit unavailable state.
+- Photos are requested, optional, and limited to one.
+- Heuristics route work; they never auto-discard or auto-resolve duplicates.
+- No heavy server ML or visual dog re-identification in the prototype.
+- No commit, bundle, or mobile runtime may contain server secrets.

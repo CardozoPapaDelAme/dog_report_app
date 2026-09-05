@@ -1,5 +1,11 @@
 # Integración de Seguridad Informática en Redes y Sistemas de Software
 
+> **Immutable source transcription.** This file preserves the Spanish SRS as
+> transcribed from `Etapa 1. Requerimientos.pdf`; requirement bodies below are
+> not silently rewritten when later decisions refine them. For implementation,
+> apply the precedence and approved amendments in
+> [`APPROVED-CLARIFICATIONS.md`](APPROVED-CLARIFICATIONS.md).
+
 **TC2007B.400 — Etapa 1. Requerimientos**
 
 **Alumn@s:**

@@ -1,52 +1,35 @@
 # Roadmap
 
-## Now — Prototype (current scope)
+## Prototype implementation
 
-Goal: a functional prototype, not a public launch.
+1. **Foundations:** create Expo development-build app, localization, role-protected
+   navigation, ordered database migrations, RPC clients, and test harnesses.
+2. **Anonymous reporting:** camera-first dynamic form, optional one-photo path,
+   bundled MobileNetV3-Small TFLite validation, Expo SQLite/local-file queue,
+   idempotent sync.
+3. **Trusted ingestion:** quarantine upload, server decode/re-encode/EXIF stripping,
+   trust assessment, rate limits, cleanup compensation.
+4. **Public map:** MapLibre online UX, stable approximate pins, exact metric server
+   clustering, severity breakdown.
+5. **Authenticated flows:** Association dashboard/export and Administrator
+   moderation/duplicate/configuration screens using separate RPCs.
+6. **Operations:** isolated stacks, Auth provisioning, migrations, monitoring,
+   retention, backup/restore and Staging lifecycle drills.
 
-**Public reporting**
-- Anonymous report creation, camera-first (RF01–RF07)
-- On-device photo validation: dog/no-dog + quality (RF09, RNF08)
-- On-device color extraction; manual size/collar (RF22)
-- Dynamic form per incident type (RF24), DB-validated (RNF36)
-- Offline creation + sync (RNF12)
+## External gate
 
-**Public map**
-- Pins, clustering, size/color semantics, zoom expansion (RF10–RF14)
+Production report intake cannot launch until the Association approves a geofence
+version. `GEOFENCE-CANDIDATE.md` defines the candidate and approval procedure.
 
-**Association account**
-- Single provisioned login, BI dashboard, CSV/Excel export (RF15–RF17)
+## Deferred
 
-**Administrator account**
-- Moderation: view all + flagged, hide/delete, auto-hide queue (RF18–RF21)
-- Possible-duplicate review queue (RF23)
+- 99.9% SLA and high availability/multi-node recovery.
+- Visual dog re-identification, DINOv2, pgvector, and server ML.
+- Multi-city/multi-tenant or per-hotel accounts.
+- Sterilization-campaign tracking, push notifications, and direct authority APIs.
 
-**Integrity & security baseline**
-- Fingerprint rate-limiting, honeypots, confidence scoring (RNF26–RNF29)
-- RLS, audit log, image validation, rate limiting, JWT policy (RNF31–RNF34)
+## Definition of implementation start
 
-## Timeline (from the SRS schedule)
-
-| Stage | Window | Notes |
-|---|---|---|
-| Etapa 1 — Requirements | done | SRS complete |
-| Etapa 2 — Design | short | data model, sequence diagrams |
-| Etapa 3 — Development | ~34 days | the build |
-| Etapa 4 — Testing | ~7 days | |
-| Etapa 5 — Deployment | ~14 days | |
-
-## Next — Deferred to future phases
-
-- **Visual dog re-identification (RNF35)**: DINOv2 embeddings + vector similarity
-  (pgvector) to suggest "same dog seen before". Requires GPU/dedicated inference the
-  current VPS can't provide, and breaks offline-first for that function. The
-  attributes captured in RF22 are the cheap pre-filter that makes this cheaper later.
-- **Sterilization campaign tracking**: noted as a relevant future feature within the
-  dogs-only scope.
-
-## Explicitly out of scope (not planned)
-
-- Multi-city / multi-tenant architecture.
-- Commercial/tiered access or per-hotel accounts.
-- Species other than dogs.
-- High-availability / server redundancy (single VPS is a known prototype limitation).
+Start coding only from migrations derived from `db/schema.sql`; pin native/backend
+versions and create tests for each `TRACEABILITY.md` row. Do not treat the target
+schema as a safe one-shot migration for a populated environment.

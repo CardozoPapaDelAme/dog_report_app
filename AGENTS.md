@@ -1,59 +1,60 @@
-# Guidance for AI Coding Agents
+# Repository Guidance for Coding Agents
 
-This file orients any AI agent (or new contributor) working in this repo. Read it
-before making changes.
+Read this file before changing the project.
 
-## What this project is
+## Source precedence
 
-A prototype mobile app for anonymous stray-dog sighting reports in Creel,
-Chihuahua, for the Asociación de Hoteles de Chihuahua. Read `docs/product/` for
-full context and `docs/architecture/OVERVIEW.md` for the system shape.
+1. `Etapa 1. Requerimientos.pdf` and
+   `docs/product/ETAPA1-REQUERIMIENTOS.md` preserve the original SRS and IDs.
+2. `docs/product/APPROVED-CLARIFICATIONS.md` governs approved amendments.
+3. `db/schema.sql` is the authoritative target schema and API/data boundary;
+   `docs/DATA-MODEL.md` explains it.
+4. `docs/architecture/DECISIONS.md` records rationale and constraints.
 
-## Source of truth
+Never rewrite the SRS body to conceal a later decision. Update clarifications,
+schema/data contract, ADRs, traceability, and tests together.
 
-- **Requirements**: the SRS ("Etapa 1. Requerimientos"), referenced throughout
-  docs by requirement IDs (RF01–RF24 functional, RNF01–RNF36 non-functional,
-  HU-01–HU-24 user stories).
-- **Database**: `docs/DATA-MODEL.md` and the schema SQL. The schema is
-  authoritative; do not invent columns or tables not described there without
-  updating the docs.
-- **Dynamic form**: the JSON contract in `docs/DATA-MODEL.md` defines what the
-  `reports.details` field may contain per incident type. Honor it on both client
-  and server.
+## Non-negotiable architecture
 
-## Non-negotiable constraints
+- Use the actor terms **anonymous public reporter**, **Association**, and
+  **Administrator**. The authenticated roles are siblings, not a hierarchy.
+- Multiple individual accounts are allowed per role. They are manually
+  provisioned by a technical operator. Public signup and in-app account
+  management stay disabled.
+- Association receives accepted canonical business data only. Administrator does
+  not inherit BI/export and acts through specific audited commands.
+- Clients never write tables directly or set moderation, trust, timestamp, audit,
+  retention, or duplicate-resolution fields. Use the RPC contracts in `API.md`.
+- RLS and SQL privileges are both mandatory. Never ship `service_role` or other
+  server credentials to the mobile app.
+- Raw EXIF is transient input and must never be persisted. Public images are
+  sanitized; public positions use the stable 50 m approximation.
+- Logical deletion is reversible. Hard deletion occurs only in retention jobs.
+- Keep local queue states separate from server moderation states.
+- Production geofence activation requires explicit Association approval; do not
+  add placeholder coordinates.
 
-These come from the requirements and the client's nature. Do not violate them
-without an explicit decision recorded in `docs/architecture/DECISIONS.md`:
+## Implementation coordination
 
-1. **No personal data from public reporters** (RNF13). Anonymous means anonymous —
-   device fingerprint only, never name/email/phone.
-2. **Offline-first** (RNF12). Report creation must work with no connection; the
-   report holds its final UUID from creation, synced later.
-3. **Defense in depth**: client-side validation is for UX; the database re-validates
-   (location inside Creel, dynamic-form structure). Never rely on the client alone.
-4. **Single-tenant, two roles**: Association and Administrator, both manually
-   provisioned. No public sign-up for these roles (RF15, RF18, RNF07).
-5. **Modest hardware**: no heavy ML on the server (4 vCPU / 8 GB RAM). Visual
-   re-identification (DINOv2) is deferred to a future phase (RNF35).
-6. **Row Level Security**: all data access separation goes through Postgres RLS
-   plus the public view. Don't bypass it with the service_role key on the client.
+- Preserve RF/RNF/HU identifiers exactly and update `docs/TRACEABILITY.md` when a
+  flow, API, data component, or test mapping changes.
+- Update `db/schema.sql` through migrations when implementation starts; do not
+  apply the monolithic target blindly to an existing database.
+- Native modules mean Expo development builds, not Expo Go.
+- Every admin/configuration mutation must remain validated, versioned where
+  applicable, and audited.
+- Storage schemas are Supabase-owned. Verify the installed version before writing
+  Storage migrations or policies; do not invent columns or behavior.
 
-## Conventions
+## Navigation
 
-- Documentation language: English. Product-facing SRS is Spanish; keep requirement
-  IDs identical across both.
-- Reference requirements by ID when implementing (e.g. "implements RF23").
-- Secrets (service_role key, JWT secret) live in environment variables, never in
-  the mobile client. The app uses only the anon key (RNF24).
-
-## Where to look
-
-| Need | File |
+| Concern | Source |
 |---|---|
-| Problem & goals | `docs/product/PROBLEM-CONTEXT.md`, `VISION.md` |
-| What to build | `docs/product/HIGH-LEVEL-REQUIREMENTS.md` |
-| Why decisions were made | `docs/architecture/DECISIONS.md` |
-| DB schema & data contract | `docs/DATA-MODEL.md` |
-| Security model | `docs/SECURITY.md` |
-| Deploy | `docs/DEPLOYMENT.md` |
+| Product amendments | `docs/product/APPROVED-CLARIFICATIONS.md` |
+| Architecture and ADRs | `docs/architecture/` |
+| Commands/projections | `docs/API.md` |
+| Data/state/retention | `docs/DATA-MODEL.md` |
+| Security/auth/privacy | `docs/SECURITY.md` |
+| Deployment/operations | `docs/DEPLOYMENT.md` |
+| Tests and traceability | `docs/TESTING.md`, `docs/TRACEABILITY.md` |
+| Diagram inputs | `docs/DIAGRAM-READINESS.md` |

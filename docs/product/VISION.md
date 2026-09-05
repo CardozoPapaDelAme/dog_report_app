@@ -1,43 +1,32 @@
-# Vision
+# Product Vision
 
-## Vision statement
+Turn scattered reports about stray dogs in Creel into a trustworthy, privacy-aware
+map and business evidence that the Association can act on, without putting account
+barriers in front of the public.
 
-Turn scattered, anecdotal knowledge about stray dogs in Creel into a shared,
-trustworthy, map-based picture that the Asociación de Hoteles de Chihuahua can act
-on — while keeping reporting frictionless and anonymous for anyone who wants to
-help.
+## Success
 
-## What success looks like
+- An anonymous public reporter completes a report in under five minutes, online or
+  offline, with a clear optional-photo path.
+- The online public map communicates recent activity without revealing exact
+  report positions.
+- Association works from accepted canonical data and can export exactly that data.
+- Administrator resolves moderation and duplicate questions through attributable,
+  reversible commands without editing original reports.
+- Invalid structure/outside-zone input fails deterministically; uncertain trust,
+  GPS, flags, and duplicate signals remain reviewable evidence.
+- Retention, restore drills, image sanitization, and environment isolation are
+  operational behavior rather than promises in prose only.
 
-- A tourist or resident can report a sighting in **under 5 minutes**, with no
-  account and no training (RNF04).
-- The public map gives an at-a-glance sense of where dog presence and incidents
-  concentrate.
-- The Association can see detailed, filterable data and export it to inform
-  strategy and to share with authorities.
-- The data is trustworthy enough to base decisions on — meaning fake, duplicate,
-  and low-quality reports are kept under control without adding friction for honest
-  reporters.
+## Principles
 
-## Design principles
-
-1. **Photo-first.** The photo is the core evidence of a report. The app opens on
-   the camera (RF07). Everything is built around making a quick, verified visual
-   report.
-2. **Anonymous by default.** No personal data from the public (RNF13). Trust is
-   established through technical signals (photo validation, geofencing, device
-   fingerprinting, confidence scoring), not identity.
-3. **Offline-first.** People report in the field, where connectivity is unreliable.
-   Reports must be creatable offline and sync later (RNF12).
-4. **Honest about limits.** The prototype does not over-promise. It does not claim
-   to identify individual dogs; it helps humans make better judgments. Heavy ML is
-   explicitly deferred (RNF35).
-5. **Human-in-the-loop for hard calls.** The system suggests (possible duplicates,
-   flagged reports); a human administrator decides.
-
-## Non-goals (for now)
-
-- Individual dog identification / re-identification.
-- Multi-city or multi-organization scaling.
-- Commercial/tiered access.
-- Species beyond dogs.
+1. **Evidence without overclaiming.** A photo is useful but optional; heuristics
+   guide humans and never establish individual dog identity.
+2. **Anonymous collection, realistic content risk.** Do not solicit reporter
+   identity; warn and moderate incidental PII rather than promise impossibility.
+3. **Offline creation, online exploration.** The durable report queue works in the
+   field; the map clearly requires connectivity.
+4. **Least privilege.** Association, Administrator, workers, and the public each
+   receive only purpose-specific data and commands.
+5. **Reversibility.** Logical deletion and duplicate resolution preserve evidence
+   until bounded retention jobs act.

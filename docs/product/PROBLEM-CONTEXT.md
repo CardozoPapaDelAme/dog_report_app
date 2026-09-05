@@ -1,53 +1,36 @@
 # Problem Context
 
-## The problem
+## Problem
 
-In Creel, Chihuahua — a tourist town in the Barrancas del Cobre (Copper Canyon)
-region — there is a persistent presence of stray and feral dogs that can pose a
-risk to residents, tourists, pets, and livestock.
+Information about stray/feral dog sightings and incidents in Creel is scattered,
+making it difficult to identify concentration, frequency, trends, and severity.
+Residents, tourists, hotels, the Association, and authorities lack a trustworthy
+shared evidence base for action.
 
-Today, information about sightings and incidents is **scattered and not recorded
-systematically**. This makes it hard to:
+## Product response
 
-- Identify which zones have the greatest dog presence.
-- Recognize risk patterns.
-- Understand the frequency and severity of incidents.
+The product centralizes low-friction reports and produces:
 
-Without organized information, residents, hoteliers, associations, and authorities
-cannot get a clear picture of the situation or make informed decisions about
-high-risk areas.
+- a recent privacy-minimized public map; and
+- accepted canonical business data for Association analysis/export.
 
-## The client
-
-**Asociación de Hoteles de Chihuahua, A.C.** — a nonprofit civil association (A.C.)
-representing affiliated hotels across Chihuahua state. The app is built for them.
-
-Because the client is a dues-funded nonprofit (not a commercial intermediary), the
-product deliberately avoids tiered/commercial access models. A single, simple
-access model fits better (see `SOLUTION-EXPLORATION.md`).
+Trust controls should reduce contamination without pretending heuristic evidence
+is certainty. Hard judgments—moderation and duplicate confirmation—remain human.
 
 ## Stakeholders
 
-| Stakeholder | Role in the system |
+| Stakeholder | Relationship |
 |---|---|
-| Tourists & residents | Anonymous reporters; consumers of the public map |
-| Affiliated hoteliers / the Association | Consumers of BI; strategy design |
-| Administrator (operated by the Association) | Moderates reports, manages quality |
-| Local authorities | Potential downstream consumers of exported data |
+| Tourists and residents | anonymous public reporters and public-map users |
+| Association | read-only business consumer and geofence-approval authority |
+| Administrator | report moderator and audited operational configurator |
+| Technical operator | account/infrastructure/migration operator |
+| Affiliated hotels and authorities | downstream recipients of Association exports |
 
-## Goal
+## Scope boundaries
 
-Centralize reports and generate **geographic and statistical intelligence** that
-lets the Association visualize the distribution of sightings and incidents in Creel
-and do Business Intelligence on it.
-
-## Geographic scope
-
-Creel's tourist zone specifically. The zone is modeled as a **data attribute** (a
-geographic polygon used for geofencing), **not** as a tenant boundary. There is no
-multi-city / multi-tenant architecture in scope (see `docs/architecture/DECISIONS.md`).
-
-## Subject scope
-
-**Dogs only.** Sterilization-campaign tracking is noted as a possible future feature
-within that scope but is not part of the current prototype.
+- Creel tourist-zone reporting, dogs only, one organizational tenant.
+- No per-hotel accounts, public signup, separate web panel, heavy server ML,
+  individual dog identification, or HA in the prototype.
+- The INEGI urban-locality polygon may seed review but does not define the tourist
+  zone until the Association approves it.

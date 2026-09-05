@@ -1,128 +1,133 @@
-# Data Model
+# Data Model and State Contracts
 
-**Authoritative schema:** `db/schema.sql` (PostgreSQL + PostGIS, with in-database
-docstrings via `COMMENT ON`). This document explains it; the SQL is the source of
-truth.
+`../db/schema.sql` is the authoritative target schema. This document explains the
+model; implementation must introduce it through ordered migrations.
 
-## Extensions
+## Core entities
 
-- `postgis` — geospatial types/functions (geofencing, clustering, distances).
-- `pgcrypto` — `gen_random_uuid()`.
-- `vector` (pgvector) — **commented out**, future phase only (RNF35).
+| Entity | Purpose |
+|---|---|
+| `profiles` | Multiple active individual accounts with one sibling role each |
+| `zone_sets`, `zones` | Immutable source/version metadata and geofence geometry |
+| `config_versions` | Typed thresholds with one active version per environment |
+| `reports` | Immutable submitted content plus server-controlled state and derived signals |
+| `photo_assets` | Quarantine, sanitized promotion, and purge lifecycle; maximum one per report |
+| `report_flags` | Public flags with temporary hashed-origin signal |
+| `duplicate_candidates` | Heuristic pairs awaiting human review |
+| `duplicate_groups`, `duplicate_memberships` | Canonical, reversible human resolution |
+| `audit_log` | Append-only report, duplicate, zone, and configuration actions |
 
-## Tables
+There is intentionally no raw EXIF column. Only derived numeric consistency
+signals may persist.
 
-### `reports` — core
-Every sighting. Anonymous-insertable (RF01), no reporter PII (RNF13).
+## Server moderation state machine
 
-Notable columns:
-- `id UUID` — **client-generated** for offline-first (RNF12).
-- `location GEOGRAPHY(POINT,4326)` — validated inside Creel by trigger (RNF08).
-- `gps_accuracy_meters`, `mock_location_suspected` — GPS quality / spoofing signals.
-- `photo_url` — nullable (RF05 allows photoless reports).
-- `incident_type`, `sighting_type` — enums (RF06, RF04).
-- `details JSONB` — dynamic-form answers, validated per type (see contract below).
-- `color_predominante` (auto), `tamano`, `tiene_collar` (manual) — attributes (RF22).
-- `status` + `hidden_reason` — moderation state (RF19–RF21).
-- `device_fingerprint`, `exif_metadata` — anti-abuse signals (RNF26).
-- `confidence_score` + 4 component scores — **recompute server-side**, don't trust
-  the client (RNF28).
-- `client_created_at` vs `synced_at` — real sighting time vs. server receipt, kept
-  separate so offline delays don't distort trends.
+```text
+submit ──> pending_review ──approve/high trust──> visible
+              │    │                              │
+              │    └─hide──────────────────────> hidden
+              │                                   │
+              └─logical delete──────> deleted <───┘
 
-### `report_flags` — user flags (RF08)
-1-to-many with reports. `UNIQUE(report_id, device_fingerprint)` stops one source from
-flagging the same report repeatedly (anti-abuse, RNF29).
-
-### `duplicate_candidates` — possible-duplicate queue (RF23)
-Pairs of reports suspected to be the same sighting, by proximity + time + attributes.
-Never merges/hides — feeds admin review (RNF30). Normalized so `report_a < report_b`.
-
-### `profiles` — the two accounts (RF15, RF18)
-Extends Supabase `auth.users` (never modified directly) with a `role`.
-
-### `zones` — Creel polygon (RNF08)
-Stored as data (not code) so the boundary can change without redeploying.
-
-### `app_settings` — runtime config
-Configurable thresholds: flag auto-hide count, GPS accuracy max, duplicate radius,
-duplicate time window (RF21/HU-21, RF23).
-
-### `audit_log` — admin accountability (RNF33)
-Immutable record of hide/delete/restore. No UPDATE/DELETE policy by design.
-
-## Triggers & functions
-
-- `fn_validate_report_location` (BEFORE INSERT) — rejects reports outside any active
-  zone (RNF08). Defense in depth vs. a bypassed client.
-- `fn_validate_report_details` (BEFORE INSERT) — enforces the dynamic-form contract
-  per incident type (RNF36).
-- `fn_check_flag_threshold` (AFTER INSERT on flags) — auto-hides a report when flags
-  reach the configurable threshold (RF21).
-- `fn_detect_duplicates` (AFTER INSERT on reports) — queues possible duplicates
-  (RF23).
-- `get_report_clusters(eps_meters)` — real-time map clustering with
-  `ST_ClusterDBSCAN` (RF11–RF14).
-
-## Access: RLS + public view
-
-- RLS filters **rows** per role.
-- `public_reports` view exposes **safe columns only** to anon (omits fingerprint,
-  scores, EXIF) and a boolean `has_flags` (RF21) instead of flag details.
-
----
-
-## Dynamic-form JSON contract (`reports.details`)
-
-`details` is JSONB but **not free-form**. Each incident type has expected keys,
-enforced by `fn_validate_report_details`. All `descripcion` keys are optional.
-
-### `avistamiento_simple`
-| Key | Type | Required | Notes |
-|---|---|---|---|
-| `cantidad_aprox` | number | only if `sighting_type = manada` | approx dog count |
-| `descripcion` | string | optional | free text |
-
-```json
-{ "cantidad_aprox": 5, "descripcion": "Near the lookout, scavenging" }
+hidden/deleted ──restore──> pending_review
+visible ──flag threshold──> hidden
 ```
 
-### `ataque_humano`
-| Key | Type | Required | Notes |
-|---|---|---|---|
-| `hubo_mordida` | boolean | yes | bite/injury occurred |
-| `descripcion` | string | optional | |
+| From | To | Cause |
+|---|---|---|
+| new | `pending_review` | All submissions begin under server control |
+| `pending_review` | `visible` | Trusted high score or Administrator approval |
+| `pending_review` | `hidden` | Administrator command |
+| `visible` | `hidden` | Administrator command or distinct-origin flag threshold |
+| non-deleted | `deleted` | Administrator logical-delete command |
+| `hidden`/`deleted` | `pending_review` | Restore; review and approval are required before republication |
 
-### `ataque_mascota`
-| Key | Type | Required | Notes |
-|---|---|---|---|
-| `tipo_animal` | string | yes | affected pet type |
-| `resulto_herido` | boolean | optional | pet injured |
-| `descripcion` | string | optional | |
+Mock-location and over-threshold GPS reports cannot take the automatic high-trust
+path. A honeypot signal also remains pending. Medium/low trust remains pending.
+Invalid JSON/coordinates and
+outside-geofence submissions are rejected before a **new** report row is accepted.
+An identical UUID+payload replay is accepted even if the active geofence later
+changed. `client_created_at` for new rows must fall in `[now()-30 days, now()+1 hour]`.
 
-### `ataque_ganado`
-| Key | Type | Required | Notes |
-|---|---|---|---|
-| `tipo_animal` | string | yes | livestock type |
-| `cantidad_afectada` | number | yes | approx count affected |
-| `descripcion` | string | optional | |
+Public expiry after 90 days does not change `visible`; it is a projection/retention
+condition. Association may still use accepted canonical business data until five
+years. Confirmed duplicate disposition is orthogonal to moderation status and is
+represented by active membership, not another overloaded report status.
 
-### `perro_lastimado`
-| Key | Type | Required | Notes |
-|---|---|---|---|
-| `situacion` | string | yes | herido / atropellado / atrapado / mal_estado |
-| `descripcion` | string | optional | |
+## Duplicate model
 
-### `otro`
-| Key | Type | Required | Notes |
-|---|---|---|---|
-| `descripcion` | string | optional | free text |
+Detection writes candidate pairs only. Administrator resolution creates one active
+group, exactly one canonical membership, and one or more duplicate memberships.
+Every member must appear in a pending candidate whose both ends are in the set, and
+those pending edges must connect the set. All original rows/photos/evidence remain
+linked. Active non-canonical memberships are excluded from public and Association
+projections and analytics. The moderation queue and
+`get_administrator_active_duplicate_groups` expose active group ids so reversal is
+discoverable. Reversal marks the group reversed, deactivates memberships, restores
+candidate review, and writes an audit entry.
 
-### Rules for evolving the contract
-- The app must build the correct JSON and validate before sending (good UX); the DB
-  trigger is the last line of defense.
-- Add new keys as **optional**; making an existing key required would require
-  migrating historical reports.
-- Update the trigger and this contract **together**.
-- `details` is exposed in `public_reports` (incident detail is public map info);
-  sensitive report columns are not.
+## Typed configuration and zones
+
+Configuration versions validate flag threshold, duplicate radius/window, trust
+bands, GPS accuracy, public report/flag rates, and fixed retention periods. A
+publish command creates a new immutable version and atomically switches active
+status.
+
+Zone sets carry source URI/version and a required SHA-256 checksum plus geometry.
+Create and activate reject a missing or malformed checksum. Activation stores an
+Association approval citation that is distinct from the Administrator note. SQL
+cannot prove the Association approved; Production activation remains an external
+gate. Direct table writes are unavailable to mobile roles. Production begins with
+no active geometry and fails closed until the candidate is approved.
+
+## Dynamic-form JSON contract
+
+`reports.details` is an object with no undeclared keys. `descripcion`, when present,
+is an optional string of at most 2,000 characters.
+
+| Incident | Allowed keys | Required validation |
+|---|---|---|
+| `avistamiento_simple` | `cantidad_aprox`, `descripcion` | Integer counts only. Pack requires 2–1000. Solitary may omit count or send `1`; quantity greater than 1 is rejected |
+| `ataque_humano` | `hubo_mordida`, `descripcion` | `hubo_mordida` boolean |
+| `ataque_mascota` | `tipo_animal`, `resulto_herido`, `descripcion` | `tipo_animal` string; injury optional boolean |
+| `ataque_ganado` | `tipo_animal`, `cantidad_afectada`, `descripcion` | animal string and integer count 1–1000 |
+| `perro_lastimado` | `situacion`, `descripcion` | `herido`, `atropellado`, `atrapado`, or `mal_estado` |
+| `otro` | `descripcion` | No category-specific required key |
+
+## Location and clustering
+
+- Exact WGS84 coordinates are stored internally.
+- Public points are transformed to UTM zone 13N and snapped to a stable 50 m grid,
+  then returned as WGS84.
+- Cluster membership is calculated server-side over exact UTM metric points.
+- Aggregate centroids are snapped to the same stable grid before release.
+- `type_counts` always includes all six incident types, with zeros when absent.
+- Cluster queries accept an optional complete viewport and cap input reports at
+  2,000 by default (5,000 maximum), most recent first.
+- Severity is: `ataque_humano` > `ataque_ganado` > `ataque_mascota` >
+  `perro_lastimado` > `otro` > `avistamiento_simple`.
+
+## Retention
+
+| Data | Rule |
+|---|---|
+| Public report/image availability | 90 days from publication |
+| De-identified accepted business report | 5 years |
+| Report/flag fingerprint hash | Cleared after 30 days |
+| Audit log | Purged after 2 years |
+| Logically deleted report | Purged after 1 year |
+| Raw EXIF | Never persisted |
+
+The database marks photos `purge_pending` when any of these is true: approved and
+`purge_after` has passed; unfinished/rejected and older than one day; or the parent
+report is itself eligible for hard deletion. A NULL `photo_assets.purge_after` must
+not block that last path (pending never-published reports, approved photos on
+pending reports, and deleted reports). A Storage worker deletes the object and
+acknowledges `purged`. A report row is not hard-deleted while its photo still needs
+external cleanup. Production retention uses server `now()` only.
+
+## Local queue is separate
+
+Recommended client states are `draft`, `queued`, `submitting`, `uploading`,
+`awaiting_processing`, `retry_wait`, `synced`, and `terminal_error`. They are local
+transport states and must never be serialized into `reports.status`.

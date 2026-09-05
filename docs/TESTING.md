@@ -1,62 +1,98 @@
-# Testing Strategy
+# Verification Strategy
 
-> **Status: preliminary.** A starting framework to expand during Etapa 4 (Testing).
-> Maps test focus to the riskiest, most security-relevant behaviors.
+## Release gates
 
-## What matters most to test here
+| Gate | Required proof |
+|---|---|
+| Schema | Migration applies/rolls back on the pinned PostgreSQL/PostGIS/Supabase version |
+| Authorization | Positive and negative tests for every actor/RPC; direct table CRUD denied |
+| State machine | Every valid transition succeeds; every invalid transition fails |
+| Privacy | No raw EXIF column/object metadata; public coordinates remain on stable 50 m grid |
+| Offline | Crash/restart-safe queue; idempotent UUID/payload retries; local cleanup only after acknowledgment |
+| Images | Header spoof, oversized/dimension bomb, corrupt decode, metadata strip, timeout, orphan, and compensation tests |
+| Duplicates | Detection only suggests; connected pending-candidate membership; reversal discoverable; audit works |
+| Retention | Time-controlled 30d/90d/1y/2y/5y tests; NULL `purge_after` cannot block report purge; production RPC uses server `now()` |
+| Operations | Backup restore meets RPO/RTO target; Staging isolation and shutdown verified |
 
-This is a security-focused project with an anonymous public surface, so prioritize:
+## Database and API tests
 
-1. **Access control (RLS)** — the highest-value tests.
-2. **Server-side validation** that can't be bypassed by the client.
-3. **Anti-abuse** behavior.
-4. **Offline-first** correctness.
+- Assert anon/authenticated roles have no application table INSERT/UPDATE/DELETE.
+- Assert PUBLIC cannot execute command functions and service RPCs reject mobile
+  roles.
+- Association can call only its accepted canonical projection and cannot retrieve
+  flags, trust, moderation, operator identities, pending/hidden/deleted rows, or
+  non-canonical duplicates.
+- Administrator can read moderation context and execute audited commands but cannot
+  call Association export or edit original report fields.
+- Disabled profiles fail privileged calls despite an otherwise valid JWT.
+- SECURITY DEFINER functions have expected owner, empty `search_path`, and exact
+  grants.
+- Report UUID replay with identical payload is idempotent even after the active
+  geofence no longer covers the original point; changed payload fails.
+- New submissions outside the current geofence still reject; missing geofence
+  fails closed; boundary point behavior is explicit; imprecise/mock inputs remain
+  pending.
+- `client_created_at` 31 days in the past or more than 1 hour in the future rejects
+  new rows and does not block identical replay.
+- Details contract receives one boundary/unknown-key/type test per incident,
+  including decimal counts and solitary quantity greater than 1.
+- Flag RPC locks the report before insert/count, rejects non-canonical and
+  non-public rows, counts distinct unexpired origins, and auto-hides only visible
+  rows.
+- `request_report_photo_upload` / `get_report_photo_status` succeed for the
+  submitting fingerprint, deny others, and allow local cleanup only after
+  approved/rejected/purged or when no photo was expected.
+- Direct `SELECT` on `profiles` is denied; `get_my_profile` returns the caller.
+- Restore returns to pending, approval republishes, and logical delete never hard
+  deletes directly.
+- Duplicate resolution without pending connected candidates fails.
+  `get_administrator_active_duplicate_groups` returns the group id after success.
+- Zone create/activate without `source_sha256` fail. Activation rejects using the
+  Administrator note as the Association approval citation.
+- Administrator queue includes original business fields, GPS accuracy,
+  mock-location, photo expectation, and component trust scores, and cannot call
+  Association analytics.
+- `service_run_retention()` has no `p_now` argument. `app_private.run_retention_at`
+  is not granted to app or service roles.
+- Photos on purge-eligible reports become `purge_pending` even when `purge_after`
+  is NULL.
 
-## Test areas
+## Map tests
 
-### RLS / access control (critical)
-- Anonymous can insert reports and flags, read only `public_reports`, and **cannot**
-  read sensitive columns (fingerprint, scores, EXIF) or hidden reports.
-- Association can read all reports but cannot perform admin moderation.
-- Administrator can hide/delete/restore and read the duplicate queue.
-- Anonymous cannot reach admin/association-only tables at all.
+- Use fixtures with known meter distances in EPSG:32613 and test every supported
+  zoom band.
+- Verify highest-severity order and that `type_counts` always contains all six
+  incident-type keys, including zeros.
+- Confirm active non-canonical duplicates never count.
+- Confirm exact coordinates are absent from public payloads and repeated requests
+  return the same approximate point.
+- Confirm cluster queries honor the documented viewport and the 2,000/5,000 report
+  cap rather than scanning unbounded history.
+- Test online loading under the RNF02 prototype target and explicit offline UX.
 
-### Server-side validation (defense in depth)
-- Report with location outside the Creel polygon is rejected (`fn_validate_report_location`).
-- `details` JSON missing required keys for its incident type is rejected
-  (`fn_validate_report_details`) — one test per incident type.
-- Confidence score sent by a client is ignored / recomputed server-side.
+## Mobile/native tests
 
-### Anti-abuse
-- Same fingerprint can't flag the same report twice (unique constraint).
-- Flag threshold auto-hides a report (`fn_check_flag_threshold`); threshold is
-  configurable via `app_settings`.
-- Diversity-weighted flag logic isn't fooled by one source (RNF29).
+- Build development and release clients for supported iOS/Android targets; Expo Go
+  is not an acceptance environment.
+- Test the bundled MobileNetV3-Small INT8 TFLite model offline on representative
+  devices, recording model checksum, ImageNet dog-label set, 224×224 preprocessing,
+  thresholds, confusion matrix/sample set, peak memory, and latency. Test
+  dog/no-dog and blur/quality retry copy separately.
+- Test bilingual layouts, camera-first cold start, photo-free path, single-photo
+  maximum, incidental-PII warning, and report completion under five minutes.
+- Simulate airplane mode, process kill, low storage, permission denial, clock skew,
+  duplicate taps, flaky upload, app upgrade, and file/SQLite mismatch.
 
-### Duplicate detection (RF23)
-- Two near reports (space+time+attributes) create a `duplicate_candidates` row.
-- Detection never auto-merges or auto-hides; admin decision changes status.
+## Infrastructure/security tests
 
-### Offline-first (RNF12)
-- Report created offline retains its client UUID and syncs once, without duplication,
-  on reconnect (idempotent sync).
+- External port scan, TLS redirect/certificate renewal, secret/bundle scan, API
+  rate limiting, login/refresh limits, and internal Studio/database reachability.
+- Validate Production/Staging use distinct endpoints, keys, databases, Storage, and
+  domains. Start Staging under load and observe Production contention.
+- Restore an encrypted backup into isolation and execute data/access smoke tests.
 
-### On-device photo validation (RF09)
-- Non-dog / low-quality photos are rejected with the correct reason and a retry path.
-- Works with no connectivity.
+## Traceability
 
-### Map (RF10–RF14)
-- Clustering returns expected groupings; zoom expands clusters; severity color logic
-  is correct.
-
-## Suggested levels
-
-- **DB/integration tests** for triggers, RLS, and constraints (highest ROI here).
-- **Unit tests** for client-side form/validation logic and offline queue.
-- **E2E** for the core report → map flow and the moderation flow.
-
-## To define
-
-- [ ] Test framework choices (client and DB).
-- [ ] Seed/fixtures including a test Creel polygon.
-- [ ] CI setup.
+`TRACEABILITY.md` is the complete pre-implementation inventory for RF01–RF24,
+RNF01–RNF36, and HU-01–HU-24. Replace each verification focus with concrete test
+IDs as suites are implemented; preserve many-to-many mappings.

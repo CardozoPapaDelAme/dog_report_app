@@ -1,27 +1,28 @@
 # Product Documentation
 
-This folder holds the product-level context: the problem, the vision, the
-requirements, and how the scope was reasoned about.
+## Read in this order
 
-## Contents
+1. `ETAPA1-REQUERIMIENTOS.md` — faithful Spanish transcription of the immutable SRS
+2. `APPROVED-CLARIFICATIONS.md` — approved implementation amendments
+3. `HIGH-LEVEL-REQUIREMENTS.md` — concise English orientation
+4. `PROBLEM-CONTEXT.md` and `VISION.md` — problem and success
+5. `SOLUTION-EXPLORATION.md` and `ROADMAP.md` — choices and scope
+6. `GEOFENCE-CANDIDATE.md` — candidate provenance and Production approval gate
 
-- `PROBLEM-CONTEXT.md` — the problem, the client, and the stakeholders
-- `VISION.md` — the product vision and what success looks like
-- `HIGH-LEVEL-REQUIREMENTS.md` — functional & non-functional requirements (RF/RNF/HU)
-- `SOLUTION-EXPLORATION.md` — alternatives considered and trade-offs
-- `ROADMAP.md` — what's in the prototype vs. deferred to later phases
+The SRS body is never rewritten to conceal later decisions. Approved
+clarifications govern implementation when an original statement is ambiguous or
+superseded. Requirement IDs remain exact and map many-to-many through
+`../TRACEABILITY.md`.
 
-## The client
+## Product summary
 
-**Asociación de Hoteles de Chihuahua, A.C.** — a nonprofit civil association
-representing affiliated hotels in Chihuahua state. It is the sole administrator of
-the system. Its members (hoteliers) are the primary consumers of the BI data; the
-public (tourists, residents) are the reporters.
+The app turns anonymous public reports about stray/feral dogs in Creel into a
+privacy-minimized public map and accepted canonical business intelligence for the
+Association. Administrator handles moderation and operational configuration
+through audited commands. Both authenticated roles use the same mobile app and
+remain non-hierarchical.
 
-## One-paragraph summary
+## Current external gate
 
-Stray/feral dogs in Creel pose a risk to residents, tourists, pets, and livestock.
-Sighting and incident data is currently scattered and unsystematic, making it hard
-to identify high-risk zones and patterns. This app centralizes anonymous, photo-
-backed reports and turns them into geographic and statistical intelligence the
-Association can act on.
+No Production geofence is approved. The INEGI locality polygon is a reproducible
+candidate only; explicit Association approval is required before activation.

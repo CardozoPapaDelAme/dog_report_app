@@ -1,82 +1,110 @@
-# Security Model
+# Security, Privacy, and Authentication
 
-Security is a first-class concern (this is a security-focused course project). The
-model has layers: access control, anti-abuse, input validation, infrastructure
-hardening, and accountability.
+## Authorization model
 
-## Access control (RLS + public view)
+Application tables are private by default. Mobile access uses minimized
+SECURITY DEFINER RPCs that:
 
-- **Row Level Security** on all tables separates anonymous, Association, and
-  Administrator access (RNF20). See `DATA-MODEL.md` for the policies.
-- The **`public_reports` view** restricts *columns* for anonymous users — RLS filters
-  rows, the view hides sensitive columns (device fingerprint, confidence scores,
-  EXIF). Anonymous users get a boolean `has_flags`, never flag details (RF21).
-- The mobile client uses **only the anon key**. The `service_role` key and JWT secret
-  live in environment variables and never ship to the client (RNF24).
-- JWTs are **short-lived** (~1h) with refresh tokens; invalidated on logout/inactivity
-  (RNF34).
+- have a fixed empty `search_path` and schema-qualified references, including
+  `extensions.*` for PostGIS and pgcrypto;
+- are owned by a dedicated NOLOGIN application owner;
+- have PUBLIC execution revoked;
+- receive only narrow EXECUTE grants;
+- verify the caller's active profile role for authenticated operations.
 
-## Defense in depth
+RLS and SQL privileges solve different problems. RLS limits rows if access is
+accidentally granted; GRANT/REVOKE limits operations and prevents PostgREST table
+CRUD. Neither replaces the other. The mobile app carries only the anon key and
+user session tokens—never `service_role`, JWT secrets, or worker credentials.
 
-Client-side validation exists for UX, but the **database independently re-validates**
-because any client check can be bypassed by calling the API directly (ADR-008):
-- Location inside Creel — `fn_validate_report_location` (RNF08).
-- Dynamic-form structure — `fn_validate_report_details` (RNF36).
+## Role matrix
 
-## Anti-abuse (anonymous reporting integrity)
+| Capability | anonymous public reporter | Association | Administrator |
+|---|---:|---:|---:|
+| Submit/flag | Yes | Public RPCs only | Public RPCs only |
+| Public map | Yes | Yes | Yes |
+| Accepted BI/export | No | Yes | No |
+| Moderation context/commands | No | No | Yes |
+| Zone/threshold commands | No | No | Yes, audited exception |
+| Direct table writes | No | No | No |
 
-Because there's no login, integrity relies on layered signals rather than identity:
-- **Device fingerprint** rate-limiting, preferred over IP because hotel guests share
-  WiFi (RNF26). Never identifies the person.
-- **Honeypot fields** — invisible to real users; filled = flagged suspicious (RNF27).
-- **Confidence score** — not binary; combines photo validity, EXIF coherence, GPS
-  precision, and fingerprint reputation to decide publish / review / discard (RNF28).
-  Must be computed server-side.
-- **Geofencing + mock-location detection** — only reports inside Creel with acceptable
-  GPS accuracy (RNF08).
-- **Flag counting with diversity weighting** — flags weighted by distinct
-  fingerprints so a single/coordinated source can't auto-hide a legitimate report
-  (RNF29). `UNIQUE(report_id, device_fingerprint)` enforces one flag per source.
+## Authentication and provisioning
 
-## Input / file validation
+- Disable public email/password signup and every OAuth/anonymous-auth provider in
+  the self-hosted Auth configuration. Anonymous reporting uses the anon API key,
+  not an anonymous Auth user.
+- A technical operator creates each Auth user, inserts the matching `profiles` row
+  with `association` or `administrator`, and delivers credentials out of band.
+- Navigation and every privileged RPC require both a signed `app_role` claim in
+  JWT app metadata and an active matching profile. Neither source alone grants
+  authority; the profile remains the immediate deactivation control.
+- Use short access tokens (prototype target: about one hour) and supported refresh
+  token rotation/session controls. Store refresh material in platform secure
+  storage, not Expo SQLite.
+- Client logout clears local tokens and asks Auth to end the session. Already
+  issued stateless access JWTs may remain usable until expiry unless the deployed
+  Auth version provides and is configured for a checked revocation mechanism.
+  Never promise instant global JWT invalidation.
+- For compromise or staff departure, the operator disables the profile, revokes
+  supported Auth sessions/refresh tokens, rotates credentials where needed, and
+  records the incident. RPC profile checks block disabled accounts even before an
+  old access token expires.
 
-- Uploaded images validated server-side before storage: allowed MIME (JPEG/PNG/HEIC),
-  max size (~10 MB), and sanitization/re-encoding to strip malicious embedded
-  metadata or payloads (RNF32).
-- API rate limiting at the proxy/API layer on public endpoints (report creation,
-  flagging) to mitigate automated abuse and DoS (RNF31).
+### Provisioning runbook
 
-## Infrastructure hardening
+1. Confirm Production or Staging target and authenticated role request approval.
+2. Create the Auth account through the installed Supabase administrative tooling.
+3. Set the server-controlled JWT `app_role` metadata and create the matching
+   profile role. Never place authorization data in user-editable metadata.
+4. Test allowed and denied RPCs with that account; do not test using service role.
+5. Deliver temporary credentials securely and require rotation if supported.
+6. For deprovisioning, set `profiles.active=false`, revoke sessions using installed
+   Auth capabilities, and preserve required audit evidence.
 
-- **SSH key-only** access; password auth and direct root login disabled (RNF17). The
-  Dokploy web panel manages deploys but **does not replace** SSH hardening.
-- **OS firewall + OVHcloud network firewall**; only needed ports exposed (443 public;
-  22 restricted) (RNF16). Internal Supabase ports not internet-exposed (RNF23).
-- TLS/HTTPS forced via Traefik + Let's Encrypt, HTTP→HTTPS redirect (RNF22).
-- Infra snapshots + daily DB backups (RPO 24h / RTO 4h) (RNF14, RNF18).
-- Basic resource/log monitoring (RNF25).
+Exact Auth environment variable names and revocation commands must be verified
+against the installed self-hosted version before deployment.
 
-## Accountability
+## Anonymous integrity and privacy
 
-- **Audit log** of every admin action (hide/delete/restore) with account, timestamp,
-  action (RNF33). Immutable by design — no UPDATE/DELETE policy.
+- The form does not solicit name, email, phone, or identifier from the reporter.
+- Device-origin material is hashed server-side, used for rate/diversity signals,
+  and cleared after 30 days. It is pseudonymous anti-abuse data, not proof of
+  absolute anonymity.
+- Reporters receive a warning not to capture people, plates, or private-property
+  details. Free text and images can still contain incidental PII; flagging and
+  Administrator hiding provide a moderation path.
+- Trust uses server-derived photo, transient EXIF coherence, GPS, honeypot, and
+  fingerprint signals. Heuristics route to review and never auto-discard.
+- Mock-location or imprecise-GPS reports always require human review.
 
-## Privacy (LFPDPPP)
+## Image security boundary
 
-- No PII from public reporters (RNF13) — fingerprint only, which does not identify a
-  person.
-- For the two accounts, operator personal data (name, email, credentials) is handled
-  under LFPDPPP: restricted access, encrypted credential storage, defined retention.
+The worker validates magic bytes/decoded type, maximum 10 MB size, bounded
+dimensions, successful decode, and resource limits. It re-encodes to an approved
+format, strips EXIF, computes the sanitized checksum, and promotes only the output.
+Raw uploads remain private. Timeouts and failures remove quarantine orphans; object
+promotion and database updates use idempotency/compensation rather than pretending
+they are one transaction.
 
-## Risk → mitigation traceability
+The on-device TFLite result is a UX signal, not server authority. RNF32 requires
+the lightweight server processor; no heavy server ML is added.
 
-From the SRS risk matrix:
+## Location privacy
 
-| Risk | Mitigation |
-|---|---|
-| Fake/malicious reports contaminate data | RNF26–RNF28 (fingerprint, honeypot, confidence) |
-| Deliberate location manipulation | RNF08 (geofence + mock-location) |
-| Legit reports hidden by false/coordinated flags | RNF29 (diversity-weighted flags) |
-| Imprecise GPS | RNF08 (accuracy threshold) |
-| Duplicate reports of one sighting | RF23 + RF22 (heuristic + attributes) |
-| Low-quality photos passing validation | RF09, RNF28, RNF36 |
+Public RPCs return the same metric 50 m-grid point for every report/request.
+Clustering uses exact coordinates internally but snaps outputs. Fixed zoom bands,
+bounded responses, cache/rate limits, and the absence of exact public endpoints
+reduce repeated-query triangulation. Association/Administrator receive exact
+coordinates only through their distinct authorized projections.
+
+## Audit and database hardening
+
+- Every moderation, duplicate, zone, and threshold command appends an audit row.
+- No mobile role receives audit INSERT/UPDATE/DELETE.
+- Function owners are not login roles and are not used by the app.
+- Migration review must enumerate function ownership, function grants, table
+  grants, RLS enablement, and exposed PostgREST schemas.
+- Clients read the caller's profile through `get_my_profile`. Direct `SELECT` on
+  `profiles` is revoked; the own-row RLS policy remains defense in depth.
+- Rate limits at Traefik/Envoy or worker cover report, flag, upload, login, and
+  refresh endpoints; fingerprint-only control is insufficient.
