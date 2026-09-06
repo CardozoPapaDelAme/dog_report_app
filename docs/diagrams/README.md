@@ -30,4 +30,7 @@ Contract owners remain outside this folder. Review diagrams with
 
 ## Inventory
 
-No diagram sources have been added yet.
+| File | Status |
+|---|---|
+| [`erd.md`](erd.md) | Added |
+| [`sequences/admin-moderation.md`](sequences/admin-moderation.md) | Added |
