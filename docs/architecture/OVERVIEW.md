@@ -1,76 +1,71 @@
 # Architecture Overview
 
-## System shape
+This document owns the current architectural shape, component boundaries, and
+responsibility split. Exact calls, persistent state, security controls, and
+operations belong to their dedicated contracts.
 
+## Current shape
+
+One Expo mobile app uses Supabase managed Free directly. Supabase Auth and the
+generated Data API/PostgREST transport expose narrow SQL RPCs; there is no
+redundant custom Controller-Service-Repository API. PostgreSQL/PostGIS owns
+transactional use cases, persistence, RLS, geofencing, moderation, duplicate
+resolution, and projections. Edge Functions are limited to non-relational image
+work and future external integrations.
+
+```text
+anonymous public reporter ─┐
+Association ───────────────┼─> React Native / Expo development build
+Administrator ─────────────┘     ├─ camera + bundled MobileNetV3-Small TFLite
+                                 ├─ Expo SQLite queue + local photo file
+                                 ├─ MapLibre online map
+                                 └─ role-protected navigation
+                                             │ HTTPS
+                    ┌────────────────────────┴────────────────────────┐
+                    │ Supabase Cloud — managed provider boundary      │
+                    │ ├─ Auth                                         │
+                    │ ├─ Data API / PostgREST (generated RPC adapter) │
+                    │ ├─ Edge Functions (image/external integrations) │
+                    │ ├─ private approved Storage                     │
+                    │ └─ PostgreSQL + PostGIS                         │
+                    └─────────────────────────────────────────────────┘
 ```
-┌─────────────────────────────┐         ┌──────────────────────────────────────┐
-│  Mobile app (React Native /  │         │  OVHcloud VPS (4 vCPU / 8 GB RAM)     │
-│  Expo) — iOS & Android       │         │  Dokploy (PaaS)                       │
-│                              │         │   └─ Traefik (reverse proxy, TLS)     │
-│  • Camera-first report flow  │  HTTPS  │        │                              │
-│  • On-device photo validate  │ ──────▶ │      Kong (Supabase gateway)          │
-│  • On-device color extract   │         │        ├─ GoTrue (Auth / JWT)         │
-│  • Offline queue + sync      │         │        ├─ PostgREST (auto REST API)   │
-│  • Public map + clusters     │         │        ├─ Storage (photos)            │
-│  • Dashboard (auth roles)    │ ◀────── │        └─ Studio (internal only)      │
-└─────────────────────────────┘         │                                        │
-                                         │      PostgreSQL + PostGIS              │
-                                         │        • RLS policies                  │
-                                         │        • triggers (geo, dup, form)     │
-                                         │        • public_reports view           │
-                                         └──────────────────────────────────────┘
-```
 
-## Components
+The decomposition is logical. It does not claim physical provider topology. One
+remote Free project is sufficient for the five-week prototype; a second is
+optional for isolated demo/testing.
 
-**Mobile app (React Native + Expo)**
-Single app serving three audiences: anonymous public (report + map), Association
-(dashboard/export), Administrator (moderation). Bilingual ES/EN. Offline-first
-report creation.
+## Responsibility boundary
 
-**Reverse proxy (Traefik, via Dokploy)**
-Terminates TLS (Let's Encrypt, auto), routes to Kong. Internal Supabase ports
-(Postgres, Kong, Studio) are not exposed to the internet.
+| Team-owned | Supabase-owned |
+|---|---|
+| App; versioned migrations and schema; RLS/grants; RPCs; Edge Function code; Storage policies; secrets/configuration; data lifecycle; quota monitoring | Physical hosts; managed gateway/runtime; TLS; managed service operation |
 
-**Supabase stack (self-hosted, Docker)**
-- **GoTrue** — authentication, issues JWTs for the two roles.
-- **PostgREST** — auto-generates the REST API from the Postgres schema.
-- **Storage** — stores report photos.
-- **Studio** — admin UI, internal access only.
+## Actor boundaries
 
-**PostgreSQL + PostGIS**
-The heart of the system. Holds all data, enforces access with RLS, and does real
-work in triggers/functions: geofencing validation, dynamic-form validation,
-duplicate detection, and map clustering.
-
-## Data flow: creating a report
-
-1. App opens on camera (RF07). User takes a photo.
-2. On-device: dog/no-dog + quality check (RF09); color extraction (RF22). Runs
-   offline.
-3. User fills the dynamic form for the chosen incident type (RF24).
-4. A client-generated UUID identifies the report (offline-first, RNF12).
-5. On connectivity, the app syncs via PostgREST (anon key + RLS).
-6. Server-side: triggers validate location is inside Creel, validate the `details`
-   JSON structure, run duplicate detection, and (re)compute the confidence score.
-7. The report appears on the public map (via the `public_reports` view) unless held
-   for review.
-
-## Access model
-
-Three access levels, enforced by RLS + a restricted public view:
-
-| Level | Sees | Can do |
+| Actor | Reads | Commands |
 |---|---|---|
-| Anonymous (anon key) | Visible reports (via `public_reports`, no sensitive columns) | Create reports, file flags |
-| Association | All reports incl. hidden | Read stats, export |
-| Administrator | All reports + flags + duplicate queue | Hide/delete/restore, resolve queues |
+| anonymous public reporter | Recent visible canonical reports with approximate location; authorized sanitized photo delivery; own photo processing status | Submit a report; send the optional photo to the image Function; flag a visible canonical report |
+| Association | Accepted canonical business data retained up to five years; authorized retained photos | None; dashboard/export are read-only |
+| Administrator | Moderation, flag, trust, duplicate, photo, and configuration context | Audited moderation, duplicate, zone, and threshold commands |
+| technical operator | Managed project and Auth administration | Provision/deactivate accounts; link/deploy migrations and Functions; exports/restores |
+| image/retention service identity | No UI | Record image processing outcomes, authorize private delivery, apply trust input, and run retention |
 
-## Where the logic lives
+Association and Administrator are sibling roles. Administrator does not inherit
+analytics/export. Its configuration commands are an explicit exception to its
+otherwise moderation-focused scope.
 
-- **On device**: photo validation, color extraction, offline queue, form UX.
-- **In the database**: access control (RLS), geofencing, form-structure validation,
-  duplicate detection, clustering, auto-hide on flag threshold, audit logging.
-- **Server-side (trigger or Edge Function)**: authoritative confidence score.
+## Contract handoff
 
-See `docs/DATA-MODEL.md` for the schema and `docs/SECURITY.md` for the security model.
+| Concern | Authoritative detail |
+|---|---|
+| RPCs, transport, and image endpoints | [`../API.md`](../API.md) |
+| Entities, state machines, duplicate semantics, and retention | [`../DATA-MODEL.md`](../DATA-MODEL.md) |
+| Authorization, privacy, and threat controls | [`../SECURITY.md`](../SECURITY.md) |
+| Technology selections | [`../STACK.md`](../STACK.md) |
+| External dependencies and fallbacks | [`../INTEGRATIONS.md`](../INTEGRATIONS.md) |
+| Deployment and operations | [`../DEPLOYMENT.md`](../DEPLOYMENT.md) |
+
+The mobile queue remains separate from server moderation state, public location is
+privacy-minimized, and the image Function is a specialized boundary rather than a
+generic business API. The linked contracts define those rules precisely.

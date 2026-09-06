@@ -1,37 +1,62 @@
-# Documentation Index
+# Documentation Index and Precedence
 
-## Product (`product/`)
+This file owns global documentation navigation and the source-of-truth order. Use
+the topic map below instead of treating summary documents as competing contracts.
 
-The "why" and "what" — read in roughly this order:
+## Source-of-truth order
 
-1. `product/PROBLEM-CONTEXT.md` — the problem being solved and who it's for
-2. `product/VISION.md` — where this is headed
-3. `product/HIGH-LEVEL-REQUIREMENTS.md` — functional & non-functional requirements
-4. `product/SOLUTION-EXPLORATION.md` — options considered and why this approach
-5. `product/ROADMAP.md` — prototype scope vs. future phases
-6. `product/README.md` — product-area index
+| Priority | Source | Purpose |
+|---|---|---|
+| 1 | [`../Etapa 1. Requerimientos.pdf`](../Etapa%201.%20Requerimientos.pdf) and [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) | Immutable original SRS and identifiers |
+| 2 | [`product/APPROVED-CLARIFICATIONS.md`](product/APPROVED-CLARIFICATIONS.md) | Approved amendments where the SRS is ambiguous or superseded |
+| 3 | [`../db/schema.sql`](../db/schema.sql) | Authoritative exact target schema and API/data boundary |
+| 4 | [`API.md`](API.md), [`DATA-MODEL.md`](DATA-MODEL.md) | Consumer-facing and conceptual explanations of the schema contract |
+| 5 | [`architecture/DECISIONS.md`](architecture/DECISIONS.md) | Technical rationale and accepted/superseded trade-offs |
 
-## Architecture (`architecture/`)
+No summary document outranks these sources. RF/RNF/HU links are many-to-many;
+use [`TRACEABILITY.md`](TRACEABILITY.md) rather than inferring one-to-one
+relationships.
 
-- `architecture/OVERVIEW.md` — system shape, components, data flow
-- `architecture/DECISIONS.md` — decision records (ADRs) with rationale
+## Recommended reading path
 
-## Technical references (this folder)
+1. [`product/README.md`](product/README.md)
+2. [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md)
+3. [`API.md`](API.md) and [`DATA-MODEL.md`](DATA-MODEL.md)
+4. [`SECURITY.md`](SECURITY.md) and [`DEPLOYMENT.md`](DEPLOYMENT.md)
+5. [`TESTING.md`](TESTING.md) and [`TRACEABILITY.md`](TRACEABILITY.md)
+6. [`DIAGRAM-READINESS.md`](DIAGRAM-READINESS.md)
 
-- `DATA-MODEL.md` — database schema, tables, dynamic-form JSON contract
-- `API.md` — API surface (preliminary; PostgREST-generated)
-- `STACK.md` — technology choices and rationale
-- `SECURITY.md` — security model: RLS, anti-abuse, hardening
-- `DEPLOYMENT.md` — deployment via Dokploy + Supabase self-hosted
-- `INTEGRATIONS.md` — third-party integrations (preliminary)
-- `TESTING.md` — testing strategy (preliminary)
-- `GLOSSARY.md` — domain and technical terms
+## Product
 
-## Requirement ID conventions
+- [`product/README.md`](product/README.md) — product navigation and authority
+- [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) — immutable Spanish SRS transcription
+- [`product/APPROVED-CLARIFICATIONS.md`](product/APPROVED-CLARIFICATIONS.md) — approved amendments
+- [`product/PROBLEM-CONTEXT.md`](product/PROBLEM-CONTEXT.md) — problem, stakeholders, and current gap
+- [`product/VISION.md`](product/VISION.md) — outcomes, principles, and success
+- [`product/HIGH-LEVEL-REQUIREMENTS.md`](product/HIGH-LEVEL-REQUIREMENTS.md) — capability-level orientation
+- [`product/SOLUTION-EXPLORATION.md`](product/SOLUTION-EXPLORATION.md) — alternatives considered
+- [`product/ROADMAP.md`](product/ROADMAP.md) — phases, dependencies, and exit gates
+- [`product/GEOFENCE-CANDIDATE.md`](product/GEOFENCE-CANDIDATE.md) — candidate provenance and approval procedure
 
-- **RF** — Functional Requirement (RF01–RF24)
-- **RNF** — Non-Functional Requirement (RNF01–RNF36)
-- **HU** — User Story / Historia de Usuario (HU-01–HU-24)
+## Architecture and technical contracts
 
-The canonical requirements live in the SRS ("Etapa 1. Requerimientos"). Docs here
-reference those IDs; keep them consistent if the SRS changes.
+- [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md) — current shape, components, and responsibilities
+- [`architecture/DECISIONS.md`](architecture/DECISIONS.md) — accepted and superseded rationale
+- [`STACK.md`](STACK.md) — selected technologies and why they are present
+- [`INTEGRATIONS.md`](INTEGRATIONS.md) — external contracts and fallbacks
+- [`API.md`](API.md) — RPC/transport consumer contract
+- [`DATA-MODEL.md`](DATA-MODEL.md) — entity, state, and retention semantics
+- [`SECURITY.md`](SECURITY.md) — security, privacy, and threat controls
+- [`DEPLOYMENT.md`](DEPLOYMENT.md) — deployment and operations runbook
+- [`TESTING.md`](TESTING.md) — verification strategy and scenario ownership
+- [`TRACEABILITY.md`](TRACEABILITY.md) — complete RF/RNF/HU mapping
+- [`DIAGRAM-READINESS.md`](DIAGRAM-READINESS.md) — diagram handoff and review checklist
+- [`diagrams/README.md`](diagrams/README.md) — versioned diagram sources; add a file only when that diagram is requested
+- [`GLOSSARY.md`](GLOSSARY.md) — vocabulary
+- [`design/DESIGN.md`](design/DESIGN.md) — visual design system, tokens, and UI components
+
+## Identifier ranges
+
+- Functional requirements: RF01–RF24
+- Non-functional requirements: RNF01–RNF36
+- User stories: HU-01–HU-24

@@ -1,52 +1,37 @@
 # Roadmap
 
-## Now — Prototype (current scope)
+This document owns phase order, dependencies, and exit gates. Architecture,
+technology selection, and operational commands belong to their linked owners.
 
-Goal: a functional prototype, not a public launch.
+## Prototype sequence
 
-**Public reporting**
-- Anonymous report creation, camera-first (RF01–RF07)
-- On-device photo validation: dog/no-dog + quality (RF09, RNF08)
-- On-device color extraction; manual size/collar (RF22)
-- Dynamic form per incident type (RF24), DB-validated (RNF36)
-- Offline creation + sync (RNF12)
+| Phase | Outcome | Depends on | Exit gate |
+|---|---|---|---|
+| 1. Foundations | Buildable mobile shell, ordered migrations, contract clients, and test harnesses | Approved contracts | Schema dry-run and baseline authorization tests pass |
+| 2. Public reporting | Durable anonymous report flow with optional evidence and recovery | Phase 1 | Offline restart and idempotent sync scenarios pass |
+| 3. Trusted ingestion | Server validation, trust routing, private delivery, and cleanup compensation | Phases 1–2 | Image, abuse, privacy, and failure-recovery scenarios pass |
+| 4. Public map | Privacy-preserving reports, clusters, and offline-unavailable UX | Phases 1–3 | Map correctness, privacy, and performance targets pass |
+| 5. Authenticated flows | Separate Association and Administrator capabilities | Phases 1–4 | Cross-role negative tests and audit scenarios pass |
+| 6. Operational readiness | Deployable, observable, recoverable prototype | All prior phases | Managed-project smoke tests and isolated restore rehearsal pass |
 
-**Public map**
-- Pins, clustering, size/color semantics, zoom expansion (RF10–RF14)
+## External gate
 
-**Association account**
-- Single provisioned login, BI dashboard, CSV/Excel export (RF15–RF17)
+Live report intake cannot launch until the Association approves a geofence
+version. [`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md) defines the candidate and
+approval procedure.
 
-**Administrator account**
-- Moderation: view all + flagged, hide/delete, auto-hide queue (RF18–RF21)
-- Possible-duplicate review queue (RF23)
+## Deferred
 
-**Integrity & security baseline**
-- Fingerprint rate-limiting, honeypots, confidence scoring (RNF26–RNF29)
-- RLS, audit log, image validation, rate limiting, JWT policy (RNF31–RNF34)
+- 99.9% SLA and high availability/multi-node recovery.
+- Optional Phase 2 visual duplicate suggestions: temporary/serverless GPU plus a
+  future pgvector migration, always combined with time/distance and human review.
+- Production SLA/PITR/custom domain and a backup mechanism that proves the
+  required RPO/RTO.
+- Multi-city/multi-tenant or per-hotel accounts.
+- Sterilization-campaign tracking, push notifications, and direct authority APIs.
 
-## Timeline (from the SRS schedule)
+## Start gate
 
-| Stage | Window | Notes |
-|---|---|---|
-| Etapa 1 — Requirements | done | SRS complete |
-| Etapa 2 — Design | short | data model, sequence diagrams |
-| Etapa 3 — Development | ~34 days | the build |
-| Etapa 4 — Testing | ~7 days | |
-| Etapa 5 — Deployment | ~14 days | |
-
-## Next — Deferred to future phases
-
-- **Visual dog re-identification (RNF35)**: DINOv2 embeddings + vector similarity
-  (pgvector) to suggest "same dog seen before". Requires GPU/dedicated inference the
-  current VPS can't provide, and breaks offline-first for that function. The
-  attributes captured in RF22 are the cheap pre-filter that makes this cheaper later.
-- **Sterilization campaign tracking**: noted as a relevant future feature within the
-  dogs-only scope.
-
-## Explicitly out of scope (not planned)
-
-- Multi-city / multi-tenant architecture.
-- Commercial/tiered access or per-hotel accounts.
-- Species other than dogs.
-- High-availability / server redundancy (single VPS is a known prototype limitation).
+Implementation starts from migrations derived from [`../../db/schema.sql`](../../db/schema.sql),
+with planned tests for every [`TRACEABILITY.md`](../TRACEABILITY.md) row. Deployment
+commands and tool-version requirements belong to [`../DEPLOYMENT.md`](../DEPLOYMENT.md).

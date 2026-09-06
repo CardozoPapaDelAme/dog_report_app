@@ -1,27 +1,28 @@
 # Product Documentation
 
-This folder holds the product-level context: the problem, the vision, the
-requirements, and how the scope was reasoned about.
+This index owns product-document navigation. Product authority comes from the
+immutable SRS followed by approved clarifications; the remaining files help
+readers find context without redefining those decisions.
 
-## Contents
+## Read in this order
 
-- `PROBLEM-CONTEXT.md` — the problem, the client, and the stakeholders
-- `VISION.md` — the product vision and what success looks like
-- `HIGH-LEVEL-REQUIREMENTS.md` — functional & non-functional requirements (RF/RNF/HU)
-- `SOLUTION-EXPLORATION.md` — alternatives considered and trade-offs
-- `ROADMAP.md` — what's in the prototype vs. deferred to later phases
+1. [`ETAPA1-REQUERIMIENTOS.md`](ETAPA1-REQUERIMIENTOS.md) — original requirements and IDs
+2. [`APPROVED-CLARIFICATIONS.md`](APPROVED-CLARIFICATIONS.md) — approved amendments
+3. [`PROBLEM-CONTEXT.md`](PROBLEM-CONTEXT.md) — problem, stakeholders, and current gap
+4. [`VISION.md`](VISION.md) — desired outcomes, principles, and success
+5. [`HIGH-LEVEL-REQUIREMENTS.md`](HIGH-LEVEL-REQUIREMENTS.md) — capability-level orientation
+6. [`SOLUTION-EXPLORATION.md`](SOLUTION-EXPLORATION.md) — alternatives considered
+7. [`ROADMAP.md`](ROADMAP.md) — phases, dependencies, and exit gates
+8. [`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md) — candidate provenance and approval procedure
 
-## The client
+The SRS body is never rewritten to conceal later decisions. Approved
+clarifications govern implementation when an original statement is ambiguous or
+superseded. Requirement IDs remain exact and map many-to-many through
+[`../TRACEABILITY.md`](../TRACEABILITY.md).
 
-**Asociación de Hoteles de Chihuahua, A.C.** — a nonprofit civil association
-representing affiliated hotels in Chihuahua state. It is the sole administrator of
-the system. Its members (hoteliers) are the primary consumers of the BI data; the
-public (tourists, residents) are the reporters.
+## Current external gate
 
-## One-paragraph summary
-
-Stray/feral dogs in Creel pose a risk to residents, tourists, pets, and livestock.
-Sighting and incident data is currently scattered and unsystematic, making it hard
-to identify high-risk zones and patterns. This app centralizes anonymous, photo-
-backed reports and turns them into geographic and statistical intelligence the
-Association can act on.
+No live/Production geofence is approved. The INEGI locality polygon is a
+reproducible candidate/test fixture only; explicit Association approval is
+required before live activation. The evidence and procedure belong to
+[`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md).

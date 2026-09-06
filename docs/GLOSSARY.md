@@ -1,63 +1,74 @@
 # Glossary
 
-## Domain
+This file provides short vocabulary reminders. Nuanced behavior remains owned by
+the linked contract documents.
 
-- **Association** — Asociación de Hoteles de Chihuahua, A.C. The nonprofit client and
-  sole system administrator.
-- **Report** — an anonymous sighting/incident record (dog present, incident type,
-  location, optional photo).
-- **Incident type** — category of a report: `avistamiento_simple`, `ataque_mascota`,
-  `ataque_ganado`, `ataque_humano`, `perro_lastimado`, `otro`.
-- **Sighting type** — `solitario` (lone dog) or `manada` (pack).
-- **Flag** — a user marking a report as invalid (fake, inappropriate, mockery, or not
-  a stray).
-- **Creel** — the tourist town in Chihuahua; the geographic scope of the system.
+## Actors and access
 
-## Roles
+- **anonymous public reporter** — external actor using public report/map/flag
+  features without an Auth account.
+- **Association** — authenticated read-only business-intelligence role. It receives
+  accepted canonical data and export, not moderation internals.
+- **Administrator** — authenticated moderation role with specific audited commands
+  and an explicit configuration-management exception. It does not inherit BI.
+- **technical operator** — infrastructure/Auth operator who provisions accounts,
+  deploys migrations, and performs recovery; not an application role.
+- **service identity** — server-only identity used by Edge Functions/retention for
+  narrow service RPCs; never embedded in the app.
 
-- **Anonymous public** — any reporter/viewer, no login.
-- **Administrator** — moderates reports (hide/delete/restore, review queues).
-- **Association account** — reads BI/stats, exports data.
+## Data and workflow
 
-## Technical
+- **accepted** — server-approved business record.
+- **visible** — accepted report eligible for authorized business use; public use
+  additionally requires an unexpired 90-day window and canonical disposition.
+- **logical deletion** — reversible non-public state; retention performs later hard
+  deletion.
+- **canonical report** — human-selected representative of a confirmed duplicate
+  group. Evidence on other members remains linked.
+- **local queue state** — device transport progress; unrelated to server moderation.
+- **raw EXIF** — source image metadata processed transiently and never stored.
+- **derived EXIF signal** — minimized scalar consistency score produced by the
+  trusted image boundary.
+- **stable public approximation** — deterministic point snapped to a 50 m metric
+  grid, identical across requests.
 
-- **RF / RNF / HU** — Functional Requirement / Non-Functional Requirement / User Story
-  (Historia de Usuario), from the SRS.
-- **Single-tenant** — one administrator/organization; city/zone is a data attribute,
-  not a tenant boundary.
-- **Offline-first** — reports are created and stored on-device without connectivity
-  and synced later.
-- **RLS (Row Level Security)** — PostgreSQL feature restricting which rows a role can
-  access.
-- **PostGIS** — PostgreSQL extension for geospatial data/queries.
-- **Geofencing** — restricting/validating reports to within Creel's polygon.
-- **Device fingerprint** — an anonymous device identifier used for rate limiting; does
-  not identify the person.
-- **Honeypot field** — a hidden form field; if filled, the submission is likely a bot.
-- **Confidence score** — a per-report 0–1 score from multiple signals deciding
-  publish/review/discard.
-- **Mock location / GPS spoofing** — faking device GPS; detected/flagged.
-- **Cluster** — a group of nearby reports rendered as one circle on the map.
-- **`details` (JSONB)** — the dynamic-form answers, structured per incident type.
+## Platform
 
-## Stack
+- **Expo development build** — custom native app build required for MapLibre and
+  TFLite modules; unlike Expo Go, it contains project native dependencies.
+- **MapLibre React Native** — chosen native online map renderer.
+- **TFLite** — bundled on-device model format used through
+  `react-native-fast-tflite`.
+- **RLS** — row-level PostgreSQL authorization; used with, not instead of, SQL
+  GRANT/REVOKE.
+- **SECURITY DEFINER** — function execution under a constrained owner; requires
+  fixed search path and narrow grants.
+- **Supabase managed boundary** — one provider-operated cloud boundary, logically
+  decomposed into Auth, Data API/PostgREST, Edge Functions, Storage, and
+  PostgreSQL/PostGIS without claiming physical internals.
+- **PostgREST/Data API** — generated HTTP adapter exposing approved SQL functions;
+  not a custom Controller-Service-Repository API.
+- **image-specific Edge Function** — non-relational boundary that validates,
+  decodes, and re-encodes image bytes without persisting the raw input.
+- **private approved Storage** — private bucket holding sanitized output only;
+  access requires an authorized short-lived delivery path.
+- **managed Free project** — Supabase project used for the academic prototype;
+  subject to current quotas, inactivity pausing, and no automatic backups.
+- **demo/test geofence** — clearly labeled candidate geometry used for validation;
+  it is not an Association-approved live boundary.
 
-- **Supabase (self-hosted)** — the backend stack (GoTrue, PostgREST, Storage, Studio)
-  run in Docker on the VPS.
-- **GoTrue** — Supabase's auth service (issues JWTs).
-- **PostgREST** — auto-generates the REST API from the schema.
-- **Kong** — Supabase's internal API gateway.
-- **Dokploy** — open-source self-hosted PaaS used to deploy and manage the stack.
-- **Traefik** — reverse proxy (via Dokploy) handling TLS and routing.
-- **OVHcloud VPS** — the server host (Beauharnois region).
-- **LFPDPPP** — Mexican federal data-protection law (Ley Federal de Protección de
-  Datos Personales en Posesión de los Particulares).
+## Requirement identifiers
 
-## Future-phase
+- **RF** — functional requirement, RF01–RF24.
+- **RNF** — non-functional requirement, RNF01–RNF36.
+- **HU** — user story, HU-01–HU-24.
 
-- **DINOv2** — a vision model (embeddings) considered for visual dog
-  re-identification in a future phase (RNF35).
-- **pgvector** — PostgreSQL extension for vector similarity search (future phase).
-- **Embedding** — a numeric vector representing an image's visual features.
-- **Re-identification** — determining whether two photos show the same individual dog
-  (future phase, not in prototype).
+Their relationships are many-to-many; see
+[`TRACEABILITY.md`](TRACEABILITY.md).
+
+## Contract owners
+
+- Actor permissions and security terms: [`SECURITY.md`](SECURITY.md)
+- State and data terms: [`DATA-MODEL.md`](DATA-MODEL.md)
+- Platform shape: [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md)
+- Requirement relationships: [`TRACEABILITY.md`](TRACEABILITY.md)

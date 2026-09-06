@@ -1,41 +1,23 @@
-# Integrations
+# Integrations and External Boundaries
 
-> **Status: preliminary.** No third-party integrations are firmly committed yet
-> beyond the core stack. This lists candidates and decisions to make.
+This document owns contracts with external providers, datasets, and optional
+services, including release gates and degraded behavior. Technology selection
+itself belongs to [`STACK.md`](STACK.md).
 
-## Current / core (not third-party in the usual sense)
+## External contract matrix
 
-- **Supabase (self-hosted)** — Auth, API, Storage, DB. Owned infrastructure, not an
-  external SaaS. See `STACK.md`.
-- **OVHcloud** — VPS host. See `DEPLOYMENT.md`.
-- **Let's Encrypt** — TLS certificates via Traefik/Dokploy.
+| Dependency | Contract | Failure or fallback | Release gate |
+|---|---|---|---|
+| Supabase managed Free | Hosts the managed application boundary; the team retains responsibility for application authorization, lifecycle, migrations, and recovery evidence | Detect pause/quota/service failure; retain queued reports and show unavailable online features | Recheck plan limits and managed catalogs; complete access and recovery tests |
+| MapTiler Cloud | Supplies online vector styles/tiles through restricted public client configuration with required attribution | Map becomes explicitly unavailable; reporting remains usable | Approve attribution, key restrictions, quota, and expected cost |
+| INEGI | Supplies reproducible candidate geometry and provenance, not live-boundary authority | Live intake remains fail-closed without Association approval | Follow [`product/GEOFENCE-CANDIDATE.md`](product/GEOFENCE-CANDIDATE.md) |
+| Optional Phase 2 compute | May generate visual-similarity suggestions from sanitized images | Phase 1 heuristic/manual duplicate review continues unchanged | Separate future approval, privacy review, and migration |
 
-## Maps (decision pending)
+Supabase operational commands belong to [`DEPLOYMENT.md`](DEPLOYMENT.md); RPC and
+image endpoint contracts belong to [`API.md`](API.md).
 
-The app needs a map with clustering (RF10–RF14). Two candidates:
-- **react-native-maps** (Google/Apple maps under the hood)
-- **Mapbox**
+## Explicit non-integrations
 
-Decide based on: clustering support, offline map tiles (given offline-first),
-bilingual labels, and cost/licensing. Record the choice in `architecture/DECISIONS.md`
-when made.
-
-## On-device ML (library, not a service)
-
-Photo validation runs on-device (RF09) — this is a bundled model, not a network
-integration:
-- **TensorFlow Lite** (MobileNet/EfficientNet-Lite), or
-- **Google ML Kit** image labeling.
-
-## Possible future integrations (out of current scope)
-
-- **DINOv2 inference service** — only if visual re-identification (RNF35) is pursued
-  in a future phase; would require external/GPU inference.
-- **Government / authority data sharing** — export today is manual (CSV/Excel, RF17);
-  a direct integration is not planned.
-
-## To decide
-
-- [ ] Maps provider (react-native-maps vs. Mapbox)
-- [ ] Offline map tile strategy
-- [ ] Push notifications? (not currently a requirement)
+No direct government feed, push provider, generic custom API, or individual-dog
+identity service is part of Phase 1. Association export remains CSV/Excel from its
+approved projection rather than an external integration.

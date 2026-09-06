@@ -1,79 +1,28 @@
 # Solution Exploration
 
-How the current approach was reached — the alternatives considered and why they
-were accepted or rejected. Decision records with more formal framing live in
-`docs/architecture/DECISIONS.md`; this file is the narrative.
+This document records useful alternatives that shaped the selected product. It is
+an index of trade-offs, not the current architecture contract; accepted technical
+rationale belongs to the
+[`architecture decision records`](../architecture/DECISIONS.md).
 
-## Reference point: FeralScan (Australia)
+## Product alternatives considered
 
-FeralScan / WildDogScan was used as a **conceptual reference** for the category
-(community wildlife/pest reporting), not as a model to copy. Research spanned other
-solutions too (HSIApps India, Taiwan's dog tracking map, Ushahidi, municipal Mexican
-apps, academic WebGIS). Gaps no existing solution covered well for this context:
-the tourism/hotel sector as the data consumer, a bilingual tourist-first UX, and
-the specific nonprofit-association ownership model.
+| Concern | Alternatives considered | Resolution owner |
+|---|---|---|
+| Account model | Shared credentials, individual accounts, per-hotel tenancy, or inherited roles | [Approved clarifications 1–5](APPROVED-CLARIFICATIONS.md) |
+| Product surfaces | One role-aware mobile app or separate public/admin clients | [Approved clarification 15](APPROVED-CLARIFICATIONS.md) |
+| Connectivity | Offline report capture with online exploration, or offline map distribution | [Approved clarification 14](APPROVED-CLARIFICATIONS.md) |
+| Duplicate decisions | Human review, automatic merge, or mandatory visual inference | [Approved clarifications 11 and 21](APPROVED-CLARIFICATIONS.md) |
+| Live geofence | Treat locality data as authoritative or require Association approval | [`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md) |
 
-## Access model: tiered/commercial → single simple tier
+## Technical alternatives index
 
-An early idea was a tiered access model (view-only vs. export) with commercial
-monetization. Once the client was correctly understood as a **dues-funded nonprofit
-civil association**, that framing was dropped. The final model is a single
-Association account + a single Administrator account, both provisioned manually.
-No feature tiers, no per-hotel accounts, no separate payment.
-
-## Architecture: multi-tenant → single-tenant
-
-An earlier assumption was multi-tenant, multi-city scaling. This was **explicitly
-corrected**: the system is single-tenant. City/zone is a data attribute, not a
-tenant boundary. This should not be reintroduced.
-
-## Backend: managed BaaS → self-hosted Supabase
-
-Considered: Firebase or Supabase Cloud (managed) vs. self-hosting. Chosen:
-**Supabase self-hosted via Docker** on an OVHcloud VPS, to reduce operational
-dependency on a managed provider while keeping Supabase's Auth, RLS, PostgREST,
-Storage, and Studio. Trade-off accepted: the team is responsible for patching the
-stack. (See DECISIONS.)
-
-## Deployment: manual reverse proxy → Dokploy
-
-Initially the plan specified Nginx/Caddy configured by hand. The project moved to
-**Dokploy** (an open-source self-hosted PaaS), which provides a one-click Supabase
-template, an integrated Traefik reverse proxy with automatic SSL, and built-in DB
-backups. This replaced the manual Nginx/Caddy step. SSH hardening is still required
-separately — the Dokploy panel does not replace it.
-
-## Dog differentiation: the hard question
-
-The team wanted the photo to carry real weight, not just be a text report with an
-image. This raised: can we tell dogs apart?
-
-- **Visual re-identification** ("is this the same dog?") via DINOv2 embeddings is
-  powerful but needs server-side compute (GPU or dedicated inference) the 8 GB/4-core
-  VPS can't provide, and it breaks offline-first for that function. → **Deferred to a
-  future phase (RNF35).**
-- **Simple attributes** (color, size, collar) are cheap. Color can be extracted
-  on-device by pixel analysis; size and collar are optional manual inputs. These feed
-  the confidence score and the duplicate heuristic without claiming individual
-  identification. → **In scope (RF22).**
-
-### Key clarification that unblocked this
-
-"On-device" ≠ "on our VPS". The dog/no-dog + quality classifier (RF09) runs on the
-**user's phone** using a standard lightweight model (MobileNet/EfficientNet-Lite via
-TF Lite, or ML Kit). The VPS never processes the photo for classification. So the
-photo pillar is fully viable; only heavy server-side ML is deferred.
-
-## Duplicate detection: heuristic now, visual later
-
-RF23 groups possible duplicates using cheap signals the VPS can handle: spatial
-proximity (PostGIS) + temporal proximity + shared attributes. It never merges or
-hides automatically — it queues candidates for the admin. Visual similarity
-(embeddings) would be the future-phase upgrade (RNF35).
-
-## Dynamic form: JSONB with validated structure
-
-The report form is conditional per incident type. Rather than many mostly-null
-columns (rigid) or a free-form blob (unsafe), the design uses a **JSONB `details`
-column with a documented, DB-validated contract per incident type** — flexible but
-structured. See `docs/DATA-MODEL.md`.
+| Question | Alternatives retained in history | Accepted rationale |
+|---|---|---|
+| Client data boundary | Broad table CRUD, custom API, or narrow generated RPC transport | [ADR-002](../architecture/DECISIONS.md#adr-002--rpc-only-client-data-boundary) |
+| Offline persistence | Memory-only state, database blobs, or durable metadata plus local file | [ADR-006](../architecture/DECISIONS.md#adr-006--durable-offline-queue-with-expo-sqlite) |
+| Image boundary | Raw quarantine Storage or transient Function processing | [ADR-007](../architecture/DECISIONS.md#adr-007--direct-image-function-plus-private-sanitized-storage) |
+| Map and location privacy | Alternative renderers, degree clustering, or stable metric approximation | [ADR-008](../architecture/DECISIONS.md#adr-008--maplibre-react-native-with-hosted-vector-tiles) and [ADR-010](../architecture/DECISIONS.md#adr-010--metric-server-clustering-and-stable-public-approximation) |
+| On-device vision | ML Kit, cloud inference, or bundled TFLite | [ADR-009](../architecture/DECISIONS.md#adr-009--custom-bundled-tflite-via-react-native-fast-tflite) |
+| Hosting | Self-hosted VPS stacks or managed Supabase | [ADRs 013, 015, and 016](../architecture/DECISIONS.md#adr-013--separate-stacks-on-one-vps) |
+| Future visual similarity | Baseline dependency or optional later enhancement | [ADR-017](../architecture/DECISIONS.md#adr-017--optional-phase-2-visual-duplicate-suggestions) |
