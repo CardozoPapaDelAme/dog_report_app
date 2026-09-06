@@ -1,36 +1,31 @@
 # Problem Context
 
-## Problem
+This document owns the problem statement, affected stakeholders, and current
+information gap. It intentionally does not prescribe implementation.
+
+## Current gap
 
 Information about stray/feral dog sightings and incidents in Creel is scattered,
 making it difficult to identify concentration, frequency, trends, and severity.
 Residents, tourists, hotels, the Association, and authorities lack a trustworthy
 shared evidence base for action.
 
-## Product response
-
-The product centralizes low-friction reports and produces:
-
-- a recent privacy-minimized public map; and
-- accepted canonical business data for Association analysis/export.
-
-Trust controls should reduce contamination without pretending heuristic evidence
-is certainty. Hard judgments—moderation and duplicate confirmation—remain human.
+The gap is not merely data collection: inconsistent reporting makes comparisons
+unreliable, obscures recurring risk areas, and limits evidence-based coordination.
 
 ## Stakeholders
 
 | Stakeholder | Relationship |
 |---|---|
-| Tourists and residents | anonymous public reporters and public-map users |
-| Association | read-only business consumer and geofence-approval authority |
-| Administrator | report moderator and audited operational configurator |
-| Technical operator | account/infrastructure/migration operator |
-| Affiliated hotels and authorities | downstream recipients of Association exports |
+| Tourists and residents | Experience, observe, and communicate local incidents |
+| Association | Needs reliable evidence for coordination and decisions |
+| Administrator | Protects the quality and usefulness of shared information |
+| Technical operator | Supports safe and reliable system operation |
+| Affiliated hotels and authorities | Act on information shared by the Association |
 
-## Scope boundaries
+## Context boundary
 
-- Creel tourist-zone reporting, dogs only, one organizational tenant.
-- No per-hotel accounts, public signup, separate web panel, heavy server ML,
-  individual dog identification, or HA in the prototype.
-- The INEGI urban-locality polygon may seed review but does not define the tourist
-  zone until the Association approves it.
+The initial context is stray/feral dog activity in Creel and the Association's need
+for shared evidence. The exact product scope and amendments belong to
+[`APPROVED-CLARIFICATIONS.md`](APPROVED-CLARIFICATIONS.md); desired outcomes belong
+to [`VISION.md`](VISION.md).

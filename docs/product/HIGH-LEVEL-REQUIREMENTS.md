@@ -1,36 +1,38 @@
 # High-Level Requirements Orientation
 
-This English summary is non-canonical. The original IDs and Spanish text remain in
-`ETAPA1-REQUERIMIENTOS.md`; `APPROVED-CLARIFICATIONS.md` governs amendments.
+This non-canonical English map groups requirements into capabilities; it does not
+restate them. Read the original text in
+[`ETAPA1-REQUERIMIENTOS.md`](ETAPA1-REQUERIMIENTOS.md), then apply
+[`APPROVED-CLARIFICATIONS.md`](APPROVED-CLARIFICATIONS.md).
 
 ## Functional scope
 
 | IDs | Outcome |
 |---|---|
-| RF01–RF09 | Anonymous camera-first reporting; photo requested but optional and limited to one; dynamic data and on-device photo UX validation |
-| RF10–RF14 | MapLibre/MapTiler online map with approximate pins and progressive metric clusters using highest severity plus per-type counts |
-| RF15–RF17 | Multiple provisioned Association accounts share a read-only accepted canonical dashboard/export capability |
-| RF18–RF21 | Multiple provisioned Administrator accounts use moderation context and specific audited state commands; deletion is logical |
-| RF22–RF24 | Structured dog attributes, human-resolved duplicate candidates, and DB-validated conditional details |
+| RF01–RF09 | Accessible public reporting, evidence capture, incident detail, integrity feedback, and camera-first flow |
+| RF10–RF14 | Public geographic exploration, clustering, severity communication, and progressive detail |
+| RF15–RF17 | Authenticated Association access, analysis, and export |
+| RF18–RF21 | Authenticated administration, report review, moderation, and flag handling |
+| RF22–RF24 | Structured dog attributes, duplicate review, and context-sensitive reporting |
 
 ## Non-functional scope
 
 | IDs | Outcome |
 |---|---|
-| RNF01–RNF04 | Best-effort prototype availability, map performance target, growth testing, and sub-five-minute reporting |
-| RNF05–RNF08 | One bilingual Expo app, two sibling roles, Expo development builds, bundled MobileNetV3-Small INT8 TFLite vision |
-| RNF09–RNF13 | Geofence/GPS review, offline validation and queue, structured attributes, privacy minimization |
-| RNF14–RNF25 | Daily backup and restore targets, hardened OVH/Dokploy/Supabase topology, RLS plus privileges, secrets and monitoring |
-| RNF26–RNF30 | Temporary fingerprint signals, honeypot, server trust routing, diverse flags, human duplicate decisions |
-| RNF31–RNF34 | Edge rate limits, quarantine/sanitization, append-only audit, honest short-token/refresh/session handling |
-| RNF35–RNF36 | Visual re-identification deferred; dynamic JSON remains DB-validated |
+| RNF01–RNF04 | Availability, performance, growth, and usability targets |
+| RNF05–RNF08 | Mobile compatibility, localization, actor access, and on-device validation |
+| RNF09–RNF13 | Location/data quality, offline operation, and privacy |
+| RNF14–RNF25 | Hosting, recovery, data platform, access control, secrets, and operations |
+| RNF26–RNF30 | Anti-abuse, trust assessment, flag integrity, and duplicate handling |
+| RNF31–RNF34 | Public-edge protection, image safety, auditability, and sessions |
+| RNF35–RNF36 | Future visual similarity and structured dynamic-form validation |
 
-RNF09 is geofence/GPS validation. RNF08 is on-device vision. The 99.9% value in
-RNF01 is a future target, not a prototype SLA.
+Approved amendments change some original implementation interpretations without
+changing these ranges. Do not infer current hosting, role cardinality, or lifecycle
+rules from this orientation; use the clarification document.
 
 ## User stories
 
-HU-01–HU-24 provide user-centered acceptance language. They do not map one-to-one
-to RF identifiers: for example HU-08 spans RF08/RF21 and anti-abuse RNFs, while
-location privacy and offline behavior add cross-cutting acceptance criteria. Use
-`../TRACEABILITY.md` for the complete mapping.
+HU-01–HU-24 provide user-centered acceptance language and map many-to-many to RF
+and RNF identifiers. Use [`../TRACEABILITY.md`](../TRACEABILITY.md) for the complete
+mapping and verification ownership.

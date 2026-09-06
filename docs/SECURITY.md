@@ -1,5 +1,9 @@
 # Security, Privacy, and Authentication
 
+This document owns security, privacy, authentication, and threat-control rationale.
+It references flows without redefining the endpoint contract in
+[`API.md`](API.md) or persistent states in [`DATA-MODEL.md`](DATA-MODEL.md).
+
 ## Authorization model
 
 Application tables are private by default. Mobile access uses minimized
@@ -14,8 +18,9 @@ SECURITY DEFINER RPCs that:
 
 RLS and SQL privileges solve different problems. RLS limits rows if access is
 accidentally granted; GRANT/REVOKE limits operations and prevents PostgREST table
-CRUD. Neither replaces the other. The mobile app carries only the anon key and
-user session tokens—never `service_role`, JWT secrets, or worker credentials.
+CRUD. Neither replaces the other. The mobile app carries only publishable project
+configuration and user session tokens—never `service_role`, database passwords,
+JWT secrets, or Function credentials.
 
 ## Role matrix
 
@@ -30,9 +35,9 @@ user session tokens—never `service_role`, JWT secrets, or worker credentials.
 
 ## Authentication and provisioning
 
-- Disable public email/password signup and every OAuth/anonymous-auth provider in
-  the self-hosted Auth configuration. Anonymous reporting uses the anon API key,
-  not an anonymous Auth user.
+- Disable public email/password signup and unused OAuth/anonymous-auth providers
+  in the managed Auth project. Anonymous reporting uses the publishable client
+  key, not an anonymous Auth user.
 - A technical operator creates each Auth user, inserts the matching `profiles` row
   with `association` or `administrator`, and delivers credentials out of band.
 - Navigation and every privileged RPC require both a signed `app_role` claim in
@@ -52,7 +57,8 @@ user session tokens—never `service_role`, JWT secrets, or worker credentials.
 
 ### Provisioning runbook
 
-1. Confirm Production or Staging target and authenticated role request approval.
+1. Confirm the target managed project, its demo/test or approved-live marker, and
+   the authenticated role request approval.
 2. Create the Auth account through the installed Supabase administrative tooling.
 3. Set the server-controlled JWT `app_role` metadata and create the matching
    profile role. Never place authorization data in user-editable metadata.
@@ -61,8 +67,8 @@ user session tokens—never `service_role`, JWT secrets, or worker credentials.
 6. For deprovisioning, set `profiles.active=false`, revoke sessions using installed
    Auth capabilities, and preserve required audit evidence.
 
-Exact Auth environment variable names and revocation commands must be verified
-against the installed self-hosted version before deployment.
+Exact managed Auth settings and supported revocation controls must be verified in
+the target project before deployment.
 
 ## Anonymous integrity and privacy
 
@@ -79,12 +85,15 @@ against the installed self-hosted version before deployment.
 
 ## Image security boundary
 
-The worker validates magic bytes/decoded type, maximum 10 MB size, bounded
-dimensions, successful decode, and resource limits. It re-encodes to an approved
-format, strips EXIF, computes the sanitized checksum, and promotes only the output.
-Raw uploads remain private. Timeouts and failures remove quarantine orphans; object
-promotion and database updates use idempotency/compensation rather than pretending
-they are one transaction.
+- **Untrusted input:** validate binding, declared/detected type, configured limits,
+  dimensions, decode success, and resource use inside the trusted Function.
+- **Metadata and payload safety:** process raw bytes/EXIF only transiently, then
+  re-encode and persist sanitized output in private Storage.
+- **Retry abuse and ambiguity:** bind source hashes to stable processing state;
+  conflicting replacement is denied and terminal retention states never authorize
+  delivery.
+- **Disclosure:** authorize every delivery against current report, role, canonical,
+  and retention conditions; never expose listing or permanent public object URLs.
 
 The on-device TFLite result is a UX signal, not server authority. RNF32 requires
 the lightweight server processor; no heavy server ML is added.
@@ -106,5 +115,5 @@ coordinates only through their distinct authorized projections.
   grants, RLS enablement, and exposed PostgREST schemas.
 - Clients read the caller's profile through `get_my_profile`. Direct `SELECT` on
   `profiles` is revoked; the own-row RLS policy remains defense in depth.
-- Rate limits at Traefik/Envoy or worker cover report, flag, upload, login, and
-  refresh endpoints; fingerprint-only control is insufficient.
+- Managed platform controls plus Function/database enforcement cover report, flag,
+  image, login, and refresh abuse. Fingerprint-only control is insufficient.

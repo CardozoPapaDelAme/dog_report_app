@@ -1,10 +1,17 @@
 # Architecture Overview
 
-## Outcome
+This document owns the current architectural shape, component boundaries, and
+responsibility split. Exact calls, persistent state, security controls, and
+operations belong to their dedicated contracts.
 
-One Expo mobile app talks to narrow Supabase RPCs and a lightweight image
-processor. PostgreSQL/PostGIS owns accepted business state, authorization checks,
-geofencing, moderation transitions, duplicate resolution, and projections.
+## Current shape
+
+One Expo mobile app uses Supabase managed Free directly. Supabase Auth and the
+generated Data API/PostgREST transport expose narrow SQL RPCs; there is no
+redundant custom Controller-Service-Repository API. PostgreSQL/PostGIS owns
+transactional use cases, persistence, RLS, geofencing, moderation, duplicate
+resolution, and projections. Edge Functions are limited to non-relational image
+work and future external integrations.
 
 ```text
 anonymous public reporter ─┐
@@ -14,74 +21,51 @@ Administrator ─────────────┘     ├─ camera + bun
                                  ├─ MapLibre online map
                                  └─ role-protected navigation
                                              │ HTTPS
-                         ┌───────────────────┴────────────────────┐
-                          │ Dokploy / Traefik / Envoy (default)    │
-                         │ ├─ Auth (JWT + refresh session)        │
-                         │ ├─ PostgREST (RPCs, no table CRUD)     │
-                         │ ├─ private quarantine/approved Storage │
-                         │ ├─ lightweight image processor         │
-                         │ └─ PostgreSQL + PostGIS                │
-                         └─────────────────────────────────────────┘
+                    ┌────────────────────────┴────────────────────────┐
+                    │ Supabase Cloud — managed provider boundary      │
+                    │ ├─ Auth                                         │
+                    │ ├─ Data API / PostgREST (generated RPC adapter) │
+                    │ ├─ Edge Functions (image/external integrations) │
+                    │ ├─ private approved Storage                     │
+                    │ └─ PostgreSQL + PostGIS                         │
+                    └─────────────────────────────────────────────────┘
 ```
 
-Production and on-demand Staging use separate Supabase stacks, data, Storage,
-secrets, and domains while sharing one physical OVH VPS. This is not HA.
+The decomposition is logical. It does not claim physical provider topology. One
+remote Free project is sufficient for the five-week prototype; a second is
+optional for isolated demo/testing.
+
+## Responsibility boundary
+
+| Team-owned | Supabase-owned |
+|---|---|
+| App; versioned migrations and schema; RLS/grants; RPCs; Edge Function code; Storage policies; secrets/configuration; data lifecycle; quota monitoring | Physical hosts; managed gateway/runtime; TLS; managed service operation |
 
 ## Actor boundaries
 
 | Actor | Reads | Commands |
 |---|---|---|
-| anonymous public reporter | Recent visible canonical reports with approximate location and sanitized photo; own photo processing status | Submit a report; request/status a quarantine upload; flag a visible canonical report |
-| Association | Accepted canonical business data retained up to five years | None; dashboard/export are read-only |
-| Administrator | Moderation, flag, trust, duplicate, and configuration context | Audited moderation, duplicate, zone, and threshold commands |
-| technical operator | Deployment and Auth administration | Provision/deactivate accounts; migrations; restore operations |
-| trusted worker | No UI | Validate/sanitize images, apply trust result, run retention |
+| anonymous public reporter | Recent visible canonical reports with approximate location; authorized sanitized photo delivery; own photo processing status | Submit a report; send the optional photo to the image Function; flag a visible canonical report |
+| Association | Accepted canonical business data retained up to five years; authorized retained photos | None; dashboard/export are read-only |
+| Administrator | Moderation, flag, trust, duplicate, photo, and configuration context | Audited moderation, duplicate, zone, and threshold commands |
+| technical operator | Managed project and Auth administration | Provision/deactivate accounts; link/deploy migrations and Functions; exports/restores |
+| image/retention service identity | No UI | Record image processing outcomes, authorize private delivery, apply trust input, and run retention |
 
 Association and Administrator are sibling roles. Administrator does not inherit
 analytics/export. Its configuration commands are an explicit exception to its
 otherwise moderation-focused scope.
 
-## Report creation and photo pipeline
+## Contract handoff
 
-1. The app creates a final UUID and stores the complete draft in Expo SQLite. A
-   photo, when present, remains in an app-private local file.
-2. The queue retries `submit_report` idempotently. The same UUID and payload hash
-   return the existing server record even if the geofence later changed; a
-   different payload for that UUID fails. New points still need the current
-   geofence.
-3. The report starts in server `pending_review`; clients cannot choose status or
-   trust values.
-4. If a photo is expected, the client calls `request_report_photo_upload`. The
-   image worker mints a signed URL for that path (`POST
-   /functions/v1/authorize-report-photo-upload`).
-5. The worker verifies decoded type, size, dimensions, and image integrity, derives
-   transient EXIF consistency signals, re-encodes without EXIF, and promotes only
-   the sanitized object. Failed and orphaned objects are cleaned up.
-6. The client polls `get_report_photo_status` and deletes local files only when
-   `local_cleanup_allowed` is true.
-7. The trusted assessment publishes high-trust reports. Medium/low trust, mock
-   location, or imprecise GPS remains in review. Heuristics never auto-discard.
+| Concern | Authoritative detail |
+|---|---|
+| RPCs, transport, and image endpoints | [`../API.md`](../API.md) |
+| Entities, state machines, duplicate semantics, and retention | [`../DATA-MODEL.md`](../DATA-MODEL.md) |
+| Authorization, privacy, and threat controls | [`../SECURITY.md`](../SECURITY.md) |
+| Technology selections | [`../STACK.md`](../STACK.md) |
+| External dependencies and fallbacks | [`../INTEGRATIONS.md`](../INTEGRATIONS.md) |
+| Deployment and operations | [`../DEPLOYMENT.md`](../DEPLOYMENT.md) |
 
-Local queue states such as `draft`, `queued`, `submitting`, `uploading`,
-`awaiting_processing`, `retry_wait`, `synced`, and `terminal_error` are NOT
-server moderation states.
-
-## Public map
-
-- The map is online-only and shows an explicit unavailable state offline.
-- The server clusters exact authorized locations in UTM zone 13N, then returns a
-  stable 50 m-grid aggregate point, highest severity, and per-type counts.
-- Supported zoom bands map to fixed cluster radii, limiting query variability.
-- Individual public pins also use the same deterministic grid. No jittered
-  endpoint exists to average into a more exact location.
-
-## Trust boundaries
-
-- Client checks improve UX but are untrusted inputs.
-- PostgREST exposes RPCs, not general table writes.
-- RLS limits rows if a grant is accidentally broadened; GRANT/REVOKE limits which
-  operations are callable. Both are mandatory.
-- The image processor is intentionally lightweight (decode, validation,
-  re-encoding, metadata-derived signals), not a server ML service.
-
-See `../API.md`, `../DATA-MODEL.md`, and `../SECURITY.md` for exact contracts.
+The mobile queue remains separate from server moderation state, public location is
+privacy-minimized, and the image Function is a specialized boundary rather than a
+generic business API. The linked contracts define those rules precisely.

@@ -1,18 +1,22 @@
 # Verification Strategy
 
+This document owns test levels, release gates, and scenario coverage. Business
+rules remain in their product/data/API/security owners; RF/RNF/HU mapping remains
+in [`TRACEABILITY.md`](TRACEABILITY.md).
+
 ## Release gates
 
 | Gate | Required proof |
 |---|---|
-| Schema | Migration applies/rolls back on the pinned PostgreSQL/PostGIS/Supabase version |
+| Schema | Ordered migration dry-run and apply succeed on a linked managed project with verified extensions/catalogs |
 | Authorization | Positive and negative tests for every actor/RPC; direct table CRUD denied |
 | State machine | Every valid transition succeeds; every invalid transition fails |
 | Privacy | No raw EXIF column/object metadata; public coordinates remain on stable 50 m grid |
 | Offline | Crash/restart-safe queue; idempotent UUID/payload retries; local cleanup only after acknowledgment |
-| Images | Header spoof, oversized/dimension bomb, corrupt decode, metadata strip, timeout, orphan, and compensation tests |
+| Images | Binding/hash conflict, header spoof, configured size/dimension limits, corrupt decode, metadata strip, timeout, idempotent retry, private delivery, and compensation tests |
 | Duplicates | Detection only suggests; connected pending-candidate membership; reversal discoverable; audit works |
 | Retention | Time-controlled 30d/90d/1y/2y/5y tests; NULL `purge_after` cannot block report purge; production RPC uses server `now()` |
-| Operations | Backup restore meets RPO/RTO target; Staging isolation and shutdown verified |
+| Operations | Database dumps and private object-byte export restore successfully; Free backup/SLA gap is explicit; quotas and pause state checked before demo |
 
 ## Database and API tests
 
@@ -39,9 +43,24 @@
 - Flag RPC locks the report before insert/count, rejects non-canonical and
   non-public rows, counts distinct unexpired origins, and auto-hides only visible
   rows.
-- `request_report_photo_upload` / `get_report_photo_status` succeed for the
-  submitting fingerprint, deny others, and allow local cleanup only after
-  approved/rejected/purged or when no photo was expected.
+- `service_begin_photo_processing` / `get_report_photo_status` bind the submitting
+  fingerprint and source hash, deny others, converge for identical retry, reject
+  different content, and allow local cleanup after every terminal state or when no
+  photo was expected.
+- Status is monotonic across `approved` → `purge_pending` → `purged`:
+  `processing_complete` and `local_cleanup_allowed` stay true, exact state is
+  preserved, and `upload_succeeded` is true only for `approved`.
+- Same-content retry after `purge_pending` and after `purged` returns the exact
+  terminal state, performs no processed-photo registration, deletes local input,
+  and stops upload retry. Neither state is treated as deliverable success.
+- Processing registration/rejection is service-only and idempotent for the same
+  outcome. No raw-image path, object, or EXIF field is persisted.
+- Public photo delivery rejects hidden, expired, deleted, and active non-canonical
+  reports. Association and Administrator paths enforce their distinct role rules;
+  invalid user tokens cannot fall back to anonymous access, and no response exposes
+  a permanent public object URL.
+- A retry after object-write/SQL-registration interruption reuses the stable photo
+  id/path and converges without leaving duplicate sanitized objects.
 - Direct `SELECT` on `profiles` is denied; `get_my_profile` returns the caller.
 - Restore returns to pending, approval republishes, and logical delete never hard
   deletes directly.
@@ -83,16 +102,26 @@
 - Simulate airplane mode, process kill, low storage, permission denial, clock skew,
   duplicate taps, flaky upload, app upgrade, and file/SQLite mismatch.
 
-## Infrastructure/security tests
+## Managed platform/security tests
 
-- External port scan, TLS redirect/certificate renewal, secret/bundle scan, API
-  rate limiting, login/refresh limits, and internal Studio/database reachability.
-- Validate Production/Staging use distinct endpoints, keys, databases, Storage, and
-  domains. Start Staging under load and observe Production contention.
-- Restore an encrypted backup into isolation and execute data/access smoke tests.
+- Secret/bundle scan, managed TLS smoke test, API/Function rate limiting, and
+  login/refresh controls.
+- `supabase db push --dry-run` lists only reviewed migrations before apply; deployed
+  Functions match versioned source. No CLI token, database password, service key,
+  or Function secret is tracked.
+- If a second Free project is used, verify endpoints, keys, data, and Storage are
+  isolated. Do not require a second project for the prototype.
+- Execute the documented milestone runbook: verify roles/schema/data checksums,
+  restore with `psql`, recreate/verify private bucket policy, restore object bytes,
+  compare manifest paths/counts/checksums with `photo_assets`, and run data/access
+  smoke tests. Record that Free supplies no automatic backup and no rehearsal has
+  occurred until evidence is captured; the prototype procedure does not itself
+  prove the required production RPO/RTO.
+- Check current Free database, Storage, egress, Function invocation, active-project,
+  and inactivity-pause limits immediately before the demo.
 
 ## Traceability
 
-`TRACEABILITY.md` is the complete pre-implementation inventory for RF01–RF24,
-RNF01–RNF36, and HU-01–HU-24. Replace each verification focus with concrete test
-IDs as suites are implemented; preserve many-to-many mappings.
+[`TRACEABILITY.md`](TRACEABILITY.md) is the complete pre-implementation inventory.
+Replace each verification focus with concrete test IDs as suites are implemented;
+preserve its many-to-many mappings.

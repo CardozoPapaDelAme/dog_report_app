@@ -1,38 +1,28 @@
 # Solution Exploration
 
-## Decisions that close earlier alternatives
+This document records useful alternatives that shaped the selected product. It is
+an index of trade-offs, not the current architecture contract; accepted technical
+rationale belongs to the
+[`architecture decision records`](../architecture/DECISIONS.md).
 
-| Concern | Selected prototype direction | Rejected/deferred direction |
+## Product alternatives considered
+
+| Concern | Alternatives considered | Resolution owner |
 |---|---|---|
-| Access | One tenant; multiple individual accounts in two sibling roles | Single shared credentials, per-hotel tenants, role inheritance |
-| Client | One role-protected Expo mobile app | Separate web/admin panel |
-| Offline | Expo SQLite metadata + app-private photo file | Memory-only queue or image blobs in SQLite |
-| API | Minimized PostgREST RPCs/commands | Broad table CRUD |
-| Map | MapLibre React Native + MapTiler Cloud vector style/tiles | Unresolved SDK/provider “or” choice; offline tiles in prototype |
-| Clustering | Exact UTM server clustering, approximate output | Degree-as-meter DBSCAN or client access to exact public points |
-| Vision | Bundled custom TFLite through `react-native-fast-tflite` | ML Kit alternative, cloud classifier, Expo Go |
-| Images | Private quarantine + lightweight server sanitization | Trusting extension/MIME or on-device validation |
-| Duplicates | Human canonical groups, reversible/audited | Automatic merge/hide or DINOv2 in prototype |
-| Configuration | Typed immutable versions and approved zone sets | Free-form key/value settings or placeholder polygon |
-| Deployment | Isolated stacks sharing one VPS | Shared database/secrets or HA claim |
+| Account model | Shared credentials, individual accounts, per-hotel tenancy, or inherited roles | [Approved clarifications 1–5](APPROVED-CLARIFICATIONS.md) |
+| Product surfaces | One role-aware mobile app or separate public/admin clients | [Approved clarification 15](APPROVED-CLARIFICATIONS.md) |
+| Connectivity | Offline report capture with online exploration, or offline map distribution | [Approved clarification 14](APPROVED-CLARIFICATIONS.md) |
+| Duplicate decisions | Human review, automatic merge, or mandatory visual inference | [Approved clarifications 11 and 21](APPROVED-CLARIFICATIONS.md) |
+| Live geofence | Treat locality data as authoritative or require Association approval | [`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md) |
 
-## Important trade-offs
+## Technical alternatives index
 
-- Native MapLibre and TFLite modules require development/release builds, increasing
-  build setup but removing unresolved runtime choices.
-- An online-only map is honest about connectivity and avoids an unplanned tile
-  distribution/licensing system; report creation remains fully offline.
-- Stable public approximation sacrifices pin precision to prevent repeated-query
-  averaging. Exact coordinates remain available only where purpose-authorized.
-- A lightweight image worker adds one component, but Postgres cannot safely decode
-  and re-encode untrusted media. This is a necessary security boundary, not server
-  ML.
-- Separate stacks improve isolation but share a failure domain and compete for
-  resources. Staging therefore runs on demand.
-
-## Geofence evidence
-
-INEGI supplies a reproducible Creel urban-locality polygon, but the product needs a
-tourist-zone boundary. Treating those as identical would be a product error.
-Version the INEGI candidate, review it in GIS, and require Association approval
-before Production activation.
+| Question | Alternatives retained in history | Accepted rationale |
+|---|---|---|
+| Client data boundary | Broad table CRUD, custom API, or narrow generated RPC transport | [ADR-002](../architecture/DECISIONS.md#adr-002--rpc-only-client-data-boundary) |
+| Offline persistence | Memory-only state, database blobs, or durable metadata plus local file | [ADR-006](../architecture/DECISIONS.md#adr-006--durable-offline-queue-with-expo-sqlite) |
+| Image boundary | Raw quarantine Storage or transient Function processing | [ADR-007](../architecture/DECISIONS.md#adr-007--direct-image-function-plus-private-sanitized-storage) |
+| Map and location privacy | Alternative renderers, degree clustering, or stable metric approximation | [ADR-008](../architecture/DECISIONS.md#adr-008--maplibre-react-native-with-hosted-vector-tiles) and [ADR-010](../architecture/DECISIONS.md#adr-010--metric-server-clustering-and-stable-public-approximation) |
+| On-device vision | ML Kit, cloud inference, or bundled TFLite | [ADR-009](../architecture/DECISIONS.md#adr-009--custom-bundled-tflite-via-react-native-fast-tflite) |
+| Hosting | Self-hosted VPS stacks or managed Supabase | [ADRs 013, 015, and 016](../architecture/DECISIONS.md#adr-013--separate-stacks-on-one-vps) |
+| Future visual similarity | Baseline dependency or optional later enhancement | [ADR-017](../architecture/DECISIONS.md#adr-017--optional-phase-2-visual-duplicate-suggestions) |

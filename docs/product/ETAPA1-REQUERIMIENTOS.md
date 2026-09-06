@@ -1,9 +1,10 @@
 # Integración de Seguridad Informática en Redes y Sistemas de Software
 
-> **Immutable source transcription.** This file preserves the Spanish SRS as
-> transcribed from `Etapa 1. Requerimientos.pdf`; requirement bodies below are
-> not silently rewritten when later decisions refine them. For implementation,
-> apply the precedence and approved amendments in
+> **SRS vigente para entregas posteriores.** El PDF
+> [`Etapa 1. Requerimientos.pdf`](../../Etapa%201.%20Requerimientos.pdf)
+> permanece inmutable como evidencia de Etapa 1. Este Markdown conserva los
+> identificadores RF/RNF/HU y actualiza el texto vigente. El historial de
+> enmiendas está en
 > [`APPROVED-CLARIFICATIONS.md`](APPROVED-CLARIFICATIONS.md).
 
 **TC2007B.400 — Etapa 1. Requerimientos**
@@ -49,7 +50,7 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 
 ### Mapa (usuario público)
 
-- **RF10** – Mapa con pines que muestra la ubicación de los reportes registrados.
+- **RF10** – Mapa con pines que muestra la ubicación aproximada y estable (50 m) de los reportes públicos visibles y recientes.
 - **RF11** – El mapa debe agrupar reportes cercanos geográficamente en clusters representados como círculos, en vez de mostrar cada pin individual cuando hay alta densidad de reportes en una zona.
 - **RF12** – El tamaño del círculo debe ser proporcional a la cantidad de reportes agrupados en esa zona.
 - **RF13** – El color del círculo debe representar el tipo de incidente de mayor severidad presente en ese grupo de reportes. Al tocar/dar clic en el círculo, se debe mostrar un desglose con la cantidad de reportes por tipo dentro de ese cluster.
@@ -57,18 +58,18 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 
 ### Usuario Asociación de Hoteles de Chihuahua (con login)
 
-- **RF15** – La Asociación de Hoteles de Chihuahua cuenta con una única cuenta de acceso (usuario y contraseña), provisionada durante la configuración inicial del sistema; no existe registro público ni auto-registro.
+- **RF15** – La Asociación de Hoteles de Chihuahua cuenta con cuentas individuales de acceso (usuario y contraseña), provisionadas manualmente por un operador técnico; no existe registro público ni auto-registro. Puede haber múltiples cuentas para este rol.
 - **RF16** – La Asociación tiene acceso, mediante su cuenta, a un panel de estadísticas con datos crudos/detallados de los reportes (por zona, fecha, tipo de incidente, tendencias).
 - **RF17** – La Asociación puede exportar los datos del panel (ej. CSV/Excel) para compartirlos con los hoteles afiliados, autoridades u otros terceros.
 
 ### Usuario administrador (con login) - gestión de reportes
 
-- **RF18** – El administrador puede iniciar sesión con credenciales propias (no hay auto-registro público; la cuenta es operada por el socio formador).
-- **RF19** – El administrador puede ver todos los reportes del sistema, incluyendo los que han sido denunciados (RF08) junto con el motivo de la denuncia.
-- **RF20** – El administrador puede ocultar o eliminar un reporte marcado como falso o inapropiado.
-- **RF21** – Un reporte denunciado permanece visible en el mapa por defecto. Si acumula un número alto de denuncias, se oculta automáticamente del mapa hasta que un administrador lo revise manualmente y decida si lo restaura o lo elimina definitivamente. Los demás usuarios podrán ver sí un reporte tiene una o más denuncias (escrito como cierto warning).
+- **RF18** – El administrador puede iniciar sesión con credenciales propias. No hay auto-registro público; las cuentas se provisionan manualmente y puede haber múltiples cuentas de administrador.
+- **RF19** – El administrador puede ver el contexto de moderación de los reportes (pendientes, ocultos, denunciados y duplicados), incluyendo el motivo de la denuncia. No hereda el panel de estadísticas ni la exportación de la Asociación de Hoteles de Chihuahua.
+- **RF20** – El administrador puede ocultar o eliminar lógicamente un reporte marcado como falso o inapropiado. La eliminación lógica es reversible; no hay borrado duro disparado por el usuario.
+- **RF21** – Un reporte denunciado permanece visible en el mapa por defecto. Si acumula un número alto de denuncias de orígenes distintos, se oculta automáticamente del mapa hasta que un administrador lo revise y decida restaurarlo o eliminarlo lógicamente. Los demás usuarios podrán ver si un reporte tiene una o más denuncias (como advertencia).
 - **RF22** – Al crear un reporte con foto, la app extrae automáticamente el color predominante del perro mediante análisis de imagen on-device (sin requerir un modelo de IA pesado ni conexión). Adicionalmente, el usuario puede indicar de forma manual y opcional el tamaño aproximado (chico/mediano/grande) y la presencia de collar (sí/no/no sé). El tamaño y el collar no se infieren automáticamente; son entrada manual del usuario.
-- **RF23** – El sistema identifica posibles reportes duplicados del mismo avistamiento cuando dos o más reportes coinciden en cercanía geográfica y temporal (umbrales configurables) y comparten atributos visuales similares. Los reportes marcados como posibles duplicados no se fusionan ni se ocultan automáticamente; se presentan agrupados en la cola de revisión del administrador para su decisión manual.
+- **RF23** – El sistema identifica posibles reportes duplicados del mismo avistamiento cuando dos o más reportes coinciden en cercanía geográfica y temporal (umbrales configurables) y comparten atributos visuales similares. La detección nunca fusiona ni oculta automáticamente. El administrador confirma de forma manual un reporte canónico y deja los demás ligados de manera reversible y auditada.
 - **RF24** – El formulario de reporte es dinámico: las preguntas mostradas cambian según el tipo de incidente seleccionado (RF06). Los datos comunes (ubicación, foto, solitario/manada, atributos del perro) se solicitan siempre; las preguntas específicas de cada tipo (ej. si hubo mordida en un ataque a humano; tipo y cantidad de animales en un ataque a ganado; situación del animal en un perro lastimado) se muestran solo cuando aplican. El formulario permanece simple para reportes básicos y solo solicita información adicional cuando la situación lo requiere.
 
 ---
@@ -77,7 +78,7 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 
 ### 1. Disponibilidad y Rendimiento
 
-- **RNF01** – Disponibilidad del sistema del 99.9%.
+- **RNF01** – La disponibilidad del 99.9% es una meta futura de servicio, no un SLA del prototipo. En Fase 1 el servicio es de mejor esfuerzo sobre Supabase managed Free.
 - **RNF02** – El mapa carga en menos de 5 segundos.
 - **RNF03** – Escalabilidad: soportar aumento de reportes sin degradar el rendimiento.
 
@@ -89,12 +90,12 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 
 - **RNF05** – Compatibilidad con iOS y Android (React Native/Expo; Android 8.0+, iOS 13+).
 - **RNF06** – Interfaz bilingüe (español/inglés) en todos los flujos: reporte público, mapa y dashboard.
-- **RNF07** – Arquitectura single-tenant: existen únicamente dos roles autenticados además del acceso público anónimo — una cuenta única para la Asociación de Hoteles de Chihuahua (consulta de estadísticas y exportación) y una cuenta de administración para la gestión/moderación manual de reportes (RF18–RF21). Ambas cuentas se provisionan manualmente, sin registro público ni multiplicidad de cuentas por hotel afiliado; no se requiere aislamiento de datos entre organizaciones distintas.
+- **RNF07** – Arquitectura single-tenant: existen únicamente dos roles autenticados hermanos, además del acceso público anónimo — la Asociación de Hoteles de Chihuahua (consulta de estadísticas y exportación) y el administrador (moderación y configuración auditada). Cada rol puede tener múltiples cuentas individuales provisionadas manualmente, sin registro público ni cuentas por hotel afiliado; no se requiere aislamiento de datos entre organizaciones distintas.
 - **RNF08** – La validación de foto perro/no-perro y calidad (RF09) se implementa con un modelo de visión ligero, pre-entrenado y estándar de la industria (ej. MobileNet/EfficientNet-Lite vía TensorFlow Lite, o Google ML Kit), ejecutado on-device. No requiere entrenamiento de un modelo propio ni cómputo del lado del servidor.
 
 ### 4. Validación y Calidad de Datos
 
-- **RNF09** – Validación de coordenadas: solo se aceptan reportes dentro de los límites geográficos de Creel. El sistema aplica detección básica de ubicaciones simuladas (mock location / GPS spoofing) a nivel de sistema operativo, y descarta o marca para revisión los reportes cuya precisión de GPS reportada supere un umbral máximo definido (ej. mayor a 50 metros).
+- **RNF09** – Validación de coordenadas: solo se aceptan reportes nuevos dentro del geofence activo de Creel. La activación productiva de ese geofence requiere aprobación explícita de la Asociación de Hoteles de Chihuahua. El sistema detecta ubicaciones simuladas (mock location / GPS spoofing) y marca para revisión los reportes con GPS impreciso o sospechoso; no los descarta. Un replay idéntico de un reporte ya aceptado no se rechaza si el geofence cambia después.
 - **RNF10** – El modelo de clasificación que valida si la foto contiene un perro corre on-device (no requiere llamada a un servicio en la nube), lo cual es coherente con la arquitectura offline-first: la validación de foto funciona incluso sin conexión. También se valida la metadata de la imagen.
 - **RNF11** – La extracción de color predominante (RF22) se realiza mediante análisis de píxeles on-device, sin depender de conexión ni de un modelo de IA pesado. Los atributos del reporte (color automático; tamaño y collar manuales) se almacenan como datos estructurados y sirven como señales de apoyo para el puntaje de confianza (RNF28) y la detección de posibles duplicados (RF23), sin constituir una identificación individual del animal. La presencia de collar sirve como señal de que el animal podría ser una mascota y no un perro callejero.
 
@@ -108,40 +109,40 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 
 ### 7. Hardware y Proveedor de Nube (Servidor)
 
-- **RNF14** – Respaldo diario de la base de datos, con un punto de recuperación objetivo (RPO) máximo de 24 horas y un tiempo de recuperación objetivo (RTO) máximo de 4 horas ante una falla del servidor de base de datos.
-- **RNF15** – El servidor se aloja en un VPS de OVHcloud, en la región disponible más cercana a México (Beauharnois, Canadá), con dimensionamiento mínimo de 4 vCPU / 8 GB RAM.
-- **RNF16** – El VPS cuenta con firewall a nivel de sistema operativo y firewall de red de OVHcloud, exponiendo únicamente los puertos necesarios (443 público; 22 restringido).
-- **RNF17** – El acceso administrativo al servidor (nivel sistema operativo) es únicamente mediante autenticación por llave SSH; se deshabilita el acceso por contraseña y el login root directo. La administración de despliegues y contenedores se realiza a través del panel de Dokploy, protegido con su propia autenticación y expuesto solo vía HTTPS; el panel de Dokploy no sustituye el endurecimiento de SSH del servidor.
-- **RNF18** – El VPS cuenta con snapshots/backups automáticos de infraestructura, adicionales al respaldo diario de base de datos (RNF14).
+- **RNF14** – El prototipo no promete respaldos diarios administrados. Requiere exportaciones lógicas por hitos de base de datos, exportación separada de objetos privados de Storage y un procedimiento de restauración aislado. Un lanzamiento público de producción debe adoptar un plan o mecanismo de backup que cumpla RPO máximo de 24 horas y RTO máximo de 4 horas.
+- **RNF15** – La Fase 1 se aloja en Supabase managed Free. No se opera un VPS propio ni un stack self-hosted obligatorio.
+- **RNF16** – El acceso público ocurre por HTTPS. TLS y el gateway son operados por Supabase; el equipo no administra firewall de host ni el puerto 22.
+- **RNF17** – No hay administración por SSH. El operador técnico usa el dashboard y la CLI de Supabase con privilegio mínimo; no se exponen credenciales de servidor a la app móvil.
+- **RNF18** – Supabase Free no ofrece snapshots automáticos de infraestructura. El prototipo conserva exportaciones cifradas externas. La producción pública queda condicionada a un mecanismo de backup que cumpla RNF14.
 
 ### 8. Software (DBMS, Servidor de Aplicación y Servidor Web)
 
-- **RNF19** – El DBMS es PostgreSQL con la extensión PostGIS, provisto por el stack de Supabase self-hosted (Docker) corriendo sobre el VPS.
-- **RNF20** – El control de acceso a los datos se implementa mediante Row Level Security (RLS) de PostgreSQL, separando lo que ve el público anónimo de lo que ve un hotel autenticado.
-- **RNF21** – El servidor de aplicación/API utiliza los componentes de Supabase (PostgREST y GoTrue/Auth), con autenticación basada en JWT.
-- **RNF22** – El servidor web opera mediante el reverse proxy integrado de Dokploy (Traefik), que enruta el tráfico hacia el stack de Supabase (Kong) y fuerza TLS/HTTPS mediante certificado gestionado automáticamente (Let's Encrypt), con redirección automática de HTTP a HTTPS.
-- **RNF23** – Supabase Studio y los puertos internos del stack (Postgres, Kong) no están expuestos directamente a internet; solo son accesibles vía el reverse proxy o la red interna de Docker.
-- **RNF24** – Las llaves sensibles (service_role key, JWT secret) se gestionan mediante variables de entorno y nunca se exponen en el cliente móvil; la app solo utiliza la anon key con políticas RLS restrictivas.
-- **RNF25** – Monitoreo básico de recursos del VPS y contenedores (CPU, RAM, disco, logs de servicios de Supabase).
+- **RNF19** – El DBMS es PostgreSQL con PostGIS, provisto por Supabase managed. No se opera un stack Docker self-hosted como topología objetivo.
+- **RNF20** – El control de acceso se implementa con RLS y privilegios SQL, separando público anónimo, Asociación de Hoteles de Chihuahua y administrador.
+- **RNF21** – La app usa Supabase Auth y la Data API/PostgREST con JWT. Las operaciones transaccionales viven en RPC SQL; no se añade una API Controller-Service-Repository redundante.
+- **RNF22** – TLS/HTTPS lo opera Supabase. El equipo no opera Traefik, Kong ni un reverse proxy propio.
+- **RNF23** – Supabase se modela como una frontera gestionada, descompuesta lógicamente en Auth, Data API/PostgREST, Edge Functions, Storage y PostgreSQL/PostGIS. No se expone la base de datos en internet ni se inventa su topología física interna.
+- **RNF24** – Las llaves sensibles (`service_role`, secretos de Functions, cadena de base de datos) nunca se envían a la app móvil; el cliente solo recibe configuración publicable.
+- **RNF25** – El monitoreo cubre cuotas, errores, pausa del proyecto Free, retención y antigüedad de exportaciones; no se opera monitoreo de CPU/RAM de un VPS propio.
 
 ### 9. Integridad y Anti-Abuso
 
 - **RNF26** – El sistema genera un identificador de dispositivo (fingerprint) al momento de crear un reporte, usado para limitar la tasa de reportes y denuncias por origen, sin identificar a la persona. Se prefiere sobre bloqueo por IP porque múltiples huéspedes de un mismo hotel comparten la red WiFi.
 - **RNF27** – El formulario de reporte incluye campos honeypot invisibles al usuario legítimo; su llenado marca el envío como sospechoso automáticamente.
-- **RNF28** – Cada reporte recibe un puntaje de confianza (no una decisión binaria de aceptar/rechazar) calculado a partir de la validación de foto, coherencia de metadata EXIF, fingerprint del dispositivo y precisión del GPS; el puntaje determina si el reporte se publica directamente, se marca para revisión, o se descarta.
+- **RNF28** – Cada reporte recibe un puntaje de confianza (no una decisión binaria de aceptar/rechazar) calculado a partir de la validación de foto, señales transitorias de EXIF, fingerprint del dispositivo y precisión del GPS. Un puntaje alto puede publicar; medio o bajo entra a revisión. Las heurísticas nunca descartan automáticamente.
 - **RNF29** – El conteo de denuncias (RF08/RF21) aplica límite de tasa y ponderación por diversidad de origen (fingerprint), de forma que múltiples denuncias desde el mismo dispositivo u origen coordinado no disparen el ocultamiento automático por sí solas.
 - **RNF30** – La detección de posibles duplicados (RF23) es de naturaleza heurística y sugerente: agrupa candidatos para revisión humana pero no determina con certeza que dos reportes correspondan al mismo perro. La decisión final recae siempre en el administrador.
 
 ### 10. Seguridad de Aplicación y API
 
-- **RNF31** – El reverse proxy o la capa de API aplica límite de tasa (rate limiting) por IP/fingerprint a los endpoints públicos (creación de reportes, denuncias), para mitigar abuso automatizado y ataques de denegación de servicio.
-- **RNF32** – Los archivos de imagen subidos se validan en el servidor antes de almacenarse: tipo MIME permitido (JPEG/PNG/HEIC), tamaño máximo (ej. 10 MB), y saneamiento/reescritura de la imagen para eliminar metadata o payloads maliciosos embebidos.
+- **RNF31** – La plataforma managed y los controles de Function/base de datos aplican límite de tasa a las operaciones públicas (creación de reportes, denuncias y carga de imagen), para mitigar abuso automatizado y denegación de servicio.
+- **RNF32** – Las imágenes opcionales se validan en una Edge Function específica: tipo MIME permitido (JPEG/PNG/HEIC), tamaño/dimensiones, decodificación real y saneamiento/re-encode. El EXIF crudo es transitorio y nunca se persiste. Solo se almacena la imagen saneada en Storage privado, con entrega autorizada y sin URL pública permanente.
 - **RNF33** – Toda acción administrativa sobre un reporte (ocultar, eliminar, restaurar) queda registrada en un log de auditoría con identificador de la cuenta administradora, marca de tiempo y acción realizada.
 - **RNF34** – Los tokens JWT de las cuentas de Asociación y Administrador tienen un tiempo de expiración corto (ej. 1 hora) con mecanismo de refresh token, y se invalidan al cerrar sesión o tras un periodo de inactividad definido.
 
 ### 11. Evolución Futura (fuera del alcance del prototipo)
 
-- **RNF35** – Se contempla, como fase posterior al prototipo, la re-identificación visual de perros individuales mediante embeddings generados por un modelo de visión (ej. DINOv2) y búsqueda por similitud vectorial (ej. extensión pgvector de PostgreSQL). Esta funcionalidad queda fuera del alcance del prototipo actual por requerir capacidad de cómputo (GPU o servicio de inferencia dedicado) superior a la del VPS contratado (4 vCPU / 8 GB RAM), y por depender del servidor, lo cual es incompatible con la validación offline-first para esa función específica. Los atributos visuales capturados en RF22 sirven como base para reducir el costo de esta fase futura, al permitir un pre-filtrado de candidatos antes de la comparación vectorial.
+- **RNF35** – Se contempla, como fase posterior opcional, sugerir duplicados visuales mediante un embedding por foto saneada y búsqueda por similitud (pgvector), combinada con filtros de tiempo y distancia. Queda fuera de la línea base de Fase 1: no se añade GPU, embeddings ni pgvector al esquema inicial, y la ausencia de ese cómputo no rompe la detección heurística. La confirmación humana sigue siendo obligatoria.
 - **RNF36** – Las respuestas condicionales del formulario dinámico (RF24) se almacenan de forma estructurada y su formato se valida en la base de datos según el tipo de incidente, garantizando que cada reporte contenga la información obligatoria de su categoría antes de ser aceptado.
 
 ---
@@ -194,8 +195,8 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 
 ### 3. Asociación Hotelera de Chihuahua (con login)
 
-**HU-15 (RF15)** — Como Asociación de Hoteles de Chihuahua, quiero iniciar sesión con una cuenta única provisionada al configurar el sistema, para acceder a las funciones exclusivas de mi rol sin depender de un registro público.
-- La cuenta de la Asociación se crea manualmente durante la configuración inicial del sistema; no hay pantalla de registro público para este rol.
+**HU-15 (RF15)** — Como Asociación de Hoteles de Chihuahua, quiero iniciar sesión con una cuenta individual provisionada por un operador técnico, para acceder a las funciones exclusivas de mi rol sin depender de un registro público.
+- Las cuentas de la Asociación de Hoteles de Chihuahua se crean manualmente; puede haber varias; no hay pantalla de registro público para este rol.
 
 **HU-16 (RF16)** — Como asociación, quiero ver un panel de estadísticas con datos detallados de los reportes (zona, fecha, tipo de incidente, tendencias), para entender mejor el riesgo en mi área y tomar decisiones informadas.
 
@@ -204,14 +205,14 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 ### 4. Usuario administrador (con login) — gestión de reportes
 
 **HU-18 (RF18)** — Como administrador del socio formador, quiero iniciar sesión con mis credenciales, para acceder a las funciones de gestión de reportes.
-- No hay auto-registro público para este rol; la cuenta se aprovisiona manualmente.
+- No hay auto-registro público para este rol; las cuentas se aprovisionan manualmente y puede haber varias.
 
 **HU-19 (RF19)** — Como administrador, quiero ver todos los reportes del sistema, incluidos los denunciados junto con su motivo de denuncia, para poder evaluar cuáles son legítimos y cuáles no.
 - La vista de reportes denunciados muestra el motivo y la cantidad de denuncias por reporte.
 
-**HU-20 (RF20)** — Como administrador, quiero poder ocultar o eliminar un reporte marcado como falso o inapropiado, para mantener la calidad de la información pública del mapa.
+**HU-20 (RF20)** — Como administrador, quiero poder ocultar o eliminar lógicamente un reporte marcado como falso o inapropiado, para mantener la calidad de la información pública del mapa.
 
-**HU-21 (RF21)** — Como administrador, quiero que un reporte se oculte automáticamente del mapa cuando acumule un número alto de denuncias, y poder revisarlo después para decidir si lo restauro o lo elimino, para no depender de revisar cada denuncia en tiempo real.
+**HU-21 (RF21)** — Como administrador, quiero que un reporte se oculte automáticamente del mapa cuando acumule un número alto de denuncias de orígenes distintos, y poder revisarlo después para decidir si lo restauro o lo elimino lógicamente, para no depender de revisar cada denuncia en tiempo real.
 - Los reportes auto-ocultos aparecen en una cola de "pendientes de revisión" separada de los reportes normales.
 - El umbral de denuncias que dispara el ocultamiento automático es configurable.
 
@@ -220,9 +221,9 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 - El tamaño y el collar son opcionales y de selección manual.
 - La presencia de collar sirve como señal de que podría tratarse de una mascota y no de un perro callejero.
 
-**HU-23 (RF23)** — Como administrador, quiero que el sistema agrupe los reportes que podrían ser del mismo avistamiento (cercanos en lugar, tiempo y apariencia), para revisarlos juntos y decidir si son duplicados, sin que el sistema los fusione por su cuenta.
+**HU-23 (RF23)** — Como administrador, quiero que el sistema agrupe los reportes que podrían ser del mismo avistamiento (cercanos en lugar, tiempo y apariencia), para revisarlos juntos y decidir un canónico, sin que el sistema los fusione por su cuenta.
 - Los posibles duplicados aparecen agrupados en la cola de revisión.
-- El administrador decide manualmente; el sistema nunca fusiona ni descarta automáticamente.
+- El administrador decide manualmente; el sistema nunca fusiona ni descarta automáticamente. La resolución es reversible y auditada.
 
 **HU-24 (RF24)** — Como habitante de Creel, quiero que el formulario solo me pregunte lo relevante según el tipo de situación que reporto, para no llenar campos que no aplican y poder terminar rápido.
 - Las preguntas cambian según el tipo de incidente elegido.
@@ -235,16 +236,16 @@ El sistema propuesto busca centralizar estos reportes y generar información geo
 
 El alcance consiste en el desarrollo de un aplicación móvil iOS y Android que permite registrar y consultar reportes acerca de perros callejeros o salvajes en Creel. Su propósito es ofrecer información geográfica y estadística que apoye a habitantes, turistas, hoteleros para identificar zonas de riesgo y patrones de incidentes.
 
-La aplicación permitirá que cualquier persona ubicada en el municipio de Creel haga reportes de manera anónima, sin tener que crear una cuenta o brindar cualquier tipo de información personal. Cada reporte tendrá la posibilidad de agregar una fotografía tomada desde la aplicación, ubicación geográfica dentro de los límites de Creel, tipo de incidente y clasificación del avistamiento como perro solitario o manada. La foto será validada directamente en el dispositivo para comprobar calidad suficiente y presencia de un perro, incluso sin conexión a internet.
+La aplicación permitirá que cualquier persona ubicada en el municipio de Creel haga reportes de manera anónima, sin tener que crear una cuenta o brindar información personal solicitada. Cada reporte podrá agregar una fotografía tomada desde la aplicación, ubicación geográfica dentro del geofence activo de Creel, tipo de incidente y clasificación del avistamiento como perro solitario o manada. La foto se valida en el dispositivo para calidad y presencia de un perro, incluso sin conexión.
 
-El sistema incluirá un mapa público con reportes y clusters, donde el tamaño de dicho cluster indicará la cantidad de reportes. Los usuarios también podrán demandar contenido falso. Los reportes con múltiples denuncias (número por definir) se ocultarán para revisión administrativa.
+El sistema incluirá un mapa público con reportes y clusters, usando ubicación aproximada de 50 m. El tamaño del cluster indicará la cantidad de reportes. Los usuarios también podrán denunciar contenido falso. Los reportes con múltiples denuncias de orígenes distintos se ocultarán para revisión administrativa.
 
-Además, habrá dos perfiles con acceso extra:
+Además, habrá dos roles autenticados hermanos, cada uno con múltiples cuentas individuales provisionadas:
 
-- **Asociación de Hoteles de Chihuahua:** acceso a estadísticas detalladas por zona, fecha, tipo de incidente y tendencias.
-- **Administrador:** consulta de todos los reportes y denuncias, revisión de reportes pendientes, y capacidad para eliminar contenido.
+- **Asociación de Hoteles de Chihuahua:** acceso de solo lectura a estadísticas y exportación sobre datos de negocio aceptados y canónicos.
+- **Administrador:** contexto de moderación, denuncias, duplicados y comandos auditados para ocultar, restaurar o eliminar lógicamente.
 
-La solución será diseñada bajo un enfoque offline-first, permitiendo guardar reportes sin conexión y sincronizarlos cuando se recupere el acceso a red. También incluirá respaldos diarios, controles de privacidad y capacidad para escalar conforme aumente el número de reportes.
+La solución será offline-first para crear/guardar reportes y sincronizarlos al recuperar red. El prototipo usa exportaciones por hitos y controles de privacidad; no promete respaldos diarios administrados en Supabase Free.
 
 ---
 

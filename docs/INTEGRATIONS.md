@@ -1,43 +1,23 @@
 # Integrations and External Boundaries
 
-## Committed boundaries
+This document owns contracts with external providers, datasets, and optional
+services, including release gates and degraded behavior. Technology selection
+itself belongs to [`STACK.md`](STACK.md).
 
-| Integration | Use | Release gate |
-|---|---|---|
-| Self-hosted Supabase `self-hosted/v0.8.0` | Auth, PostgREST, Storage, PostgreSQL | Confirm installed images before Auth/Storage migrations |
-| Envoy (`envoyproxy/envoy:v1.39.0`) | Default Supabase API gateway | Kong only if an operator enables the optional override |
-| OVHcloud | VPS and network controls | Capacity and backup destination verified |
-| Dokploy/Traefik | Deployment, edge routing, TLS | Separate environment domains/secrets |
-| Let's Encrypt | TLS certificates | Renewal alert tested |
-| MapLibre React Native | Native map renderer | Expo development build smoke test |
-| MapTiler Cloud | Online vector styles/tiles | Attribution, key restriction, quota, and cost approval |
-| `react-native-fast-tflite` | Bundled custom TFLite inference | Model and device benchmark evidence |
-| INEGI | Geofence candidate source | Association approval before Production activation |
+## External contract matrix
 
-## Map strategy
+| Dependency | Contract | Failure or fallback | Release gate |
+|---|---|---|---|
+| Supabase managed Free | Hosts the managed application boundary; the team retains responsibility for application authorization, lifecycle, migrations, and recovery evidence | Detect pause/quota/service failure; retain queued reports and show unavailable online features | Recheck plan limits and managed catalogs; complete access and recovery tests |
+| MapTiler Cloud | Supplies online vector styles/tiles through restricted public client configuration with required attribution | Map becomes explicitly unavailable; reporting remains usable | Approve attribution, key restrictions, quota, and expected cost |
+| INEGI | Supplies reproducible candidate geometry and provenance, not live-boundary authority | Live intake remains fail-closed without Association approval | Follow [`product/GEOFENCE-CANDIDATE.md`](product/GEOFENCE-CANDIDATE.md) |
+| Optional Phase 2 compute | May generate visual-similarity suggestions from sanitized images | Phase 1 heuristic/manual duplicate review continues unchanged | Separate future approval, privacy review, and migration |
 
-The prototype uses MapLibre React Native with MapTiler Cloud vector styles/tiles.
-The basemap is online-only and the UI shows an explicit unavailable state without
-connectivity. The MapTiler key is a public client credential and must be restricted
-using supported provider controls; it is not a Supabase secret. Domain clusters
-come from server RPCs so privacy and severity remain authoritative.
+Supabase operational commands belong to [`DEPLOYMENT.md`](DEPLOYMENT.md); RPC and
+image endpoint contracts belong to [`API.md`](API.md).
 
-## On-device vision
+## Explicit non-integrations
 
-The MobileNetV3-Small INT8 ImageNet TFLite model is bundled with the app and runs
-through `react-native-fast-tflite` on CPU first. The app aggregates documented dog
-labels and uses a separate blur/quality metric. There is no ML SaaS, custom model
-training, or server classification. A native Expo development build is required.
-Server image processing performs security validation/sanitization, not dog
-classification.
-
-## Geofence source
-
-The reproducible candidate comes from INEGI Marco Geoestadístico, December 2025.
-See `product/GEOFENCE-CANDIDATE.md`. It is not an approved Production boundary.
-
-## Deferred integrations
-
-No direct government data feed, push-notification provider, DINOv2 service, or
-vector database is part of the prototype. Association export remains CSV/Excel
-from its minimized projection.
+No direct government feed, push provider, generic custom API, or individual-dog
+identity service is part of Phase 1. Association export remains CSV/Excel from its
+approved projection rather than an external integration.

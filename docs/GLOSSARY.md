@@ -1,5 +1,8 @@
 # Glossary
 
+This file provides short vocabulary reminders. Nuanced behavior remains owned by
+the linked contract documents.
+
 ## Actors and access
 
 - **anonymous public reporter** — external actor using public report/map/flag
@@ -10,8 +13,8 @@
   and an explicit configuration-management exception. It does not inherit BI.
 - **technical operator** — infrastructure/Auth operator who provisions accounts,
   deploys migrations, and performs recovery; not an application role.
-- **trusted worker** — server identity for image processing, trust application, and
-  retention; never embedded in the app.
+- **service identity** — server-only identity used by Edge Functions/retention for
+  narrow service RPCs; never embedded in the app.
 
 ## Data and workflow
 
@@ -40,10 +43,19 @@
   GRANT/REVOKE.
 - **SECURITY DEFINER** — function execution under a constrained owner; requires
   fixed search path and narrow grants.
-- **quarantine** — private untrusted-image area before server decode/re-encoding.
-- **Envoy** — default self-hosted Supabase API gateway in the pinned prototype.
-  Kong is an optional override, not the baseline.
-- **Production/Staging** — isolated Supabase stacks sharing one physical VPS.
+- **Supabase managed boundary** — one provider-operated cloud boundary, logically
+  decomposed into Auth, Data API/PostgREST, Edge Functions, Storage, and
+  PostgreSQL/PostGIS without claiming physical internals.
+- **PostgREST/Data API** — generated HTTP adapter exposing approved SQL functions;
+  not a custom Controller-Service-Repository API.
+- **image-specific Edge Function** — non-relational boundary that validates,
+  decodes, and re-encodes image bytes without persisting the raw input.
+- **private approved Storage** — private bucket holding sanitized output only;
+  access requires an authorized short-lived delivery path.
+- **managed Free project** — Supabase project used for the academic prototype;
+  subject to current quotas, inactivity pausing, and no automatic backups.
+- **demo/test geofence** — clearly labeled candidate geometry used for validation;
+  it is not an Association-approved live boundary.
 
 ## Requirement identifiers
 
@@ -51,4 +63,12 @@
 - **RNF** — non-functional requirement, RNF01–RNF36.
 - **HU** — user story, HU-01–HU-24.
 
-Their relationships are many-to-many; see `TRACEABILITY.md`.
+Their relationships are many-to-many; see
+[`TRACEABILITY.md`](TRACEABILITY.md).
+
+## Contract owners
+
+- Actor permissions and security terms: [`SECURITY.md`](SECURITY.md)
+- State and data terms: [`DATA-MODEL.md`](DATA-MODEL.md)
+- Platform shape: [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md)
+- Requirement relationships: [`TRACEABILITY.md`](TRACEABILITY.md)

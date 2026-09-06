@@ -8,12 +8,16 @@ rewriting the immutable Spanish SRS or its transcription.
 
 Use these sources in order:
 
-1. `Etapa 1. Requerimientos.pdf` and its faithful transcription establish the
-   original intent and immutable RF/RNF/HU identifiers.
+1. [`../../Etapa 1. Requerimientos.pdf`](../../Etapa%201.%20Requerimientos.pdf) and
+   its faithful [`transcription`](ETAPA1-REQUERIMIENTOS.md) establish the original
+   intent and immutable RF/RNF/HU identifiers.
 2. This document supplies approved clarifications and amendments.
-3. `db/schema.sql` and `docs/DATA-MODEL.md` define the authoritative target data
-   and command contracts.
-4. ADRs in `docs/architecture/DECISIONS.md` explain technical choices.
+3. [`../../db/schema.sql`](../../db/schema.sql) defines the authoritative exact
+   target schema and API/data boundary.
+4. [`../API.md`](../API.md) and [`../DATA-MODEL.md`](../DATA-MODEL.md) explain that
+   contract without overriding it.
+5. ADRs in [`../architecture/DECISIONS.md`](../architecture/DECISIONS.md) explain
+   technical choices.
 
 When an original statement is ambiguous or conflicts with an approved item
 below, implementation follows this document. Requirement IDs remain unchanged.
@@ -37,10 +41,13 @@ below, implementation follows this document. Requirement IDs remain unchanged.
 | 13 | Prototype availability is best effort. The SRS 99.9% value is a future service target, not a current SLA. | RNF01 |
 | 14 | Report creation and its durable queue work offline. The public map requires connectivity and must show an explicit unavailable state when offline. | RF01, RF10; RNF12; HU-01, HU-10 |
 | 15 | One React Native/Expo mobile app serves all actors with role-protected navigation. There is no separate web administration panel. | RF01, RF15, RF18; RNF05–RNF07; HU-01, HU-15, HU-18 |
-| 16 | One OVH VPS runs Dokploy with physically shared but logically isolated Production and Staging Supabase stacks. Each has separate data, storage, secrets, domains, and backups. Staging is on demand and stopped after validation; neither environment is highly available. | RNF01, RNF14–RNF25 |
+| 16 | Phase 1 uses Supabase managed Free directly. One remote project is sufficient for the five-week prototype; a second active Free project is optional for isolated demo/testing. The local Supabase Docker stack is optional; the version-checked Supabase CLI is the selected remote deployment tool, and migrations/Edge Functions remain versioned. The prior OVH/Dokploy/self-hosted Production/Staging topology is superseded. | RNF01, RNF14–RNF25 |
 | 17 | No official geofence has been approved. The INEGI-derived candidate is versioned and documented, but Production activation requires explicit Association approval. Placeholder geometry must never be represented as official. | RNF09 |
 | 18 | Retention is: public map and approved photo 90 days; de-identified business data 5 years; fingerprint 30 days; audit log 2 years; logical deletion purge after 1 year; raw EXIF never persisted. | RF10, RF16, RF17, RF20; RNF13, RNF14, RNF18, RNF25, RNF26, RNF28, RNF32, RNF33; HU-10, HU-16, HU-17, HU-20 |
-| 19 | The prototype self-hosted Supabase API gateway is Envoy, matching the current upstream default. SRS RNF22/RNF23 Kong wording is historical. Kong is used only if an operator explicitly enables the optional override. | RNF22, RNF23 |
+| 19 | Supabase Cloud is one managed provider boundary, logically decomposed into Auth, Data API/PostgREST, Edge Functions, Storage, and PostgreSQL/PostGIS. The SRS gateway/VPS wording is historical and superseded. PostgREST is the generated HTTP adapter; narrow SQL RPCs own transactional use cases, PostgreSQL owns persistence/RLS/PostGIS, and Edge Functions are reserved for non-relational image work or external integrations. No redundant custom Controller-Service-Repository API is added. | RNF19–RNF23, RNF31–RNF32 |
+| 20 | The report is submitted first with its final UUID and `photo_expected`. The optional reduced image is then sent as multipart form data to an image-specific Edge Function. It validates report/fingerprint binding, content and decode constraints; derives EXIF signals transiently; re-encodes without metadata; and stores only sanitized output in a private bucket. Source-hash/status contracts make identical retries converge; different content conflicts and replacement is out of Phase 1 scope. Photo delivery is authorized and time-limited, never a permanent public URL. | RF03, RF05, RF09; RNF10, RNF12, RNF13, RNF28, RNF31, RNF32; HU-03, HU-05, HU-09 |
+| 21 | Phase 1 duplicate suggestions use the manual/heuristic time, distance, and attribute path and require human confirmation. If time remains, optional Phase 2 may use temporary/serverless GPU compute to generate one embedding per sanitized photo and a future pgvector migration to combine visual similarity with time/distance filters. GPU absence must not break Phase 1, and visual output never resolves duplicates automatically. | RF23; RNF30, RNF35; HU-23 |
+| 22 | Managed Free planning assumptions verified 2026-09-05 are: up to two active Free projects, 500 MB database per project, 1 GB file storage, 5 GB egress, 500,000 Edge Function invocations, no automatic backups, and possible project pausing after inactivity. Pricing/quotas must be rechecked before the demo. The prototype requires milestone database dumps, separate private Storage object-byte exports with checksums/manifests, and an executable isolated restore runbook. A public production launch must use a plan/backup mechanism that meets required RPO/RTO; no Free production SLA, PITR, or custom domain is promised. | RNF01, RNF14–RNF18, RNF24–RNF25 |
 
 ## Interpretation rules
 
@@ -55,6 +62,6 @@ below, implementation follows this document. Requirement IDs remain unchanged.
 
 ## Approval gaps that remain
 
-Only the Production geofence geometry remains blocked on external approval.
+Only the live/Production geofence geometry remains blocked on external approval.
 The candidate and activation gate are documented in
 [`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md).

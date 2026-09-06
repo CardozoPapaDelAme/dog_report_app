@@ -1,8 +1,8 @@
 # Requirements Traceability Matrix
 
-This matrix maps every immutable SRS identifier to implementation surfaces. It
-records many-to-many relationships; it does not imply that one user story equals
-one functional requirement.
+This document exclusively owns the complete RF/RNF/HU mapping from immutable SRS
+identifiers to implementation surfaces and verification focus. Relationships are
+many-to-many; one user story does not imply one functional requirement.
 
 ## Functional requirements
 
@@ -10,7 +10,7 @@ one functional requirement.
 |---|---|---|---|
 | RF01 | Anonymous report flow | `submit_report`; `reports` | No login; command-only insert |
 | RF02 | Privacy copy and form | Minimized command parameters | No identity fields; incidental-PII warning |
-| RF03 | Camera/photo capture | Local file; `request_report_photo_upload`; `get_report_photo_status`; quarantine worker | Optional single photo capture, authorized upload, and acknowledged cleanup |
+| RF03 | Camera/photo capture | Local file; image Function POST; `get_report_photo_status` | Optional single photo, report-first upload, terminal-state monotonic retry/cleanup |
 | RF04 | Dynamic form | `reports.sighting_type` | Solitary/pack validation |
 | RF05 | Camera quick action | Offline draft without photo | Report completes photo-free |
 | RF06 | Dynamic form | `incident_type`; validated `details` | Every category accepted/rejected correctly |
@@ -37,7 +37,7 @@ one functional requirement.
 
 | ID | Flow/component | Data/API/operations boundary | Verification focus |
 |---|---|---|---|
-| RNF01 | Availability posture | Best-effort single VPS; future 99.9% target | No current SLA claim; recovery drill |
+| RNF01 | Availability posture | Managed Free best effort; future 99.9% target | No current SLA/PITR claim; pause/readiness check |
 | RNF02 | Public map | Bounded queries, indexes, pagination | <5 s target under prototype load |
 | RNF03 | API/database | Spatial/time indexes and bounded RPCs | Load test growth profile |
 | RNF04 | Report UX | Camera-first dynamic form | Usability session under 5 min |
@@ -48,30 +48,30 @@ one functional requirement.
 | RNF09 | Location validation | Versioned zones; report command | New points outside rejected; identical replay still accepted; mock/imprecise reviewed |
 | RNF10 | Photo validation | On-device model; transient EXIF signals | Offline inference; no raw EXIF persistence |
 | RNF11 | Dog attributes | Structured columns and duplicate signals | Offline color extraction; no identity claim |
-| RNF12 | Offline sync | Expo SQLite + local file + retry state | Crash-safe idempotent sync |
+| RNF12 | Offline sync | Expo SQLite + local file + exact retry state | Crash-safe idempotent sync; purge states stop upload retry |
 | RNF13 | Privacy | Minimized projections and retention | No solicited public identity; PII moderation |
-| RNF14 | Database recovery | Daily encrypted backup | RPO ≤24 h/RTO ≤4 h restore drill |
-| RNF15 | Hosting | OVH 4 vCPU/8 GB minimum | Provisioning evidence/resource baseline |
-| RNF16 | Network | Host and OVH firewalls | Port scan permits 443; restricted 22 |
-| RNF17 | Server administration | SSH keys; no root/password login | Configuration audit |
-| RNF18 | Infrastructure recovery | Off-host backup/snapshot | Restore drill independent of live VPS |
-| RNF19 | Database | PostgreSQL/PostGIS in `extensions` | Confirm installed Supabase/Postgres version; no public-schema assumption |
+| RNF14 | Database recovery | Roles/schema/data dumps plus private-object manifest/export; production backup gate | Isolated `psql`/object restore rehearsal; do not claim Free meets required RPO/RTO |
+| RNF15 | Hosting | Supabase managed Free amendment | Managed project readiness and quota evidence; historical OVH wording superseded |
+| RNF16 | Network | Supabase-managed TLS/gateway plus app access controls | HTTPS smoke test; no team-operated host firewall claim |
+| RNF17 | Server administration | Managed dashboard/CLI access with operator MFA/least privilege | No SSH/VPS operation; operator access audit |
+| RNF18 | Infrastructure recovery | External encrypted DB dumps, private bytes/manifest, migrations/Functions | Checksummed restore into isolated managed project |
+| RNF19 | Database | Managed PostgreSQL/PostGIS in `extensions` | Verify project catalogs; no provider-column/public-schema assumption |
 | RNF20 | Authorization | RLS plus grants/revokes plus RPCs | Cross-role negative tests |
 | RNF21 | API/Auth | PostgREST functions and Supabase Auth | JWT and command contract integration |
-| RNF22 | Edge routing | Dokploy/Traefik/Envoy/TLS | HTTPS redirect and certificate checks; Kong only if explicitly overridden |
-| RNF23 | Internal services | Private DB/Studio/Envoy internals | External scan and network inspection |
-| RNF24 | Secrets | Environment-managed server secrets; anon client key | Bundle/secret scanning |
-| RNF25 | Operations | CPU/RAM/disk/log/backup monitoring | Alerts and dashboard smoke tests |
+| RNF22 | Edge routing | Supabase-managed gateway/runtime/TLS | HTTPS smoke test; no custom gateway topology claim |
+| RNF23 | Internal services | One managed boundary with logical Auth/Data API/Functions/Storage/Postgres | No direct database exposure or invented physical internals |
+| RNF24 | Secrets | Managed server secrets; publishable client configuration only | Bundle/secret scanning |
+| RNF25 | Operations | Managed usage, errors, pause state, retention, and export-age monitoring | Quota alerts/dashboard smoke tests |
 | RNF26 | Anti-abuse | Fingerprint hashes; 30-day retention | Rate limits and retention job |
-| RNF27 | Submission integrity | Honeypot signal to trust worker | Suspicious goes to review, not discard |
+| RNF27 | Submission integrity | Honeypot signal to SQL trust assessment | Suspicious goes to review, not discard |
 | RNF28 | Trust workflow | Trusted assessment boundary | High publishes; medium/low reviews |
 | RNF29 | Flag integrity | Fingerprint uniqueness/diversity; rate limit | Coordinated flags cannot bypass threshold policy |
 | RNF30 | Duplicate workflow | Candidate/groups/memberships | Detection never resolves automatically |
-| RNF31 | Public edge | Proxy/worker rate limits | Report/flag abuse tests |
-| RNF32 | Image processor | `request_report_photo_upload`; status RPC; private quarantine; decode/re-encode | MIME/size/dimension/decode, status acknowledgment, and orphan cleanup |
+| RNF31 | Public edge | Managed platform plus Function/database rate controls | Report/flag/image abuse tests |
+| RNF32 | Image processor | Multipart image Function; service/status RPCs; private sanitized Storage | Binding/hash, validation, monotonic terminal acknowledgment, no raw persistence, authorized delivery |
 | RNF33 | Audit | Append-only `audit_log` | Every admin/config/duplicate command recorded |
 | RNF34 | Sessions | Short access token + rotating refresh/session policy | Expiry, refresh, logout limitation messaging |
-| RNF35 | Deferred re-identification | No DINOv2/pgvector in prototype | Absence from runtime/schema |
+| RNF35 | Optional Phase 2 visual similarity | Future GPU/pgvector migration; Phase 1 heuristic fallback | Absent from baseline schema; suggestions remain human-confirmed |
 | RNF36 | Dynamic form | DB validator | Type/key/value boundary cases |
 
 ## User stories
@@ -80,7 +80,7 @@ one functional requirement.
 |---|---|---|---|---|
 | HU-01 | RF01, RNF12 | Anonymous report | `submit_report` | Offline/no-login creation |
 | HU-02 | RF02, RNF13 | Privacy/form | Minimized payload | No identity solicitation |
-| HU-03 | RF03, RF09 | Camera | Photo RPCs and worker | Capture, authorized upload, status, validation |
+| HU-03 | RF03, RF09 | Camera | Report-first image Function plus exact status RPC | Capture, binding, terminal retry stop, validation, cleanup |
 | HU-04 | RF04, RF24 | Form | `sighting_type` | Required classification |
 | HU-05 | RF05, RF07 | Camera quick action | Offline draft | Visible no-photo path |
 | HU-06 | RF06, RF13, RF24 | Incident form | `incident_type`, `details` | Categories and severity |
@@ -107,4 +107,4 @@ one functional requirement.
 
 Before release, each row must link to a test ID in the test suite. Until code
 exists, the “Verification focus” column is the acceptance-test inventory and
-`docs/TESTING.md` defines the test levels.
+[`TESTING.md`](TESTING.md) defines the test levels.

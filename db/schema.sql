@@ -1,21 +1,23 @@
 -- Creel stray-dog reporting application: authoritative target schema.
--- PostgreSQL + PostGIS, intended for separate self-hosted Supabase stacks.
+-- PostgreSQL + PostGIS, intended for Supabase managed projects.
 -- Implements RF01-RF24 and RNF01-RNF36 as amended by
 -- docs/product/APPROVED-CLARIFICATIONS.md.
 --
--- PINNED PROTOTYPE TARGET (confirm installed images before applying):
--- * Self-hosted Supabase snapshot: self-hosted/v0.8.0
--- * Postgres image: supabase/postgres:17.6.1.136
--- * API gateway: Envoy (envoyproxy/envoy:v1.39.0). Kong is not the default;
---   use it only if an operator explicitly enables the optional override.
--- * PostGIS and pgcrypto live in schema extensions, matching current Supabase
---   guidance. Do not assume those functions or types exist in public.
--- * Auth image: supabase/gotrue:v2.189.0
--- * Storage image: supabase/storage-api:v1.60.4
+-- MANAGED PROTOTYPE TARGET:
+-- * Supabase Cloud owns physical hosts, TLS, gateway/runtime operation, Auth,
+--   Data API/PostgREST, Edge Functions, Storage, and PostgreSQL operation.
+-- * The project owns migrations, application schemas, RLS, grants, RPCs, Edge
+--   Function code, Storage policies, secrets/configuration, and data lifecycle.
+-- * PostGIS and pgcrypto live in schema extensions. Confirm the managed project
+--   catalogs before migrations; do not assume provider-owned physical columns.
+-- * The local Supabase Docker stack is optional. Remote projects are updated with
+--   a version-checked Supabase CLI from versioned migrations only, using a
+--   linked-project dry run before db push. Functions deploy with explicit
+--   --use-api when Docker-free bundling is required.
 --
 -- DEPLOYMENT READINESS:
 -- * auth.users, auth.uid(), anon, authenticated, and service_role are owned by
---   the Supabase stack and must exist before this migration is applied.
+--   the managed Supabase project and must exist before this migration is applied.
 -- * Apply migrations with a dedicated NOLOGIN owner (for example app_owner).
 --   SECURITY DEFINER functions execute as that owner; the owner must not be a
 --   client login and must own only application objects required by the function.
@@ -26,9 +28,10 @@
 --   Supabase-owned objects. Confirm the installed Supabase/Storage/Auth
 --   versions before writing those migrations. Do not invent columns.
 -- * The migration owner must have USAGE on schema extensions.
--- * Set deployment_metadata.environment to production only in the Production
---   stack. The default is staging and Production report intake fails closed until
---   an Association-approved geofence is active.
+-- * Set deployment_metadata.environment to production only in an approved live
+--   project. The default is staging so a demo/test project cannot be mistaken for
+--   live; live report intake fails closed until an Association-approved geofence
+--   is active.
 
 BEGIN;
 
@@ -76,8 +79,7 @@ CREATE TYPE public.flag_reason AS ENUM (
   'otro'
 );
 CREATE TYPE public.photo_state AS ENUM (
-  'awaiting_upload',
-  'quarantined',
+  'processing',
   'approved',
   'rejected',
   'purge_pending',
@@ -100,8 +102,8 @@ CREATE TYPE public.audit_action AS ENUM (
   'zone_set_activated'
 );
 
--- Each deployed stack has exactly one environment marker. Production must update
--- this row in its deployment-only migration.
+-- Each managed project has exactly one environment marker. A live project must
+-- update this row in its environment-specific migration.
 CREATE TABLE public.deployment_metadata (
   singleton BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (singleton),
   environment public.deployment_environment NOT NULL DEFAULT 'staging',
@@ -237,12 +239,13 @@ CREATE INDEX idx_reports_client_created_at ON public.reports (client_created_at)
 CREATE INDEX idx_reports_fingerprint ON public.reports (device_fingerprint_hash)
   WHERE device_fingerprint_hash IS NOT NULL;
 
--- Raw EXIF never has a column. Only trusted, derived scalar signals are stored.
+-- Raw bytes and raw EXIF are never stored. The source hash supports idempotent
+-- processing and is removed with this row under the photo/report retention flow.
 CREATE TABLE public.photo_assets (
   id UUID PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
   report_id UUID NOT NULL UNIQUE REFERENCES public.reports(id) ON DELETE CASCADE,
-  state public.photo_state NOT NULL DEFAULT 'awaiting_upload',
-  quarantine_object_path TEXT,
+  state public.photo_state NOT NULL DEFAULT 'processing',
+  source_sha256 TEXT NOT NULL CHECK (source_sha256 ~ '^[0-9a-f]{64}$'),
   approved_object_path TEXT,
   detected_mime_type TEXT,
   byte_size INTEGER CHECK (byte_size BETWEEN 1 AND 10485760),
@@ -250,14 +253,16 @@ CREATE TABLE public.photo_assets (
   height_pixels INTEGER CHECK (height_pixels BETWEEN 1 AND 12000),
   sanitized_sha256 TEXT CHECK (sanitized_sha256 ~ '^[0-9a-f]{64}$'),
   rejection_code TEXT,
-  quarantined_at TIMESTAMPTZ,
+  processing_started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   approved_at TIMESTAMPTZ,
   purge_after TIMESTAMPTZ,
   purged_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CHECK (quarantine_object_path IS NULL OR length(quarantine_object_path) BETWEEN 1 AND 1000),
   CHECK (approved_object_path IS NULL OR length(approved_object_path) BETWEEN 1 AND 1000),
-  CHECK ((state = 'approved') = (approved_object_path IS NOT NULL AND approved_at IS NOT NULL) OR state IN ('purge_pending', 'purged'))
+  CHECK (rejection_code IS NULL OR length(rejection_code) BETWEEN 1 AND 120),
+  CHECK (state <> 'approved' OR (approved_object_path IS NOT NULL AND approved_at IS NOT NULL)),
+  CHECK (state <> 'rejected' OR rejection_code IS NOT NULL),
+  CHECK (state <> 'purged' OR approved_object_path IS NULL)
 );
 
 CREATE TABLE public.report_flags (
@@ -334,7 +339,7 @@ CREATE INDEX idx_audit_entity ON public.audit_log (entity_type, entity_id);
 
 COMMENT ON TABLE public.reports IS 'Immutable public-submitted content plus server-controlled moderation and derived trust state. Clients insert only through submit_report.';
 COMMENT ON COLUMN public.reports.client_created_at IS 'Device timestamp. New submissions must fall in [now()-30 days, now()+1 hour]. Identical replays skip this window.';
-COMMENT ON TABLE public.photo_assets IS 'Private quarantine and sanitized-photo lifecycle. Raw EXIF is processed transiently and never persisted.';
+COMMENT ON TABLE public.photo_assets IS 'Private sanitized-photo processing, approval, rejection, and purge lifecycle. Raw input and raw EXIF are never persisted.';
 COMMENT ON TABLE public.duplicate_groups IS 'Audited, reversible human duplicate resolution with one canonical report.';
 COMMENT ON TABLE public.config_versions IS 'Typed, validated, versioned operational thresholds. Direct client mutation is prohibited.';
 COMMENT ON TABLE public.zone_sets IS 'Versioned geofence metadata. source_sha256 is required. association_approval_reference cites an external Association decision; Administrator notes are not that approval.';
@@ -729,7 +734,7 @@ RETURNS TABLE (
   predominant_color TEXT,
   dog_size public.dog_size,
   has_collar BOOLEAN,
-  sanitized_image_path TEXT,
+  has_sanitized_photo BOOLEAN,
   occurred_at TIMESTAMPTZ,
   has_flags BOOLEAN
 )
@@ -748,11 +753,12 @@ AS $$
     r.color_predominante,
     r.tamano,
     r.tiene_collar,
-    pa.approved_object_path,
+    (pa.id IS NOT NULL),
     r.client_created_at,
     EXISTS (SELECT 1 FROM public.report_flags f WHERE f.report_id = r.id)
   FROM public.reports r
   LEFT JOIN public.photo_assets pa ON pa.report_id = r.id AND pa.state = 'approved'
+    AND pa.purge_after > now()
   WHERE r.status = 'visible'
     AND r.public_until > now()
     AND (p_since IS NULL OR r.client_created_at >= p_since)
@@ -876,80 +882,9 @@ END;
 $$;
 
 -- ---------------------------------------------------------------------------
--- Client photo upload/status RPCs. Signed Storage URLs are minted by the
--- image worker, not by Postgres. Clients never write photo_assets directly.
+-- Client photo status. Upload bytes go only to the image-specific Edge Function;
+-- clients never receive Storage write access or write photo_assets directly.
 -- ---------------------------------------------------------------------------
-
-CREATE FUNCTION public.request_report_photo_upload(
-  p_report_id UUID,
-  p_device_fingerprint TEXT
-)
-RETURNS TABLE (
-  report_id UUID,
-  photo_id UUID,
-  quarantine_object_path TEXT,
-  max_bytes INTEGER,
-  allowed_content_types TEXT[]
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_report public.reports%ROWTYPE;
-  v_photo public.photo_assets%ROWTYPE;
-  v_fingerprint_hash TEXT;
-  v_photo_id UUID;
-  v_path TEXT;
-BEGIN
-  IF p_report_id IS NULL OR p_device_fingerprint IS NULL OR length(p_device_fingerprint) < 16 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_photo_upload_identity';
-  END IF;
-  v_fingerprint_hash := encode(extensions.digest(p_device_fingerprint, 'sha256'), 'hex');
-
-  SELECT * INTO v_report FROM public.reports WHERE id = p_report_id;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_not_found';
-  END IF;
-  IF NOT v_report.photo_expected THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'photo_not_expected';
-  END IF;
-  IF v_report.device_fingerprint_hash IS NULL THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_photo_access_expired';
-  END IF;
-  IF v_report.device_fingerprint_hash <> v_fingerprint_hash THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'report_photo_access_denied';
-  END IF;
-
-  SELECT * INTO v_photo FROM public.photo_assets WHERE photo_assets.report_id = p_report_id;
-  IF FOUND THEN
-    IF v_photo.state NOT IN ('awaiting_upload', 'rejected') THEN
-      RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_state_conflict';
-    END IF;
-    v_photo_id := v_photo.id;
-    v_path := COALESCE(
-      v_photo.quarantine_object_path,
-      'quarantine/' || p_report_id::TEXT || '/' || v_photo_id::TEXT
-    );
-    UPDATE public.photo_assets
-    SET state = 'awaiting_upload',
-        quarantine_object_path = v_path,
-        rejection_code = NULL
-    WHERE id = v_photo_id;
-  ELSE
-    v_photo_id := pg_catalog.gen_random_uuid();
-    v_path := 'quarantine/' || p_report_id::TEXT || '/' || v_photo_id::TEXT;
-    INSERT INTO public.photo_assets (
-      id, report_id, state, quarantine_object_path
-    ) VALUES (
-      v_photo_id, p_report_id, 'awaiting_upload', v_path
-    );
-  END IF;
-
-  RETURN QUERY SELECT p_report_id, v_photo_id, v_path, 10485760,
-    ARRAY['image/jpeg', 'image/png', 'image/heic']::TEXT[];
-END;
-$$;
 
 CREATE FUNCTION public.get_report_photo_status(
   p_report_id UUID,
@@ -961,6 +896,7 @@ RETURNS TABLE (
   photo_state public.photo_state,
   rejection_code TEXT,
   processing_complete BOOLEAN,
+  upload_succeeded BOOLEAN,
   local_cleanup_allowed BOOLEAN
 )
 LANGUAGE plpgsql
@@ -973,6 +909,8 @@ DECLARE
   v_photo public.photo_assets%ROWTYPE;
   v_fingerprint_hash TEXT;
   v_complete BOOLEAN;
+  v_succeeded BOOLEAN;
+  v_has_photo BOOLEAN;
 BEGIN
   IF p_report_id IS NULL OR p_device_fingerprint IS NULL OR length(p_device_fingerprint) < 16 THEN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_photo_status_identity';
@@ -991,56 +929,96 @@ BEGIN
   END IF;
 
   SELECT * INTO v_photo FROM public.photo_assets WHERE photo_assets.report_id = p_report_id;
+  v_has_photo := FOUND;
   IF NOT v_report.photo_expected THEN
-    RETURN QUERY SELECT p_report_id, FALSE, NULL::public.photo_state, NULL::TEXT, TRUE, TRUE;
+    RETURN QUERY SELECT
+      p_report_id, FALSE, NULL::public.photo_state, NULL::TEXT, TRUE, FALSE, TRUE;
     RETURN;
   END IF;
-  v_complete := FOUND AND v_photo.state IN ('approved', 'rejected', 'purged');
+  -- Completion and local cleanup are monotonic: retention states remain terminal,
+  -- but only an approved sanitized object is a successful upload.
+  v_complete := v_has_photo AND v_photo.state IN (
+    'approved', 'rejected', 'purge_pending', 'purged'
+  );
+  v_succeeded := v_has_photo AND v_photo.state = 'approved';
   RETURN QUERY SELECT
     p_report_id,
     TRUE,
-    v_photo.state,
-    v_photo.rejection_code,
+    CASE WHEN v_has_photo THEN v_photo.state ELSE NULL::public.photo_state END,
+    CASE WHEN v_has_photo THEN v_photo.rejection_code ELSE NULL::TEXT END,
     v_complete,
+    v_succeeded,
     v_complete;
 END;
 $$;
 
 -- ---------------------------------------------------------------------------
--- Trusted image/anti-abuse worker boundary. No mobile role receives EXECUTE.
+-- Trusted image Edge Function boundary. No mobile role receives EXECUTE.
 -- ---------------------------------------------------------------------------
 
-CREATE FUNCTION public.service_register_quarantine_upload(
+CREATE FUNCTION public.service_begin_photo_processing(
   p_report_id UUID,
-  p_quarantine_object_path TEXT
+  p_device_fingerprint TEXT,
+  p_source_sha256 TEXT
 )
-RETURNS UUID
+RETURNS TABLE (
+  photo_id UUID,
+  photo_state public.photo_state,
+  approved_object_path TEXT,
+  rejection_code TEXT
+)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-DECLARE v_id UUID;
+DECLARE
+  v_report public.reports%ROWTYPE;
+  v_photo public.photo_assets%ROWTYPE;
+  v_fingerprint_hash TEXT;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.reports WHERE id = p_report_id AND photo_expected) THEN
+  IF p_report_id IS NULL OR p_device_fingerprint IS NULL
+     OR length(p_device_fingerprint) < 16
+     OR p_source_sha256 IS NULL OR lower(p_source_sha256) !~ '^[0-9a-f]{64}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_photo_processing_identity';
+  END IF;
+  v_fingerprint_hash := encode(extensions.digest(p_device_fingerprint, 'sha256'), 'hex');
+
+  SELECT * INTO v_report FROM public.reports WHERE id = p_report_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_not_found';
+  END IF;
+  IF NOT v_report.photo_expected THEN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'photo_not_expected';
   END IF;
-  INSERT INTO public.photo_assets (
-    report_id, state, quarantine_object_path, quarantined_at
-  ) VALUES (p_report_id, 'quarantined', p_quarantine_object_path, now())
-  ON CONFLICT (report_id) DO UPDATE
-    SET state = 'quarantined', quarantine_object_path = EXCLUDED.quarantine_object_path,
-        quarantined_at = now()
-    WHERE public.photo_assets.state IN ('awaiting_upload', 'quarantined', 'rejected')
-  RETURNING id INTO v_id;
-  IF v_id IS NULL THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_state_conflict';
+  IF v_report.device_fingerprint_hash IS NULL THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_photo_access_expired';
   END IF;
-  RETURN v_id;
+  IF v_report.device_fingerprint_hash <> v_fingerprint_hash THEN
+    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'report_photo_access_denied';
+  END IF;
+
+  SELECT * INTO v_photo FROM public.photo_assets
+  WHERE report_id = p_report_id FOR UPDATE;
+  IF FOUND THEN
+    IF v_photo.source_sha256 <> lower(p_source_sha256) THEN
+      RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'photo_content_conflict';
+    END IF;
+    RETURN QUERY SELECT v_photo.id, v_photo.state,
+      v_photo.approved_object_path, v_photo.rejection_code;
+    RETURN;
+  END IF;
+
+  INSERT INTO public.photo_assets (report_id, state, source_sha256)
+  VALUES (p_report_id, 'processing', lower(p_source_sha256))
+  RETURNING * INTO v_photo;
+  RETURN QUERY SELECT v_photo.id, v_photo.state,
+    v_photo.approved_object_path, v_photo.rejection_code;
 END;
 $$;
 
 CREATE FUNCTION public.service_register_processed_photo(
   p_report_id UUID,
+  p_source_sha256 TEXT,
   p_approved_object_path TEXT,
   p_detected_mime_type TEXT,
   p_byte_size INTEGER,
@@ -1055,22 +1033,39 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
+DECLARE v_photo public.photo_assets%ROWTYPE;
 BEGIN
-  IF p_detected_mime_type NOT IN ('image/jpeg', 'image/png', 'image/heic')
+  IF p_source_sha256 IS NULL OR lower(p_source_sha256) !~ '^[0-9a-f]{64}$'
+     OR p_sanitized_sha256 IS NULL OR lower(p_sanitized_sha256) !~ '^[0-9a-f]{64}$'
+     OR p_approved_object_path IS NULL OR length(p_approved_object_path) NOT BETWEEN 1 AND 1000
+     OR p_detected_mime_type NOT IN ('image/jpeg', 'image/png', 'image/heic')
      OR p_byte_size NOT BETWEEN 1 AND 10485760
      OR p_width_pixels NOT BETWEEN 1 AND 12000
      OR p_height_pixels NOT BETWEEN 1 AND 12000 THEN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_processed_image';
   END IF;
+  SELECT * INTO v_photo FROM public.photo_assets
+  WHERE report_id = p_report_id FOR UPDATE;
+  IF NOT FOUND OR v_photo.source_sha256 <> lower(p_source_sha256) THEN
+    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_processing_not_started';
+  END IF;
+  IF v_photo.state = 'approved' THEN
+    IF v_photo.approved_object_path = p_approved_object_path
+       AND v_photo.sanitized_sha256 = lower(p_sanitized_sha256) THEN
+      RETURN;
+    END IF;
+    RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'processed_photo_conflict';
+  END IF;
+  IF v_photo.state <> 'processing' THEN
+    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_state_conflict';
+  END IF;
   UPDATE public.photo_assets
   SET state = 'approved', approved_object_path = p_approved_object_path,
       detected_mime_type = p_detected_mime_type, byte_size = p_byte_size,
       width_pixels = p_width_pixels, height_pixels = p_height_pixels,
-      sanitized_sha256 = p_sanitized_sha256, approved_at = now()
-  WHERE report_id = p_report_id AND state = 'quarantined';
-  IF NOT FOUND THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_not_quarantined';
-  END IF;
+      sanitized_sha256 = lower(p_sanitized_sha256), approved_at = now(),
+      purge_after = now() + interval '90 days'
+  WHERE id = v_photo.id;
   UPDATE public.reports
   SET photo_validation_score = p_photo_validation_score,
       exif_consistency_score = p_exif_consistency_score
@@ -1078,18 +1073,91 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION public.service_reject_photo(p_report_id UUID, p_rejection_code TEXT)
+CREATE FUNCTION public.service_reject_photo(
+  p_report_id UUID,
+  p_source_sha256 TEXT,
+  p_rejection_code TEXT
+)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
+DECLARE v_photo public.photo_assets%ROWTYPE;
 BEGIN
+  IF p_source_sha256 IS NULL OR lower(p_source_sha256) !~ '^[0-9a-f]{64}$'
+     OR p_rejection_code IS NULL OR length(trim(p_rejection_code)) NOT BETWEEN 1 AND 120 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_photo_rejection';
+  END IF;
+  SELECT * INTO v_photo FROM public.photo_assets
+  WHERE report_id = p_report_id FOR UPDATE;
+  IF NOT FOUND OR v_photo.source_sha256 <> lower(p_source_sha256) THEN
+    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_processing_not_started';
+  END IF;
+  IF v_photo.state = 'rejected' AND v_photo.rejection_code = p_rejection_code THEN
+    RETURN;
+  END IF;
+  IF v_photo.state <> 'processing' THEN
+    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_state_conflict';
+  END IF;
   UPDATE public.photo_assets
-  SET state = 'rejected', rejection_code = p_rejection_code
-  WHERE report_id = p_report_id AND state = 'quarantined';
+  SET state = 'rejected', rejection_code = p_rejection_code,
+      purge_after = now() + interval '1 day'
+  WHERE id = v_photo.id;
+END;
+$$;
+
+CREATE FUNCTION public.service_authorize_report_photo_delivery(
+  p_report_id UUID,
+  p_requester_id UUID DEFAULT NULL
+)
+RETURNS TABLE (approved_object_path TEXT)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE v_role public.user_role;
+BEGIN
+  IF p_requester_id IS NOT NULL THEN
+    SELECT role INTO v_role FROM public.profiles
+    WHERE id = p_requester_id AND active;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'photo_delivery_access_denied';
+    END IF;
+  END IF;
+
+  RETURN QUERY
+  SELECT pa.approved_object_path
+  FROM public.reports r
+  JOIN public.photo_assets pa ON pa.report_id = r.id
+  WHERE r.id = p_report_id
+    AND pa.state = 'approved'
+    AND (pa.purge_after IS NULL OR pa.purge_after > now())
+    AND (
+      (
+        p_requester_id IS NULL
+        AND r.status = 'visible'
+        AND r.public_until > now()
+        AND NOT EXISTS (
+          SELECT 1 FROM public.duplicate_memberships dm
+          WHERE dm.report_id = r.id AND dm.active AND dm.member_role = 'duplicate'
+        )
+      )
+      OR (
+        v_role = 'association'
+        AND r.status = 'visible'
+        AND r.accepted_at >= now() - interval '5 years'
+        AND NOT EXISTS (
+          SELECT 1 FROM public.duplicate_memberships dm
+          WHERE dm.report_id = r.id AND dm.active AND dm.member_role = 'duplicate'
+        )
+      )
+      OR v_role = 'administrator'
+    );
+
   IF NOT FOUND THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_not_quarantined';
+    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'photo_delivery_access_denied';
   END IF;
 END;
 $$;
@@ -1268,7 +1336,7 @@ RETURNS TABLE (
   predominant_color TEXT,
   dog_size public.dog_size,
   has_collar BOOLEAN,
-  sanitized_image_path TEXT,
+  has_sanitized_photo BOOLEAN,
   occurred_at TIMESTAMPTZ,
   accepted_at TIMESTAMPTZ
 )
@@ -1284,10 +1352,11 @@ BEGIN
   RETURN QUERY
   SELECT r.id, extensions.ST_X(r.location::extensions.geometry), extensions.ST_Y(r.location::extensions.geometry),
          r.incident_type, r.sighting_type, r.details, r.color_predominante,
-         r.tamano, r.tiene_collar, pa.approved_object_path,
+         r.tamano, r.tiene_collar, (pa.id IS NOT NULL),
          r.client_created_at, r.accepted_at
   FROM public.reports r
   LEFT JOIN public.photo_assets pa ON pa.report_id = r.id AND pa.state = 'approved'
+    AND pa.purge_after > now()
   WHERE r.status = 'visible'
     AND r.accepted_at >= now() - interval '5 years'
     AND (p_from IS NULL OR r.client_created_at >= p_from)
@@ -1325,7 +1394,7 @@ RETURNS TABLE (
   dog_size public.dog_size,
   has_collar BOOLEAN,
   photo_expected BOOLEAN,
-  sanitized_image_path TEXT,
+  has_sanitized_photo BOOLEAN,
   trust_level public.trust_tier,
   trust_score NUMERIC,
   photo_validation_score NUMERIC,
@@ -1355,7 +1424,7 @@ BEGIN
          r.gps_accuracy_meters, r.mock_location_suspected,
          r.incident_type, r.sighting_type, r.details,
          r.color_predominante, r.tamano, r.tiene_collar, r.photo_expected,
-         pa.approved_object_path,
+         (pa.id IS NOT NULL),
          r.trust_tier, r.trust_score,
          r.photo_validation_score, r.exif_consistency_score,
          r.gps_trust_score, r.fingerprint_trust_score, r.honeypot_suspected,
@@ -1382,6 +1451,7 @@ BEGIN
          r.client_created_at, r.synced_at
   FROM public.reports r
   LEFT JOIN public.photo_assets pa ON pa.report_id = r.id AND pa.state = 'approved'
+    AND (pa.purge_after IS NULL OR pa.purge_after > now())
   LEFT JOIN public.duplicate_memberships dm ON dm.report_id = r.id AND dm.active
   LEFT JOIN public.duplicate_groups dg ON dg.id = dm.group_id AND dg.status = 'active'
   WHERE r.status IN ('pending_review', 'hidden', 'deleted')
@@ -1828,8 +1898,8 @@ BEGIN
   WHERE pa.state NOT IN ('purge_pending', 'purged')
     AND (
       (pa.state = 'approved' AND pa.purge_after IS NOT NULL AND pa.purge_after <= p_now)
-      OR (pa.state IN ('awaiting_upload', 'quarantined', 'rejected')
-          AND pa.created_at <= p_now - interval '1 day')
+      OR (pa.state IN ('processing', 'rejected')
+          AND pa.processing_started_at <= p_now - interval '1 day')
       OR EXISTS (
         SELECT 1 FROM public.reports r
         WHERE r.id = pa.report_id
@@ -1878,8 +1948,7 @@ SET search_path = ''
 AS $$
 BEGIN
   UPDATE public.photo_assets
-  SET state = 'purged', purged_at = now(), quarantine_object_path = NULL,
-      approved_object_path = NULL
+  SET state = 'purged', purged_at = now(), approved_object_path = NULL
   WHERE id = p_photo_id AND state = 'purge_pending';
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_not_pending_purge'; END IF;
 END;
@@ -1927,8 +1996,6 @@ GRANT EXECUTE ON FUNCTION public.get_public_reports(TIMESTAMPTZ, INTEGER)
 GRANT EXECUTE ON FUNCTION public.get_public_clusters(
   INTEGER, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, INTEGER
 ) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.request_report_photo_upload(UUID, TEXT)
-  TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_report_photo_status(UUID, TEXT)
   TO anon, authenticated;
 
@@ -1953,9 +2020,10 @@ GRANT EXECUTE ON FUNCTION public.admin_approve_report(UUID, TEXT),
   public.admin_activate_zone_set(UUID, TEXT, TEXT)
   TO authenticated;
 
-GRANT EXECUTE ON FUNCTION public.service_register_quarantine_upload(UUID, TEXT),
-  public.service_register_processed_photo(UUID, TEXT, TEXT, INTEGER, INTEGER, INTEGER, TEXT, NUMERIC, NUMERIC),
-  public.service_reject_photo(UUID, TEXT),
+GRANT EXECUTE ON FUNCTION public.service_begin_photo_processing(UUID, TEXT, TEXT),
+  public.service_register_processed_photo(UUID, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, TEXT, NUMERIC, NUMERIC),
+  public.service_reject_photo(UUID, TEXT, TEXT),
+  public.service_authorize_report_photo_delivery(UUID, UUID),
   public.service_apply_trust_assessment(UUID, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC),
   public.service_run_retention(),
   public.service_acknowledge_photo_purge(UUID)

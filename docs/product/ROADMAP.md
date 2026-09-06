@@ -1,35 +1,37 @@
 # Roadmap
 
-## Prototype implementation
+This document owns phase order, dependencies, and exit gates. Architecture,
+technology selection, and operational commands belong to their linked owners.
 
-1. **Foundations:** create Expo development-build app, localization, role-protected
-   navigation, ordered database migrations, RPC clients, and test harnesses.
-2. **Anonymous reporting:** camera-first dynamic form, optional one-photo path,
-   bundled MobileNetV3-Small TFLite validation, Expo SQLite/local-file queue,
-   idempotent sync.
-3. **Trusted ingestion:** quarantine upload, server decode/re-encode/EXIF stripping,
-   trust assessment, rate limits, cleanup compensation.
-4. **Public map:** MapLibre online UX, stable approximate pins, exact metric server
-   clustering, severity breakdown.
-5. **Authenticated flows:** Association dashboard/export and Administrator
-   moderation/duplicate/configuration screens using separate RPCs.
-6. **Operations:** isolated stacks, Auth provisioning, migrations, monitoring,
-   retention, backup/restore and Staging lifecycle drills.
+## Prototype sequence
+
+| Phase | Outcome | Depends on | Exit gate |
+|---|---|---|---|
+| 1. Foundations | Buildable mobile shell, ordered migrations, contract clients, and test harnesses | Approved contracts | Schema dry-run and baseline authorization tests pass |
+| 2. Public reporting | Durable anonymous report flow with optional evidence and recovery | Phase 1 | Offline restart and idempotent sync scenarios pass |
+| 3. Trusted ingestion | Server validation, trust routing, private delivery, and cleanup compensation | Phases 1–2 | Image, abuse, privacy, and failure-recovery scenarios pass |
+| 4. Public map | Privacy-preserving reports, clusters, and offline-unavailable UX | Phases 1–3 | Map correctness, privacy, and performance targets pass |
+| 5. Authenticated flows | Separate Association and Administrator capabilities | Phases 1–4 | Cross-role negative tests and audit scenarios pass |
+| 6. Operational readiness | Deployable, observable, recoverable prototype | All prior phases | Managed-project smoke tests and isolated restore rehearsal pass |
 
 ## External gate
 
-Production report intake cannot launch until the Association approves a geofence
-version. `GEOFENCE-CANDIDATE.md` defines the candidate and approval procedure.
+Live report intake cannot launch until the Association approves a geofence
+version. [`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md) defines the candidate and
+approval procedure.
 
 ## Deferred
 
 - 99.9% SLA and high availability/multi-node recovery.
-- Visual dog re-identification, DINOv2, pgvector, and server ML.
+- Optional Phase 2 visual duplicate suggestions: temporary/serverless GPU plus a
+  future pgvector migration, always combined with time/distance and human review.
+- Production SLA/PITR/custom domain and a backup mechanism that proves the
+  required RPO/RTO.
 - Multi-city/multi-tenant or per-hotel accounts.
 - Sterilization-campaign tracking, push notifications, and direct authority APIs.
 
-## Definition of implementation start
+## Start gate
 
-Start coding only from migrations derived from `db/schema.sql`; pin native/backend
-versions and create tests for each `TRACEABILITY.md` row. Do not treat the target
-schema as a safe one-shot migration for a populated environment.
+Implementation starts from migrations derived from [`../../db/schema.sql`](../../db/schema.sql),
+with planned tests for every [`TRACEABILITY.md`](../TRACEABILITY.md) row. Deployment
+commands and tool-version requirements belong to [`../DEPLOYMENT.md`](../DEPLOYMENT.md).

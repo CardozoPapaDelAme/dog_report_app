@@ -1,59 +1,40 @@
-# Diagram Readiness and Inventory
+# Diagram Handoff and Review Checklist
 
-Contracts are now specific enough to draw sequence, activity, component,
-authorization, ER, and deployment diagrams. Production geofence geometry is still
-an external approval gate, not an implemented polygon. Installed Auth/Storage
-schemas must be confirmed on the target images before those objects are drawn as
-physical columns.
+This document owns only diagram readiness, source handoff, and acceptance checks.
+It does not define architecture. **Contract input is ready; diagrams are not marked
+complete until their source files are delivered and checked below.** Versioned
+sources live in [`diagrams/README.md`](diagrams/README.md) and are created only
+when a specific diagram is requested.
 
-## Quick path
+## Source handoff
 
-1. Draw actors, RPCs, and the Envoy default gateway from this inventory.
-2. Mark Production geofence activation as “Association approval required.”
-3. Do not invent Storage/Auth columns or a Kong hop unless an operator explicitly
-   enables the Kong override.
-
-## Required diagrams
-
-| Diagram | Must show | Primary sources | Ready |
-|---|---|---|---|
-| System context | Three actors; one mobile app; technical operator; external INEGI source | `architecture/OVERVIEW.md`, product clarifications | Yes |
-| Containers/deployment | Production and on-demand Staging stacks sharing one VPS; Traefik edge; Envoy API gateway; isolation and no HA | `DEPLOYMENT.md`, `STACK.md` | Yes, with version confirmation at provision |
-| Components | Mobile features, PostgREST RPC boundary, image processor, Auth, Storage, PostgreSQL/PostGIS in `extensions` | `architecture/OVERVIEW.md`, `API.md` | Yes |
-| Report sequence | Offline UUID, SQLite/local file, `submit_report` replay-before-geofence, `request_report_photo_upload`, signed-URL worker, `get_report_photo_status`, cleanup | `API.md`, `DATA-MODEL.md` | Yes |
-| Moderation state | Pending, visible, hidden, logical deletion, restoration, flag lock, expiry, purge including NULL `purge_after` | `DATA-MODEL.md` | Yes |
-| Duplicate resolution | Pending connected candidates, canonical selection, active-group projection, reversible memberships, audit | `DATA-MODEL.md`, `API.md` | Yes |
-| Authorization | Actor-to-RPC matrix, `get_my_profile`, no direct table writes, no Association analytics for Administrator | `SECURITY.md`, `API.md` | Yes |
-| ERD | Reports, photos, flags, duplicate groups, configs, zones with required checksum, audits | `../db/schema.sql`, `DATA-MODEL.md` | Yes |
-| Operations | Backup/restore, migration promotion, retention using server `now()`, staging lifecycle | `DEPLOYMENT.md` | Yes |
-
-## Diagram rules
-
-- Keep offline-local sync state separate from server moderation state.
-- Represent Association and Administrator as siblings, never inheritance.
-- Label every write as a command/RPC or trusted worker action; do not draw broad
-  CRUD access to tables.
-- Show exact coordinates only inside the trusted server boundary. Public outputs
-  use the stable approximate grid.
-- Show raw uploads in private quarantine and only sanitized images in approved
-  storage.
-- Draw Envoy as the Supabase API gateway. Do not draw Kong unless the optional
-  override is actually enabled.
-- Qualify PostGIS/pgcrypto as `extensions.*`, not `public.*`.
-- Mark the Production geofence as “approval required,” not “complete.”
+| Diagram | Read these owners before drawing | Contract input ready |
+|---|---|---:|
+| System context and components | [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md), [`product/APPROVED-CLARIFICATIONS.md`](product/APPROVED-CLARIFICATIONS.md) | Yes |
+| Deployment and operations | [`DEPLOYMENT.md`](DEPLOYMENT.md), [`STACK.md`](STACK.md), [`INTEGRATIONS.md`](INTEGRATIONS.md) | Yes |
+| Report and image sequence | [`API.md`](API.md), [`DATA-MODEL.md`](DATA-MODEL.md), [`SECURITY.md`](SECURITY.md) | Yes |
+| Moderation and duplicate states | [`DATA-MODEL.md`](DATA-MODEL.md) | Yes |
+| Authorization | [`SECURITY.md`](SECURITY.md), [`API.md`](API.md) | Yes |
+| ERD | [`../db/schema.sql`](../db/schema.sql), [`DATA-MODEL.md`](DATA-MODEL.md) | Yes |
+| Requirement/activity coverage | [`TRACEABILITY.md`](TRACEABILITY.md), [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) | Yes |
 
 ## Remaining input
 
 | Item | Blocks diagrams? | Owner |
 |---|---|---|
-| Association approval of a Production geofence checksum/version | No. Draw the gate, not coordinates | Association |
-| Exact Auth/Storage catalog columns on the installed images | Yes for physical Auth/Storage ERDs only | Operator, after version confirmation |
-| Live domains and backup destinations | No. Use placeholders until provisioned | Operator |
+| Association approval of a live geofence checksum/version | No. Draw the gate; demo may use a labeled candidate fixture | Association |
+| Exact managed Auth/Storage catalog columns | Only for provider-internal physical ERDs, which are out of scope | Operator/provider docs |
+| Optional second Free project | No. One project is sufficient | Team |
+| Teammates' Mermaid sources | No for target contract; review later without changing current files | Team |
 | Expo/React Native package versions | No for backend diagrams | Mobile implementation |
 
 ## Checklist
 
-- [ ] Sequence diagrams use named photo RPCs and the signed-URL worker, not an unnamed upload arrow.
-- [ ] Duplicate reversal starts from an active group id returned by the admin API.
-- [ ] Deployment diagram shows Traefik → Envoy, not Traefik → Kong, unless overridden.
-- [ ] Retention activity includes photos whose `purge_after` is NULL when the report is eligible.
+- [ ] Diagram scope and terminology match [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md).
+- [ ] Every call and return state matches [`API.md`](API.md); no invented route or service is shown.
+- [ ] Persistent states and transitions match [`DATA-MODEL.md`](DATA-MODEL.md).
+- [ ] Trust boundaries, private data, and actor permissions match [`SECURITY.md`](SECURITY.md).
+- [ ] Deployment and recovery steps match [`DEPLOYMENT.md`](DEPLOYMENT.md) without inventing provider internals.
+- [ ] ERD names and relationships match [`../db/schema.sql`](../db/schema.sql); provider-owned schemas remain external.
+- [ ] The live geofence is shown as externally approval-gated, not already approved.
+- [ ] Relevant RF/RNF/HU rows in [`TRACEABILITY.md`](TRACEABILITY.md) are covered.

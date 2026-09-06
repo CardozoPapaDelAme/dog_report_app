@@ -1,7 +1,9 @@
 # Data Model and State Contracts
 
-`../db/schema.sql` is the authoritative target schema. This document explains the
-model; implementation must introduce it through ordered migrations.
+This document owns conceptual entity, state, duplicate, and retention semantics.
+[`../db/schema.sql`](../db/schema.sql) is the authoritative exact target; this
+explanation does not override its names, signatures, or constraints. Consumer
+calls belong to [`API.md`](API.md).
 
 ## Core entities
 
@@ -11,14 +13,41 @@ model; implementation must introduce it through ordered migrations.
 | `zone_sets`, `zones` | Immutable source/version metadata and geofence geometry |
 | `config_versions` | Typed thresholds with one active version per environment |
 | `reports` | Immutable submitted content plus server-controlled state and derived signals |
-| `photo_assets` | Quarantine, sanitized promotion, and purge lifecycle; maximum one per report |
+| `photo_assets` | Sanitized-image processing, approval/rejection, and purge lifecycle; maximum one per report/source hash |
 | `report_flags` | Public flags with temporary hashed-origin signal |
 | `duplicate_candidates` | Heuristic pairs awaiting human review |
 | `duplicate_groups`, `duplicate_memberships` | Canonical, reversible human resolution |
 | `audit_log` | Append-only report, duplicate, zone, and configuration actions |
 
-There is intentionally no raw EXIF column. Only derived numeric consistency
-signals may persist.
+There is intentionally no raw-image or raw-EXIF object/column. Only a source
+SHA-256 for retry identity, sanitized object metadata, and derived numeric
+consistency signals may persist.
+
+## Photo state and idempotency
+
+```text
+no photo row ──image Function begins──> processing ──valid──> approved
+                                           │
+                                           └─invalid───────> rejected
+approved/rejected/stale processing ──retention──> purge_pending ──delete ack──> purged
+```
+
+The report is created first with its final UUID and `photo_expected`. The image
+Function computes the source hash and calls `service_begin_photo_processing`.
+The same report/hash returns the existing state; a different hash conflicts in
+every state, so implicit replacement cannot overwrite approved evidence. The
+client resolves unknown network outcomes through retry plus
+`get_report_photo_status`. `approved` means only a sanitized private object exists.
+Raw input and raw EXIF exist only during in-memory/ephemeral Function processing.
+
+`approved`, `rejected`, `purge_pending`, and `purged` are terminal upload states.
+Once any is observed, `processing_complete` and `local_cleanup_allowed` remain
+true and the client stops retrying. `upload_succeeded` is true only in `approved`;
+it becomes false in `purge_pending`/`purged` because retention has removed current
+delivery eligibility. The exact state remains visible so cleanup is distinguishable
+from validation rejection. A same-content retry that reaches
+`service_begin_photo_processing` after `purge_pending` or `purged` returns that
+state and performs no re-registration.
 
 ## Server moderation state machine
 
@@ -65,6 +94,12 @@ projections and analytics. The moderation queue and
 `get_administrator_active_duplicate_groups` expose active group ids so reversal is
 discoverable. Reversal marks the group reversed, deactivates memberships, restores
 candidate review, and writes an audit entry.
+
+Phase 1 candidate generation uses only stored time, distance, and manual dog
+attributes. Optional Phase 2 may add one embedding per sanitized photo and
+pgvector similarity through a separate future migration. It may rank/suggest
+candidates only; the Phase 1 heuristic path and human confirmation remain
+mandatory when GPU/vector support is absent.
 
 ## Typed configuration and zones
 
@@ -119,12 +154,12 @@ is an optional string of at most 2,000 characters.
 | Raw EXIF | Never persisted |
 
 The database marks photos `purge_pending` when any of these is true: approved and
-`purge_after` has passed; unfinished/rejected and older than one day; or the parent
+`purge_after` has passed; processing/rejected and older than one day; or the parent
 report is itself eligible for hard deletion. A NULL `photo_assets.purge_after` must
-not block that last path (pending never-published reports, approved photos on
-pending reports, and deleted reports). A Storage worker deletes the object and
-acknowledges `purged`. A report row is not hard-deleted while its photo still needs
-external cleanup. Production retention uses server `now()` only.
+not block that last path. The approved output starts with a 90-day deadline, which
+is reset from publication when the report becomes visible. A Function deletes the
+private object and acknowledges `purged`. A report row is not hard-deleted while
+its photo still needs external cleanup. Retention uses server `now()` only.
 
 ## Local queue is separate
 

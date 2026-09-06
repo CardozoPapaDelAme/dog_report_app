@@ -1,6 +1,12 @@
 # Architecture Decision Records
 
-Approved product amendments live in `../product/APPROVED-CLARIFICATIONS.md`.
+This document owns accepted and superseded technical rationale. It preserves why
+choices were made; current structural orientation belongs to
+[`OVERVIEW.md`](OVERVIEW.md), and exact contracts belong to the schema and
+contract documents.
+
+Approved product amendments live in
+[`../product/APPROVED-CLARIFICATIONS.md`](../product/APPROVED-CLARIFICATIONS.md).
 These records define how the prototype implements them.
 
 ## ADR-001 — Single tenant, sibling roles, multiple accounts
@@ -20,9 +26,10 @@ or Administrator inheritance of Association BI/export.
 **Decision.** Expose minimized SECURITY DEFINER projections and commands; revoke
 mobile table CRUD. Keep RLS enabled as a second boundary.
 
-**Why.** Broad INSERT/UPDATE lets clients set trust, moderation, timestamps, and
-audit fields. RLS filters rows but does not by itself constrain columns or command
-semantics.
+**Why.** Broad INSERT/UPDATE lets clients set trust, moderation, server-controlled
+lifecycle/audit timestamps, and audit fields. The narrow report command separately
+accepts and validates `p_client_created_at` as the observation timestamp. RLS
+filters rows but does not by itself constrain columns or command semantics.
 
 **Constraint.** Empty `search_path`, qualified names, dedicated NOLOGIN owner,
 PUBLIC revocation, narrow EXECUTE grants, role checks, and negative tests are
@@ -65,14 +72,22 @@ image blobs in rows. Server moderation state remains separate.
 
 **Trade-off.** Queue/file compensation and orphan cleanup must be tested explicitly.
 
-## ADR-007 — Quarantine plus lightweight image processor
+## ADR-007 — Direct image Function plus private sanitized Storage
 
-**Decision.** Upload privately, decode and validate server-side, derive EXIF
-coherence transiently, re-encode without metadata, and promote sanitized output.
-Use a small server worker/Edge Function class boundary; do not run server ML.
+**Decision.** Submit the report first, then send the optional reduced image as
+multipart form data to an image-specific Edge Function. Validate binding and
+configured MIME/size/dimension limits, decode, derive EXIF coherence transiently,
+and re-encode in memory/ephemeral processing. Persist only sanitized output in a
+private bucket. Use source hashes and status RPCs for idempotent retries; different
+content for the same report conflicts and replacement is out of scope.
 
-**Why.** Postgres/PostgREST cannot safely decode/re-encode images or atomically move
-Storage objects. RNF32 cannot rely on MIME headers or on-device validation.
+**Why.** Postgres/PostgREST cannot safely decode/re-encode untrusted media. The
+managed Function can process bytes without persisting a raw quarantine object,
+reducing state and Storage exposure while preserving RNF32 and offline recovery.
+
+**Constraint.** Private images are delivered only through an image-specific GET
+authorization path or equivalent short-lived managed signed delivery. No
+permanent public object URL is exposed.
 
 ## ADR-008 — MapLibre React Native with hosted vector tiles
 
@@ -140,6 +155,9 @@ claiming unsupported token invalidation.
 
 ## ADR-013 — Separate stacks on one VPS
 
+**Status: superseded by ADR-016.** This records the audited checkpoint only and is
+not the managed target.
+
 **Decision.** Production and on-demand Staging have separate Supabase stacks,
 Storage, databases, secrets, backups, and domains but share one physical OVH VPS.
 
@@ -159,6 +177,9 @@ mark/delete/ack compensation flow so database and object storage converge safely
 
 ## ADR-015 — PostgreSQL/PostGIS and self-hosted Supabase via Dokploy
 
+**Status: superseded by ADR-016.** This records the audited checkpoint only and is
+not the managed target.
+
 **Decision.** Retain PostgreSQL/PostGIS and separate self-hosted Supabase stacks on
 Dokploy/Traefik over an OVH VPS. Pin the prototype to snapshot `self-hosted/v0.8.0`
 with Envoy as the API gateway and PostGIS/pgcrypto installed in schema `extensions`.
@@ -171,3 +192,60 @@ use Envoy, not Kong, and keep extensions out of `public`.
 Confirm the installed versions before Auth/Storage migrations. Kong remains
 available only as an explicit override. No pgvector/DINOv2 or heavy server
 inference is included.
+
+## ADR-016 — Supabase managed Free as the Phase 1 provider boundary
+
+**Decision.** Use Supabase managed Free directly. Model Supabase Cloud as one
+managed provider boundary, logically decomposed into Auth, Data API/PostgREST,
+Edge Functions, Storage, and PostgreSQL/PostGIS. One remote project is sufficient
+for the five-week prototype; a second Free project is optional for isolated
+demo/testing. The local Supabase Docker stack is optional; the version-checked
+Supabase CLI is the selected remote deployment tool.
+
+**Why.** Managed operation removes the VPS, container, gateway, TLS, and dual-stack
+work that does not differentiate the product. The team still owns migrations,
+schema, RLS, SQL privileges, RPCs, Functions, Storage policies, secrets,
+retention, and quota monitoring.
+
+**Evolution strategy.** Phase 1 optimizes for learning speed and short feedback
+loops, not for implementing the final backend in one pass. Build and validate one
+vertical product flow at a time, evolving PostgreSQL, RLS, and RPC contracts through
+ordered migrations with compatibility and regression tests. `db/schema.sql`
+describes the target contract; it must not be applied monolithically to an existing
+project. Managed Supabase reduces undifferentiated infrastructure work, but it does
+not make later refactoring automatic or risk-free.
+
+Add a standalone application API only when observed requirements justify its
+operational cost—for example, substantial orchestration across external services,
+long-running workflows that do not fit SQL or focused Edge Functions, a stable
+versioned API shared by multiple independent clients, or a concrete portability
+requirement. Schema size or hypothetical future scale alone is not sufficient
+evidence. Until then, PostgREST plus narrow RPCs is the application API rather than
+a temporary absence of one.
+
+**Constraint.** PostgREST is the generated HTTP adapter, not a custom Controller.
+SQL RPCs own transactional use cases, PostgreSQL owns persistence/RLS/PostGIS, and
+Edge Functions remain limited to non-relational image work and external
+integrations. No service key or database credential ships to the app.
+
+**Trade-off.** Free has no automatic backups and may pause after inactivity. The
+prototype requires milestone database dumps, a separate checksummed private-object
+export, and a tested isolated restore procedure. A public production launch must
+first adopt a plan or backup mechanism that meets the required RPO/RTO. Pricing
+and quotas must be rechecked before the demo; no production SLA, PITR, or custom
+domain is promised.
+
+## ADR-017 — Optional Phase 2 visual duplicate suggestions
+
+**Decision.** Phase 1 remains fully functional with heuristic candidates and
+manual canonical resolution. If time remains, a temporary/serverless GPU may
+produce one visual embedding per sanitized photo; a future migration may add
+pgvector, and similarity is combined with time/distance filters to suggest
+candidates. Human confirmation remains mandatory.
+
+**Why.** Visual similarity can improve review ordering without making model output
+authoritative or placing GPU cost in the Phase 1 critical path.
+
+**Constraint.** No pgvector extension, embedding column/table, or GPU dependency is
+part of the Phase 1 baseline schema. External ML integration belongs behind an
+Edge Function.
