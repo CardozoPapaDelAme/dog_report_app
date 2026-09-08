@@ -12,16 +12,19 @@ These records define how the prototype implements them.
 ## ADR-001 — Single tenant, sibling roles, multiple accounts
 
 **Decision.** Keep one organizational tenant and exactly two authenticated roles,
-Association and Administrator. Allow multiple individually attributable accounts
+Asociación de Hoteles de Chihuahua and Administrator. Allow multiple individually attributable accounts
 per role, provisioned by a technical operator.
 
 **Why.** Roles describe authority, not account count. Individual accounts preserve
 accountability without introducing hotel tenants or a role hierarchy.
 
 **Constraint.** No public signup, in-app account administration, per-hotel tenant,
-or Administrator inheritance of Association BI/export.
+or Administrator inheritance of Asociación de Hoteles de Chihuahua BI/export.
 
 ## ADR-002 — RPC-only client data boundary
+
+**Status: superseded by ADR-018 and approved clarification 23.** This records the
+previous contract and is not implementation guidance.
 
 **Decision.** Expose minimized SECURITY DEFINER projections and commands; revoke
 mobile table CRUD. Keep RLS enabled as a second boundary.
@@ -47,7 +50,7 @@ deletion, canonical duplicates, and time-limited public display.
 ## ADR-004 — Human canonical duplicate groups
 
 **Decision.** Heuristics create candidate pairs. Administrator creates a group with
-one canonical member; non-canonical members are excluded from public/Association
+one canonical member; non-canonical members are excluded from public/Asociación de Hoteles de Chihuahua
 outputs. Resolution is reversible and audited.
 
 **Why.** RF23/RNF30 prohibit automatic certainty, hiding, or merging.
@@ -56,7 +59,7 @@ outputs. Resolution is reversible and audited.
 
 **Decision.** Replace key/value settings with validated immutable config versions.
 Version zone source metadata and geometry separately. Activation atomically swaps
-the active set and requires an Association approval reference.
+the active set and requires an Asociación de Hoteles de Chihuahua approval reference.
 
 **Why.** Runtime configuration is security-sensitive behavior, not free-form text.
 The current INEGI polygon is only a candidate, not an approved tourist boundary.
@@ -72,27 +75,28 @@ image blobs in rows. Server moderation state remains separate.
 
 **Trade-off.** Queue/file compensation and orphan cleanup must be tested explicitly.
 
-## ADR-007 — Direct image Function plus private sanitized Storage
+## ADR-007 — Hono image route plus private sanitized Storage
 
-**Decision.** Submit the report first, then send the optional reduced image as
-multipart form data to an image-specific Edge Function. Validate binding and
-configured MIME/size/dimension limits, decode, derive EXIF coherence transiently,
-and re-encode in memory/ephemeral processing. Persist only sanitized output in a
-private bucket. Use source hashes and status RPCs for idempotent retries; different
-content for the same report conflicts and replacement is out of scope.
+**Decision.** Submit the report first, then send the optional reduced JPEG/PNG as
+multipart form data to the image route in the single `api` Function. HEIC/HEIF is
+normalized to JPEG on the client. The route validates binding and configured
+MIME/size/dimension limits, decodes, derives metadata coherence transiently, and
+re-encodes in memory/ephemeral processing. Persist only sanitized JPEG/PNG output
+in a private bucket. Source hashes and status routes make retries converge;
+different content conflicts and replacement is out of scope.
 
-**Why.** Postgres/PostgREST cannot safely decode/re-encode untrusted media. The
-managed Function can process bytes without persisting a raw quarantine object,
+**Why.** PostgreSQL cannot safely decode/re-encode untrusted media. The managed
+Edge runtime can process bytes without persisting a raw quarantine object,
 reducing state and Storage exposure while preserving RNF32 and offline recovery.
 
-**Constraint.** Private images are delivered only through an image-specific GET
-authorization path or equivalent short-lived managed signed delivery. No
+**Constraint.** Private images are delivered only through the authorized Hono GET
+route or equivalent short-lived managed signed delivery. No
 permanent public object URL is exposed.
 
 ## ADR-008 — MapLibre React Native with hosted vector tiles
 
 **Decision.** Use `@maplibre/maplibre-react-native` in Expo development/release
-builds with MapTiler Cloud vector styles/tiles. The map is online-only. Server RPCs
+builds with MapTiler Cloud vector styles/tiles. The map is online-only. API queries
 provide domain clusters; MapLibre renders them and uses cluster expansion/zoom
 interaction. Restrict the public MapTiler key according to provider controls.
 
@@ -146,7 +150,7 @@ discard. Invalid structure and outside-geofence coordinates reject deterministic
 ## ADR-012 — Authentication sessions are not instantly revocable JWTs
 
 **Decision.** Disable signup, provision accounts manually, check active profiles on
-every privileged RPC, use short access tokens and supported refresh/session
+every privileged API request, use short access tokens and supported refresh/session
 controls, and document logout limitations.
 
 **Why.** Stateless access JWTs ordinarily remain valid until expiry. A disabled
@@ -196,37 +200,29 @@ inference is included.
 ## ADR-016 — Supabase managed Free as the Phase 1 provider boundary
 
 **Decision.** Use Supabase managed Free directly. Model Supabase Cloud as one
-managed provider boundary, logically decomposed into Auth, Data API/PostgREST,
-Edge Functions, Storage, and PostgreSQL/PostGIS. One remote project is sufficient
+managed provider boundary, logically decomposed into Auth, one Edge Function
+`api`, Storage, and PostgreSQL/PostGIS. One remote project is sufficient
 for the five-week prototype; a second Free project is optional for isolated
 demo/testing. The local Supabase Docker stack is optional; the version-checked
 Supabase CLI is the selected remote deployment tool.
 
 **Why.** Managed operation removes the VPS, container, gateway, TLS, and dual-stack
 work that does not differentiate the product. The team still owns migrations,
-schema, RLS, SQL privileges, RPCs, Functions, Storage policies, secrets,
+schema, RLS, SQL privileges, the `api` Function, Storage policies, secrets,
 retention, and quota monitoring.
 
 **Evolution strategy.** Phase 1 optimizes for learning speed and short feedback
-loops, not for implementing the final backend in one pass. Build and validate one
-vertical product flow at a time, evolving PostgreSQL, RLS, and RPC contracts through
+loops. Build and validate one vertical product flow at a time, evolving PostgreSQL,
+RLS, and Hono contracts through
 ordered migrations with compatibility and regression tests. `db/schema.sql`
 describes the target contract; it must not be applied monolithically to an existing
 project. Managed Supabase reduces undifferentiated infrastructure work, but it does
 not make later refactoring automatic or risk-free.
 
-Add a standalone application API only when observed requirements justify its
-operational cost—for example, substantial orchestration across external services,
-long-running workflows that do not fit SQL or focused Edge Functions, a stable
-versioned API shared by multiple independent clients, or a concrete portability
-requirement. Schema size or hypothetical future scale alone is not sufficient
-evidence. Until then, PostgREST plus narrow RPCs is the application API rather than
-a temporary absence of one.
-
-**Constraint.** PostgREST is the generated HTTP adapter, not a custom Controller.
-SQL RPCs own transactional use cases, PostgreSQL owns persistence/RLS/PostGIS, and
-Edge Functions remain limited to non-relational image work and external
-integrations. No service key or database credential ships to the app.
+**Amendment.** Approved clarification 23 and ADR-018 supersede the earlier
+constraint against an application API. The managed-provider choice remains;
+domain transport is now the single Hono `api` Function. No server credential
+ships to the app.
 
 **Trade-off.** Free has no automatic backups and may pause after inactivity. The
 prototype requires milestone database dumps, a separate checksummed private-object
@@ -247,5 +243,53 @@ candidates. Human confirmation remains mandatory.
 authoritative or placing GPU cost in the Phase 1 critical path.
 
 **Constraint.** No pgvector extension, embedding column/table, or GPU dependency is
-part of the Phase 1 baseline schema. External ML integration belongs behind an
-Edge Function.
+part of the Phase 1 baseline schema. External ML integration belongs behind the
+`api` Function.
+
+## ADR-018 — One Hono API with direct PostgreSQL repositories
+
+**Decision.** Deploy one plain-JavaScript Hono app as Edge Function `api`. Use
+API-oriented Controllers, Services, Repositories, Domain modules, and JSON
+Presenters. All mobile domain traffic crosses this API. Repositories use direct,
+parameterized PostgreSQL access; no domain persistence uses PostgREST,
+`supabase.from()`, `supabase.rpc()`, or exposed domain/service SQL functions.
+
+**Why.** HTTP concerns, orchestration, changing policy, media compensation, and
+stable views belong in application code. PostgreSQL remains authoritative for
+durable invariants, spatial/set-based work, locking, RLS, grants, and audit.
+
+**Constraint.** One composition root owns middleware, errors, routes, and
+infrastructure. Controllers contain no policy; Services own authorization and
+transactions; Repositories contain no HTTP; Presenters never query storage.
+
+## ADR-019 — Least-privilege backend identity and actor context
+
+**Decision.** `app_backend` is a `LOGIN NOBYPASSRLS NOINHERIT` role, owns no
+application objects, and receives explicit minimum grants. A Service starts a
+short transaction, sets local `app.user_id` and `app.role`, then invokes
+Repositories. Auth middleware verifies the JWT and required claims; the Service
+loads an active profile and requires claim/profile/route-role agreement.
+
+**Why.** A server credential is not authorization. Transaction-local context
+lets RLS constrain rows while preventing context leakage through pooled
+connections. Service authorization and database enforcement remain independent.
+
+**Constraint.** Missing, malformed, inactive, or mismatched identity fails closed.
+Invalid tokens never downgrade to anonymous. The backend role cannot bypass RLS,
+alter schema, change roles, or update/delete audit evidence.
+
+## ADR-020 — Durable limits, photo-free trust, and retention discovery
+
+**Decision.** PostgreSQL-backed hourly buckets atomically enforce report and flag
+limits across Edge instances; an idempotent report replay is checked before quota
+consumption. TrustService evaluates photo-free reports immediately using nullable
+photo signals and a versioned policy. RetentionService performs mark → list
+`purge_pending` → Storage delete → acknowledge, with acknowledgements only for
+successful deletes.
+
+**Why.** Edge isolates cannot safely own counters. Photo-free submissions must not
+remain unassessed. A count-only retention primitive cannot recover after partial
+object deletion.
+
+**Constraint.** Retries converge. Failed deletes remain discoverable. Scheduled
+calls require a dedicated secret and project/environment preflight before work.

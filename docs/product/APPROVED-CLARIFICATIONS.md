@@ -1,21 +1,24 @@
 # Approved Product Clarifications and Amendments
 
 **Status: approved for prototype implementation.** This document resolves
-ambiguities and supersedes conflicting implementation interpretations without
-rewriting the immutable Spanish SRS or its transcription.
+ambiguities and supersedes conflicting implementation interpretations. Later
+numbered decisions supersede earlier conflicting decisions. The PDF and original
+Spanish SRS remain historical; the consolidated SRS v2 is normative.
 
 ## Precedence
 
 Use these sources in order:
 
-1. [`../../Etapa 1. Requerimientos.pdf`](../../Etapa%201.%20Requerimientos.pdf) and
-   its faithful [`transcription`](ETAPA1-REQUERIMIENTOS.md) establish the original
-   intent and immutable RF/RNF/HU identifiers.
-2. This document supplies approved clarifications and amendments.
-3. [`../../db/schema.sql`](../../db/schema.sql) defines the authoritative exact
-   target schema and API/data boundary.
-4. [`../API.md`](../API.md) and [`../DATA-MODEL.md`](../DATA-MODEL.md) explain that
-   contract without overriding it.
+1. This document supplies approved amendments; later numbered decisions govern
+   conflicts with earlier ones.
+2. [`ETAPA1-REQUERIMIENTOS-V2.md`](ETAPA1-REQUERIMIENTOS-V2.md) is the normative
+   consolidated SRS for implementation.
+3. [`../../Etapa 1. Requerimientos.pdf`](../../Etapa%201.%20Requerimientos.pdf) and
+   [`ETAPA1-REQUERIMIENTOS.md`](ETAPA1-REQUERIMIENTOS.md) preserve historical
+   wording and immutable RF/RNF/HU identifiers.
+4. [`../API.md`](../API.md) and [`../../db/schema.sql`](../../db/schema.sql) are
+   peer exact contracts for HTTP and persistence. [`../DATA-MODEL.md`](../DATA-MODEL.md)
+   explains persistent semantics without overriding either.
 5. ADRs in [`../architecture/DECISIONS.md`](../architecture/DECISIONS.md) explain
    technical choices.
 
@@ -48,13 +51,18 @@ below, implementation follows this document. Requirement IDs remain unchanged.
 | 20 | The report is submitted first with its final UUID and `photo_expected`. The optional reduced image is then sent as multipart form data to an image-specific Edge Function. It validates report/fingerprint binding, content and decode constraints; derives EXIF signals transiently; re-encodes without metadata; and stores only sanitized output in a private bucket. Source-hash/status contracts make identical retries converge; different content conflicts and replacement is out of Phase 1 scope. Photo delivery is authorized and time-limited, never a permanent public URL. | RF03, RF05, RF09; RNF10, RNF12, RNF13, RNF28, RNF31, RNF32; HU-03, HU-05, HU-09 |
 | 21 | Phase 1 duplicate suggestions use the manual/heuristic time, distance, and attribute path and require human confirmation. If time remains, optional Phase 2 may use temporary/serverless GPU compute to generate one embedding per sanitized photo and a future pgvector migration to combine visual similarity with time/distance filters. GPU absence must not break Phase 1, and visual output never resolves duplicates automatically. | RF23; RNF30, RNF35; HU-23 |
 | 22 | Managed Free planning assumptions verified 2026-09-05 are: up to two active Free projects, 500 MB database per project, 1 GB file storage, 5 GB egress, 500,000 Edge Function invocations, no automatic backups, and possible project pausing after inactivity. Pricing/quotas must be rechecked before the demo. The prototype requires milestone database dumps, separate private Storage object-byte exports with checksums/manifests, and an executable isolated restore runbook. A public production launch must use a plan/backup mechanism that meets required RPO/RTO; no Free production SLA, PITR, or custom domain is promised. | RNF01, RNF14–RNF18, RNF24–RNF25 |
+| 23 | **Supersedes #19 and the incompatible RNF21 interpretation.** All mobile domain traffic crosses one plain-JavaScript Hono application deployed as the Supabase Edge Function `api`. It uses API-oriented Controllers, Services, Repositories, Domain modules, and JSON Presenters. Repositories issue parameterized SQL directly; mobile domain access does not use Data API/PostgREST, `.from()`, `.rpc()`, or exposed domain/service SQL functions. Supabase Auth remains the session authority; PostgreSQL/PostGIS, Storage, secrets, Edge hosting, managed TLS, and gateway remain managed services. | RNF19–RNF25, RNF31–RNF34 |
+| 24 | **Supersedes #20 only where it describes separate image Functions or service RPCs.** Report-first and source-hash idempotency remain. The single `api` Function owns the multipart photo route, binding, byte/type/dimension/decode checks, transient metadata extraction, JPEG/PNG re-encoding, private Storage write, trust orchestration, authorized delivery, and compensation. HEIC/HEIF is normalized to JPEG on the client before upload; the backend accepts and persists sanitized JPEG/PNG only. | RF03, RF05, RF09, RF22; RNF10, RNF12, RNF13, RNF28, RNF31, RNF32; HU-03, HU-05, HU-09, HU-22 |
+| 25 | A dedicated `app_backend` PostgreSQL login is `NOBYPASSRLS`, owns no application objects, and receives narrow grants. Each Service opens a short transaction, sets transaction-local actor id/role only after JWT verification, active-profile lookup, and claim/profile/route-role agreement, then calls Repositories. Missing or inconsistent context fails closed. PostgreSQL retains constraints, RLS, grants, PostGIS, locks, append-only audit integrity, and backend-only atomic/set-based primitives. | RF15–RF24; RNF20–RNF21, RNF24, RNF26–RNF36; HU-15–HU-24 |
+| 26 | Durable database-backed hourly buckets enforce report and flag limits across Edge instances. Idempotent report replay does not consume quota. Photo-free reports receive an immediate versioned trust assessment with nullable photo signals. Retention uses mark → discover `purge_pending` → delete private object → acknowledge; partial failure remains discoverable and retryable. | RF01, RF05, RF08, RF20–RF21; RNF12, RNF25–RNF33; HU-01, HU-05, HU-08, HU-20–HU-21 |
 
 ## Interpretation rules
 
 - RF/RNF/HU relationships are many-to-many. Parenthetical references in the SRS
   are trace hints, not a one-to-one mapping.
 - The standardized actor terms are **anonymous public reporter**,
-  **Association**, and **Administrator**.
+  **Asociación de Hoteles de Chihuahua**, and **Administrator**. The SQL role
+  remains `association`.
 - Geofence validation is RNF09. RNF08 concerns the on-device vision model.
 - “Accepted” means server-approved business data. “Visible” means currently
   publishable, but public display additionally requires the 90-day window and a

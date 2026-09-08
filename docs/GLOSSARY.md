@@ -7,14 +7,16 @@ the linked contract documents.
 
 - **anonymous public reporter** — external actor using public report/map/flag
   features without an Auth account.
-- **Association** — authenticated read-only business-intelligence role. It receives
+- **Asociación de Hoteles de Chihuahua** — authenticated read-only business-intelligence role. It receives
   accepted canonical data and export, not moderation internals.
 - **Administrator** — authenticated moderation role with specific audited commands
   and an explicit configuration-management exception. It does not inherit BI.
 - **technical operator** — infrastructure/Auth operator who provisions accounts,
   deploys migrations, and performs recovery; not an application role.
-- **service identity** — server-only identity used by Edge Functions/retention for
-  narrow service RPCs; never embedded in the app.
+- **scheduler** — server-only caller of the cron-secret-gated retention route;
+  never embedded in the app and never granted database access.
+- **app_backend** — least-privilege PostgreSQL login used only by `api`; it is
+  `NOBYPASSRLS`, owns no application objects, and is never shipped to clients.
 
 ## Data and workflow
 
@@ -41,21 +43,27 @@ the linked contract documents.
   `react-native-fast-tflite`.
 - **RLS** — row-level PostgreSQL authorization; used with, not instead of, SQL
   GRANT/REVOKE.
-- **SECURITY DEFINER** — function execution under a constrained owner; requires
-  fixed search path and narrow grants.
+- **transaction-local actor context** — `app.user_id` and `app.role` values set by
+  a Service inside one transaction after authentication; RLS fails closed when
+  absent or inconsistent.
 - **Supabase managed boundary** — one provider-operated cloud boundary, logically
-  decomposed into Auth, Data API/PostgREST, Edge Functions, Storage, and
+  decomposed into Auth, Edge Function `api`, Storage, and
   PostgreSQL/PostGIS without claiming physical internals.
-- **PostgREST/Data API** — generated HTTP adapter exposing approved SQL functions;
-  not a custom Controller-Service-Repository API.
-- **image-specific Edge Function** — non-relational boundary that validates,
-  decodes, and re-encodes image bytes without persisting the raw input.
+- **Hono API** — the only domain HTTP boundary, deployed as one plain-JavaScript
+  Supabase Edge Function named `api`.
+- **Controller / Service / Repository / Domain / Presenter** — respectively HTTP
+  adaptation; policy/orchestration/transactions; parameterized persistence;
+  invariants; and stable JSON shaping.
+- **image route** — module inside `api` that validates, decodes, and re-encodes
+  JPEG/PNG bytes without persisting raw input.
+- **purge_pending** — durable photo state discoverable by RetentionService until
+  private object deletion succeeds and is acknowledged.
 - **private approved Storage** — private bucket holding sanitized output only;
   access requires an authorized short-lived delivery path.
 - **managed Free project** — Supabase project used for the academic prototype;
   subject to current quotas, inactivity pausing, and no automatic backups.
 - **demo/test geofence** — clearly labeled candidate geometry used for validation;
-  it is not an Association-approved live boundary.
+  it is not an Asociación de Hoteles de Chihuahua-approved live boundary.
 
 ## Requirement identifiers
 

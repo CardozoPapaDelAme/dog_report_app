@@ -20,8 +20,11 @@ Contract owners remain outside this folder. Review diagrams with
 
 - One diagram per file.
 - Actors, screens, and UX can follow the team’s existing flows.
-- Server calls must match [`../API.md`](../API.md): `supabase.rpc(...)` or
-  `/rest/v1/rpc/<function>`, never a custom `/api/...` Controller.
+- Server calls must match [`../API.md`](../API.md): mobile domain traffic enters
+  Edge Function `api`, then Controller → Service → Repository → PostgreSQL and
+  returns through a JSON Presenter.
+- Do not show mobile PostgREST, `.from()`, `.rpc()`, direct domain-table access,
+  or separate image/retention domain Functions.
 - Do not invent routes, services, or physical Supabase internals.
 - Public map locations stay approximate. Live geofence activation stays
   approval-gated by the Asociación de Hoteles de Chihuahua.

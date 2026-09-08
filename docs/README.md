@@ -7,11 +7,11 @@ the topic map below instead of treating summary documents as competing contracts
 
 | Priority | Source | Purpose |
 |---|---|---|
-| 1 | [`../Etapa 1. Requerimientos.pdf`](../Etapa%201.%20Requerimientos.pdf) and [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) | Immutable original SRS and identifiers |
-| 2 | [`product/APPROVED-CLARIFICATIONS.md`](product/APPROVED-CLARIFICATIONS.md) | Approved amendments where the SRS is ambiguous or superseded |
-| 3 | [`../db/schema.sql`](../db/schema.sql) | Authoritative exact target schema and API/data boundary |
-| 4 | [`API.md`](API.md), [`DATA-MODEL.md`](DATA-MODEL.md) | Consumer-facing and conceptual explanations of the schema contract |
-| 5 | [`architecture/DECISIONS.md`](architecture/DECISIONS.md) | Technical rationale and accepted/superseded trade-offs |
+| 1 | [`product/APPROVED-CLARIFICATIONS.md`](product/APPROVED-CLARIFICATIONS.md) | Approved amendments; later numbered decisions govern conflicts |
+| 2 | [`product/ETAPA1-REQUERIMIENTOS-V2.md`](product/ETAPA1-REQUERIMIENTOS-V2.md) | Normative consolidated SRS |
+| 3 | [`../Etapa 1. Requerimientos.pdf`](../Etapa%201.%20Requerimientos.pdf), [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) | Historical wording and immutable identifiers |
+| 4 | [`API.md`](API.md), [`../db/schema.sql`](../db/schema.sql) | Peer exact HTTP and persistence contracts |
+| 5 | [`DATA-MODEL.md`](DATA-MODEL.md), [`architecture/DECISIONS.md`](architecture/DECISIONS.md) | Persistent semantics and technical rationale |
 
 No summary document outranks these sources. RF/RNF/HU links are many-to-many;
 use [`TRACEABILITY.md`](TRACEABILITY.md) rather than inferring one-to-one
@@ -30,6 +30,7 @@ relationships.
 
 - [`product/README.md`](product/README.md) — product navigation and authority
 - [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) — immutable Spanish SRS transcription
+- [`product/ETAPA1-REQUERIMIENTOS-V2.md`](product/ETAPA1-REQUERIMIENTOS-V2.md) — normative consolidated SRS
 - [`product/APPROVED-CLARIFICATIONS.md`](product/APPROVED-CLARIFICATIONS.md) — approved amendments
 - [`product/PROBLEM-CONTEXT.md`](product/PROBLEM-CONTEXT.md) — problem, stakeholders, and current gap
 - [`product/VISION.md`](product/VISION.md) — outcomes, principles, and success
@@ -44,7 +45,7 @@ relationships.
 - [`architecture/DECISIONS.md`](architecture/DECISIONS.md) — accepted and superseded rationale
 - [`STACK.md`](STACK.md) — selected technologies and why they are present
 - [`INTEGRATIONS.md`](INTEGRATIONS.md) — external contracts and fallbacks
-- [`API.md`](API.md) — RPC/transport consumer contract
+- [`API.md`](API.md) — Hono HTTP consumer contract
 - [`DATA-MODEL.md`](DATA-MODEL.md) — entity, state, and retention semantics
 - [`SECURITY.md`](SECURITY.md) — security, privacy, and threat controls
 - [`DEPLOYMENT.md`](DEPLOYMENT.md) — deployment and operations runbook

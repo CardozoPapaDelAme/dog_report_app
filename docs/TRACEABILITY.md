@@ -1,36 +1,38 @@
 # Requirements Traceability Matrix
 
-This document exclusively owns the complete RF/RNF/HU mapping from immutable SRS
-identifiers to implementation surfaces and verification focus. Relationships are
-many-to-many; one user story does not imply one functional requirement.
+This document exclusively owns the complete historical SRS → normative SRS v2 →
+HTTP/data → verification mapping. Every row preserves the same exact identifier
+in [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) and
+[`product/ETAPA1-REQUERIMIENTOS-V2.md`](product/ETAPA1-REQUERIMIENTOS-V2.md).
+Approved amendments govern changed wording. Relationships are many-to-many.
 
 ## Functional requirements
 
 | ID | Flow/component | Data/API boundary | Verification focus |
 |---|---|---|---|
-| RF01 | Anonymous report flow | `submit_report`; `reports` | No login; command-only insert |
+| RF01 | Anonymous report flow | `POST /reports`; ReportService; `reports` | No login; Hono-only insert; durable rate/replay |
 | RF02 | Privacy copy and form | Minimized command parameters | No identity fields; incidental-PII warning |
-| RF03 | Camera/photo capture | Local file; image Function POST; `get_report_photo_status` | Optional single photo, report-first upload, terminal-state monotonic retry/cleanup |
+| RF03 | Camera/photo capture | Local file; report photo POST/status routes; `photo_assets` | Optional single photo, report-first upload, terminal-state monotonic retry/cleanup |
 | RF04 | Dynamic form | `reports.sighting_type` | Solitary/pack validation |
 | RF05 | Camera quick action | Offline draft without photo | Report completes photo-free |
 | RF06 | Dynamic form | `incident_type`; validated `details` | Every category accepted/rejected correctly |
 | RF07 | Root navigation | Camera-first anonymous route | Cold-start route test |
-| RF08 | Public report detail | `submit_report_flag`; `report_flags` | One effective flag per fingerprint/report |
+| RF08 | Public report detail | `POST /reports/:report_id/flags`; FlagService; `report_flags` | One effective flag per fingerprint/report; durable limit |
 | RF09 | On-device vision | Bundled TFLite model | Dog/quality failures and retry offline |
-| RF10 | Online public map | `get_public_reports` | Approximate recent visible canonical pins |
-| RF11 | Map clustering | `get_public_clusters` | Metric grouping at supported zooms; documented viewport/limit |
+| RF10 | Online public map | `GET /public/reports`; presenter/repository | Approximate recent visible canonical pins |
+| RF11 | Map clustering | `GET /public/clusters`; PostGIS repository query | Metric grouping at supported zooms; documented viewport/limit |
 | RF12 | Cluster renderer | `report_count` | Circle size follows count |
 | RF13 | Cluster renderer | `highest_severity`; `type_counts` | Highest severity and all six type keys, zeros included |
-| RF14 | Map interaction | Fixed zoom-to-radius RPC | Progressive expansion to pins |
-| RF15 | Association login | Auth + profile role check | Multiple provisioned accounts; no signup |
-| RF16 | Association dashboard | `get_association_reports` | Accepted canonical business data only |
-| RF17 | Association export | `get_association_reports` pagination/export | CSV/Excel parity and authorization |
-| RF18 | Administrator login | Auth + profile role check | Provisioned account; no signup |
-| RF19 | Moderation queues | `get_administrator_moderation_queue` | Original fields, GPS/mock, photo expectation, component trust; no BI endpoint |
-| RF20 | Moderation commands | `admin_hide_report`, `admin_logical_delete_report` | No direct update; reversible deletion |
-| RF21 | Flag review/state machine | Auto-hide trigger; restore/approve commands | Threshold, audit, restore semantics |
+| RF14 | Map interaction | Fixed zoom-to-radius repository contract | Progressive expansion to pins |
+| RF15 | Asociación de Hoteles de Chihuahua login | Auth JWT + `GET /me` + profile/role agreement | Multiple provisioned accounts; no signup |
+| RF16 | Asociación de Hoteles de Chihuahua dashboard | `GET /association/reports` | Accepted canonical business data only |
+| RF17 | Asociación de Hoteles de Chihuahua export | Same paginated role route/view | CSV/Excel parity and authorization |
+| RF18 | Administrator login | Auth JWT + `GET /me` + profile/role agreement | Provisioned account; no signup |
+| RF19 | Moderation queues | `GET /admin/moderation-queue` | Original fields, GPS/mock, photo expectation, component trust; no BI endpoint |
+| RF20 | Moderation commands | Administrator report command routes | No direct mobile update; audited reversible deletion |
+| RF21 | Flag review/state machine | FlagService + restore/approve routes | Threshold, audit, restore semantics |
 | RF22 | On-device attributes | Structured report columns | Color automatic; size/collar manual |
-| RF23 | Duplicate review | Candidate/resolution commands; `get_administrator_active_duplicate_groups` | Human-only, pending connected set, canonical, reversible, audited |
+| RF23 | Duplicate review | Administrator duplicate routes; candidates/groups/memberships | Human-only, pending connected set, canonical, reversible, audited |
 | RF24 | Dynamic form | `details` JSONB validator | Allowed keys/types per incident |
 
 ## Non-functional requirements
@@ -39,16 +41,16 @@ many-to-many; one user story does not imply one functional requirement.
 |---|---|---|---|
 | RNF01 | Availability posture | Managed Free best effort; future 99.9% target | No current SLA/PITR claim; pause/readiness check |
 | RNF02 | Public map | Bounded queries, indexes, pagination | <5 s target under prototype load |
-| RNF03 | API/database | Spatial/time indexes and bounded RPCs | Load test growth profile |
+| RNF03 | API/database | Bounded Hono queries, spatial/time indexes | Load test growth profile |
 | RNF04 | Report UX | Camera-first dynamic form | Usability session under 5 min |
 | RNF05 | Mobile app | Expo development builds, iOS/Android | Supported-device smoke tests |
 | RNF06 | Localization | `react-i18next`; all role flows | ES/EN coverage and layout |
 | RNF07 | Auth/navigation | Two sibling roles; profile checks | No public signup or role inheritance |
 | RNF08 | On-device vision | `react-native-fast-tflite`; MobileNetV3-Small INT8 | Runs offline in development/release build |
-| RNF09 | Location validation | Versioned zones; report command | New points outside rejected; identical replay still accepted; mock/imprecise reviewed |
+| RNF09 | Location validation | Versioned zones; ReportService + PostGIS repository | New points outside rejected; identical replay still accepted; mock/imprecise reviewed |
 | RNF10 | Photo validation | On-device model; transient EXIF signals | Offline inference; no raw EXIF persistence |
 | RNF11 | Dog attributes | Structured columns and duplicate signals | Offline color extraction; no identity claim |
-| RNF12 | Offline sync | Expo SQLite + local file + exact retry state | Crash-safe idempotent sync; purge states stop upload retry |
+| RNF12 | Offline sync | Expo SQLite + local file + Hono receipts/status | Crash-safe idempotent sync; purge states stop upload retry |
 | RNF13 | Privacy | Minimized projections and retention | No solicited public identity; PII moderation |
 | RNF14 | Database recovery | Roles/schema/data dumps plus private-object manifest/export; production backup gate | Isolated `psql`/object restore rehearsal; do not claim Free meets required RPO/RTO |
 | RNF15 | Hosting | Supabase managed Free amendment | Managed project readiness and quota evidence; historical OVH wording superseded |
@@ -56,21 +58,21 @@ many-to-many; one user story does not imply one functional requirement.
 | RNF17 | Server administration | Managed dashboard/CLI access with operator MFA/least privilege | No SSH/VPS operation; operator access audit |
 | RNF18 | Infrastructure recovery | External encrypted DB dumps, private bytes/manifest, migrations/Functions | Checksummed restore into isolated managed project |
 | RNF19 | Database | Managed PostgreSQL/PostGIS in `extensions` | Verify project catalogs; no provider-column/public-schema assumption |
-| RNF20 | Authorization | RLS plus grants/revokes plus RPCs | Cross-role negative tests |
-| RNF21 | API/Auth | PostgREST functions and Supabase Auth | JWT and command contract integration |
+| RNF20 | Authorization | Service authorization + local-GUC RLS + grants | Unset/spoofed/cross-role negative tests |
+| RNF21 | API/Auth | Supabase Auth sessions + Hono `api` + parameterized repositories | Route/JWT/layer-boundary integration |
 | RNF22 | Edge routing | Supabase-managed gateway/runtime/TLS | HTTPS smoke test; no custom gateway topology claim |
-| RNF23 | Internal services | One managed boundary with logical Auth/Data API/Functions/Storage/Postgres | No direct database exposure or invented physical internals |
-| RNF24 | Secrets | Managed server secrets; publishable client configuration only | Bundle/secret scanning |
-| RNF25 | Operations | Managed usage, errors, pause state, retention, and export-age monitoring | Quota alerts/dashboard smoke tests |
-| RNF26 | Anti-abuse | Fingerprint hashes; 30-day retention | Rate limits and retention job |
-| RNF27 | Submission integrity | Honeypot signal to SQL trust assessment | Suspicious goes to review, not discard |
-| RNF28 | Trust workflow | Trusted assessment boundary | High publishes; medium/low reviews |
-| RNF29 | Flag integrity | Fingerprint uniqueness/diversity; rate limit | Coordinated flags cannot bypass threshold policy |
+| RNF23 | Internal services | One managed boundary: Auth/`api`/Storage/PostgreSQL | No direct mobile database exposure or invented physical internals |
+| RNF24 | Secrets | `app_backend`, JWT, Storage, scheduler secrets server-only | Bundle/repository/response secret scanning |
+| RNF25 | Operations | Managed usage, API errors, pool, scheduler, pause, retention, exports | Quota/readiness/dashboard smoke tests |
+| RNF26 | Anti-abuse | Server hashes; `rate_limit_buckets`; 30-day retention | Concurrent limits and retention job |
+| RNF27 | Submission integrity | Honeypot signal to TrustService | Suspicious goes to review, not discard |
+| RNF28 | Trust workflow | Versioned TrustService; nullable photo signals | Photo-free assessed; high publishes; medium/low reviews |
+| RNF29 | Flag integrity | Uniqueness/diversity + durable flag bucket | Coordinated/concurrent flags cannot bypass policy |
 | RNF30 | Duplicate workflow | Candidate/groups/memberships | Detection never resolves automatically |
-| RNF31 | Public edge | Managed platform plus Function/database rate controls | Report/flag/image abuse tests |
-| RNF32 | Image processor | Multipart image Function; service/status RPCs; private sanitized Storage | Binding/hash, validation, monotonic terminal acknowledgment, no raw persistence, authorized delivery |
-| RNF33 | Audit | Append-only `audit_log` | Every admin/config/duplicate command recorded |
-| RNF34 | Sessions | Short access token + rotating refresh/session policy | Expiry, refresh, logout limitation messaging |
+| RNF31 | Public edge | Hono middleware + atomic PostgreSQL rate buckets | Report/flag/image concurrent abuse tests |
+| RNF32 | Image processor | Client HEIC→JPEG; Hono photo routes; private sanitized Storage | JPEG/PNG sniff/decode/re-encode; `415 unsupported_photo_type`; monotonic state, no raw persistence, delivery |
+| RNF33 | Audit | Repository INSERT-only `audit_log` in mutation transaction | Every admin/config/duplicate command atomic with audit |
+| RNF34 | Sessions | Auth refresh + Hono JWT/profile/role middleware | Invalid never anonymous; expiry/refresh/logout limitation |
 | RNF35 | Optional Phase 2 visual similarity | Future GPU/pgvector migration; Phase 1 heuristic fallback | Absent from baseline schema; suggestions remain human-confirmed |
 | RNF36 | Dynamic form | DB validator | Type/key/value boundary cases |
 
@@ -78,33 +80,35 @@ many-to-many; one user story does not imply one functional requirement.
 
 | ID | Related requirements | Flow/component | Data/API | Verification focus |
 |---|---|---|---|---|
-| HU-01 | RF01, RNF12 | Anonymous report | `submit_report` | Offline/no-login creation |
+| HU-01 | RF01, RNF12 | Anonymous report | `POST /reports` | Offline/no-login creation |
 | HU-02 | RF02, RNF13 | Privacy/form | Minimized payload | No identity solicitation |
-| HU-03 | RF03, RF09 | Camera | Report-first image Function plus exact status RPC | Capture, binding, terminal retry stop, validation, cleanup |
+| HU-03 | RF03, RF09 | Camera | Report-first Hono photo upload/status | Capture, binding, terminal retry stop, validation, cleanup |
 | HU-04 | RF04, RF24 | Form | `sighting_type` | Required classification |
 | HU-05 | RF05, RF07 | Camera quick action | Offline draft | Visible no-photo path |
 | HU-06 | RF06, RF13, RF24 | Incident form | `incident_type`, `details` | Categories and severity |
 | HU-07 | RF07 | Navigation | N/A | Camera is initial route |
-| HU-08 | RF08, RF21, RNF29 | Public detail/flagging | `submit_report_flag` | Warning and auto-hide behavior |
+| HU-08 | RF08, RF21, RNF29 | Public detail/flagging | Hono flag route | Warning, durable limit, auto-hide behavior |
 | HU-09 | RF09, RNF08, RNF10 | On-device vision | Bundled TFLite model | Offline retake reasons |
-| HU-10 | RF10, RNF13 | Online map | Public report RPC | Approximate visible pins/offline UX |
-| HU-11 | RF11, RF14 | Map clusters | Cluster RPC | Geographic grouping |
+| HU-10 | RF10, RNF13 | Online map | Public reports route/view | Approximate visible pins/offline UX |
+| HU-11 | RF11, RF14 | Map clusters | Public clusters route/view | Geographic grouping |
 | HU-12 | RF12 | Cluster renderer | `report_count` | Proportional size |
 | HU-13 | RF13 | Cluster detail | Severity/count fields | Highest severity and breakdown |
 | HU-14 | RF14 | Map zoom | Fixed zoom levels | Progressive expansion |
-| HU-15 | RF15, RNF07 | Association auth | Profile role | Provisioned multi-account role |
-| HU-16 | RF16 | Association dashboard | Association projection | Accepted canonical data only |
-| HU-17 | RF17 | Association export | Association projection | Export parity |
-| HU-18 | RF18, RNF07 | Administrator auth | Profile role | Provisioned access |
-| HU-19 | RF19, RF08 | Moderation queue | Administrator projection | Flag/trust context |
-| HU-20 | RF20, RNF33 | Moderation | Hide/delete commands | Audited logical deletion |
-| HU-21 | RF21, RNF29 | Flag review | Auto-hide/restore/approve | Configured threshold workflow |
+| HU-15 | RF15, RNF07 | Asociación de Hoteles de Chihuahua auth | JWT/profile/role + `GET /me` | Provisioned multi-account role |
+| HU-16 | RF16 | Asociación de Hoteles de Chihuahua dashboard | Role route/presenter | Accepted canonical data only |
+| HU-17 | RF17 | Asociación de Hoteles de Chihuahua export | Same role route/presenter | Export parity |
+| HU-18 | RF18, RNF07 | Administrator auth | JWT/profile/role + `GET /me` | Provisioned access |
+| HU-19 | RF19, RF08 | Moderation queue | Administrator queue route/presenter | Flag/trust context |
+| HU-20 | RF20, RNF33 | Moderation | Hono hide/delete routes | Audited logical deletion |
+| HU-21 | RF21, RNF29 | Flag review | FlagService + restore/approve routes | Configured threshold workflow |
 | HU-22 | RF22, RNF11 | Attributes | Structured columns | Color/size/collar semantics |
-| HU-23 | RF23, RNF30 | Duplicate review | Resolution commands and active-group projection | Canonical/reverse/audit |
+| HU-23 | RF23, RNF30 | Duplicate review | Administrator duplicate routes | Canonical/reverse/audit |
 | HU-24 | RF24, RNF36 | Dynamic form | JSON contract | Conditional required fields |
 
 ## Test ownership
 
-Before release, each row must link to a test ID in the test suite. Until code
-exists, the “Verification focus” column is the acceptance-test inventory and
-[`TESTING.md`](TESTING.md) defines the test levels.
+For this contract-retarget change, each verification focus is checked against the
+documentation/schema target, with PostgreSQL behavior executed where applicable.
+The later backend implementation SDD must replace future-runtime inventory with
+executable Hono, Storage, scheduler, and mobile test IDs as described by
+[`TESTING.md`](TESTING.md).

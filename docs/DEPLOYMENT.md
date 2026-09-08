@@ -55,14 +55,11 @@ supabase db push --dry-run
 # Apply the reviewed migrations.
 supabase db push
 
-# Deploy without local Docker bundling (repeat for each versioned Function).
-supabase functions deploy process-report-photo --use-api
+# Deploy the single versioned backend without local Docker bundling.
+supabase functions deploy api --use-api
 ```
 
-Run the same deployment for the delivery Function if implemented separately:
-`supabase functions deploy report-photo --use-api`. The general selected syntax is
-`supabase functions deploy <function-name> --use-api`, where `<function-name>` is a
-placeholder, not literal shell input. Never commit access tokens, database
+There is no separate domain/image/retention Function. Never commit access tokens, database
 passwords, connection strings, service keys, JWT secrets, or Function secrets.
 Set server secrets through supported Supabase project/CLI secret management and
 expose only the project URL plus publishable client key in the mobile build.
@@ -77,18 +74,35 @@ schema policies.
 1. Create or select the managed Free project and record whether it is `staging`
    (demo/test) or `production` (approved live) in the environment migration.
 2. Disable public signup and unused Auth providers; manually provision named
-   Association/Administrator accounts and matching profiles.
+   Asociación de Hoteles de Chihuahua/Administrator accounts and matching profiles.
 3. Enable/verify PostGIS and pgcrypto in the managed `extensions` schema.
-4. Apply migrations only after `supabase db push --dry-run`; verify owners,
-   fixed `search_path`, RLS, revokes, and exact EXECUTE grants.
+4. Apply ordered migrations only after `supabase db push --dry-run`; verify
+   `app_backend` is `NOBYPASSRLS`, owns no objects, RLS is enabled, mobile grants
+   are empty, audit is insert-only, and private primitive grants are exact.
 5. Create the private approved-image bucket and least-privilege policies only
    against the verified managed Storage schema.
-6. Deploy the image processing/delivery Functions and configure their server-side
-   secrets. The mobile app must never receive `service_role`.
+6. Configure the database pooler URL, JWT verification mode, Storage server
+   credential, internal scheduler secret, project ref, and expected environment as
+   Function secrets. Deploy only `api`. The mobile app receives none of them.
 7. Configure/restrict the MapTiler public key and verify attribution/quota.
 8. For a demo/test project, import the INEGI geometry only as a clearly labeled
    candidate/test fixture. An approved live project must fail closed until the
-   Association approves the exact checksum/version.
+   Asociación de Hoteles de Chihuahua approves the exact checksum/version.
+
+## Required preflight and promotion
+
+Before migration, secret mutation, Function deployment, or scheduler enablement,
+an operator records and compares all of the following: authenticated CLI account,
+linked project ref, expected project ref, `deployment_metadata.environment`,
+migration head/checksum, installed CLI version, required secret *names* (never
+values), and intended Function name exactly `api`. Any mismatch aborts before
+work. There is no fallback project, environment, Function name, or Data API path.
+
+Required implementation spikes must record tested versions and limits for Edge
+multipart/body/memory and JPEG/PNG codec behavior; iOS/Android HEIC→JPEG output,
+orientation and metadata; postgres.js with Supavisor pool mode/concurrency; project
+JWT/JWKS versus supported legacy verification; and managed-Free scheduling. An
+unproven spike blocks the affected capability and fails closed.
 
 ## Promotion and verification
 
@@ -183,7 +197,7 @@ Git and shell history where practical.
    the manifest. Verify every retained `photo_assets.approved_object_path` has one
    matching object and investigate every unreferenced object.
 7. Run schema/RLS/grant checks, cross-role negative tests, Auth/profile login,
-   public and authenticated RPC smoke tests, image authorization/delivery, and
+   public and authenticated Hono smoke tests, image authorization/delivery, and
    retention mark/delete/ack compensation. Record elapsed time and results, then
    securely remove temporary decrypted material according to the operator policy.
 
@@ -194,11 +208,15 @@ demonstrably satisfies the required RPO/RTO.
 
 ## Retention and monitoring
 
-Run `service_run_retention()` on a trusted scheduled path using server `now()`.
-It clears expired fingerprint hashes, marks processing/rejected/expired approved
-photos for purge, purges old audits, and hard-deletes eligible reports only after
-private Storage deletion is acknowledged. Alert on stuck `purge_pending` rows,
-Function failures, orphans, and unexpected delete volume.
+Schedule `POST /functions/v1/api/internal/retention/run` only after project,
+environment, Function name, scheduler capability, and secret-name preflight. The
+scheduler sends the dedicated internal secret and no caller clock. The Service
+clears expired fingerprints, invokes the set-based mark primitive, discovers every
+`purge_pending` row, deletes private objects idempotently, acknowledges successful
+deletes, purges old audits, and hard-deletes eligible reports only after cleanup.
+Partial failure returns evidence, leaves failed rows discoverable, and retries with
+bounded backoff. Alert on stuck rows, Function failures, orphans, scheduler drift,
+and unexpected delete volume.
 
 Monitor database/storage/egress/Function usage against Free quotas, API latency and
 errors, Auth failures, Postgres connections/slow queries, image outcomes, retention
@@ -209,7 +227,7 @@ lag, complete milestone-export age, security audit volume, and project pause sta
 1. Protect and rotate secrets; deactivate compromised profiles/sessions.
 2. Preserve logs, audit evidence, exports, and migration history.
 3. Restore into an isolated managed project when integrity is uncertain.
-4. Keep approved live intake fail-closed without an active Association-approved
+4. Keep approved live intake fail-closed without an active Asociación de Hoteles de Chihuahua-approved
    geofence.
 5. Communicate managed Free limits honestly; do not claim provider recovery or
    availability features that the selected plan does not include.

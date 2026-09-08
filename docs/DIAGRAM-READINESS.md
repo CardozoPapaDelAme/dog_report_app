@@ -16,13 +16,13 @@ when a specific diagram is requested.
 | Moderation and duplicate states | [`DATA-MODEL.md`](DATA-MODEL.md) | Yes |
 | Authorization | [`SECURITY.md`](SECURITY.md), [`API.md`](API.md) | Yes |
 | ERD | [`../db/schema.sql`](../db/schema.sql), [`DATA-MODEL.md`](DATA-MODEL.md) | Yes |
-| Requirement/activity coverage | [`TRACEABILITY.md`](TRACEABILITY.md), [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) | Yes |
+| Requirement/activity coverage | [`TRACEABILITY.md`](TRACEABILITY.md), [`product/ETAPA1-REQUERIMIENTOS-V2.md`](product/ETAPA1-REQUERIMIENTOS-V2.md) | Yes |
 
 ## Remaining input
 
 | Item | Blocks diagrams? | Owner |
 |---|---|---|
-| Association approval of a live geofence checksum/version | No. Draw the gate; demo may use a labeled candidate fixture | Association |
+| Asociación de Hoteles de Chihuahua approval of a live geofence checksum/version | No. Draw the gate; demo may use a labeled candidate fixture | Asociación de Hoteles de Chihuahua |
 | Exact managed Auth/Storage catalog columns | Only for provider-internal physical ERDs, which are out of scope | Operator/provider docs |
 | Optional second Free project | No. One project is sufficient | Team |
 | Teammates' Mermaid sources | No for target contract; review later without changing current files | Team |
@@ -32,6 +32,10 @@ when a specific diagram is requested.
 
 - [ ] Diagram scope and terminology match [`architecture/OVERVIEW.md`](architecture/OVERVIEW.md).
 - [ ] Every call and return state matches [`API.md`](API.md); no invented route or service is shown.
+- [ ] Every domain sequence crosses Hono Controller → Service → Repository and
+      returns through a JSON Presenter; media and retention remain modules of `api`.
+- [ ] Auth is session-only for mobile domain flows; no direct PostgREST, `.from()`,
+      `.rpc()`, domain-table access, or separate domain Function is shown.
 - [ ] Persistent states and transitions match [`DATA-MODEL.md`](DATA-MODEL.md).
 - [ ] Trust boundaries, private data, and actor permissions match [`SECURITY.md`](SECURITY.md).
 - [ ] Deployment and recovery steps match [`DEPLOYMENT.md`](DEPLOYMENT.md) without inventing provider internals.

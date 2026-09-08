@@ -5,11 +5,21 @@
 --
 -- MANAGED PROTOTYPE TARGET:
 -- * Supabase Cloud owns physical hosts, TLS, gateway/runtime operation, Auth,
---   Data API/PostgREST, Edge Functions, Storage, and PostgreSQL operation.
--- * The project owns migrations, application schemas, RLS, grants, RPCs, Edge
---   Function code, Storage policies, secrets/configuration, and data lifecycle.
 -- * PostGIS and pgcrypto live in schema extensions. Confirm the managed project
 --   catalogs before migrations; do not assume provider-owned physical columns.
+-- CONTRACT BOUNDARY:
+-- * Mobile clients use Supabase Auth for sessions and Hono for all domain traffic.
+-- * No domain table or domain/service SQL function is exposed to mobile roles.
+-- * Repositories issue parameterized SQL through app_backend. The role is
+--   NOBYPASSRLS, owns no objects, and receives explicit least-privilege grants.
+-- * Services own authorization and transactions. Before repository access they
+--   set transaction-local app.user_id, app.role, and (for anonymous origin-bound
+--   operations) app.origin_hash. Missing or inconsistent context fails closed.
+-- * PostgreSQL owns constraints, RLS, grants, PostGIS, locks, audit integrity,
+--   dynamic-details validation, duplicate detection, durable rate buckets, and
+--   narrow backend-only atomic/set-based primitives.
+-- * Auth and Storage catalogs are Supabase-owned. Verify installed versions before
+--   writing policies against them. Never place role passwords or service keys here.
 -- * The local Supabase Docker stack is optional. Remote projects are updated with
 --   a version-checked Supabase CLI from versioned migrations only, using a
 --   linked-project dry run before db push. Functions deploy with explicit
@@ -30,10 +40,22 @@
 -- * The migration owner must have USAGE on schema extensions.
 -- * Set deployment_metadata.environment to production only in an approved live
 --   project. The default is staging so a demo/test project cannot be mistaken for
---   live; live report intake fails closed until an Association-approved geofence
+--   live; live intake fails closed until an Asociación de Hoteles de Chihuahua-approved geofence
 --   is active.
+-- * This monolithic file is a target snapshot. Derive ordered migrations: create
+--   app_backend/rate table; add policies/grants/primitives; then revoke/drop legacy
+--   public RPCs before deploying disabled api and performing one direct cutover.
 
 BEGIN;
+
+DO $role$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'app_backend') THEN
+    CREATE ROLE app_backend LOGIN NOBYPASSRLS NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
+  END IF;
+END
+$role$;
+ALTER ROLE app_backend NOBYPASSRLS NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
 
 CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA extensions;
@@ -41,7 +63,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 GRANT USAGE ON SCHEMA extensions TO CURRENT_USER;
 
 CREATE SCHEMA IF NOT EXISTS app_private;
-REVOKE ALL ON SCHEMA app_private FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON SCHEMA app_private FROM PUBLIC, anon, authenticated, service_role;
 
 CREATE TYPE public.user_role AS ENUM ('association', 'administrator');
 CREATE TYPE public.deployment_environment AS ENUM ('staging', 'production');
@@ -182,6 +204,21 @@ CREATE TABLE public.config_versions (
 CREATE UNIQUE INDEX uq_config_one_active_per_environment
   ON public.config_versions (environment) WHERE is_active;
 
+-- Existing configuration versions are immutable; activation is the only update.
+CREATE FUNCTION app_private.enforce_config_version_immutability()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path = ''
+AS $$
+BEGIN
+  IF (to_jsonb(NEW) - 'is_active') IS DISTINCT FROM (to_jsonb(OLD) - 'is_active') THEN
+    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'config_version_is_immutable';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER trg_config_version_immutability
+BEFORE UPDATE ON public.config_versions
+FOR EACH ROW EXECUTE FUNCTION app_private.enforce_config_version_immutability();
+
 INSERT INTO public.config_versions (
   environment, version, is_active, flag_auto_hide_threshold,
   duplicate_radius_meters, duplicate_time_window_minutes,
@@ -193,6 +230,8 @@ INSERT INTO public.config_versions (
 
 CREATE TABLE public.reports (
   id UUID PRIMARY KEY, -- Client-generated final identity for offline idempotency.
+  -- Identical replay is accepted even if the active geofence later changed.
+  -- New submissions still fail closed against the current approved geofence.
   submission_hash TEXT NOT NULL CHECK (submission_hash ~ '^[0-9a-f]{64}$'),
   location extensions.geography(POINT, 4326) NOT NULL,
   gps_accuracy_meters NUMERIC(7,2) NOT NULL CHECK (gps_accuracy_meters > 0),
@@ -211,6 +250,7 @@ CREATE TABLE public.reports (
   previous_status public.report_status,
   trust_tier public.trust_tier NOT NULL DEFAULT 'unassessed',
   trust_score NUMERIC(4,3) CHECK (trust_score BETWEEN 0 AND 1),
+  trust_config_id UUID REFERENCES public.config_versions(id),
   photo_validation_score NUMERIC(4,3) CHECK (photo_validation_score BETWEEN 0 AND 1),
   exif_consistency_score NUMERIC(4,3) CHECK (exif_consistency_score BETWEEN 0 AND 1),
   gps_trust_score NUMERIC(4,3) CHECK (gps_trust_score BETWEEN 0 AND 1),
@@ -230,7 +270,8 @@ CREATE TABLE public.reports (
   CHECK ((device_fingerprint_hash IS NULL) = (fingerprint_expires_at IS NULL)),
   CHECK (status <> 'visible' OR (accepted_at IS NOT NULL AND published_at IS NOT NULL AND public_until IS NOT NULL)),
   CHECK ((status = 'deleted') = (deleted_at IS NOT NULL)),
-  CHECK (previous_status IS NULL OR previous_status <> 'deleted')
+  CHECK (previous_status IS NULL OR previous_status <> 'deleted'),
+  CHECK (trust_tier = 'unassessed' OR (trust_score IS NOT NULL AND trust_config_id IS NOT NULL))
 );
 CREATE INDEX idx_reports_location ON public.reports USING GIST (location);
 CREATE INDEX idx_reports_status_public ON public.reports (status, public_until);
@@ -247,7 +288,7 @@ CREATE TABLE public.photo_assets (
   state public.photo_state NOT NULL DEFAULT 'processing',
   source_sha256 TEXT NOT NULL CHECK (source_sha256 ~ '^[0-9a-f]{64}$'),
   approved_object_path TEXT,
-  detected_mime_type TEXT,
+  detected_mime_type TEXT CHECK (detected_mime_type IS NULL OR detected_mime_type IN ('image/jpeg', 'image/png')),
   byte_size INTEGER CHECK (byte_size BETWEEN 1 AND 10485760),
   width_pixels INTEGER CHECK (width_pixels BETWEEN 1 AND 12000),
   height_pixels INTEGER CHECK (height_pixels BETWEEN 1 AND 12000),
@@ -260,7 +301,12 @@ CREATE TABLE public.photo_assets (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (approved_object_path IS NULL OR length(approved_object_path) BETWEEN 1 AND 1000),
   CHECK (rejection_code IS NULL OR length(rejection_code) BETWEEN 1 AND 120),
-  CHECK (state <> 'approved' OR (approved_object_path IS NOT NULL AND approved_at IS NOT NULL)),
+  CHECK (state <> 'approved' OR (
+    approved_object_path IS NOT NULL AND approved_at IS NOT NULL
+    AND detected_mime_type IS NOT NULL AND byte_size IS NOT NULL
+    AND width_pixels IS NOT NULL AND height_pixels IS NOT NULL
+    AND sanitized_sha256 IS NOT NULL
+  )),
   CHECK (state <> 'rejected' OR rejection_code IS NOT NULL),
   CHECK (state <> 'purged' OR approved_object_path IS NULL)
 );
@@ -337,17 +383,46 @@ CREATE TABLE public.audit_log (
 CREATE INDEX idx_audit_created_at ON public.audit_log (created_at);
 CREATE INDEX idx_audit_entity ON public.audit_log (entity_type, entity_id);
 
-COMMENT ON TABLE public.reports IS 'Immutable public-submitted content plus server-controlled moderation and derived trust state. Clients insert only through submit_report.';
+CREATE TABLE public.rate_limit_buckets (
+  operation TEXT NOT NULL CHECK (operation IN ('report', 'flag')),
+  origin_hash TEXT NOT NULL CHECK (origin_hash ~ '^[0-9a-f]{64}$'),
+  window_start TIMESTAMPTZ NOT NULL,
+  request_count INTEGER NOT NULL CHECK (request_count > 0),
+  expires_at TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (operation, origin_hash, window_start),
+  CHECK (window_start = date_trunc('hour', window_start)),
+  CHECK (expires_at > window_start)
+);
+CREATE INDEX idx_rate_limit_buckets_expiry ON public.rate_limit_buckets (expires_at);
+
+COMMENT ON TABLE public.reports IS 'Immutable public-submitted content plus server-controlled moderation and derived trust state. Mobile insertion is Hono-only.';
 COMMENT ON COLUMN public.reports.client_created_at IS 'Device timestamp. New submissions must fall in [now()-30 days, now()+1 hour]. Identical replays skip this window.';
 COMMENT ON TABLE public.photo_assets IS 'Private sanitized-photo processing, approval, rejection, and purge lifecycle. Raw input and raw EXIF are never persisted.';
 COMMENT ON TABLE public.duplicate_groups IS 'Audited, reversible human duplicate resolution with one canonical report.';
 COMMENT ON TABLE public.config_versions IS 'Typed, validated, versioned operational thresholds. Direct client mutation is prohibited.';
-COMMENT ON TABLE public.zone_sets IS 'Versioned geofence metadata. source_sha256 is required. association_approval_reference cites an external Association decision; Administrator notes are not that approval.';
+COMMENT ON TABLE public.zone_sets IS 'Versioned geofence metadata. source_sha256 is required. association_approval_reference cites an external Asociación de Hoteles de Chihuahua decision; Administrator notes are not that approval.';
 COMMENT ON TABLE public.audit_log IS 'Append-only audit evidence retained for two years; direct UPDATE and DELETE are prohibited.';
+COMMENT ON COLUMN public.reports.client_created_at IS 'Validated device observation timestamp, never a server lifecycle timestamp.';
+COMMENT ON COLUMN public.reports.trust_config_id IS 'Configuration version used for the persisted trust assessment, including photo-free assessment.';
+COMMENT ON TABLE public.photo_assets IS 'Sanitized JPEG/PNG lifecycle only. Raw image, HEIC, and raw EXIF are never persisted.';
+COMMENT ON TABLE public.audit_log IS 'Append-only audit evidence; app_backend receives INSERT but never UPDATE or DELETE.';
+COMMENT ON TABLE public.rate_limit_buckets IS 'Durable cross-instance report/flag rate counters. Idempotent replay is resolved before consumption.';
 
 -- ---------------------------------------------------------------------------
 -- Private helpers. They are not exposed through PostgREST's public schema.
 -- ---------------------------------------------------------------------------
+-- Context helpers are backend-private and intentionally absent from public schema.
+CREATE FUNCTION app_private.actor_role()
+RETURNS TEXT LANGUAGE sql STABLE SET search_path = ''
+AS $$ SELECT NULLIF(pg_catalog.current_setting('app.role', true), '') $$;
+
+CREATE FUNCTION app_private.actor_id()
+RETURNS UUID LANGUAGE sql STABLE SET search_path = ''
+AS $$ SELECT NULLIF(pg_catalog.current_setting('app.user_id', true), '')::UUID $$;
+
+CREATE FUNCTION app_private.origin_hash()
+RETURNS TEXT LANGUAGE sql STABLE SET search_path = ''
+AS $$ SELECT NULLIF(pg_catalog.current_setting('app.origin_hash', true), '') $$;
 
 CREATE FUNCTION app_private.current_environment()
 RETURNS public.deployment_environment
@@ -359,19 +434,24 @@ AS $$
   SELECT environment FROM public.deployment_metadata WHERE singleton = TRUE
 $$;
 
-CREATE FUNCTION app_private.has_role(required_role public.user_role)
+CREATE FUNCTION app_private.is_active_actor(required_role public.user_role)
 RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = (SELECT auth.uid())
-      AND active
-      AND role = required_role
-      AND COALESCE((SELECT auth.jwt()->'app_metadata'->>'app_role'), '') = required_role::TEXT
+    WHERE id = app_private.actor_id() AND active AND role = required_role
+      AND app_private.actor_role() = required_role::TEXT
+  )
+$$;
+
+CREATE FUNCTION app_private.is_noncanonical(p_report_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.duplicate_memberships
+    WHERE report_id = p_report_id AND active AND member_role = 'duplicate'
   )
 $$;
 
@@ -403,25 +483,37 @@ AS $$
   )::extensions.geography
 $$;
 
-CREATE FUNCTION app_private.write_audit(
-  p_actor_id UUID,
-  p_action public.audit_action,
-  p_entity_type TEXT,
-  p_entity_id UUID,
-  p_previous JSONB,
-  p_new JSONB,
-  p_note TEXT
+-- Atomic, cross-instance hourly limiter. Services resolve idempotent report replay
+-- before invoking it; FALSE maps to the typed 429 without domain mutation.
+CREATE FUNCTION app_private.consume_rate_limit(
+  p_operation TEXT, p_origin_hash TEXT, p_limit INTEGER
 )
-RETURNS VOID
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = ''
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
-  INSERT INTO public.audit_log (
-    actor_id, action, entity_type, entity_id, previous_values, new_values, note
-  ) VALUES (
-    p_actor_id, p_action, p_entity_type, p_entity_id, p_previous, p_new, p_note
-  )
+DECLARE
+  v_count INTEGER;
+  v_window TIMESTAMPTZ := date_trunc('hour', now());
+  v_role TEXT := app_private.actor_role();
+  v_context_origin_hash TEXT := app_private.origin_hash();
+BEGIN
+  IF v_role IS NULL OR v_role NOT IN ('anonymous', 'internal')
+     OR p_origin_hash IS DISTINCT FROM v_context_origin_hash THEN
+    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'invalid_rate_limit_context';
+  END IF;
+  IF p_operation NOT IN ('report', 'flag') OR p_origin_hash !~ '^[0-9a-f]{64}$'
+     OR p_limit IS NULL OR p_limit < 1 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_rate_limit_input';
+  END IF;
+  INSERT INTO public.rate_limit_buckets (
+    operation, origin_hash, window_start, request_count, expires_at
+  ) VALUES (p_operation, p_origin_hash, v_window, 1, v_window + interval '2 hours')
+  ON CONFLICT (operation, origin_hash, window_start) DO UPDATE
+    SET request_count = public.rate_limit_buckets.request_count + 1
+    WHERE public.rate_limit_buckets.request_count < p_limit
+  RETURNING request_count INTO v_count;
+  RETURN v_count IS NOT NULL;
+END;
 $$;
 
 CREATE FUNCTION app_private.validate_report_details()
@@ -512,741 +604,10 @@ BEFORE INSERT ON public.reports
 FOR EACH ROW EXECUTE FUNCTION app_private.validate_report_details();
 
 -- ---------------------------------------------------------------------------
--- Public commands and minimized projections.
--- ---------------------------------------------------------------------------
-
-CREATE FUNCTION public.submit_report(
-  p_id UUID,
-  p_longitude DOUBLE PRECISION,
-  p_latitude DOUBLE PRECISION,
-  p_gps_accuracy_meters NUMERIC,
-  p_mock_location_suspected BOOLEAN,
-  p_incident_type public.incident_type,
-  p_sighting_type public.sighting_type,
-  p_details JSONB,
-  p_color_predominante TEXT,
-  p_tamano public.dog_size,
-  p_tiene_collar BOOLEAN,
-  p_photo_expected BOOLEAN,
-  p_client_photo_check_passed BOOLEAN,
-  p_device_fingerprint TEXT,
-  p_honeypot_filled BOOLEAN,
-  p_client_created_at TIMESTAMPTZ
-)
-RETURNS TABLE (report_id UUID, moderation_status public.report_status)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_environment public.deployment_environment;
-  v_location extensions.geography(POINT, 4326);
-  v_gps_max NUMERIC;
-  v_hash TEXT;
-  v_existing_hash TEXT;
-  v_reason public.report_status_reason;
-BEGIN
-  IF p_id IS NULL OR p_device_fingerprint IS NULL OR length(p_device_fingerprint) < 16 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_submission_identity';
-  END IF;
-  IF p_gps_accuracy_meters IS NULL OR p_mock_location_suspected IS NULL
-     OR p_honeypot_filled IS NULL OR p_client_created_at IS NULL THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'missing_required_submission_signal';
-  END IF;
-  IF p_longitude NOT BETWEEN -180 AND 180 OR p_latitude NOT BETWEEN -90 AND 90 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_coordinates';
-  END IF;
-
-  v_environment := app_private.current_environment();
-  v_location := extensions.ST_SetSRID(extensions.ST_MakePoint(p_longitude, p_latitude), 4326)::extensions.geography;
-  v_hash := encode(extensions.digest(jsonb_build_object(
-    'id', p_id, 'longitude', p_longitude, 'latitude', p_latitude,
-    'gps_accuracy_meters', p_gps_accuracy_meters,
-    'mock_location_suspected', p_mock_location_suspected,
-    'incident_type', p_incident_type, 'sighting_type', p_sighting_type,
-    'details', COALESCE(p_details, '{}'::jsonb),
-    'color', p_color_predominante, 'size', p_tamano, 'collar', p_tiene_collar,
-    'photo_expected', p_photo_expected,
-    'client_photo_check_passed', p_client_photo_check_passed,
-    'honeypot_filled', p_honeypot_filled,
-    'device_fingerprint_hash', encode(extensions.digest(p_device_fingerprint, 'sha256'), 'hex'),
-    'client_created_at', p_client_created_at
-  )::TEXT, 'sha256'), 'hex');
-
-  -- Identical replay is accepted even if the active geofence later changed.
-  -- New submissions still fail closed against the current approved geofence.
-  SELECT submission_hash INTO v_existing_hash
-  FROM public.reports WHERE id = p_id;
-  IF FOUND THEN
-    IF v_existing_hash <> v_hash THEN
-      RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'report_id_payload_conflict';
-    END IF;
-    RETURN QUERY SELECT r.id, r.status FROM public.reports r WHERE r.id = p_id;
-    RETURN;
-  END IF;
-
-  IF p_client_created_at > now() + interval '1 hour'
-     OR p_client_created_at < now() - interval '30 days' THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'client_created_at_out_of_bounds';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1
-    FROM public.zone_sets zs
-    JOIN public.zones z ON z.zone_set_id = zs.id
-    WHERE zs.environment = v_environment
-      AND zs.status = 'active'
-      AND extensions.ST_Covers(z.boundary::extensions.geometry, v_location::extensions.geometry)
-  ) THEN
-    IF NOT EXISTS (
-      SELECT 1 FROM public.zone_sets
-      WHERE environment = v_environment AND status = 'active'
-    ) THEN
-      RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'geofence_not_configured';
-    END IF;
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'location_outside_geofence';
-  END IF;
-
-  SELECT gps_accuracy_max_meters INTO STRICT v_gps_max
-  FROM public.config_versions
-  WHERE environment = v_environment AND is_active;
-
-  v_reason := CASE
-    WHEN p_mock_location_suspected THEN 'mock_location'::public.report_status_reason
-    WHEN p_gps_accuracy_meters > v_gps_max THEN 'imprecise_gps'::public.report_status_reason
-    WHEN p_honeypot_filled THEN 'honeypot_signal'::public.report_status_reason
-    ELSE 'awaiting_trust_assessment'::public.report_status_reason
-  END;
-
-  INSERT INTO public.reports (
-    id, submission_hash, location, gps_accuracy_meters,
-    mock_location_suspected, incident_type, sighting_type, details,
-    color_predominante, tamano, tiene_collar, photo_expected,
-    client_photo_check_passed, honeypot_suspected, status, status_reason,
-    device_fingerprint_hash, fingerprint_expires_at, client_created_at
-  ) VALUES (
-    p_id, v_hash, v_location, p_gps_accuracy_meters,
-    p_mock_location_suspected, p_incident_type, p_sighting_type,
-    COALESCE(p_details, '{}'::jsonb), p_color_predominante, p_tamano,
-    p_tiene_collar, p_photo_expected, p_client_photo_check_passed,
-    p_honeypot_filled,
-    'pending_review', v_reason,
-    encode(extensions.digest(p_device_fingerprint, 'sha256'), 'hex'), now() + interval '30 days',
-    p_client_created_at
-  ) ON CONFLICT (id) DO NOTHING;
-
-  IF NOT FOUND THEN
-    SELECT submission_hash INTO v_existing_hash FROM public.reports WHERE id = p_id;
-    IF v_existing_hash <> v_hash THEN
-      RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'report_id_payload_conflict';
-    END IF;
-  END IF;
-
-  RETURN QUERY SELECT r.id, r.status FROM public.reports r WHERE r.id = p_id;
-END;
-$$;
-
-CREATE FUNCTION public.submit_report_flag(
-  p_report_id UUID,
-  p_reason public.flag_reason,
-  p_reason_detail TEXT,
-  p_device_fingerprint TEXT
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_id UUID;
-  v_threshold INTEGER;
-  v_count INTEGER;
-  v_previous JSONB;
-BEGIN
-  IF p_device_fingerprint IS NULL OR length(p_device_fingerprint) < 16 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_flag_identity';
-  END IF;
-
-  -- Lock the report before insert/count so concurrent flags cannot miss the
-  -- auto-hide threshold. Non-canonical and non-public rows are not flaggable.
-  SELECT jsonb_build_object('status', r.status, 'status_reason', r.status_reason)
-    INTO v_previous
-  FROM public.reports r
-  WHERE r.id = p_report_id
-    AND r.status = 'visible'
-    AND r.public_until > now()
-    AND NOT EXISTS (
-      SELECT 1 FROM public.duplicate_memberships dm
-      WHERE dm.report_id = r.id AND dm.active AND dm.member_role = 'duplicate'
-    )
-  FOR UPDATE;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_not_flaggable';
-  END IF;
-
-  INSERT INTO public.report_flags (
-    report_id, reason, reason_detail, device_fingerprint_hash, fingerprint_expires_at
-  ) VALUES (
-    p_report_id, p_reason, p_reason_detail,
-    encode(extensions.digest(p_device_fingerprint, 'sha256'), 'hex'), now() + interval '30 days'
-  ) RETURNING id INTO v_id;
-
-  SELECT flag_auto_hide_threshold INTO STRICT v_threshold
-  FROM public.config_versions
-  WHERE environment = app_private.current_environment() AND is_active;
-
-  SELECT count(DISTINCT device_fingerprint_hash) INTO v_count
-  FROM public.report_flags
-  WHERE report_id = p_report_id
-    AND fingerprint_expires_at > now()
-    AND device_fingerprint_hash IS NOT NULL;
-
-  IF v_count >= v_threshold THEN
-    UPDATE public.reports
-    SET status = 'hidden', status_reason = 'flag_threshold', hidden_at = now()
-    WHERE id = p_report_id AND status = 'visible';
-    IF FOUND THEN
-      PERFORM app_private.write_audit(
-        NULL, 'report_auto_hidden', 'report', p_report_id, v_previous,
-        jsonb_build_object('status', 'hidden', 'effective_flag_count', v_count),
-        'Automatic hide at the active distinct-origin flag threshold'
-      );
-    END IF;
-  END IF;
-
-  RETURN v_id;
-EXCEPTION WHEN unique_violation THEN
-  RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'flag_already_submitted';
-END;
-$$;
-
-CREATE FUNCTION public.get_public_reports(
-  p_since TIMESTAMPTZ DEFAULT NULL,
-  p_limit INTEGER DEFAULT 500
-)
-RETURNS TABLE (
-  report_id UUID,
-  approximate_longitude DOUBLE PRECISION,
-  approximate_latitude DOUBLE PRECISION,
-  incident public.incident_type,
-  sighting public.sighting_type,
-  public_details JSONB,
-  predominant_color TEXT,
-  dog_size public.dog_size,
-  has_collar BOOLEAN,
-  has_sanitized_photo BOOLEAN,
-  occurred_at TIMESTAMPTZ,
-  has_flags BOOLEAN
-)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT
-    r.id,
-    extensions.ST_X(app_private.approximate_public_location(r.location)::extensions.geometry),
-    extensions.ST_Y(app_private.approximate_public_location(r.location)::extensions.geometry),
-    r.incident_type,
-    r.sighting_type,
-    r.details,
-    r.color_predominante,
-    r.tamano,
-    r.tiene_collar,
-    (pa.id IS NOT NULL),
-    r.client_created_at,
-    EXISTS (SELECT 1 FROM public.report_flags f WHERE f.report_id = r.id)
-  FROM public.reports r
-  LEFT JOIN public.photo_assets pa ON pa.report_id = r.id AND pa.state = 'approved'
-    AND pa.purge_after > now()
-  WHERE r.status = 'visible'
-    AND r.public_until > now()
-    AND (p_since IS NULL OR r.client_created_at >= p_since)
-    AND NOT EXISTS (
-      SELECT 1 FROM public.duplicate_memberships dm
-      WHERE dm.report_id = r.id AND dm.active AND dm.member_role = 'duplicate'
-    )
-  ORDER BY r.client_created_at DESC, r.id
-  LIMIT LEAST(GREATEST(p_limit, 1), 1000)
-$$;
-
-CREATE FUNCTION public.get_public_clusters(
-  p_zoom INTEGER,
-  p_min_longitude DOUBLE PRECISION DEFAULT NULL,
-  p_min_latitude DOUBLE PRECISION DEFAULT NULL,
-  p_max_longitude DOUBLE PRECISION DEFAULT NULL,
-  p_max_latitude DOUBLE PRECISION DEFAULT NULL,
-  p_limit INTEGER DEFAULT 2000
-)
-RETURNS TABLE (
-  cluster_id INTEGER,
-  report_count BIGINT,
-  approximate_longitude DOUBLE PRECISION,
-  approximate_latitude DOUBLE PRECISION,
-  highest_severity public.incident_type,
-  type_counts JSONB
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_has_viewport BOOLEAN;
-  v_limit INTEGER;
-BEGIN
-  IF p_zoom IS NULL OR p_zoom < 0 OR p_zoom > 22 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_cluster_zoom';
-  END IF;
-  v_has_viewport := (p_min_longitude IS NOT NULL OR p_min_latitude IS NOT NULL
-                     OR p_max_longitude IS NOT NULL OR p_max_latitude IS NOT NULL);
-  IF v_has_viewport AND (
-       p_min_longitude IS NULL OR p_min_latitude IS NULL
-       OR p_max_longitude IS NULL OR p_max_latitude IS NULL
-       OR p_min_longitude NOT BETWEEN -180 AND 180
-       OR p_max_longitude NOT BETWEEN -180 AND 180
-       OR p_min_latitude NOT BETWEEN -90 AND 90
-       OR p_max_latitude NOT BETWEEN -90 AND 90
-       OR p_min_longitude >= p_max_longitude
-       OR p_min_latitude >= p_max_latitude
-     ) THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_cluster_viewport';
-  END IF;
-  v_limit := LEAST(GREATEST(COALESCE(p_limit, 2000), 1), 5000);
-
-  RETURN QUERY
-  WITH eligible AS (
-    SELECT r.id, r.incident_type,
-           extensions.ST_Transform(r.location::extensions.geometry, 32613) AS metric_location
-    FROM public.reports r
-    WHERE r.status = 'visible' AND r.public_until > now()
-      AND NOT EXISTS (
-        SELECT 1 FROM public.duplicate_memberships dm
-        WHERE dm.report_id = r.id AND dm.active AND dm.member_role = 'duplicate'
-      )
-      AND (
-        NOT v_has_viewport
-        OR extensions.ST_Intersects(
-             r.location::extensions.geometry,
-             extensions.ST_MakeEnvelope(
-               p_min_longitude, p_min_latitude, p_max_longitude, p_max_latitude, 4326
-             )
-           )
-      )
-    ORDER BY r.client_created_at DESC, r.id
-    LIMIT v_limit
-  ), clustered AS (
-    SELECT *, extensions.ST_ClusterDBSCAN(
-      metric_location,
-      eps => CASE
-        WHEN p_zoom >= 16 THEN 35
-        WHEN p_zoom >= 14 THEN 75
-        WHEN p_zoom >= 12 THEN 200
-        WHEN p_zoom >= 10 THEN 500
-        ELSE 1000
-      END,
-      minpoints => 1
-    ) OVER () AS cid
-    FROM eligible
-  ), per_type AS (
-    SELECT cid, incident_type, count(*) AS type_count,
-           extensions.ST_Collect(metric_location) AS type_locations
-    FROM clustered
-    GROUP BY cid, incident_type
-  ), grouped AS (
-    SELECT cid,
-      sum(type_count)::BIGINT AS total_count,
-      extensions.ST_Collect(type_locations) AS all_locations,
-      (array_agg(incident_type ORDER BY app_private.incident_severity(incident_type) DESC))[1] AS severe,
-      jsonb_build_object(
-        'avistamiento_simple', 0,
-        'ataque_mascota', 0,
-        'ataque_ganado', 0,
-        'ataque_humano', 0,
-        'perro_lastimado', 0,
-        'otro', 0
-      ) || jsonb_object_agg(incident_type::TEXT, type_count) AS counts
-    FROM per_type
-    GROUP BY cid
-  )
-  SELECT
-    grouped.cid,
-    grouped.total_count,
-    extensions.ST_X(extensions.ST_Transform(extensions.ST_SnapToGrid(extensions.ST_Centroid(grouped.all_locations), 50.0, 50.0), 4326)),
-    extensions.ST_Y(extensions.ST_Transform(extensions.ST_SnapToGrid(extensions.ST_Centroid(grouped.all_locations), 50.0, 50.0), 4326)),
-    grouped.severe,
-    grouped.counts
-  FROM grouped
-  ORDER BY grouped.cid;
-END;
-$$;
-
--- ---------------------------------------------------------------------------
--- Client photo status. Upload bytes go only to the image-specific Edge Function;
--- clients never receive Storage write access or write photo_assets directly.
--- ---------------------------------------------------------------------------
-
-CREATE FUNCTION public.get_report_photo_status(
-  p_report_id UUID,
-  p_device_fingerprint TEXT
-)
-RETURNS TABLE (
-  report_id UUID,
-  photo_expected BOOLEAN,
-  photo_state public.photo_state,
-  rejection_code TEXT,
-  processing_complete BOOLEAN,
-  upload_succeeded BOOLEAN,
-  local_cleanup_allowed BOOLEAN
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_report public.reports%ROWTYPE;
-  v_photo public.photo_assets%ROWTYPE;
-  v_fingerprint_hash TEXT;
-  v_complete BOOLEAN;
-  v_succeeded BOOLEAN;
-  v_has_photo BOOLEAN;
-BEGIN
-  IF p_report_id IS NULL OR p_device_fingerprint IS NULL OR length(p_device_fingerprint) < 16 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_photo_status_identity';
-  END IF;
-  v_fingerprint_hash := encode(extensions.digest(p_device_fingerprint, 'sha256'), 'hex');
-
-  SELECT * INTO v_report FROM public.reports WHERE id = p_report_id;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_not_found';
-  END IF;
-  IF v_report.device_fingerprint_hash IS NULL THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_photo_access_expired';
-  END IF;
-  IF v_report.device_fingerprint_hash <> v_fingerprint_hash THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'report_photo_access_denied';
-  END IF;
-
-  SELECT * INTO v_photo FROM public.photo_assets WHERE photo_assets.report_id = p_report_id;
-  v_has_photo := FOUND;
-  IF NOT v_report.photo_expected THEN
-    RETURN QUERY SELECT
-      p_report_id, FALSE, NULL::public.photo_state, NULL::TEXT, TRUE, FALSE, TRUE;
-    RETURN;
-  END IF;
-  -- Completion and local cleanup are monotonic: retention states remain terminal,
-  -- but only an approved sanitized object is a successful upload.
-  v_complete := v_has_photo AND v_photo.state IN (
-    'approved', 'rejected', 'purge_pending', 'purged'
-  );
-  v_succeeded := v_has_photo AND v_photo.state = 'approved';
-  RETURN QUERY SELECT
-    p_report_id,
-    TRUE,
-    CASE WHEN v_has_photo THEN v_photo.state ELSE NULL::public.photo_state END,
-    CASE WHEN v_has_photo THEN v_photo.rejection_code ELSE NULL::TEXT END,
-    v_complete,
-    v_succeeded,
-    v_complete;
-END;
-$$;
-
--- ---------------------------------------------------------------------------
--- Trusted image Edge Function boundary. No mobile role receives EXECUTE.
--- ---------------------------------------------------------------------------
-
-CREATE FUNCTION public.service_begin_photo_processing(
-  p_report_id UUID,
-  p_device_fingerprint TEXT,
-  p_source_sha256 TEXT
-)
-RETURNS TABLE (
-  photo_id UUID,
-  photo_state public.photo_state,
-  approved_object_path TEXT,
-  rejection_code TEXT
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_report public.reports%ROWTYPE;
-  v_photo public.photo_assets%ROWTYPE;
-  v_fingerprint_hash TEXT;
-BEGIN
-  IF p_report_id IS NULL OR p_device_fingerprint IS NULL
-     OR length(p_device_fingerprint) < 16
-     OR p_source_sha256 IS NULL OR lower(p_source_sha256) !~ '^[0-9a-f]{64}$' THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_photo_processing_identity';
-  END IF;
-  v_fingerprint_hash := encode(extensions.digest(p_device_fingerprint, 'sha256'), 'hex');
-
-  SELECT * INTO v_report FROM public.reports WHERE id = p_report_id FOR UPDATE;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_not_found';
-  END IF;
-  IF NOT v_report.photo_expected THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'photo_not_expected';
-  END IF;
-  IF v_report.device_fingerprint_hash IS NULL THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'report_photo_access_expired';
-  END IF;
-  IF v_report.device_fingerprint_hash <> v_fingerprint_hash THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'report_photo_access_denied';
-  END IF;
-
-  SELECT * INTO v_photo FROM public.photo_assets
-  WHERE report_id = p_report_id FOR UPDATE;
-  IF FOUND THEN
-    IF v_photo.source_sha256 <> lower(p_source_sha256) THEN
-      RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'photo_content_conflict';
-    END IF;
-    RETURN QUERY SELECT v_photo.id, v_photo.state,
-      v_photo.approved_object_path, v_photo.rejection_code;
-    RETURN;
-  END IF;
-
-  INSERT INTO public.photo_assets (report_id, state, source_sha256)
-  VALUES (p_report_id, 'processing', lower(p_source_sha256))
-  RETURNING * INTO v_photo;
-  RETURN QUERY SELECT v_photo.id, v_photo.state,
-    v_photo.approved_object_path, v_photo.rejection_code;
-END;
-$$;
-
-CREATE FUNCTION public.service_register_processed_photo(
-  p_report_id UUID,
-  p_source_sha256 TEXT,
-  p_approved_object_path TEXT,
-  p_detected_mime_type TEXT,
-  p_byte_size INTEGER,
-  p_width_pixels INTEGER,
-  p_height_pixels INTEGER,
-  p_sanitized_sha256 TEXT,
-  p_photo_validation_score NUMERIC,
-  p_exif_consistency_score NUMERIC
-)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_photo public.photo_assets%ROWTYPE;
-BEGIN
-  IF p_source_sha256 IS NULL OR lower(p_source_sha256) !~ '^[0-9a-f]{64}$'
-     OR p_sanitized_sha256 IS NULL OR lower(p_sanitized_sha256) !~ '^[0-9a-f]{64}$'
-     OR p_approved_object_path IS NULL OR length(p_approved_object_path) NOT BETWEEN 1 AND 1000
-     OR p_detected_mime_type NOT IN ('image/jpeg', 'image/png', 'image/heic')
-     OR p_byte_size NOT BETWEEN 1 AND 10485760
-     OR p_width_pixels NOT BETWEEN 1 AND 12000
-     OR p_height_pixels NOT BETWEEN 1 AND 12000 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_processed_image';
-  END IF;
-  SELECT * INTO v_photo FROM public.photo_assets
-  WHERE report_id = p_report_id FOR UPDATE;
-  IF NOT FOUND OR v_photo.source_sha256 <> lower(p_source_sha256) THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_processing_not_started';
-  END IF;
-  IF v_photo.state = 'approved' THEN
-    IF v_photo.approved_object_path = p_approved_object_path
-       AND v_photo.sanitized_sha256 = lower(p_sanitized_sha256) THEN
-      RETURN;
-    END IF;
-    RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'processed_photo_conflict';
-  END IF;
-  IF v_photo.state <> 'processing' THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_state_conflict';
-  END IF;
-  UPDATE public.photo_assets
-  SET state = 'approved', approved_object_path = p_approved_object_path,
-      detected_mime_type = p_detected_mime_type, byte_size = p_byte_size,
-      width_pixels = p_width_pixels, height_pixels = p_height_pixels,
-      sanitized_sha256 = lower(p_sanitized_sha256), approved_at = now(),
-      purge_after = now() + interval '90 days'
-  WHERE id = v_photo.id;
-  UPDATE public.reports
-  SET photo_validation_score = p_photo_validation_score,
-      exif_consistency_score = p_exif_consistency_score
-  WHERE id = p_report_id;
-END;
-$$;
-
-CREATE FUNCTION public.service_reject_photo(
-  p_report_id UUID,
-  p_source_sha256 TEXT,
-  p_rejection_code TEXT
-)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_photo public.photo_assets%ROWTYPE;
-BEGIN
-  IF p_source_sha256 IS NULL OR lower(p_source_sha256) !~ '^[0-9a-f]{64}$'
-     OR p_rejection_code IS NULL OR length(trim(p_rejection_code)) NOT BETWEEN 1 AND 120 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_photo_rejection';
-  END IF;
-  SELECT * INTO v_photo FROM public.photo_assets
-  WHERE report_id = p_report_id FOR UPDATE;
-  IF NOT FOUND OR v_photo.source_sha256 <> lower(p_source_sha256) THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_processing_not_started';
-  END IF;
-  IF v_photo.state = 'rejected' AND v_photo.rejection_code = p_rejection_code THEN
-    RETURN;
-  END IF;
-  IF v_photo.state <> 'processing' THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_state_conflict';
-  END IF;
-  UPDATE public.photo_assets
-  SET state = 'rejected', rejection_code = p_rejection_code,
-      purge_after = now() + interval '1 day'
-  WHERE id = v_photo.id;
-END;
-$$;
-
-CREATE FUNCTION public.service_authorize_report_photo_delivery(
-  p_report_id UUID,
-  p_requester_id UUID DEFAULT NULL
-)
-RETURNS TABLE (approved_object_path TEXT)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_role public.user_role;
-BEGIN
-  IF p_requester_id IS NOT NULL THEN
-    SELECT role INTO v_role FROM public.profiles
-    WHERE id = p_requester_id AND active;
-    IF NOT FOUND THEN
-      RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'photo_delivery_access_denied';
-    END IF;
-  END IF;
-
-  RETURN QUERY
-  SELECT pa.approved_object_path
-  FROM public.reports r
-  JOIN public.photo_assets pa ON pa.report_id = r.id
-  WHERE r.id = p_report_id
-    AND pa.state = 'approved'
-    AND (pa.purge_after IS NULL OR pa.purge_after > now())
-    AND (
-      (
-        p_requester_id IS NULL
-        AND r.status = 'visible'
-        AND r.public_until > now()
-        AND NOT EXISTS (
-          SELECT 1 FROM public.duplicate_memberships dm
-          WHERE dm.report_id = r.id AND dm.active AND dm.member_role = 'duplicate'
-        )
-      )
-      OR (
-        v_role = 'association'
-        AND r.status = 'visible'
-        AND r.accepted_at >= now() - interval '5 years'
-        AND NOT EXISTS (
-          SELECT 1 FROM public.duplicate_memberships dm
-          WHERE dm.report_id = r.id AND dm.active AND dm.member_role = 'duplicate'
-        )
-      )
-      OR v_role = 'administrator'
-    );
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'photo_delivery_access_denied';
-  END IF;
-END;
-$$;
-
-CREATE FUNCTION public.service_apply_trust_assessment(
-  p_report_id UUID,
-  p_trust_score NUMERIC,
-  p_photo_score NUMERIC,
-  p_exif_score NUMERIC,
-  p_gps_score NUMERIC,
-  p_fingerprint_score NUMERIC
-)
-RETURNS public.report_status
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_report public.reports%ROWTYPE;
-  v_config public.config_versions%ROWTYPE;
-  v_tier public.trust_tier;
-  v_status public.report_status;
-BEGIN
-  IF p_trust_score IS NULL OR p_photo_score IS NULL OR p_exif_score IS NULL
-     OR p_gps_score IS NULL OR p_fingerprint_score IS NULL
-     OR p_trust_score NOT BETWEEN 0 AND 1 OR p_photo_score NOT BETWEEN 0 AND 1
-     OR p_exif_score NOT BETWEEN 0 AND 1 OR p_gps_score NOT BETWEEN 0 AND 1
-     OR p_fingerprint_score NOT BETWEEN 0 AND 1 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_trust_score';
-  END IF;
-  SELECT * INTO STRICT v_report FROM public.reports WHERE id = p_report_id FOR UPDATE;
-  IF v_report.status = 'visible' THEN
-    RETURN 'visible';
-  ELSIF v_report.status <> 'pending_review' THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'trust_assessment_not_allowed';
-  END IF;
-  SELECT * INTO STRICT v_config FROM public.config_versions
-  WHERE environment = app_private.current_environment() AND is_active;
-
-  v_tier := CASE
-    WHEN p_trust_score >= v_config.trust_high_threshold THEN 'high'::public.trust_tier
-    WHEN p_trust_score >= v_config.trust_medium_threshold THEN 'medium'::public.trust_tier
-    ELSE 'low'::public.trust_tier
-  END;
-
-  IF v_report.mock_location_suspected THEN
-    v_status := 'pending_review';
-  ELSIF v_report.honeypot_suspected THEN
-    v_status := 'pending_review';
-  ELSIF v_report.gps_accuracy_meters > v_config.gps_accuracy_max_meters THEN
-    v_status := 'pending_review';
-  ELSIF v_report.photo_expected AND NOT EXISTS (
-    SELECT 1 FROM public.photo_assets WHERE report_id = p_report_id AND state = 'approved'
-  ) THEN
-    v_status := 'pending_review';
-  ELSIF v_tier = 'high' THEN
-    v_status := 'visible';
-  ELSE
-    v_status := 'pending_review';
-  END IF;
-
-  UPDATE public.reports
-  SET trust_score = p_trust_score, photo_validation_score = p_photo_score,
-      exif_consistency_score = p_exif_score, gps_trust_score = p_gps_score,
-      fingerprint_trust_score = p_fingerprint_score, trust_tier = v_tier,
-      status = v_status,
-      status_reason = CASE
-        WHEN mock_location_suspected THEN 'mock_location'::public.report_status_reason
-        WHEN honeypot_suspected THEN 'honeypot_signal'::public.report_status_reason
-        WHEN gps_accuracy_meters > v_config.gps_accuracy_max_meters THEN 'imprecise_gps'::public.report_status_reason
-        WHEN v_status = 'visible' THEN 'high_trust_auto_publish'::public.report_status_reason
-        ELSE 'medium_or_low_trust'::public.report_status_reason
-      END,
-      accepted_at = CASE WHEN v_status = 'visible' THEN COALESCE(accepted_at, now()) ELSE accepted_at END,
-      published_at = CASE WHEN v_status = 'visible' THEN now() ELSE published_at END,
-      public_until = CASE WHEN v_status = 'visible' THEN now() + interval '90 days' ELSE public_until END
-  WHERE id = p_report_id;
-
-  UPDATE public.photo_assets
-  SET purge_after = CASE WHEN v_status = 'visible' THEN now() + interval '90 days' ELSE purge_after END
-  WHERE report_id = p_report_id AND state = 'approved';
-  RETURN v_status;
-END;
-$$;
-
--- ---------------------------------------------------------------------------
 -- Duplicate candidate detection. It suggests only; no visibility changes occur.
 -- ---------------------------------------------------------------------------
-
+-- Set-based PostGIS suggestion remains a persistence invariant; it never resolves,
+-- hides, merges, or selects a canonical report.
 CREATE FUNCTION app_private.detect_duplicate_candidates()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -1261,7 +622,6 @@ BEGIN
     INTO STRICT v_radius, v_minutes
   FROM public.config_versions
   WHERE environment = app_private.current_environment() AND is_active;
-
   INSERT INTO public.duplicate_candidates (
     report_a, report_b, distance_meters, minutes_apart, matched_signals
   )
@@ -1293,570 +653,6 @@ CREATE TRIGGER trg_detect_duplicate_candidates
 AFTER INSERT ON public.reports
 FOR EACH ROW EXECUTE FUNCTION app_private.detect_duplicate_candidates();
 
-CREATE FUNCTION public.get_my_profile()
-RETURNS TABLE (
-  user_id UUID,
-  role public.user_role,
-  display_name TEXT,
-  is_active BOOLEAN
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-BEGIN
-  IF (SELECT auth.uid()) IS NULL THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'authentication_required';
-  END IF;
-  RETURN QUERY
-  SELECT p.id, p.role, p.display_name, p.active
-  FROM public.profiles p
-  WHERE p.id = (SELECT auth.uid());
-END;
-$$;
-
--- ---------------------------------------------------------------------------
--- Association projection: accepted canonical business data only, five years.
--- ---------------------------------------------------------------------------
-
-CREATE FUNCTION public.get_association_reports(
-  p_from TIMESTAMPTZ DEFAULT NULL,
-  p_to TIMESTAMPTZ DEFAULT NULL,
-  p_limit INTEGER DEFAULT 1000,
-  p_offset INTEGER DEFAULT 0
-)
-RETURNS TABLE (
-  report_id UUID,
-  exact_longitude DOUBLE PRECISION,
-  exact_latitude DOUBLE PRECISION,
-  incident public.incident_type,
-  sighting public.sighting_type,
-  business_details JSONB,
-  predominant_color TEXT,
-  dog_size public.dog_size,
-  has_collar BOOLEAN,
-  has_sanitized_photo BOOLEAN,
-  occurred_at TIMESTAMPTZ,
-  accepted_at TIMESTAMPTZ
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-BEGIN
-  IF NOT app_private.has_role('association') THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'association_role_required';
-  END IF;
-  RETURN QUERY
-  SELECT r.id, extensions.ST_X(r.location::extensions.geometry), extensions.ST_Y(r.location::extensions.geometry),
-         r.incident_type, r.sighting_type, r.details, r.color_predominante,
-         r.tamano, r.tiene_collar, (pa.id IS NOT NULL),
-         r.client_created_at, r.accepted_at
-  FROM public.reports r
-  LEFT JOIN public.photo_assets pa ON pa.report_id = r.id AND pa.state = 'approved'
-    AND pa.purge_after > now()
-  WHERE r.status = 'visible'
-    AND r.accepted_at >= now() - interval '5 years'
-    AND (p_from IS NULL OR r.client_created_at >= p_from)
-    AND (p_to IS NULL OR r.client_created_at < p_to)
-    AND NOT EXISTS (
-      SELECT 1 FROM public.duplicate_memberships dm
-      WHERE dm.report_id = r.id AND dm.active AND dm.member_role = 'duplicate'
-    )
-  ORDER BY r.client_created_at DESC, r.id
-  LIMIT LEAST(GREATEST(p_limit, 1), 5000)
-  OFFSET GREATEST(p_offset, 0);
-END;
-$$;
-
--- ---------------------------------------------------------------------------
--- Administrator moderation/configuration projections and audited commands.
--- ---------------------------------------------------------------------------
-
-CREATE FUNCTION public.get_administrator_moderation_queue(
-  p_limit INTEGER DEFAULT 200,
-  p_offset INTEGER DEFAULT 0
-)
-RETURNS TABLE (
-  report_id UUID,
-  moderation_status public.report_status,
-  reason public.report_status_reason,
-  exact_longitude DOUBLE PRECISION,
-  exact_latitude DOUBLE PRECISION,
-  gps_accuracy_meters NUMERIC,
-  mock_location_suspected BOOLEAN,
-  incident public.incident_type,
-  sighting public.sighting_type,
-  original_details JSONB,
-  predominant_color TEXT,
-  dog_size public.dog_size,
-  has_collar BOOLEAN,
-  photo_expected BOOLEAN,
-  has_sanitized_photo BOOLEAN,
-  trust_level public.trust_tier,
-  trust_score NUMERIC,
-  photo_validation_score NUMERIC,
-  exif_consistency_score NUMERIC,
-  gps_trust_score NUMERIC,
-  fingerprint_trust_score NUMERIC,
-  honeypot_suspected BOOLEAN,
-  flags JSONB,
-  duplicate_candidates JSONB,
-  active_duplicate_group_id UUID,
-  active_duplicate_member_role public.duplicate_member_role,
-  occurred_at TIMESTAMPTZ,
-  synced_at TIMESTAMPTZ
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required';
-  END IF;
-  RETURN QUERY
-  SELECT r.id, r.status, r.status_reason,
-         extensions.ST_X(r.location::extensions.geometry), extensions.ST_Y(r.location::extensions.geometry),
-         r.gps_accuracy_meters, r.mock_location_suspected,
-         r.incident_type, r.sighting_type, r.details,
-         r.color_predominante, r.tamano, r.tiene_collar, r.photo_expected,
-         (pa.id IS NOT NULL),
-         r.trust_tier, r.trust_score,
-         r.photo_validation_score, r.exif_consistency_score,
-         r.gps_trust_score, r.fingerprint_trust_score, r.honeypot_suspected,
-         COALESCE((
-           SELECT jsonb_agg(jsonb_build_object(
-             'reason', f.reason, 'detail', f.reason_detail, 'created_at', f.created_at
-           ) ORDER BY f.created_at)
-           FROM public.report_flags f WHERE f.report_id = r.id
-         ), '[]'::jsonb),
-         COALESCE((
-           SELECT jsonb_agg(jsonb_build_object(
-             'candidate_id', dc.id,
-             'other_report_id', CASE WHEN dc.report_a = r.id THEN dc.report_b ELSE dc.report_a END,
-             'distance_meters', dc.distance_meters,
-             'minutes_apart', dc.minutes_apart,
-             'matched_signals', dc.matched_signals,
-             'status', dc.status
-           ) ORDER BY dc.created_at)
-           FROM public.duplicate_candidates dc
-           WHERE dc.status = 'pending' AND (dc.report_a = r.id OR dc.report_b = r.id)
-         ), '[]'::jsonb),
-         dg.id,
-         dm.member_role,
-         r.client_created_at, r.synced_at
-  FROM public.reports r
-  LEFT JOIN public.photo_assets pa ON pa.report_id = r.id AND pa.state = 'approved'
-    AND (pa.purge_after IS NULL OR pa.purge_after > now())
-  LEFT JOIN public.duplicate_memberships dm ON dm.report_id = r.id AND dm.active
-  LEFT JOIN public.duplicate_groups dg ON dg.id = dm.group_id AND dg.status = 'active'
-  WHERE r.status IN ('pending_review', 'hidden', 'deleted')
-     OR EXISTS (SELECT 1 FROM public.report_flags f WHERE f.report_id = r.id)
-     OR EXISTS (
-       SELECT 1 FROM public.duplicate_candidates dc
-       WHERE dc.status = 'pending' AND (dc.report_a = r.id OR dc.report_b = r.id)
-     )
-     OR dm.active
-  ORDER BY r.synced_at, r.id
-  LIMIT LEAST(GREATEST(p_limit, 1), 500)
-  OFFSET GREATEST(p_offset, 0);
-END;
-$$;
-
-CREATE FUNCTION public.get_administrator_active_duplicate_groups()
-RETURNS TABLE (
-  group_id UUID,
-  canonical_report_id UUID,
-  member_report_ids UUID[],
-  resolved_at TIMESTAMPTZ,
-  resolution_version INTEGER
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required';
-  END IF;
-  RETURN QUERY
-  SELECT dg.id, dg.canonical_report_id,
-         ARRAY(
-           SELECT dm.report_id FROM public.duplicate_memberships dm
-           WHERE dm.group_id = dg.id AND dm.active ORDER BY dm.report_id
-         ),
-         dg.resolved_at, dg.resolution_version
-  FROM public.duplicate_groups dg
-  WHERE dg.status = 'active'
-  ORDER BY dg.resolved_at DESC, dg.id;
-END;
-$$;
-
-CREATE FUNCTION public.get_administrator_configuration()
-RETURNS TABLE (
-  active_configuration JSONB,
-  zone_sets JSONB
-)
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_environment public.deployment_environment;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required';
-  END IF;
-  v_environment := app_private.current_environment();
-  RETURN QUERY
-  SELECT
-    (SELECT to_jsonb(c) - ARRAY['created_by']::TEXT[]
-     FROM public.config_versions c
-     WHERE c.environment = v_environment AND c.is_active),
-    COALESCE((
-      SELECT jsonb_agg(
-        jsonb_build_object(
-          'id', zs.id, 'version', zs.version, 'name', zs.name,
-          'source_uri', zs.source_uri, 'source_version', zs.source_version,
-          'source_sha256', zs.source_sha256, 'status', zs.status,
-          'association_approval_reference', zs.association_approval_reference,
-          'approved_at', zs.approved_at, 'activated_at', zs.activated_at,
-          'created_at', zs.created_at
-        ) ORDER BY zs.version DESC
-      ) FROM public.zone_sets zs WHERE zs.environment = v_environment
-    ), '[]'::jsonb);
-END;
-$$;
-
-CREATE FUNCTION public.admin_approve_report(p_report_id UUID, p_note TEXT DEFAULT NULL)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_before JSONB;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN
-    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required';
-  END IF;
-  SELECT jsonb_build_object('status', status, 'reason', status_reason) INTO v_before
-  FROM public.reports WHERE id = p_report_id AND status IN ('pending_review', 'hidden') FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'invalid_approve_transition'; END IF;
-  UPDATE public.reports
-  SET status = 'visible', status_reason = 'administrator_approved',
-      accepted_at = COALESCE(accepted_at, now()), published_at = now(),
-      public_until = now() + interval '90 days', hidden_at = NULL,
-      flag_reviewed_at = now()
-  WHERE id = p_report_id;
-  UPDATE public.photo_assets SET purge_after = now() + interval '90 days'
-  WHERE report_id = p_report_id AND state = 'approved';
-  PERFORM app_private.write_audit(auth.uid(), 'report_approved', 'report', p_report_id,
-    v_before, jsonb_build_object('status', 'visible'), p_note);
-END;
-$$;
-
-CREATE FUNCTION public.admin_hide_report(p_report_id UUID, p_note TEXT)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_before JSONB;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required'; END IF;
-  IF p_note IS NULL OR length(trim(p_note)) = 0 THEN RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'moderation_note_required'; END IF;
-  SELECT jsonb_build_object('status', status, 'reason', status_reason) INTO v_before
-  FROM public.reports WHERE id = p_report_id AND status IN ('pending_review', 'visible') FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'invalid_hide_transition'; END IF;
-  UPDATE public.reports SET status = 'hidden', status_reason = 'administrator_hidden', hidden_at = now()
-  WHERE id = p_report_id;
-  PERFORM app_private.write_audit(auth.uid(), 'report_hidden', 'report', p_report_id,
-    v_before, jsonb_build_object('status', 'hidden'), p_note);
-END;
-$$;
-
-CREATE FUNCTION public.admin_logical_delete_report(p_report_id UUID, p_note TEXT)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_before JSONB; v_previous public.report_status;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required'; END IF;
-  IF p_note IS NULL OR length(trim(p_note)) = 0 THEN RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'moderation_note_required'; END IF;
-  SELECT status, jsonb_build_object('status', status, 'reason', status_reason)
-    INTO v_previous, v_before FROM public.reports
-  WHERE id = p_report_id AND status <> 'deleted' FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'invalid_delete_transition'; END IF;
-  UPDATE public.reports
-  SET previous_status = v_previous, status = 'deleted', status_reason = 'logical_deletion', deleted_at = now()
-  WHERE id = p_report_id;
-  PERFORM app_private.write_audit(auth.uid(), 'report_logically_deleted', 'report', p_report_id,
-    v_before, jsonb_build_object('status', 'deleted'), p_note);
-END;
-$$;
-
-CREATE FUNCTION public.admin_restore_report(p_report_id UUID, p_note TEXT)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_before JSONB;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required'; END IF;
-  IF p_note IS NULL OR length(trim(p_note)) = 0 THEN RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'moderation_note_required'; END IF;
-  SELECT jsonb_build_object('status', status, 'reason', status_reason) INTO v_before
-  FROM public.reports WHERE id = p_report_id AND status IN ('hidden', 'deleted') FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'invalid_restore_transition'; END IF;
-  UPDATE public.reports
-  SET status = 'pending_review', status_reason = 'restored_for_review',
-      previous_status = NULL, deleted_at = NULL, hidden_at = NULL,
-      accepted_at = NULL, published_at = NULL, public_until = NULL,
-      flag_reviewed_at = now()
-  WHERE id = p_report_id;
-  PERFORM app_private.write_audit(auth.uid(), 'report_restored', 'report', p_report_id,
-    v_before, jsonb_build_object('status', 'pending_review'), p_note);
-END;
-$$;
-
-CREATE FUNCTION public.admin_resolve_duplicate_group(
-  p_canonical_report_id UUID,
-  p_report_ids UUID[],
-  p_note TEXT DEFAULT NULL
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_group_id UUID; v_distinct_count INTEGER; v_connected_count INTEGER;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required'; END IF;
-  SELECT count(DISTINCT value) INTO v_distinct_count FROM unnest(p_report_ids) AS value;
-  IF v_distinct_count < 2 OR NOT (p_canonical_report_id = ANY(p_report_ids)) THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_duplicate_group';
-  END IF;
-  IF EXISTS (
-    SELECT 1 FROM public.reports r WHERE r.id = ANY(p_report_ids) AND r.status = 'deleted'
-  ) OR (SELECT count(*) FROM public.reports r WHERE r.id = ANY(p_report_ids)) <> v_distinct_count THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_duplicate_member';
-  END IF;
-  IF EXISTS (
-    SELECT 1 FROM public.duplicate_memberships dm WHERE dm.report_id = ANY(p_report_ids) AND dm.active
-  ) THEN
-    RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'active_duplicate_membership_exists';
-  END IF;
-  IF EXISTS (
-    SELECT 1
-    FROM unnest(p_report_ids) AS member(id)
-    WHERE NOT EXISTS (
-      SELECT 1 FROM public.duplicate_candidates dc
-      WHERE dc.status = 'pending'
-        AND dc.report_a = ANY(p_report_ids)
-        AND dc.report_b = ANY(p_report_ids)
-        AND (dc.report_a = member.id OR dc.report_b = member.id)
-    )
-  ) THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'duplicate_candidates_required';
-  END IF;
-  WITH RECURSIVE connected AS (
-    SELECT p_canonical_report_id AS id
-    UNION
-    SELECT CASE WHEN dc.report_a = connected.id THEN dc.report_b ELSE dc.report_a END
-    FROM connected
-    JOIN public.duplicate_candidates dc
-      ON dc.status = 'pending'
-     AND dc.report_a = ANY(p_report_ids)
-     AND dc.report_b = ANY(p_report_ids)
-     AND (dc.report_a = connected.id OR dc.report_b = connected.id)
-  )
-  SELECT count(*) INTO v_connected_count FROM connected;
-  IF v_connected_count <> v_distinct_count THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'duplicate_group_not_connected';
-  END IF;
-
-  INSERT INTO public.duplicate_groups (canonical_report_id, resolved_by, note)
-  VALUES (p_canonical_report_id, auth.uid(), p_note) RETURNING id INTO v_group_id;
-  INSERT INTO public.duplicate_memberships (group_id, report_id, member_role)
-  SELECT v_group_id, value,
-         CASE WHEN value = p_canonical_report_id THEN 'canonical'::public.duplicate_member_role
-              ELSE 'duplicate'::public.duplicate_member_role END
-  FROM (SELECT DISTINCT unnest(p_report_ids) AS value) members;
-  UPDATE public.duplicate_candidates
-  SET status = 'confirmed', reviewed_by = auth.uid(), reviewed_at = now()
-  WHERE report_a = ANY(p_report_ids) AND report_b = ANY(p_report_ids);
-  PERFORM app_private.write_audit(auth.uid(), 'duplicate_resolved', 'duplicate_group', v_group_id,
-    NULL, jsonb_build_object('canonical_report_id', p_canonical_report_id, 'report_ids', p_report_ids), p_note);
-  RETURN v_group_id;
-END;
-$$;
-
-CREATE FUNCTION public.admin_reverse_duplicate_group(p_group_id UUID, p_note TEXT)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_report_ids UUID[];
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required'; END IF;
-  IF p_note IS NULL OR length(trim(p_note)) = 0 THEN RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'reversal_note_required'; END IF;
-  SELECT array_agg(report_id) INTO v_report_ids FROM public.duplicate_memberships
-  WHERE group_id = p_group_id AND active;
-  IF v_report_ids IS NULL THEN RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'active_duplicate_group_not_found'; END IF;
-  UPDATE public.duplicate_groups
-  SET status = 'reversed', reversed_by = auth.uid(), reversed_at = now()
-  WHERE id = p_group_id AND status = 'active';
-  UPDATE public.duplicate_memberships SET active = FALSE WHERE group_id = p_group_id AND active;
-  UPDATE public.duplicate_candidates SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL
-  WHERE report_a = ANY(v_report_ids) AND report_b = ANY(v_report_ids);
-  PERFORM app_private.write_audit(auth.uid(), 'duplicate_reversed', 'duplicate_group', p_group_id,
-    jsonb_build_object('report_ids', v_report_ids), jsonb_build_object('status', 'reversed'), p_note);
-END;
-$$;
-
-CREATE FUNCTION public.admin_publish_configuration(
-  p_flag_auto_hide_threshold INTEGER,
-  p_duplicate_radius_meters INTEGER,
-  p_duplicate_time_window_minutes INTEGER,
-  p_trust_high_threshold NUMERIC,
-  p_trust_medium_threshold NUMERIC,
-  p_gps_accuracy_max_meters NUMERIC,
-  p_report_rate_limit_per_hour INTEGER,
-  p_flag_rate_limit_per_hour INTEGER,
-  p_change_note TEXT
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_environment public.deployment_environment; v_version INTEGER; v_id UUID; v_old JSONB;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required'; END IF;
-  v_environment := app_private.current_environment();
-  SELECT to_jsonb(c), version + 1 INTO v_old, v_version
-  FROM public.config_versions c WHERE environment = v_environment AND is_active FOR UPDATE;
-  UPDATE public.config_versions SET is_active = FALSE WHERE environment = v_environment AND is_active;
-  INSERT INTO public.config_versions (
-    environment, version, is_active, flag_auto_hide_threshold,
-    duplicate_radius_meters, duplicate_time_window_minutes,
-    trust_high_threshold, trust_medium_threshold, gps_accuracy_max_meters,
-    report_rate_limit_per_hour, flag_rate_limit_per_hour, change_note, created_by
-  ) VALUES (
-    v_environment, v_version, TRUE, p_flag_auto_hide_threshold,
-    p_duplicate_radius_meters, p_duplicate_time_window_minutes,
-    p_trust_high_threshold, p_trust_medium_threshold, p_gps_accuracy_max_meters,
-    p_report_rate_limit_per_hour, p_flag_rate_limit_per_hour, p_change_note, auth.uid()
-  ) RETURNING id INTO v_id;
-  PERFORM app_private.write_audit(auth.uid(), 'configuration_published', 'config_version', v_id,
-    v_old, jsonb_build_object('version', v_version), p_change_note);
-  RETURN v_id;
-END;
-$$;
-
-CREATE FUNCTION public.admin_create_zone_set(
-  p_name TEXT,
-  p_source_uri TEXT,
-  p_source_version TEXT,
-  p_source_sha256 TEXT,
-  p_boundary_geojson JSONB
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_environment public.deployment_environment; v_version INTEGER; v_id UUID; v_geometry extensions.geometry;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required'; END IF;
-  IF p_source_sha256 IS NULL OR lower(p_source_sha256) !~ '^[0-9a-f]{64}$' THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_source_sha256';
-  END IF;
-  v_environment := app_private.current_environment();
-  v_geometry := extensions.ST_SetSRID(extensions.ST_GeomFromGeoJSON(p_boundary_geojson::TEXT), 4326);
-  IF extensions.GeometryType(v_geometry) NOT IN ('POLYGON', 'MULTIPOLYGON') OR NOT extensions.ST_IsValid(v_geometry)
-     OR extensions.ST_IsEmpty(v_geometry) THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_zone_geometry';
-  END IF;
-  IF NOT extensions.ST_CoveredBy(v_geometry, extensions.ST_MakeEnvelope(-109.1, 25.5, -103.0, 31.8, 4326))
-     OR extensions.ST_Area(v_geometry::extensions.geography) NOT BETWEEN 1000 AND 10000000000 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'zone_outside_chihuahua_sanity_bounds';
-  END IF;
-  SELECT COALESCE(max(version), 0) + 1 INTO v_version
-  FROM public.zone_sets WHERE environment = v_environment;
-  INSERT INTO public.zone_sets (
-    environment, version, name, source_uri, source_version, source_sha256, created_by
-  ) VALUES (
-    v_environment, v_version, p_name, p_source_uri, p_source_version,
-    lower(p_source_sha256), auth.uid()
-  ) RETURNING id INTO v_id;
-  INSERT INTO public.zones (zone_set_id, name, boundary)
-  VALUES (v_id, p_name, extensions.ST_Multi(v_geometry)::extensions.geography);
-  PERFORM app_private.write_audit(auth.uid(), 'zone_set_created', 'zone_set', v_id,
-    NULL, jsonb_build_object('version', v_version, 'source_sha256', lower(p_source_sha256)), NULL);
-  RETURN v_id;
-END;
-$$;
-
-CREATE FUNCTION public.admin_activate_zone_set(
-  p_zone_set_id UUID,
-  p_association_approval_reference TEXT,
-  p_note TEXT DEFAULT NULL
-)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE v_environment public.deployment_environment; v_old_id UUID;
-BEGIN
-  IF NOT app_private.has_role('administrator') THEN RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'administrator_role_required'; END IF;
-  IF p_association_approval_reference IS NULL OR length(trim(p_association_approval_reference)) < 3 THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'association_approval_required';
-  END IF;
-  IF p_note IS NOT NULL AND length(trim(p_note)) > 0
-     AND lower(trim(p_note)) = lower(trim(p_association_approval_reference)) THEN
-    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'approval_reference_must_not_be_admin_note';
-  END IF;
-  v_environment := app_private.current_environment();
-  IF NOT EXISTS (
-    SELECT 1 FROM public.zone_sets zs JOIN public.zones z ON z.zone_set_id = zs.id
-    WHERE zs.id = p_zone_set_id
-      AND zs.environment = v_environment
-      AND zs.status IN ('draft', 'approved')
-      AND zs.source_sha256 ~ '^[0-9a-f]{64}$'
-  ) THEN RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_zone_set'; END IF;
-
-  SELECT id INTO v_old_id FROM public.zone_sets
-  WHERE environment = v_environment AND status = 'active' FOR UPDATE;
-  UPDATE public.zone_sets SET status = 'retired', activated_at = NULL
-  WHERE id = v_old_id;
-  UPDATE public.zone_sets
-  SET status = 'active', association_approval_reference = p_association_approval_reference,
-      approved_at = COALESCE(approved_at, now()), activated_at = now()
-  WHERE id = p_zone_set_id;
-  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'zone_activation_failed'; END IF;
-  PERFORM app_private.write_audit(auth.uid(), 'zone_set_activated', 'zone_set', p_zone_set_id,
-    jsonb_build_object('previous_active_zone_set_id', v_old_id),
-    jsonb_build_object('association_approval_reference', p_association_approval_reference), p_note);
-END;
-$$;
-
--- ---------------------------------------------------------------------------
--- Retention worker. Storage deletion is compensating work: mark first, delete
--- the object externally, then acknowledge. Report rows are purged only after any
--- associated photo has reached purged state. A NULL photo.purge_after must not
--- block purge when the parent report is itself eligible.
--- ---------------------------------------------------------------------------
-
 CREATE FUNCTION app_private.report_is_purge_eligible(
   p_status public.report_status,
   p_deleted_at TIMESTAMPTZ,
@@ -1875,6 +671,14 @@ AS $$
     OR (p_accepted_at IS NULL AND p_synced_at <= p_now - interval '5 years')
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Retention worker. Storage deletion is compensating work: mark first, delete
+-- the object externally, then acknowledge. Report rows are purged only after any
+-- associated photo has reached purged state. A NULL photo.purge_after must not
+-- block purge when the parent report is itself eligible.
+-- ---------------------------------------------------------------------------
+-- Deterministic form is retained for controlled SQL tests and is not granted to
+-- app_backend. The production wrapper below always supplies server now().
 CREATE FUNCTION app_private.run_retention_at(p_now TIMESTAMPTZ)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -1883,7 +687,11 @@ SET search_path = ''
 AS $$
 DECLARE v_report_fingerprints INTEGER; v_flag_fingerprints INTEGER;
         v_photos INTEGER; v_audits INTEGER; v_reports INTEGER;
+        v_buckets INTEGER;
 BEGIN
+  IF app_private.actor_role() IS DISTINCT FROM 'internal' THEN
+    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'internal_actor_context_required';
+  END IF;
   IF p_now IS NULL THEN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'retention_timestamp_required';
   END IF;
@@ -1909,6 +717,8 @@ BEGIN
       )
     );
   GET DIAGNOSTICS v_photos = ROW_COUNT;
+  DELETE FROM public.rate_limit_buckets WHERE expires_at <= p_now;
+  GET DIAGNOSTICS v_buckets = ROW_COUNT;
   DELETE FROM public.audit_log WHERE created_at <= p_now - interval '2 years';
   GET DIAGNOSTICS v_audits = ROW_COUNT;
   DELETE FROM public.reports r
@@ -1924,41 +734,25 @@ BEGIN
     'report_fingerprints_cleared', v_report_fingerprints,
     'flag_fingerprints_cleared', v_flag_fingerprints,
     'photos_marked_for_purge', v_photos,
+    'rate_buckets_purged', v_buckets,
     'audit_rows_purged', v_audits,
     'report_rows_purged', v_reports
   );
 END;
 $$;
 
--- Production worker entrypoint. Clock is always server now(); no caller clock.
-CREATE FUNCTION public.service_run_retention()
-RETURNS JSONB
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT app_private.run_retention_at(now())
-$$;
+CREATE FUNCTION app_private.run_retention()
+RETURNS JSONB LANGUAGE sql SECURITY DEFINER SET search_path = ''
+AS $$ SELECT app_private.run_retention_at(now()) $$;
 
-CREATE FUNCTION public.service_acknowledge_photo_purge(p_photo_id UUID)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-BEGIN
-  UPDATE public.photo_assets
-  SET state = 'purged', purged_at = now(), approved_object_path = NULL
-  WHERE id = p_photo_id AND state = 'purge_pending';
-  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE = '55000', MESSAGE = 'photo_not_pending_purge'; END IF;
-END;
-$$;
+-- Production worker entrypoint. Clock is always server now(); no caller clock.
 
 -- ---------------------------------------------------------------------------
 -- RLS and privileges. RLS restricts rows if a grant is added accidentally;
 -- GRANT/REVOKE prevents broad table/API operations. Both layers are required.
 -- ---------------------------------------------------------------------------
-
+-- RLS: app_backend remains subject to every policy. Context is set locally by the
+-- owning Service transaction; role/profile agreement is checked again in SQL.
 ALTER TABLE public.deployment_metadata ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.zone_sets ENABLE ROW LEVEL SECURITY;
@@ -1971,62 +765,147 @@ ALTER TABLE public.duplicate_candidates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.duplicate_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.duplicate_memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rate_limit_buckets ENABLE ROW LEVEL SECURITY;
 
--- Defense-in-depth only. Clients read the caller's profile through get_my_profile.
-CREATE POLICY profiles_select_own ON public.profiles
-FOR SELECT TO authenticated
-USING (id = (SELECT auth.uid()));
+CREATE POLICY deployment_backend_select ON public.deployment_metadata
+FOR SELECT TO app_backend USING (app_private.actor_role() IN ('anonymous', 'association', 'administrator', 'internal'));
 
+CREATE POLICY profiles_actor_select ON public.profiles FOR SELECT TO app_backend
+USING (id = app_private.actor_id() OR app_private.actor_role() = 'internal');
+
+CREATE POLICY zones_backend_select ON public.zone_sets FOR SELECT TO app_backend
+USING (app_private.actor_role() IN ('anonymous', 'association', 'administrator', 'internal'));
+CREATE POLICY zones_backend_mutate ON public.zone_sets FOR ALL TO app_backend
+USING (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal')
+WITH CHECK (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal');
+CREATE POLICY zone_geometry_backend_select ON public.zones FOR SELECT TO app_backend
+USING (app_private.actor_role() IN ('anonymous', 'administrator', 'internal'));
+CREATE POLICY zone_geometry_backend_mutate ON public.zones FOR ALL TO app_backend
+USING (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal')
+WITH CHECK (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal');
+
+CREATE POLICY config_backend_select ON public.config_versions FOR SELECT TO app_backend
+USING (app_private.actor_role() IN ('anonymous', 'association', 'administrator', 'internal'));
+CREATE POLICY config_backend_mutate ON public.config_versions FOR ALL TO app_backend
+USING (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal')
+WITH CHECK (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal');
+
+CREATE POLICY reports_backend_select ON public.reports FOR SELECT TO app_backend USING (
+  app_private.actor_role() = 'internal'
+  OR app_private.is_active_actor('administrator')
+  OR (app_private.is_active_actor('association') AND status = 'visible'
+      AND accepted_at >= now() - interval '5 years' AND NOT app_private.is_noncanonical(id))
+  OR (app_private.actor_role() = 'anonymous' AND (
+      (status = 'visible' AND public_until > now() AND NOT app_private.is_noncanonical(id))
+      OR device_fingerprint_hash = app_private.origin_hash()
+  ))
+);
+CREATE POLICY reports_backend_insert ON public.reports FOR INSERT TO app_backend
+WITH CHECK (app_private.actor_role() IN ('anonymous', 'internal'));
+CREATE POLICY reports_backend_update ON public.reports FOR UPDATE TO app_backend
+USING (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator')
+  OR (app_private.actor_role() = 'anonymous'
+      AND (device_fingerprint_hash = app_private.origin_hash() OR status = 'visible')))
+WITH CHECK (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator')
+  OR app_private.actor_role() = 'anonymous');
+
+CREATE POLICY photos_backend_select ON public.photo_assets FOR SELECT TO app_backend USING (
+  app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator')
+  OR EXISTS (SELECT 1 FROM public.reports r WHERE r.id = report_id)
+);
+-- clients never receive Storage write access or write photo_assets directly.
+CREATE POLICY photos_backend_insert ON public.photo_assets FOR INSERT TO app_backend
+WITH CHECK (
+  app_private.actor_role() = 'internal'
+  OR (app_private.actor_role() = 'anonymous' AND EXISTS (
+    SELECT 1 FROM public.reports r
+    WHERE r.id = report_id AND r.device_fingerprint_hash = app_private.origin_hash()
+  ))
+);
+CREATE POLICY photos_backend_update ON public.photo_assets FOR UPDATE TO app_backend
+USING (
+  app_private.actor_role() = 'internal'
+  OR (app_private.actor_role() = 'anonymous' AND EXISTS (
+    SELECT 1 FROM public.reports r
+    WHERE r.id = report_id AND r.device_fingerprint_hash = app_private.origin_hash()
+  ))
+)
+WITH CHECK (
+  app_private.actor_role() = 'internal'
+  OR (app_private.actor_role() = 'anonymous' AND EXISTS (
+    SELECT 1 FROM public.reports r
+    WHERE r.id = report_id AND r.device_fingerprint_hash = app_private.origin_hash()
+  ))
+);
+
+CREATE POLICY flags_backend_select ON public.report_flags FOR SELECT TO app_backend
+USING (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'));
+CREATE POLICY flags_backend_insert ON public.report_flags FOR INSERT TO app_backend
+WITH CHECK (app_private.actor_role() IN ('anonymous', 'internal'));
+
+CREATE POLICY candidates_backend_select ON public.duplicate_candidates FOR SELECT TO app_backend
+USING (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'));
+CREATE POLICY candidates_backend_insert ON public.duplicate_candidates FOR INSERT TO app_backend
+WITH CHECK (app_private.actor_role() IN ('anonymous', 'internal'));
+CREATE POLICY candidates_backend_update ON public.duplicate_candidates FOR UPDATE TO app_backend
+USING (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'))
+WITH CHECK (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'));
+
+CREATE POLICY groups_backend_all ON public.duplicate_groups FOR ALL TO app_backend
+USING (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'))
+WITH CHECK (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'));
+CREATE POLICY memberships_backend_all ON public.duplicate_memberships FOR ALL TO app_backend
+USING (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'))
+WITH CHECK (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'));
+
+CREATE POLICY audit_backend_select ON public.audit_log FOR SELECT TO app_backend
+USING (app_private.actor_role() = 'internal' OR app_private.is_active_actor('administrator'));
+CREATE POLICY audit_backend_insert ON public.audit_log FOR INSERT TO app_backend
+WITH CHECK (app_private.actor_role() IN ('anonymous', 'internal')
+  OR app_private.is_active_actor('administrator'));
+
+CREATE POLICY rates_backend_all ON public.rate_limit_buckets FOR ALL TO app_backend
+USING (app_private.actor_role() IN ('anonymous', 'internal'))
+WITH CHECK (app_private.actor_role() IN ('anonymous', 'internal'));
+
+-- Mobile/PostgREST kill switch: no application table, sequence, or function grant.
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM service_role;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM service_role;
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM service_role;
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA app_private FROM PUBLIC, anon, authenticated, service_role;
 
-GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT USAGE ON SCHEMA public, app_private, extensions TO app_backend;
+GRANT SELECT ON public.deployment_metadata, public.profiles, public.zone_sets,
+  public.zones, public.config_versions, public.reports, public.photo_assets,
+  public.report_flags, public.duplicate_candidates, public.duplicate_groups,
+  public.duplicate_memberships, public.audit_log TO app_backend;
+GRANT INSERT ON public.reports, public.photo_assets, public.report_flags,
+  public.duplicate_candidates, public.duplicate_groups,
+  public.duplicate_memberships, public.config_versions, public.zone_sets,
+  public.zones, public.audit_log TO app_backend;
+GRANT UPDATE (status, status_reason, previous_status, trust_tier, trust_score, trust_config_id, photo_validation_score, exif_consistency_score, gps_trust_score, fingerprint_trust_score, device_fingerprint_hash, fingerprint_expires_at, accepted_at, published_at, public_until, hidden_at, deleted_at, flag_reviewed_at) ON public.reports TO app_backend;
+GRANT UPDATE (state, approved_object_path, detected_mime_type, byte_size, width_pixels, height_pixels, sanitized_sha256, rejection_code, approved_at, purge_after, purged_at) ON public.photo_assets TO app_backend;
+GRANT UPDATE (status, reviewed_by, reviewed_at) ON public.duplicate_candidates TO app_backend;
+GRANT UPDATE (status, resolution_version, reversed_by, reversed_at) ON public.duplicate_groups TO app_backend;
+GRANT UPDATE (active) ON public.duplicate_memberships TO app_backend;
+GRANT UPDATE (is_active) ON public.config_versions TO app_backend;
+GRANT UPDATE (status, association_approval_reference, approved_at, activated_at) ON public.zone_sets TO app_backend;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_backend;
 
-GRANT EXECUTE ON FUNCTION public.submit_report(
-  UUID, DOUBLE PRECISION, DOUBLE PRECISION, NUMERIC, BOOLEAN,
-  public.incident_type, public.sighting_type, JSONB, TEXT, public.dog_size,
-  BOOLEAN, BOOLEAN, BOOLEAN, TEXT, BOOLEAN, TIMESTAMPTZ
-) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.submit_report_flag(UUID, public.flag_reason, TEXT, TEXT)
-  TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_public_reports(TIMESTAMPTZ, INTEGER)
-  TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_public_clusters(
-  INTEGER, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, INTEGER
-) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_report_photo_status(UUID, TEXT)
-  TO anon, authenticated;
+REVOKE UPDATE, DELETE, TRUNCATE ON public.audit_log FROM app_backend;
+REVOKE DELETE, TRUNCATE ON ALL TABLES IN SCHEMA public FROM app_backend;
 
-GRANT EXECUTE ON FUNCTION public.get_my_profile()
-  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_association_reports(TIMESTAMPTZ, TIMESTAMPTZ, INTEGER, INTEGER)
-  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_administrator_moderation_queue(INTEGER, INTEGER)
-  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_administrator_active_duplicate_groups()
-  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_administrator_configuration()
-  TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_approve_report(UUID, TEXT),
-  public.admin_hide_report(UUID, TEXT),
-  public.admin_logical_delete_report(UUID, TEXT),
-  public.admin_restore_report(UUID, TEXT),
-  public.admin_resolve_duplicate_group(UUID, UUID[], TEXT),
-  public.admin_reverse_duplicate_group(UUID, TEXT),
-  public.admin_publish_configuration(INTEGER, INTEGER, INTEGER, NUMERIC, NUMERIC, NUMERIC, INTEGER, INTEGER, TEXT),
-  public.admin_create_zone_set(TEXT, TEXT, TEXT, TEXT, JSONB),
-  public.admin_activate_zone_set(UUID, TEXT, TEXT)
-  TO authenticated;
-
-GRANT EXECUTE ON FUNCTION public.service_begin_photo_processing(UUID, TEXT, TEXT),
-  public.service_register_processed_photo(UUID, TEXT, TEXT, TEXT, INTEGER, INTEGER, INTEGER, TEXT, NUMERIC, NUMERIC),
-  public.service_reject_photo(UUID, TEXT, TEXT),
-  public.service_authorize_report_photo_delivery(UUID, UUID),
-  public.service_apply_trust_assessment(UUID, NUMERIC, NUMERIC, NUMERIC, NUMERIC, NUMERIC),
-  public.service_run_retention(),
-  public.service_acknowledge_photo_purge(UUID)
-  TO service_role;
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA app_private FROM app_backend;
+GRANT EXECUTE ON FUNCTION app_private.actor_role(), app_private.actor_id(),
+  app_private.origin_hash(), app_private.current_environment(),
+  app_private.is_active_actor(public.user_role),
+  app_private.is_noncanonical(UUID),
+  app_private.incident_severity(public.incident_type),
+  app_private.approximate_public_location(extensions.geography),
+  app_private.consume_rate_limit(TEXT, TEXT, INTEGER),
+  app_private.run_retention() TO app_backend;
 
 COMMIT;

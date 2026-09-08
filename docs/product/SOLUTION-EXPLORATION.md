@@ -13,15 +13,15 @@ rationale belongs to the
 | Product surfaces | One role-aware mobile app or separate public/admin clients | [Approved clarification 15](APPROVED-CLARIFICATIONS.md) |
 | Connectivity | Offline report capture with online exploration, or offline map distribution | [Approved clarification 14](APPROVED-CLARIFICATIONS.md) |
 | Duplicate decisions | Human review, automatic merge, or mandatory visual inference | [Approved clarifications 11 and 21](APPROVED-CLARIFICATIONS.md) |
-| Live geofence | Treat locality data as authoritative or require Association approval | [`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md) |
+| Live geofence | Treat locality data as authoritative or require Asociación de Hoteles de Chihuahua approval | [`GEOFENCE-CANDIDATE.md`](GEOFENCE-CANDIDATE.md) |
 
 ## Technical alternatives index
 
 | Question | Alternatives retained in history | Accepted rationale |
 |---|---|---|
-| Client data boundary | Broad table CRUD, custom API, or narrow generated RPC transport | [ADR-002](../architecture/DECISIONS.md#adr-002--rpc-only-client-data-boundary) |
+| Client data boundary | Broad table CRUD, generated RPC transport, or one modular application API | [ADR-018](../architecture/DECISIONS.md#adr-018--one-hono-api-with-direct-postgresql-repositories) |
 | Offline persistence | Memory-only state, database blobs, or durable metadata plus local file | [ADR-006](../architecture/DECISIONS.md#adr-006--durable-offline-queue-with-expo-sqlite) |
-| Image boundary | Raw quarantine Storage or transient Function processing | [ADR-007](../architecture/DECISIONS.md#adr-007--direct-image-function-plus-private-sanitized-storage) |
+| Image boundary | Raw quarantine Storage, separate Function, or transient route processing | [ADR-007](../architecture/DECISIONS.md#adr-007--hono-image-route-plus-private-sanitized-storage) |
 | Map and location privacy | Alternative renderers, degree clustering, or stable metric approximation | [ADR-008](../architecture/DECISIONS.md#adr-008--maplibre-react-native-with-hosted-vector-tiles) and [ADR-010](../architecture/DECISIONS.md#adr-010--metric-server-clustering-and-stable-public-approximation) |
 | On-device vision | ML Kit, cloud inference, or bundled TFLite | [ADR-009](../architecture/DECISIONS.md#adr-009--custom-bundled-tflite-via-react-native-fast-tflite) |
 | Hosting | Self-hosted VPS stacks or managed Supabase | [ADRs 013, 015, and 016](../architecture/DECISIONS.md#adr-013--separate-stacks-on-one-vps) |

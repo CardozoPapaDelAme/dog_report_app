@@ -4,13 +4,15 @@ Read this file before changing the project.
 
 ## Source precedence
 
-1. `Etapa 1. Requerimientos.pdf` and
-   `docs/product/ETAPA1-REQUERIMIENTOS.md` preserve the original SRS and IDs.
-2. `docs/product/APPROVED-CLARIFICATIONS.md` governs approved amendments.
-3. `db/schema.sql` is the authoritative exact target schema and API/data boundary.
-4. `docs/API.md` and `docs/DATA-MODEL.md` explain that contract for consumers and
-   readers; they do not override the schema.
-5. `docs/architecture/DECISIONS.md` records rationale and constraints.
+1. `docs/product/APPROVED-CLARIFICATIONS.md` governs approved amendments; later
+   numbered decisions supersede earlier conflicts.
+2. `docs/product/ETAPA1-REQUERIMIENTOS-V2.md` is the normative consolidated SRS.
+3. `Etapa 1. Requerimientos.pdf` and `docs/product/ETAPA1-REQUERIMIENTOS.md`
+   preserve historical wording and exact RF/RNF/HU identifiers.
+4. `docs/API.md` and `db/schema.sql` are peer exact contracts for HTTP and
+   persistence respectively; neither silently overrides the other.
+5. `docs/DATA-MODEL.md` explains persistent semantics and
+   `docs/architecture/DECISIONS.md` records rationale and constraints.
 
 Never rewrite the SRS body to conceal a later decision. Update clarifications,
 schema/data contract, ADRs, traceability, and tests together.
@@ -26,19 +28,25 @@ schema/data contract, ADRs, traceability, and tests together.
   management stay disabled.
 - The Asociación de Hoteles de Chihuahua receives accepted canonical business data only. Administrator does
   not inherit BI/export and acts through specific audited commands.
-- Clients never write tables directly or set moderation, trust, server-controlled
+- Mobile clients never access domain tables directly or set moderation, trust, server-controlled
   lifecycle/audit timestamps, retention, or duplicate-resolution fields. The
-  validated `p_client_created_at` parameter is the client's observation timestamp,
-  not a server lifecycle timestamp. Use the RPC contracts in `docs/API.md`.
+  validated `client_created_at` field is the client's observation timestamp, not a
+  server lifecycle timestamp. Use the HTTP contracts in `docs/API.md`.
 - Phase 1 targets Supabase managed Free. Model the provider as one managed
-  boundary, logically decomposed into Auth, Data API/PostgREST, Edge Functions,
-  Storage, and PostgreSQL/PostGIS; never claim physical provider internals.
-- Do not add a redundant custom Controller-Service-Repository API. PostgREST is
-  the generated HTTP adapter, SQL RPCs own transactional use cases, PostgreSQL
-  owns persistence/RLS/PostGIS, and Edge Functions are reserved for
-  non-relational image work or external integrations.
-- RLS and SQL privileges are both mandatory. Never ship `service_role` or other
-  server credentials to the mobile app.
+  boundary, logically decomposed into Auth, one Edge Function `api`, Storage, and
+  PostgreSQL/PostGIS; never claim physical provider internals.
+- All domain traffic uses one plain-JavaScript Hono API in the Edge Function
+  `api`. Organize it as API-oriented Controllers, Services, Repositories, Domain,
+  and JSON Presenters. Repositories use direct parameterized PostgreSQL access;
+  domain persistence must not use PostgREST, `.from()`, `.rpc()`, or exposed
+  domain/service SQL functions.
+- Services own authorization, policy, orchestration, and transactions. Every
+  transaction sets local actor context before repository access. PostgreSQL owns
+  constraints, RLS, grants, PostGIS, locking, audit integrity, and narrow
+  backend-only atomic/set-based primitives.
+- RLS and SQL privileges are both mandatory. The `app_backend` login is
+  `NOBYPASSRLS`, owns no application objects, and receives least privilege. Never
+  ship it, `service_role`, or other server credentials to the mobile app.
 - Raw EXIF is transient input and must never be persisted. Public images are
   sanitized, private, and delivered only after authorization; public positions
   use the stable 50 m approximation.
@@ -60,10 +68,13 @@ schema/data contract, ADRs, traceability, and tests together.
   Storage migrations or policies; do not invent columns or behavior.
 - The local Supabase Docker stack is optional. The selected remote deployment
   workflow uses a version-checked Supabase CLI; deploy Edge Functions explicitly
-  with `supabase functions deploy <function-name> --use-api`. Keep SQL migrations
+  with `supabase functions deploy api --use-api`. Keep SQL migrations
   and Functions versioned even when developing against the managed project.
 - Do not put access tokens, database passwords, service keys, or Function secrets
   in Git. The mobile app receives only publishable client configuration.
+- Deploy the single backend explicitly with
+  `supabase functions deploy api --use-api`; fail closed on project, environment,
+  secret, JWT/profile/role, geofence, or scheduler preflight mismatch.
 
 ## Navigation
 

@@ -13,10 +13,12 @@ define deployment steps or external-service operating contracts; see
 | Map renderer | `@maplibre/maplibre-react-native` | Native vector-map rendering and interaction |
 | Map provider | MapTiler Cloud | Hosted online styles and vector tiles |
 | On-device vision | `react-native-fast-tflite` with MobileNetV3-Small INT8 | Offline dog/quality assistance with a bundled model |
-| Managed platform | Supabase Cloud Free | Prototype Auth, Data API, Functions, Storage, and PostgreSQL boundary |
-| Data transport | Supabase Data API/PostgREST | Generated HTTP transport for narrow SQL RPCs |
+| Managed platform | Supabase Cloud Free | Prototype Auth, Edge hosting, Storage, and PostgreSQL boundary |
+| Domain HTTP | Hono on Deno Edge runtime, plain JavaScript | One modular Function `api` with portable Web APIs |
+| PostgreSQL client | `postgres.js` through Supavisor pooler | Direct parameterized repository queries and short transactions |
+| JWT verification | `jose` | Local signature/claim verification against the project-supported key mode |
 | Database | PostgreSQL with PostGIS/pgcrypto | Transactional, spatial, authorization, and integrity rules |
-| Image processing | Supabase Edge Functions | Decode/re-encode work that does not belong in SQL |
+| Image processing | Deno-compatible codec in the `api` Function | JPEG/PNG sniff/decode/re-encode work that does not belong in SQL |
 | Object storage | Supabase private Storage | Sanitized image output behind authorized delivery |
 | Deployment tools | Supabase CLI, `psql`, and Docker where required | Versioned remote changes and rehearsable recovery |
 
@@ -27,5 +29,8 @@ define deployment steps or external-service operating contracts; see
   [`DEPLOYMENT.md`](DEPLOYMENT.md).
 - Version, license, quota, and benchmark evidence are release work owned by
   [`TESTING.md`](TESTING.md).
+- Runtime choices require recorded spikes for Edge body/memory limits, image
+  codec compatibility, Supavisor mode/concurrency, JWT/JWKS mode, and managed-Free
+  scheduling. An unverified spike fails closed; it is not an implementation fact.
 - Optional Phase 2 visual similarity is not part of this selected Phase 1 stack;
   see [ADR-017](architecture/DECISIONS.md#adr-017--optional-phase-2-visual-duplicate-suggestions).

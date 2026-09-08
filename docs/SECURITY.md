@@ -6,32 +6,29 @@ It references flows without redefining the endpoint contract in
 
 ## Authorization model
 
-Application tables are private by default. Mobile access uses minimized
-SECURITY DEFINER RPCs that:
+Application tables are private to mobile roles. One `app_backend` login connects
+from the `api` Function through the verified pooler configuration. It is
+`LOGIN NOBYPASSRLS NOINHERIT`, owns no application object, cannot change roles,
+and receives explicit table/column/sequence/function grants only.
 
-- have a fixed empty `search_path` and schema-qualified references, including
-  `extensions.*` for PostGIS and pgcrypto;
-- are owned by a dedicated NOLOGIN application owner;
-- have PUBLIC execution revoked;
-- receive only narrow EXECUTE grants;
-- verify the caller's active profile role for authenticated operations.
-
-RLS and SQL privileges solve different problems. RLS limits rows if access is
-accidentally granted; GRANT/REVOKE limits operations and prevents PostgREST table
-CRUD. Neither replaces the other. The mobile app carries only publishable project
-configuration and user session tokens—never `service_role`, database passwords,
-JWT secrets, or Function credentials.
+RLS and SQL privileges solve different problems. Privileges constrain operations;
+RLS constrains rows from transaction-local `app.user_id` and `app.role`. Each
+Service transaction calls `set_config(..., true)` only after authentication and
+authorization, before repository access. Unset or malformed context sees no
+sensitive rows. The mobile app carries only publishable project configuration and
+user session tokens—never `service_role`, `app_backend`, database URLs, JWT
+verification secrets, Storage service keys, or internal scheduler secrets.
 
 ## Role matrix
 
-| Capability | anonymous public reporter | Association | Administrator |
+| Capability | anonymous public reporter | Asociación de Hoteles de Chihuahua | Administrator |
 |---|---:|---:|---:|
-| Submit/flag | Yes | Public RPCs only | Public RPCs only |
+| Submit/flag | Yes, through Hono | Public Hono routes only | Public Hono routes only |
 | Public map | Yes | Yes | Yes |
 | Accepted BI/export | No | Yes | No |
 | Moderation context/commands | No | No | Yes |
 | Zone/threshold commands | No | No | Yes, audited exception |
-| Direct table writes | No | No | No |
+| Direct domain-table access | No | No | No |
 
 ## Authentication and provisioning
 
@@ -40,7 +37,7 @@ JWT secrets, or Function credentials.
   key, not an anonymous Auth user.
 - A technical operator creates each Auth user, inserts the matching `profiles` row
   with `association` or `administrator`, and delivers credentials out of band.
-- Navigation and every privileged RPC require both a signed `app_role` claim in
+- Navigation and every privileged API route require both a signed `app_role` claim in
   JWT app metadata and an active matching profile. Neither source alone grants
   authority; the profile remains the immediate deactivation control.
 - Use short access tokens (prototype target: about one hour) and supported refresh
@@ -52,7 +49,7 @@ JWT secrets, or Function credentials.
   Never promise instant global JWT invalidation.
 - For compromise or staff departure, the operator disables the profile, revokes
   supported Auth sessions/refresh tokens, rotates credentials where needed, and
-  records the incident. RPC profile checks block disabled accounts even before an
+  records the incident. API profile checks block disabled accounts even before an
   old access token expires.
 
 ### Provisioning runbook
@@ -62,7 +59,7 @@ JWT secrets, or Function credentials.
 2. Create the Auth account through the installed Supabase administrative tooling.
 3. Set the server-controlled JWT `app_role` metadata and create the matching
    profile role. Never place authorization data in user-editable metadata.
-4. Test allowed and denied RPCs with that account; do not test using service role.
+4. Test allowed and denied Hono routes with that account; do not test using server roles.
 5. Deliver temporary credentials securely and require rotation if supported.
 6. For deprovisioning, set `profiles.active=false`, revoke sessions using installed
    Auth capabilities, and preserve required audit evidence.
@@ -79,14 +76,17 @@ the target project before deployment.
 - Reporters receive a warning not to capture people, plates, or private-property
   details. Free text and images can still contain incidental PII; flagging and
   Administrator hiding provide a moderation path.
-- Trust uses server-derived photo, transient EXIF coherence, GPS, honeypot, and
-  fingerprint signals. Heuristics route to review and never auto-discard.
+- Trust uses nullable server-derived photo signals, transient metadata coherence,
+  GPS, honeypot, and fingerprint signals. Photo-free reports are assessed
+  immediately. Heuristics route to review and never auto-discard.
 - Mock-location or imprecise-GPS reports always require human review.
 
 ## Image security boundary
 
-- **Untrusted input:** validate binding, declared/detected type, configured limits,
-  dimensions, decode success, and resource use inside the trusted Function.
+- **Client normalization:** HEIC/HEIF is normalized to JPEG on device with correct
+  orientation and metadata removal; it is never an accepted backend/storage type.
+- **Untrusted input:** accept declared/detected JPEG or PNG only; validate binding,
+  configured limits, dimensions, decode success, and resource use inside `api`.
 - **Metadata and payload safety:** process raw bytes/EXIF only transiently, then
   re-encode and persist sanitized output in private Storage.
 - **Retry abuse and ambiguity:** bind source hashes to stable processing state;
@@ -96,24 +96,37 @@ the target project before deployment.
   and retention conditions; never expose listing or permanent public object URLs.
 
 The on-device TFLite result is a UX signal, not server authority. RNF32 requires
-the lightweight server processor; no heavy server ML is added.
+backend JPEG/PNG sanitization; no heavy server ML is added.
 
 ## Location privacy
 
-Public RPCs return the same metric 50 m-grid point for every report/request.
+Public presenters return the same metric 50 m-grid point for every report/request.
 Clustering uses exact coordinates internally but snaps outputs. Fixed zoom bands,
 bounded responses, cache/rate limits, and the absence of exact public endpoints
-reduce repeated-query triangulation. Association/Administrator receive exact
+reduce repeated-query triangulation. Asociación de Hoteles de Chihuahua and Administrator receive exact
 coordinates only through their distinct authorized projections.
 
 ## Audit and database hardening
 
 - Every moderation, duplicate, zone, and threshold command appends an audit row.
-- No mobile role receives audit INSERT/UPDATE/DELETE.
-- Function owners are not login roles and are not used by the app.
-- Migration review must enumerate function ownership, function grants, table
-  grants, RLS enablement, and exposed PostgREST schemas.
-- Clients read the caller's profile through `get_my_profile`. Direct `SELECT` on
-  `profiles` is revoked; the own-row RLS policy remains defense in depth.
-- Managed platform controls plus Function/database enforcement cover report, flag,
+- Repositories insert audit evidence in the same transaction as the mutation.
+  `app_backend` has INSERT but never UPDATE/DELETE on `audit_log`.
+- Migration review enumerates role attributes, object ownership, table/column/
+  sequence/function grants, RLS enablement/policies, and confirms no mobile domain
+  table/function exposure.
+- After JWT signature/claim verification, a transaction sets the subject id and
+  reads only that active profile. Claim/profile/route-role mismatch denies access.
+- Managed platform controls plus API/database enforcement cover report, flag,
   image, login, and refresh abuse. Fingerprint-only control is insufficient.
+- Durable hourly buckets use hashed origin, operation, and UTC window; only a new
+  non-idempotent attempt consumes quota. Buckets expire through retention.
+
+## Secret and fail-closed inventory
+
+| Secret/configuration | Location | Failure behavior |
+|---|---|---|
+| Database pooler URL for `app_backend` | Function secret | API startup/readiness fails; never falls back to Data API |
+| JWT key mode/JWKS or supported legacy secret | Function secret/config | Token-bearing request returns 401; never anonymous |
+| Storage server credential | Function secret | Upload/delivery/retention fails without exposing object path |
+| Retention scheduler secret | Function + scheduler secret stores | Internal route returns 401 before mark/list/delete/ack |
+| Project ref and environment | deployment metadata/config | Deploy/scheduler preflight aborts on mismatch |

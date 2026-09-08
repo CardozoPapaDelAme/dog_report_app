@@ -1,8 +1,8 @@
 # Database ERD
 
 Project-owned tables only. Exact names and constraints live in
-[`../../db/schema.sql`](../../db/schema.sql). This diagram omits RPC functions,
-RLS, and Supabase-owned Auth/Storage catalogs.
+[`../../db/schema.sql`](../../db/schema.sql). This diagram omits private SQL
+primitives, RLS, and Supabase-owned Auth/Storage catalogs.
 
 ```mermaid
 erDiagram
@@ -97,6 +97,14 @@ erDiagram
     uuid entity_id
   }
 
+  rate_limit_buckets {
+    text operation PK
+    text origin_hash PK
+    timestamptz window_start PK
+    int request_count
+    timestamptz expires_at
+  }
+
   auth_users ||--|| profiles : "1:1 after provisioning"
   profiles ||--o{ zone_sets : creates
   profiles ||--o{ config_versions : publishes
@@ -131,6 +139,7 @@ One job per table. State machines and retention stay in
 | `zones` | The actual polygon for that version: inside vs outside. |
 | `config_versions` | Operational numbers: flag threshold, GPS accuracy, duplicate window. |
 | `audit_log` | Who hid, restored, resolved duplicates, or changed rules. |
+| `rate_limit_buckets` | Durable per-origin hourly report/flag counters shared by every Edge instance. |
 | `deployment_metadata` | This project is `staging` or `production`. |
 
 ## How the tables group
@@ -141,11 +150,11 @@ One job per table. State machines and retention stay in
 | Accounts | `auth_users` + `profiles` |
 | Rules | `zone_sets` + `zones` + `config_versions` |
 | Duplicate cleanup | `duplicate_candidates` + `duplicate_groups` + `duplicate_memberships` |
-| Operations | `audit_log` + `deployment_metadata` |
+| Operations | `audit_log` + `rate_limit_buckets` + `deployment_metadata` |
 
 ## Intentionally not drawn
 
-- The 35 SQL RPCs. Those are the API, not entities.
+- Backend-only atomic/set-based SQL primitives. The Hono HTTP API is not an entity.
 - Trust score columns, retention timestamps, and every `reports` check.
 - `storage.objects`. Only `photo_assets.approved_object_path` points at a private object.
 - Public 50 m coordinates. The exact point is stored; the approximation is computed on read.

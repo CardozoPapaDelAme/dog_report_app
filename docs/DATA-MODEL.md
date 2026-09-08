@@ -18,6 +18,7 @@ calls belong to [`API.md`](API.md).
 | `duplicate_candidates` | Heuristic pairs awaiting human review |
 | `duplicate_groups`, `duplicate_memberships` | Canonical, reversible human resolution |
 | `audit_log` | Append-only report, duplicate, zone, and configuration actions |
+| `rate_limit_buckets` | Atomic report/flag counts by operation, hashed origin, and UTC hour |
 
 There is intentionally no raw-image or raw-EXIF object/column. Only a source
 SHA-256 for retry identity, sanitized object metadata, and derived numeric
@@ -26,19 +27,20 @@ consistency signals may persist.
 ## Photo state and idempotency
 
 ```text
-no photo row ──image Function begins──> processing ──valid──> approved
+no photo row ──PhotoService begins──> processing ──valid──> approved
                                            │
                                            └─invalid───────> rejected
 approved/rejected/stale processing ──retention──> purge_pending ──delete ack──> purged
 ```
 
-The report is created first with its final UUID and `photo_expected`. The image
-Function computes the source hash and calls `service_begin_photo_processing`.
+The report is created first with its final UUID and `photo_expected`. PhotoService
+computes the source hash and uses parameterized repository statements.
 The same report/hash returns the existing state; a different hash conflicts in
 every state, so implicit replacement cannot overwrite approved evidence. The
 client resolves unknown network outcomes through retry plus
-`get_report_photo_status`. `approved` means only a sanitized private object exists.
-Raw input and raw EXIF exist only during in-memory/ephemeral Function processing.
+the photo-status route. `approved` means only a sanitized private JPEG/PNG object
+exists. HEIC/HEIF is normalized on device. Raw input and raw EXIF exist only during
+in-memory/ephemeral route processing.
 
 `approved`, `rejected`, `purge_pending`, and `purged` are terminal upload states.
 Once any is observed, `processing_complete` and `local_cleanup_allowed` remain
@@ -46,7 +48,7 @@ true and the client stops retrying. `upload_succeeded` is true only in `approved
 it becomes false in `purge_pending`/`purged` because retention has removed current
 delivery eligibility. The exact state remains visible so cleanup is distinguishable
 from validation rejection. A same-content retry that reaches
-`service_begin_photo_processing` after `purge_pending` or `purged` returns that
+PhotoService after `purge_pending` or `purged` returns that
 state and performs no re-registration.
 
 ## Server moderation state machine
@@ -79,7 +81,7 @@ An identical UUID+payload replay is accepted even if the active geofence later
 changed. `client_created_at` for new rows must fall in `[now()-30 days, now()+1 hour]`.
 
 Public expiry after 90 days does not change `visible`; it is a projection/retention
-condition. Association may still use accepted canonical business data until five
+condition. Asociación de Hoteles de Chihuahua may still use accepted canonical business data until five
 years. Confirmed duplicate disposition is orthogonal to moderation status and is
 represented by active membership, not another overloaded report status.
 
@@ -89,9 +91,9 @@ Detection writes candidate pairs only. Administrator resolution creates one acti
 group, exactly one canonical membership, and one or more duplicate memberships.
 Every member must appear in a pending candidate whose both ends are in the set, and
 those pending edges must connect the set. All original rows/photos/evidence remain
-linked. Active non-canonical memberships are excluded from public and Association
+linked. Active non-canonical memberships are excluded from public and Asociación de Hoteles de Chihuahua
 projections and analytics. The moderation queue and
-`get_administrator_active_duplicate_groups` expose active group ids so reversal is
+the Administrator duplicate-group route exposes active group ids so reversal is
 discoverable. Reversal marks the group reversed, deactivates memberships, restores
 candidate review, and writes an audit entry.
 
@@ -105,13 +107,13 @@ mandatory when GPU/vector support is absent.
 
 Configuration versions validate flag threshold, duplicate radius/window, trust
 bands, GPS accuracy, public report/flag rates, and fixed retention periods. A
-publish command creates a new immutable version and atomically switches active
+Service command creates a new immutable version and atomically switches active
 status.
 
 Zone sets carry source URI/version and a required SHA-256 checksum plus geometry.
 Create and activate reject a missing or malformed checksum. Activation stores an
-Association approval citation that is distinct from the Administrator note. SQL
-cannot prove the Association approved; Production activation remains an external
+Asociación de Hoteles de Chihuahua approval citation that is distinct from the Administrator note. SQL
+cannot prove the Asociación de Hoteles de Chihuahua approved; Production activation remains an external
 gate. Direct table writes are unavailable to mobile roles. Production begins with
 no active geometry and fails closed until the candidate is approved.
 
@@ -153,13 +155,28 @@ is an optional string of at most 2,000 characters.
 | Logically deleted report | Purged after 1 year |
 | Raw EXIF | Never persisted |
 
-The database marks photos `purge_pending` when any of these is true: approved and
+The backend-only set-based primitive marks photos `purge_pending` when any of these is true: approved and
 `purge_after` has passed; processing/rejected and older than one day; or the parent
 report is itself eligible for hard deletion. A NULL `photo_assets.purge_after` must
 not block that last path. The approved output starts with a 90-day deadline, which
 is reset from publication when the report becomes visible. A Function deletes the
 private object and acknowledges `purged`. A report row is not hard-deleted while
-its photo still needs external cleanup. Retention uses server `now()` only.
+its photo still needs external cleanup. RetentionService lists every
+`purge_pending` row, deletes the private object idempotently, and acknowledges only
+successful deletion. Failed deletion remains discoverable on retry. Retention uses
+server `now()` only.
+
+## Durable rate limits and trust
+
+`rate_limit_buckets` has one row per operation, server-hashed origin, and UTC-hour
+window. A private atomic increment creates/locks the row and rejects counts above
+the active versioned limit across every Edge instance. ReportService resolves an
+existing UUID/payload replay before incrementing, so replay consumes no quota.
+
+TrustService stores the active policy version and component scores. Photo-derived
+scores are nullable when `photo_expected=false`; the report is assessed during
+creation rather than waiting for an image. High trust may publish, while
+mock/imprecise/honeypot or medium/low trust remains pending.
 
 ## Local queue is separate
 

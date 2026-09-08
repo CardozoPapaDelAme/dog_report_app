@@ -1,54 +1,96 @@
 # Sequence: Administrator moderation queue
 
-Replaces the old `GET /api/admin/reportes` and `PATCH /api/admin/reportes/{id}`
-flow. There is no custom Controller. PostgREST exposes SQL RPCs.
-
-**Mantener** in the original task is mapped to `admin_approve_report` (keep /
-publish after review). Leaving the row untouched needs no RPC.
+Administrator reads moderation context and executes audited state commands. The
+original report content is immutable through this flow, and Administrator does
+not inherit Asociación de Hoteles de Chihuahua BI/export access.
 
 ```mermaid
 sequenceDiagram
-  actor Admin
-  participant App
-  participant PostgREST
-  participant Postgres
+  actor Admin as Administrator
+  participant App as React Native app
+  participant M as Hono JWT middleware
+  participant C as Moderation Controller
+  participant S as ModerationService
+  participant R as ModerationRepository
+  participant DB as PostgreSQL / RLS
+  participant P as JSON Presenter
 
   Admin->>App: Open moderation queue
-  App->>PostgREST: supabase.rpc("get_administrator_moderation_queue")
-  PostgREST->>Postgres: EXECUTE get_administrator_moderation_queue
-  Postgres-->>Postgres: Require administrator profile
-  Postgres-->>PostgREST: Pending/hidden/flagged/duplicate rows<br/>status, reason, flags, trust
-  PostgREST-->>App: JSON list
-  App-->>Admin: Show queue
-
-  alt Ocultar
-    Admin->>App: Hide + required note
-    App->>PostgREST: supabase.rpc("admin_hide_report")
-    PostgREST->>Postgres: pending/visible → hidden<br/>write audit_log
-  else Eliminar
-    Admin->>App: Logical delete + required note
-    App->>PostgREST: supabase.rpc("admin_logical_delete_report")
-    PostgREST->>Postgres: → deleted (reversible)<br/>write audit_log
-  else Mantener / publicar
-    Admin->>App: Approve
-    App->>PostgREST: supabase.rpc("admin_approve_report")
-    PostgREST->>Postgres: pending/hidden → visible<br/>write audit_log
+  App->>M: GET /admin/moderation-queue with limit, cursor, and Bearer JWT
+  alt Missing or invalid token
+    M->>P: Map authentication failure
+    P-->>App: 401 authentication_required or invalid_token
+    App-->>Admin: Deny access
+  else JWT valid
+    M->>C: Verified subject and app_role
+    C->>S: listQueue(actor, query)
+    S->>DB: BEGIN, SET LOCAL app.user_id/app.role
+    S->>R: Validate active Administrator and list context
+    R->>DB: Parameterized SELECT under RLS
+    alt Inactive or mismatched profile
+      S->>DB: ROLLBACK
+      S->>P: Map authorization failure
+      P-->>App: 403 inactive_profile, role_mismatch, or forbidden
+      App-->>Admin: Deny access
+    else Queue authorized
+      DB-->>R: Original fields, signals, flags, trust, photo, duplicates
+      R-->>S: Page and next_cursor
+      S->>DB: COMMIT
+      S->>P: Authorized queue view
+      P-->>App: 200 JSON
+      App-->>Admin: Show moderation queue
+    end
   end
 
-  PostgREST-->>App: Success or typed error
-  App->>PostgREST: supabase.rpc("get_administrator_moderation_queue")
-  PostgREST-->>App: Updated list
-  App-->>Admin: Refresh queue
+  opt Administrator selects a loaded report
+    alt Approve pending or hidden report
+      Admin->>App: Approve, note optional
+      App->>M: POST /admin/reports/:report_id/approve and Bearer JWT
+    else Hide pending or visible report
+      Admin->>App: Hide with required note
+      App->>M: POST /admin/reports/:report_id/hide and Bearer JWT
+    else Logically delete non-deleted report
+      Admin->>App: Delete with required note
+      App->>M: POST /admin/reports/:report_id/delete and Bearer JWT
+    else Restore hidden or deleted report
+      Admin->>App: Restore with required note
+      App->>M: POST /admin/reports/:report_id/restore and Bearer JWT
+    end
+
+    M->>C: Reverify JWT and route role
+    C->>S: Execute state command(actor, report_id, body)
+    S->>DB: BEGIN, SET LOCAL app.user_id/app.role
+    S->>R: Revalidate profile, lock report, transition, append audit
+    R->>DB: Parameterized statements in one transaction
+    alt Invalid or stale state
+      S->>DB: ROLLBACK
+      S->>P: Map invalid transition
+      P-->>App: 409 invalid_*_transition
+    else Command succeeds
+      S->>DB: COMMIT
+      S->>P: Present command result
+      P-->>App: 200 JSON
+      App->>M: GET /admin/moderation-queue and Bearer JWT
+      Note over M,P: Refresh repeats the same middleware, Controller, Service, Repository, and Presenter path.
+      App-->>Admin: Refresh queue
+    end
+  end
 ```
 
-## Call mapping
+## State effects
 
-| UI action | RPC | Effect |
-|---|---|---|
-| Enter queue | `get_administrator_moderation_queue` | Read-only list with flag reasons and counts |
-| Ocultar | `admin_hide_report` | `hidden`; note required |
-| Eliminar | `admin_logical_delete_report` | Logical `deleted`; reversible; note required |
-| Mantener | `admin_approve_report` | `visible`; starts/restarts public window |
-| Restore later | `admin_restore_report` | `hidden`/`deleted` → `pending_review` (not in this screen’s three buttons) |
+| Command | Effect |
+|---|---|
+| `POST /admin/reports/:report_id/approve` | `pending_review`/`hidden` → `visible`; starts or restarts the 90-day public window |
+| `POST /admin/reports/:report_id/hide` | `pending_review`/`visible` → `hidden` |
+| `POST /admin/reports/:report_id/delete` | Any non-deleted state → reversible `deleted`; never hard-deletes |
+| `POST /admin/reports/:report_id/restore` | `hidden`/`deleted` → `pending_review`; approval is still required to publish |
 
-The original report fields are never edited. Association BI RPCs are not used here.
+Every successful command locks, transitions, and appends audit evidence in the
+same transaction. Hard deletion belongs only to retention.
+
+## Sources
+
+- [`../../API.md`](../../API.md): Administrator queue, command routes, bodies, and errors.
+- [`../../DATA-MODEL.md`](../../DATA-MODEL.md): moderation state machine and retention.
+- [`../../SECURITY.md`](../../SECURITY.md): sibling roles, immutable evidence, and audit controls.
