@@ -56,8 +56,7 @@ supabase/functions/api/
 └── infrastructure/          # postgres.js, JWT/JWKS, Storage, config
 ```
 
-The tree is a future implementation contract; this repository change does not
-create runtime source. Every domain flow follows Controller → Service → Repository
+The tree is the live Function layout. Every domain flow follows Controller → Service → Repository
 and returns through a Presenter. Services open short transactions and set
 transaction-local `app.user_id` and `app.role` after authentication checks.
 PostgreSQL retains constraints, RLS, grants, PostGIS, locks, append-only audit,
