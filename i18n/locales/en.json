@@ -1,3 +1,40 @@
 {
-  "ready": "The client is ready."
+  "ready": "The client is ready.",
+  "common": { "yes": "Yes", "no": "No", "cancel": "Cancel" },
+  "moderation": {
+    "eyebrow": "Operations center",
+    "title": "Moderation queue",
+    "subtitle": "Review signals, evidence, and location before publishing or removing a report.",
+    "onPage": "On this page",
+    "flagged": "Flagged",
+    "urgent": "High priority",
+    "trust": "Trust",
+    "flags": "Flags",
+    "photo": "Photo",
+    "exactLocation": "Exact location",
+    "suspiciousSignals": "Needs attention: suspicious signals were detected.",
+    "approve": "Approve",
+    "delete": "Delete",
+    "loadMore": "Load more",
+    "empty": "There are no pending reports on this page.",
+    "errorTitle": "We could not refresh the queue",
+    "retry": "Tap to try again.",
+    "sessionRequired": "Administrator session required",
+    "sessionRequiredBody": "This screen expects an access token from the session layer. Public or server credentials are never stored here.",
+    "deleteEyebrow": "Logical deletion",
+    "deleteTitle": "Remove this report",
+    "deleteBody": "The report will no longer be shown, but it can be restored. Record the reason for the audit trail.",
+    "noteLabel": "Deletion reason",
+    "notePlaceholder": "Describe why it should be removed...",
+    "confirmDelete": "Confirm deletion",
+    "status": { "pending_review": "Pending", "hidden": "Hidden", "visible": "Visible", "deleted": "Deleted" },
+    "incidents": {
+      "avistamiento_simple": "Sighting",
+      "ataque_mascota": "Pet attack",
+      "ataque_ganado": "Livestock attack",
+      "ataque_humano": "Human attack",
+      "perro_lastimado": "Injured dog",
+      "otro": "Other incident"
+    }
+  }
 }

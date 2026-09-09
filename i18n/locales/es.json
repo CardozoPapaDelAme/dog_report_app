@@ -1,3 +1,40 @@
 {
-  "ready": "El cliente está listo."
+  "ready": "El cliente está listo.",
+  "common": { "yes": "Sí", "no": "No", "cancel": "Cancelar" },
+  "moderation": {
+    "eyebrow": "Centro de operaciones",
+    "title": "Cola de moderación",
+    "subtitle": "Revisa señales, evidencia y ubicación antes de publicar o retirar un reporte.",
+    "onPage": "En esta página",
+    "flagged": "Con banderas",
+    "urgent": "Prioridad alta",
+    "trust": "Confianza",
+    "flags": "Banderas",
+    "photo": "Foto",
+    "exactLocation": "Ubicación exacta",
+    "suspiciousSignals": "Requiere atención: se detectaron señales sospechosas.",
+    "approve": "Aprobar",
+    "delete": "Eliminar",
+    "loadMore": "Cargar más",
+    "empty": "No hay reportes pendientes en esta página.",
+    "errorTitle": "No pudimos actualizar la cola",
+    "retry": "Toca para intentar nuevamente.",
+    "sessionRequired": "Sesión de administrador requerida",
+    "sessionRequiredBody": "Esta pantalla espera el access token de la capa de sesión. No se almacenan credenciales públicas ni de servidor.",
+    "deleteEyebrow": "Borrado lógico",
+    "deleteTitle": "Retirar este reporte",
+    "deleteBody": "El reporte dejará de mostrarse, pero podrá restaurarse. Registra el motivo para la auditoría.",
+    "noteLabel": "Motivo de eliminación",
+    "notePlaceholder": "Describe por qué debe retirarse...",
+    "confirmDelete": "Confirmar eliminación",
+    "status": { "pending_review": "Pendiente", "hidden": "Oculto", "visible": "Visible", "deleted": "Eliminado" },
+    "incidents": {
+      "avistamiento_simple": "Avistamiento",
+      "ataque_mascota": "Ataque a mascota",
+      "ataque_ganado": "Ataque a ganado",
+      "ataque_humano": "Ataque a persona",
+      "perro_lastimado": "Perro lastimado",
+      "otro": "Otro incidente"
+    }
+  }
 }
