@@ -40,3 +40,23 @@ Deno.test('visible reports expose only hide and delete moderation commands', () 
   assert(commands.includes('hide'), 'visible should allow hide');
   assert(commands.includes('delete'), 'visible should allow delete');
 });
+
+Deno.test('delete allows every non-deleted report state', () => {
+  for (const status of ['pending_review', 'visible', 'hidden']) {
+    assert(canTransition('delete', status), `delete should allow ${status}`);
+    assert(assertTransition('delete', status) === 'deleted', `${status} should become deleted`);
+  }
+});
+
+Deno.test('delete rejects an already deleted report', () => {
+  assert(!canTransition('delete', 'deleted'), 'delete should reject deleted');
+  try {
+    assertTransition('delete', 'deleted');
+    throw new Error('delete unexpectedly allowed deleted');
+  } catch (error) {
+    assert(
+      error.code === 'invalid_delete_transition',
+      'delete should return a typed conflict for deleted',
+    );
+  }
+});

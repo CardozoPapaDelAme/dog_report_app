@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 
 import {
   approveReport,
+  deleteReport,
   getModerationQueue,
 } from '../controllers/moderation-controller.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -13,5 +14,7 @@ moderationRoutes.get('/admin/moderation-queue', administratorOnly, getModeration
 moderationRoutes.get('/api/admin/moderation-queue', administratorOnly, getModerationQueue);
 moderationRoutes.post('/admin/reports/:report_id/approve', administratorOnly, approveReport);
 moderationRoutes.post('/api/admin/reports/:report_id/approve', administratorOnly, approveReport);
+moderationRoutes.post('/admin/reports/:report_id/delete', administratorOnly, deleteReport);
+moderationRoutes.post('/api/admin/reports/:report_id/delete', administratorOnly, deleteReport);
 
 export { moderationRoutes };

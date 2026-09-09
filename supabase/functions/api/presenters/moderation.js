@@ -98,6 +98,8 @@ export function presentModerationCommand(c, report) {
         accepted_at: report.accepted_at,
         published_at: report.published_at,
         public_until: report.public_until,
+        hidden_at: report.hidden_at,
+        deleted_at: report.deleted_at,
         allowed_commands: allowedCommands(report.status),
       },
     },

@@ -2,6 +2,7 @@ import { getSql } from '../infrastructure/db.js';
 import { assertTransition } from '../domain/report-moderation.js';
 import {
   approveReport,
+  deleteReport as persistDeletedReport,
   insertModerationAudit,
   listModerationQueue,
   lockReportForModeration,
@@ -30,6 +31,28 @@ export function listQueue({ actor, limit, cursor }) {
 }
 
 export function approve({ actor, reportId, note }) {
+  return executeTransition({
+    actor,
+    reportId,
+    note,
+    command: 'approve',
+    action: 'report_approved',
+    persist: approveReport,
+  });
+}
+
+export function deleteReport({ actor, reportId, note }) {
+  return executeTransition({
+    actor,
+    reportId,
+    note,
+    command: 'delete',
+    action: 'report_logically_deleted',
+    persist: persistDeletedReport,
+  });
+}
+
+function executeTransition({ actor, reportId, note, command, action, persist }) {
   const sql = getSql();
   return sql.begin(async (tx) => {
     await tx`SELECT set_config('app.user_id', ${actor.userId}, true)`;
@@ -42,11 +65,11 @@ export function approve({ actor, reportId, note }) {
       throw error;
     }
 
-    assertTransition('approve', current.status);
-    const updated = await approveReport(tx, reportId);
+    assertTransition(command, current.status);
+    const updated = await persist(tx, reportId);
     await insertModerationAudit(tx, {
       actorId: actor.userId,
-      action: 'report_approved',
+      action,
       reportId,
       previousValues: moderationValues(current),
       newValues: moderationValues(updated),
