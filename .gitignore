@@ -53,6 +53,11 @@ yarn-debug.log*
 .expo-shared/
 dist/
 web-build/
+expo-env.d.ts
+.kotlin/
+.env*.local
+/ios
+/android
 
 # Env / secrets
 .env
