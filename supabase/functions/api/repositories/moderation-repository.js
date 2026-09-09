@@ -1,5 +1,78 @@
 const QUEUE_STATUSES = ['pending_review', 'hidden'];
 
+export async function lockReportForModeration(tx, reportId) {
+  const rows = await tx`
+    SELECT
+      id,
+      status,
+      status_reason,
+      previous_status,
+      accepted_at,
+      published_at,
+      public_until,
+      hidden_at,
+      deleted_at
+    FROM public.reports
+    WHERE id = ${reportId}
+    FOR UPDATE
+  `;
+  return rows[0] ?? null;
+}
+
+export async function approveReport(tx, reportId) {
+  const rows = await tx`
+    UPDATE public.reports
+    SET
+      previous_status = status,
+      status = 'visible',
+      status_reason = 'administrator_approved',
+      accepted_at = COALESCE(accepted_at, now()),
+      published_at = now(),
+      public_until = now() + interval '90 days',
+      hidden_at = NULL
+    WHERE id = ${reportId}
+    RETURNING
+      id,
+      status,
+      status_reason,
+      previous_status,
+      accepted_at,
+      published_at,
+      public_until,
+      hidden_at,
+      deleted_at
+  `;
+  const report = rows[0];
+  await tx`SELECT app_private.reset_approved_photo_public_window(${reportId})`;
+  return report;
+}
+
+export async function insertModerationAudit(
+  tx,
+  { actorId, action, reportId, previousValues, newValues, note },
+) {
+  await tx`
+    INSERT INTO public.audit_log (
+      actor_id,
+      action,
+      entity_type,
+      entity_id,
+      previous_values,
+      new_values,
+      note
+    )
+    VALUES (
+      ${actorId},
+      ${action},
+      'report',
+      ${reportId},
+      ${JSON.stringify(previousValues)}::jsonb,
+      ${JSON.stringify(newValues)}::jsonb,
+      ${note}
+    )
+  `;
+}
+
 export async function listModerationQueue(tx, { limit, cursor }) {
   const rows = cursor
     ? await tx`

@@ -84,3 +84,23 @@ export function presentModerationQueue(c, rows, limit) {
     200,
   );
 }
+
+export function presentModerationCommand(c, report) {
+  const requestId = c.get('requestId') ?? '';
+  c.header('X-Request-Id', requestId);
+  return c.json(
+    {
+      data: {
+        report_id: report.id,
+        status: report.status,
+        status_reason: report.status_reason,
+        previous_status: report.previous_status,
+        accepted_at: report.accepted_at,
+        published_at: report.published_at,
+        public_until: report.public_until,
+        allowed_commands: allowedCommands(report.status),
+      },
+    },
+    200,
+  );
+}
