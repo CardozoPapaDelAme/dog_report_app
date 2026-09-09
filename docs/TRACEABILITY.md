@@ -28,8 +28,8 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF16 | Asociación de Hoteles de Chihuahua dashboard | `GET /association/reports` | Accepted canonical business data only |
 | RF17 | Asociación de Hoteles de Chihuahua export | Same paginated role route/view | CSV/Excel parity and authorization |
 | RF18 | Administrator login | Auth JWT + `GET /me` + profile/role agreement | Provisioned account; no signup |
-| RF19 | Moderation queues | `GET /admin/moderation-queue` | Original fields, GPS/mock, photo expectation, component trust; no BI endpoint |
-| RF20 | Moderation commands | Administrator report command routes | No direct mobile update; audited reversible deletion |
+| RF19 | Administrator moderation queue | `GET /admin/moderation-queue`; `ModerationQueueScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; responsive ES/EN states; no BI endpoint |
+| RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/delete update the queue projection; no direct mobile database update; audited reversible deletion |
 | RF21 | Flag review/state machine | FlagService + restore/approve routes | Threshold, audit, restore semantics |
 | RF22 | On-device attributes | Structured report columns | Color automatic; size/collar manual |
 | RF23 | Duplicate review | Administrator duplicate routes; candidates/groups/memberships | Human-only, pending connected set, canonical, reversible, audited |
@@ -98,8 +98,8 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | HU-16 | RF16 | Asociación de Hoteles de Chihuahua dashboard | Role route/presenter | Accepted canonical data only |
 | HU-17 | RF17 | Asociación de Hoteles de Chihuahua export | Same role route/presenter | Export parity |
 | HU-18 | RF18, RNF07 | Administrator auth | JWT/profile/role + `GET /me` | Provisioned access |
-| HU-19 | RF19, RF08 | Moderation queue | Administrator queue route/presenter | Flag/trust context |
-| HU-20 | RF20, RNF33 | Moderation | Hono hide/delete routes | Audited logical deletion |
+| HU-19 | RF19, RF08 | Moderation queue | Administrator route/presenter + responsive Expo screen | Flag/trust context, pagination, refresh, empty/error/session states |
+| HU-20 | RF20, RNF33 | Moderation | Hono approve/delete routes + generic Expo command client | Audited logical deletion; successful commands update the local queue projection |
 | HU-21 | RF21, RNF29 | Flag review | FlagService + restore/approve routes | Configured threshold workflow |
 | HU-22 | RF22, RNF11 | Attributes | Structured columns | Color/size/collar semantics |
 | HU-23 | RF23, RNF30 | Duplicate review | Administrator duplicate routes | Canonical/reverse/audit |
@@ -107,8 +107,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 
 ## Test ownership
 
-For this contract-retarget change, each verification focus is checked against the
-documentation/schema target, with PostgreSQL behavior executed where applicable.
-The later backend implementation SDD must replace future-runtime inventory with
-executable Hono, Storage, scheduler, and mobile test IDs as described by
-[`TESTING.md`](TESTING.md).
+Executable Deno tests cover Hono, domain, repository, service, and mobile
+model/client behavior. Expo Doctor and Android/web exports provide mobile-shell
+and bundling checks; supported-device interaction and accessibility smoke tests
+remain release evidence as described by [`TESTING.md`](TESTING.md).
