@@ -25,6 +25,23 @@ npx expo start
 Leave `EXPO_PUBLIC_API_BASE_URL` empty until the Hono API is deployed. Use
 `services/apiClient.js` for HTTP. Expo Go is enough for the skeleton.
 
+If a ticket needs the shared database, also run:
+
+```bash
+npx supabase login
+npx supabase link --project-ref dcvihomkxkutkckmjvmp
+```
+
+Do not create a project, paste SQL, or run `db push` unless you are adding a
+new file under `supabase/migrations/`.
+
+## Database migrations (operators only)
+
+```bash
+npx supabase db push --dry-run
+npx supabase db push
+```
+
 ## Start here
 
 1. [`docs/README.md`](docs/README.md) — source precedence and documentation map
