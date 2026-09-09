@@ -84,6 +84,10 @@ schema policies.
 6. Configure the database pooler URL, JWT verification mode, Storage server
    credential, internal scheduler secret, project ref, and expected environment as
    Function secrets. Deploy only `api`. The mobile app receives none of them.
+   Retention uses the exact names `INTERNAL_RETENTION_SECRET`,
+   `EXPECTED_SUPABASE_PROJECT_REF`, `EXPECTED_DEPLOYMENT_ENVIRONMENT`, and
+   `APPROVED_PHOTOS_BUCKET`; `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` remain
+   provider-managed server configuration.
 7. Configure/restrict the MapTiler public key and verify attribution/quota.
 8. For a demo/test project, import the INEGI geometry only as a clearly labeled
    candidate/test fixture. An approved live project must fail closed until the

@@ -64,7 +64,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RNF23 | Internal services | One managed boundary: Auth/`api`/Storage/PostgreSQL | No direct mobile database exposure or invented physical internals |
 | RNF24 | Secrets | `app_backend`, JWT, Storage, scheduler secrets server-only | Bundle/repository/response secret scanning |
 | RNF25 | Operations | Managed usage, API errors, pool, scheduler, pause, retention, exports | Quota/readiness/dashboard smoke tests |
-| RNF26 | Anti-abuse | Server hashes; `rate_limit_buckets`; 30-day retention | Concurrent limits and retention job |
+| RNF26 | Anti-abuse | Server hashes; `rate_limit_buckets`; prepare/list/Storage-delete/acknowledge/finalize retention phases | Concurrent limits and partial-failure retention retry |
 | RNF27 | Submission integrity | Honeypot signal to TrustService | Suspicious goes to review, not discard |
 | RNF28 | Trust workflow | Versioned TrustService; nullable photo signals | Photo-free assessed; high publishes; medium/low reviews |
 | RNF29 | Flag integrity | Uniqueness/diversity + durable flag bucket | Coordinated/concurrent flags cannot bypass policy |

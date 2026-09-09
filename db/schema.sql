@@ -701,15 +701,14 @@ $$;
 -- ---------------------------------------------------------------------------
 -- Deterministic form is retained for controlled SQL tests and is not granted to
 -- app_backend. The production wrapper below always supplies server now().
-CREATE FUNCTION app_private.run_retention_at(p_now TIMESTAMPTZ)
+CREATE FUNCTION app_private.prepare_retention_at(p_now TIMESTAMPTZ)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE v_report_fingerprints INTEGER; v_flag_fingerprints INTEGER;
-        v_photos INTEGER; v_audits INTEGER; v_reports INTEGER;
-        v_buckets INTEGER;
+        v_photos INTEGER; v_buckets INTEGER;
 BEGIN
   IF app_private.actor_role() IS DISTINCT FROM 'internal' THEN
     RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'internal_actor_context_required';
@@ -741,8 +740,58 @@ BEGIN
   GET DIAGNOSTICS v_photos = ROW_COUNT;
   DELETE FROM public.rate_limit_buckets WHERE expires_at <= p_now;
   GET DIAGNOSTICS v_buckets = ROW_COUNT;
-  DELETE FROM public.audit_log WHERE created_at <= p_now - interval '2 years';
-  GET DIAGNOSTICS v_audits = ROW_COUNT;
+  RETURN jsonb_build_object(
+    'report_fingerprints_cleared', v_report_fingerprints,
+    'flag_fingerprints_cleared', v_flag_fingerprints,
+    'photos_marked_for_purge', v_photos,
+    'rate_buckets_purged', v_buckets
+  );
+END;
+$$;
+
+CREATE FUNCTION app_private.prepare_retention()
+RETURNS JSONB LANGUAGE sql SECURITY DEFINER SET search_path = ''
+AS $$ SELECT app_private.prepare_retention_at(now()) $$;
+
+CREATE FUNCTION app_private.acknowledge_photo_purge(p_photo_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE v_updated INTEGER;
+BEGIN
+  IF app_private.actor_role() IS DISTINCT FROM 'internal' THEN
+    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'internal_actor_context_required';
+  END IF;
+  UPDATE public.photo_assets
+  SET state = 'purged', approved_object_path = NULL, purged_at = now()
+  WHERE id = p_photo_id AND state = 'purge_pending';
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  IF v_updated = 1 THEN
+    RETURN TRUE;
+  END IF;
+  RETURN EXISTS (
+    SELECT 1 FROM public.photo_assets
+    WHERE id = p_photo_id AND state = 'purged' AND approved_object_path IS NULL
+  );
+END;
+$$;
+
+CREATE FUNCTION app_private.finalize_retention_at(p_now TIMESTAMPTZ)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE v_audits INTEGER; v_reports INTEGER;
+BEGIN
+  IF app_private.actor_role() IS DISTINCT FROM 'internal' THEN
+    RAISE EXCEPTION USING ERRCODE = '42501', MESSAGE = 'internal_actor_context_required';
+  END IF;
+  IF p_now IS NULL THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'retention_timestamp_required';
+  END IF;
   DELETE FROM public.reports r
   WHERE app_private.report_is_purge_eligible(
           r.status, r.deleted_at, r.accepted_at, r.synced_at, p_now
@@ -752,22 +801,20 @@ BEGIN
       WHERE pa.report_id = r.id AND pa.state <> 'purged'
     );
   GET DIAGNOSTICS v_reports = ROW_COUNT;
+  DELETE FROM public.audit_log WHERE created_at <= p_now - interval '2 years';
+  GET DIAGNOSTICS v_audits = ROW_COUNT;
   RETURN jsonb_build_object(
-    'report_fingerprints_cleared', v_report_fingerprints,
-    'flag_fingerprints_cleared', v_flag_fingerprints,
-    'photos_marked_for_purge', v_photos,
-    'rate_buckets_purged', v_buckets,
-    'audit_rows_purged', v_audits,
-    'report_rows_purged', v_reports
+    'report_rows_purged', v_reports,
+    'audit_rows_purged', v_audits
   );
 END;
 $$;
 
-CREATE FUNCTION app_private.run_retention()
+CREATE FUNCTION app_private.finalize_retention()
 RETURNS JSONB LANGUAGE sql SECURITY DEFINER SET search_path = ''
-AS $$ SELECT app_private.run_retention_at(now()) $$;
+AS $$ SELECT app_private.finalize_retention_at(now()) $$;
 
--- Production worker entrypoint. Clock is always server now(); no caller clock.
+-- Production worker entrypoints always use server now(); no caller clock.
 
 -- ---------------------------------------------------------------------------
 -- RLS and privileges. RLS restricts rows if a grant is added accidentally;
@@ -929,6 +976,8 @@ GRANT EXECUTE ON FUNCTION app_private.actor_role(), app_private.actor_id(),
   app_private.approximate_public_location(extensions.geography),
   app_private.consume_rate_limit(TEXT, TEXT, INTEGER),
   app_private.reset_approved_photo_public_window(UUID),
-  app_private.run_retention() TO app_backend;
+  app_private.prepare_retention(),
+  app_private.acknowledge_photo_purge(UUID),
+  app_private.finalize_retention() TO app_backend;
 
 COMMIT;
