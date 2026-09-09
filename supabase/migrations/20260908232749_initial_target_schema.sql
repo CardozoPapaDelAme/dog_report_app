@@ -1,3 +1,7 @@
+-- Versioned migration derived from db/schema.sql (authoritative target).
+-- Applied only via Supabase CLI (`supabase db push --dry-run` then `supabase db push`).
+-- Do not paste this file into the SQL Editor.
+
 -- Creel stray-dog reporting application: authoritative target schema.
 -- PostgreSQL + PostGIS, intended for Supabase managed projects.
 -- Implements RF01-RF24 and RNF01-RNF36 as amended by
@@ -46,7 +50,6 @@
 --   app_backend/rate table; add policies/grants/primitives; then revoke/drop legacy
 --   public RPCs before deploying disabled api and performing one direct cutover.
 
-BEGIN;
 
 DO $role$
 BEGIN
@@ -55,6 +58,8 @@ BEGIN
   END IF;
 END
 $role$;
+-- Managed Postgres forbids ALTER ROLE ... NOSUPERUSER unless the session is
+-- SUPERUSER. CREATE ROLE already starts without SUPERUSER/CREATEDB/CREATEROLE.
 ALTER ROLE app_backend NOBYPASSRLS NOINHERIT;
 
 CREATE SCHEMA IF NOT EXISTS extensions;
@@ -907,5 +912,3 @@ GRANT EXECUTE ON FUNCTION app_private.actor_role(), app_private.actor_id(),
   app_private.approximate_public_location(extensions.geography),
   app_private.consume_rate_limit(TEXT, TEXT, INTEGER),
   app_private.run_retention() TO app_backend;
-
-COMMIT;
