@@ -6,9 +6,24 @@ Chihuahua. The prototype targets the Asociación de Hoteles de Chihuahua, A.C.
 
 ## Status
 
-**Implementation-ready target contracts; implementation has not started.** The
-documentation and authoritative SQL schema are aligned. Production report intake
-remains blocked until the Asociación de Hoteles de Chihuahua approves a geofence version.
+The mobile client skeleton (ALAN-0) is in the repository root. Product screens,
+Auth, map, and the Hono backend are not started. Production report intake remains
+blocked until the Asociación de Hoteles de Chihuahua approves a geofence version.
+
+## Team setup
+
+Need GitHub access. Then:
+
+```bash
+git clone https://github.com/jpDLG101/dog_report_app.git
+cd dog_report_app
+npm install
+cp .env.example .env
+npx expo start
+```
+
+Leave `EXPO_PUBLIC_API_BASE_URL` empty until the Hono API is deployed. Use
+`services/apiClient.js` for HTTP. Expo Go is enough for the skeleton.
 
 ## Start here
 
