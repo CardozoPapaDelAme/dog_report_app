@@ -1,11 +1,15 @@
 {
   "ready": "El cliente está listo.",
   "common": { "yes": "Sí", "no": "No", "cancel": "Cancelar" },
+  "commandCenter": {
+    "eyebrow": "Espacio del administrador",
+    "title": "Command Center",
+    "subtitle": "Prioriza la página de trabajo actual y entra a cada revisión con su contexto completo."
+  },
   "moderation": {
-    "eyebrow": "Centro de operaciones",
     "title": "Cola de moderación",
-    "subtitle": "Revisa señales, evidencia y ubicación antes de publicar o retirar un reporte.",
     "onPage": "En esta página",
+    "pageScope": "Las métricas y tarjetas resumen únicamente los reportes cargados en este dispositivo; no son totales globales.",
     "flagged": "Con banderas",
     "urgent": "Prioridad alta",
     "trust": "Confianza",

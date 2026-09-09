@@ -89,7 +89,7 @@ function ReportCard({ report, busy, onApprove, onDelete, t }) {
   );
 }
 
-export default function ModerationQueueScreen({ accessToken }) {
+export default function CommandCenterScreen({ accessToken }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const queue = useModerationQueue(accessToken);
@@ -110,14 +110,18 @@ export default function ModerationQueueScreen({ accessToken }) {
   const header = (
     <View>
       <View style={styles.hero}>
-        <Text style={styles.eyebrow}>{t('moderation.eyebrow')}</Text>
-        <Text style={styles.title}>{t('moderation.title')}</Text>
-        <Text style={styles.subtitle}>{t('moderation.subtitle')}</Text>
+        <Text style={styles.eyebrow}>{t('commandCenter.eyebrow')}</Text>
+        <Text style={styles.title}>{t('commandCenter.title')}</Text>
+        <Text style={styles.subtitle}>{t('commandCenter.subtitle')}</Text>
       </View>
       <View style={styles.metricsRow}>
         <Metric label={t('moderation.onPage')} value={summary.total} />
         <Metric label={t('moderation.flagged')} value={summary.flagged} tone="danger" />
         <Metric label={t('moderation.urgent')} value={summary.urgent} tone="danger" />
+      </View>
+      <View style={styles.queueIntro}>
+        <Text style={styles.queueTitle}>{t('moderation.title')}</Text>
+        <Text style={styles.pageScope}>{t('moderation.pageScope')}</Text>
       </View>
       {queue.error ? (
         <Pressable accessibilityRole="button" onPress={queue.refresh} style={styles.errorBanner}>
@@ -216,6 +220,9 @@ const styles = StyleSheet.create({
   metricValue: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 21 },
   metricValueDanger: { color: colors.danger },
   metricLabel: { color: colors.muted, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 11, marginTop: 3 },
+  queueIntro: { marginHorizontal: 20, marginBottom: 16 },
+  queueTitle: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 19 },
+  pageScope: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12, lineHeight: 18, marginTop: 3 },
   gridRow: { paddingHorizontal: 14, gap: 14 },
   gridItem: { flex: 1, maxWidth: '50%' },
   card: { backgroundColor: colors.surface, borderColor: '#dfe6da', borderWidth: 1, borderRadius: 18, marginHorizontal: 20, marginBottom: 14, padding: 16 },

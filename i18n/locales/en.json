@@ -1,11 +1,15 @@
 {
   "ready": "The client is ready.",
   "common": { "yes": "Yes", "no": "No", "cancel": "Cancel" },
+  "commandCenter": {
+    "eyebrow": "Administrator workspace",
+    "title": "Command Center",
+    "subtitle": "Prioritize the current work page and open each review with its complete context."
+  },
   "moderation": {
-    "eyebrow": "Operations center",
     "title": "Moderation queue",
-    "subtitle": "Review signals, evidence, and location before publishing or removing a report.",
     "onPage": "On this page",
+    "pageScope": "Metrics and cards summarize only reports loaded on this device; they are not global totals.",
     "flagged": "Flagged",
     "urgent": "High priority",
     "trust": "Trust",

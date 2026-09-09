@@ -28,7 +28,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF16 | Asociación de Hoteles de Chihuahua dashboard | `GET /association/reports` | Accepted canonical business data only |
 | RF17 | Asociación de Hoteles de Chihuahua export | Same paginated role route/view | CSV/Excel parity and authorization |
 | RF18 | Administrator login | Auth JWT + `GET /me` + profile/role agreement | Provisioned account; no signup |
-| RF19 | Administrator moderation queue | `GET /admin/moderation-queue`; `ModerationQueueScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; responsive ES/EN states; no BI endpoint |
+| RF19 | Administrator Command Center and moderation queue | `GET /admin/moderation-queue`; `CommandCenterScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; page-scoped responsive ES/EN summary; no aggregate/BI endpoint |
 | RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/delete update the queue projection; no direct mobile database update; audited reversible deletion |
 | RF21 | Flag review/state machine | FlagService + restore/approve routes | Threshold, audit, restore semantics |
 | RF22 | On-device attributes | Structured report columns | Color automatic; size/collar manual |
@@ -98,7 +98,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | HU-16 | RF16 | Asociación de Hoteles de Chihuahua dashboard | Role route/presenter | Accepted canonical data only |
 | HU-17 | RF17 | Asociación de Hoteles de Chihuahua export | Same role route/presenter | Export parity |
 | HU-18 | RF18, RNF07 | Administrator auth | JWT/profile/role + `GET /me` | Provisioned access |
-| HU-19 | RF19, RF08 | Moderation queue | Administrator route/presenter + responsive Expo screen | Flag/trust context, pagination, refresh, empty/error/session states |
+| HU-19 | RF19, RF08 | Command Center moderation queue | Administrator route/presenter + responsive Expo screen | Flag/trust context, explicitly page-scoped summary, pagination, refresh, empty/error/session states |
 | HU-20 | RF20, RNF33 | Moderation | Hono approve/delete routes + generic Expo command client | Audited logical deletion; successful commands update the local queue projection |
 | HU-21 | RF21, RNF29 | Flag review | FlagService + restore/approve routes | Configured threshold workflow |
 | HU-22 | RF22, RNF11 | Attributes | Structured columns | Color/size/collar semantics |
