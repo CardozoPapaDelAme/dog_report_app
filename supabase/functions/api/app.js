@@ -4,6 +4,7 @@ import { optionalAuth } from './middleware/auth.js';
 import { requestId } from './middleware/request-id.js';
 import { presentError } from './presenters/error.js';
 import { healthRoutes } from './routes/health.js';
+import { moderationRoutes } from './routes/moderation.js';
 
 const app = new Hono();
 
@@ -11,6 +12,7 @@ app.use('*', requestId);
 app.use('*', optionalAuth);
 
 app.route('/', healthRoutes);
+app.route('/', moderationRoutes);
 
 app.notFound((c) => presentError(c, 404, 'not_found', 'No route matched this request.'));
 
