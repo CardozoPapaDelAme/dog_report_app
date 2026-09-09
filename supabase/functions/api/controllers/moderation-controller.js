@@ -3,7 +3,11 @@ import {
   presentModerationCommand,
   presentModerationQueue,
 } from '../presenters/moderation.js';
-import { approve, listQueue } from '../services/moderation-service.js';
+import {
+  approve,
+  deleteReport as deleteReportCommand,
+  listQueue,
+} from '../services/moderation-service.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -63,9 +67,9 @@ export async function getModerationQueue(c) {
   }
 }
 
-export function parseApproveBody(raw) {
+function parseNoteBody(raw, noteRequired) {
   if (!raw) {
-    return { ok: true, note: null };
+    return noteRequired ? { ok: false } : { ok: true, note: null };
   }
 
   let body;
@@ -81,10 +85,25 @@ export function parseApproveBody(raw) {
   if (keys.some((key) => key !== 'note')) {
     return { ok: false };
   }
-  if (body.note !== undefined && (typeof body.note !== 'string' || body.note.length > 1000)) {
+  if (body.note === undefined) {
+    return noteRequired ? { ok: false } : { ok: true, note: null };
+  }
+  if (
+    typeof body.note !== 'string' ||
+    (noteRequired && body.note.trim().length === 0) ||
+    body.note.length > 1000
+  ) {
     return { ok: false };
   }
-  return { ok: true, note: body.note ?? null };
+  return { ok: true, note: body.note };
+}
+
+export function parseApproveBody(raw) {
+  return parseNoteBody(raw, false);
+}
+
+export function parseDeleteBody(raw) {
+  return parseNoteBody(raw, true);
 }
 
 export async function approveReport(c) {
@@ -115,6 +134,40 @@ export async function approveReport(c) {
         409,
         'invalid_approve_transition',
         'The report cannot be approved from its current state.',
+      );
+    }
+    throw error;
+  }
+}
+
+export async function deleteReport(c) {
+  const reportId = c.req.param('report_id');
+  if (!UUID_PATTERN.test(reportId)) {
+    return presentError(c, 400, 'invalid_request', 'report_id must be a UUID.');
+  }
+
+  const body = parseDeleteBody(await c.req.text());
+  if (!body.ok) {
+    return presentError(c, 400, 'invalid_request', 'Body must contain a non-empty string note.');
+  }
+
+  try {
+    const report = await deleteReportCommand({
+      actor: c.get('auth'),
+      reportId,
+      note: body.note,
+    });
+    return presentModerationCommand(c, report);
+  } catch (error) {
+    if (error?.code === 'not_found') {
+      return presentError(c, 404, 'not_found', 'Report was not found.');
+    }
+    if (error?.code === 'invalid_delete_transition') {
+      return presentError(
+        c,
+        409,
+        'invalid_delete_transition',
+        'The report cannot be deleted from its current state.',
       );
     }
     throw error;

@@ -47,6 +47,29 @@ export async function approveReport(tx, reportId) {
   return report;
 }
 
+export async function deleteReport(tx, reportId) {
+  const rows = await tx`
+    UPDATE public.reports
+    SET
+      previous_status = status,
+      status = 'deleted',
+      status_reason = 'logical_deletion',
+      deleted_at = now()
+    WHERE id = ${reportId}
+    RETURNING
+      id,
+      status,
+      status_reason,
+      previous_status,
+      accepted_at,
+      published_at,
+      public_until,
+      hidden_at,
+      deleted_at
+  `;
+  return rows[0];
+}
+
 export async function insertModerationAudit(
   tx,
   { actorId, action, reportId, previousValues, newValues, note },
