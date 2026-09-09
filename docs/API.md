@@ -31,6 +31,7 @@ blocker; neither contract silently overrides the other.
 
 | Method and path | Actor | Success | Service |
 |---|---|---:|---|
+| `GET /health` | public | 200 | HealthService |
 | `POST /reports` | anonymous public reporter | 201/200 replay | ReportService |
 | `POST /reports/:report_id/flags` | anonymous public reporter | 201 | FlagService |
 | `GET /public/reports` | public | 200 | PublicMapService |

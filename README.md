@@ -6,8 +6,8 @@ Chihuahua. The prototype targets the Asociación de Hoteles de Chihuahua, A.C.
 
 ## Status
 
-The mobile client skeleton (ALAN-0) is in the repository root. Product screens,
-Auth, map, and the Hono backend are not started. Production report intake remains
+The mobile client skeleton is in the repository root. `GET /health` is deployed;
+product screens and `GET /me` are not started. Production report intake remains
 blocked until the Asociación de Hoteles de Chihuahua approves a geofence version.
 
 ## Team setup
@@ -22,8 +22,12 @@ cp .env.example .env
 npx expo start
 ```
 
-Leave `EXPO_PUBLIC_API_BASE_URL` empty until the Hono API is deployed. Use
-`services/apiClient.js` for HTTP. Expo Go is enough for the skeleton.
+`GET /health` is live at
+`https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api/health`.
+Set `EXPO_PUBLIC_API_BASE_URL` to
+`https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api`.
+Use `services/apiClient.js` for HTTP. Expo Go is enough for the skeleton;
+MapLibre and TFLite later need a development build.
 
 If a ticket needs the shared database, also run:
 
