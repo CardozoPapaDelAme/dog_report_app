@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import './i18n';
-import ModerationQueueScreen from './screens/ModerationQueueScreen.js';
+import CommandCenterScreen from './screens/CommandCenterScreen.js';
 
 export default function App({ accessToken = null }) {
   const [fontsLoaded, fontError] = useFonts({
@@ -22,7 +22,7 @@ export default function App({ accessToken = null }) {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <ModerationQueueScreen accessToken={accessToken} />
+      <CommandCenterScreen accessToken={accessToken} />
     </SafeAreaProvider>
   );
 }

@@ -54,6 +54,13 @@ sequenceDiagram
   agregadas globales. Un resumen global requiere ampliar el contrato; este flujo
   no lo fabrica a partir de acceso directo a tablas.
 
+## Implementación móvil
+
+- `screens/CommandCenterScreen.js` presenta la cola y etiqueta explícitamente el
+  resumen como limitado a la página cargada.
+- `models/moderation.js#summarizeModerationPage` deriva las métricas solo del
+  arreglo recibido; no consulta otra ruta ni estima totales globales.
+
 ## Fuentes
 
 - [`../../API.md`](../../API.md): contrato de la cola de moderación.
