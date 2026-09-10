@@ -6,6 +6,7 @@ import { presentError } from './presenters/error.js';
 import { healthRoutes } from './routes/health.js';
 import { moderationRoutes } from './routes/moderation.js';
 import { retentionRoutes } from './routes/retention.js';
+import { configurationRoutes } from './routes/configuration.js';
 
 const app = new Hono();
 
@@ -15,6 +16,7 @@ app.use('*', optionalAuth);
 app.route('/', healthRoutes);
 app.route('/', moderationRoutes);
 app.route('/', retentionRoutes);
+app.route('/', configurationRoutes);
 
 app.notFound((c) => presentError(c, 404, 'not_found', 'No route matched this request.'));
 
