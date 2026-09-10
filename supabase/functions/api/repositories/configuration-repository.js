@@ -75,7 +75,7 @@ export async function insertConfigurationAudit(tx, { actorId, previous, current,
       actor_id, action, entity_type, entity_id, previous_values, new_values, note
     ) VALUES (
       ${actorId}, 'configuration_published', 'configuration', ${current.id},
-      ${JSON.stringify(previous)}::jsonb, ${JSON.stringify(current)}::jsonb, ${note}
+      ${tx.json(previous)}, ${tx.json(current)}, ${note}
     )
   `;
 }
