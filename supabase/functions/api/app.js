@@ -8,7 +8,7 @@ import { moderationRoutes } from './routes/moderation.js';
 import { retentionRoutes } from './routes/retention.js';
 import { identityRoutes } from './routes/identity-routes.js';
 
-const app = new Hono();
+const app = new Hono().basePath('/api');
 
 app.use('*', requestId);
 app.use('*', optionalAuth);
