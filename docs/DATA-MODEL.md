@@ -106,9 +106,36 @@ mandatory when GPU/vector support is absent.
 ## Typed configuration and zones
 
 Configuration versions validate flag threshold, duplicate radius/window, trust
-bands, GPS accuracy, public report/flag rates, and fixed retention periods. A
-Service command creates a new immutable version and atomically switches active
-status.
+bands, GPS accuracy, public report/flag rates, and fixed retention periods. L1
+accepts eight numeric thresholds plus one required `change_note`:
+
+| Field | Inclusive range | Precision |
+|---|---|---|
+| `flag_auto_hide_threshold` | 2–100 | Integer |
+| `duplicate_radius_meters` | 10–1000 | Integer, meters |
+| `duplicate_time_window_minutes` | 5–1440 | Integer, minutes |
+| `trust_high_threshold` | 0–1 | At most 3 decimal places |
+| `trust_medium_threshold` | 0–1 | At most 3 decimal places; strictly less than high |
+| `gps_accuracy_max_meters` | 5–500 | At most 2 decimal places, meters |
+| `report_rate_limit_per_hour` | 1–500 | Integer |
+| `flag_rate_limit_per_hour` | 1–1000 | Integer |
+| `change_note` | 1–1000 Unicode characters | Nonblank string |
+
+These limits mirror `config_versions` in `db/schema.sql`. Reject excess decimal
+precision before persistence so PostgreSQL cannot silently round the requested
+thresholds. Numeric strings, booleans, missing values, undeclared fields and
+client-controlled metadata are rejected. The five retention fields remain
+server-controlled; this command uses their schema defaults.
+
+The Service creates a complete new version, switches activation, and inserts its
+audit in one transaction. Only `is_active` may change on an existing row; its
+thresholds, note, author, version, and creation timestamp remain immutable. No
+row is deleted. The partial unique index allows at most one active version per
+environment; the Service preserves an active version throughout committed
+publications. Configuration publication uses transaction advisory lock namespace
+`102001`, key `1` for staging or `2` for production, before reading or allocating
+a version. All future configuration publishers must use the same lock protocol.
+Version numbers increase within each environment independently.
 
 Zone sets carry source URI/version and a required SHA-256 checksum plus geometry.
 Create and activate reject a missing or malformed checksum. Activation stores an

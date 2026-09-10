@@ -197,11 +197,64 @@ Members must form a connected pending-candidate graph and have no active members
 `POST /admin/duplicate-groups/:group_id/reverse` requires `{ "note": string }`.
 Both are locked, reversible, and audited.
 
-`GET /admin/configuration` returns the active typed configuration and versioned
-zone metadata. `POST /admin/configuration` accepts all nine validated values:
-flag threshold, duplicate radius/window, high/medium trust thresholds, GPS maximum,
-report/flag hourly rates, and `change_note`; it creates and activates a new version
-atomically and audits it.
+### Configuration (FAB-1 / L1)
+
+`GET /admin/configuration` accepts no body or query parameters and returns `200`.
+`POST /admin/configuration` accepts a complete JSON object with **eight numeric
+thresholds plus `change_note` (nine fields total)** and returns `201`. The earlier
+“nine values” wording includes the note; there is no ninth numeric threshold.
+Exact ranges and decimal precision are listed in
+[`DATA-MODEL.md`](DATA-MODEL.md#typed-configuration-and-zones) and enforced by
+[`../db/schema.sql`](../db/schema.sql).
+
+```json
+{
+  "flag_auto_hide_threshold": 5,
+  "duplicate_radius_meters": 150,
+  "duplicate_time_window_minutes": 120,
+  "trust_high_threshold": 0.8,
+  "trust_medium_threshold": 0.5,
+  "gps_accuracy_max_meters": 50,
+  "report_rate_limit_per_hour": 10,
+  "flag_rate_limit_per_hour": 30,
+  "change_note": "Adjust thresholds after Administrator review"
+}
+```
+
+Both responses use `{ "data": { "configuration": { ... }, "zone_set": null } }`.
+`configuration` contains `id`, `environment`, `version`, `is_active`, all nine
+request fields, the five server-controlled `*_retention_days` fields,
+`created_by`, and UTC `created_at`. Numeric thresholds are JSON numbers.
+`zone_set`, when an active set exists in the same environment, contains `id`,
+`environment`, `version`, `name`, `source_uri`, `source_version`, `source_sha256`,
+`status`, `association_approval_reference`, `approved_at`, and `activated_at`.
+Absent geometry is represented as `zone_set: null`; it does not prevent managing
+thresholds. This route never creates or activates zones.
+
+Only an active Administrator may read or publish. The Service rechecks the
+profile inside its transaction. The environment comes from
+`deployment_metadata` and must match server `EXPECTED_DEPLOYMENT_ENVIRONMENT`;
+a missing/invalid expected environment or mismatch returns `503 preflight_mismatch`.
+Caller-supplied environment, version, activation, author, timestamps, retention
+fields, unknown fields, partial updates, and query parameters are rejected.
+
+Publication inserts a new inactive row, deactivates the previous row, activates
+the new row, and inserts `configuration_published` audit evidence in one
+transaction. An environment-scoped transaction advisory lock serializes version
+allocation and publication, including when no active version exists. Audit
+`previous_values` and `new_values` are JSON objects (the former is JSON null for
+initial publication), with the authenticated actor and change note. Any failure
+rolls back the entire operation. A POST always creates a version, even when the
+thresholds equal the prior version; this endpoint has no idempotency key.
+
+Validation failures return `400 invalid_request` with
+`error.details.fields.<field>` describing invalid values. Missing active
+configuration on GET returns `503 configuration_unavailable`. Known persistence
+conflicts return `409 configuration_conflict`; connection failures return
+`503 dependency_unavailable`. Unexpected failures return `500 internal_error`
+without SQL or private diagnostics. Unsupported methods return `405` with
+`Allow: GET, POST`. Both relative and existing `/api`-prefixed local routing
+conventions are supported.
 
 `POST /admin/zone-sets` accepts `name`, `source_uri`, `source_version`, lowercase
 64-hex `source_sha256`, and Polygon/MultiPolygon GeoJSON. It validates geometry and
@@ -235,7 +288,7 @@ does no work. Scheduler retries use bounded backoff and converge.
 | 403 | `forbidden`, `inactive_profile`, `role_mismatch` |
 | 404 | `not_found`, `report_not_flaggable`, `photo_not_available` |
 | 405 | `method_not_allowed` |
-| 409 | `report_id_payload_conflict`, `flag_already_submitted`, `photo_content_conflict`, `invalid_*_transition`, duplicate/zone conflicts |
+| 409 | `report_id_payload_conflict`, `flag_already_submitted`, `photo_content_conflict`, `invalid_*_transition`, `configuration_conflict`, duplicate/zone conflicts |
 | 413 | `photo_too_large` |
 | 415 | `unsupported_photo_type` |
 | 422 | `photo_decode_failed` |
