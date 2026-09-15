@@ -111,3 +111,11 @@ Executable Deno tests cover Hono, domain, repository, service, and mobile
 model/client behavior. Expo Doctor and Android/web exports provide mobile-shell
 and bundling checks; supported-device interaction and accessibility smoke tests
 remain release evidence as described by [`TESTING.md`](TESTING.md).
+
+Current report-intake coverage maps as follows:
+
+| Test artifact | Covered IDs | Focus |
+|---|---|---|
+| `supabase/functions/api/controllers/report-controller.test.js` | RF01, RF06, RF24, RNF12, RNF36, HU-01, HU-06, HU-24 | Public command parsing, raw fingerprint handoff, unknown-field rejection, dynamic details validation |
+| `supabase/functions/api/services/report-service.test.js` | RF01, RNF09, RNF12, RNF26, HU-01 | Canonical idempotency hash, fingerprint-independent replay, replay short-circuit before geofence/rate/trust, server-time `client_created_at` window, hourly retry calculation |
+| `supabase/functions/api/services/trust-service.test.js` | RNF27, RNF28 | High-trust publication path and mandatory review for mock/imprecise location signals |

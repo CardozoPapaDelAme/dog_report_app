@@ -5,6 +5,7 @@ import { requestId } from './middleware/request-id.js';
 import { presentError } from './presenters/error.js';
 import { healthRoutes } from './routes/health.js';
 import { moderationRoutes } from './routes/moderation.js';
+import { reportRoutes } from './routes/report.js';
 import { retentionRoutes } from './routes/retention.js';
 
 const app = new Hono();
@@ -13,6 +14,7 @@ app.use('*', requestId);
 app.use('*', optionalAuth);
 
 app.route('/', healthRoutes);
+app.route('/', reportRoutes);
 app.route('/', moderationRoutes);
 app.route('/', retentionRoutes);
 
