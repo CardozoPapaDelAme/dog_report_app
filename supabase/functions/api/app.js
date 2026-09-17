@@ -6,8 +6,9 @@ import { presentError } from './presenters/error.js';
 import { healthRoutes } from './routes/health.js';
 import { moderationRoutes } from './routes/moderation.js';
 import { retentionRoutes } from './routes/retention.js';
+import { identityRoutes } from './routes/identity-routes.js';
 
-const app = new Hono();
+const app = new Hono().basePath('/api');//all endpoints in Hono will have the prefix /api
 
 app.use('*', requestId);
 app.use('*', optionalAuth);
@@ -15,6 +16,7 @@ app.use('*', optionalAuth);
 app.route('/', healthRoutes);
 app.route('/', moderationRoutes);
 app.route('/', retentionRoutes);
+app.route('/', identityRoutes);
 
 app.notFound((c) => presentError(c, 404, 'not_found', 'No route matched this request.'));
 
