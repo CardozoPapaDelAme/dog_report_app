@@ -70,6 +70,30 @@ export async function hideReportRow(tx, reportId) {
   return rows[0];
 }
 
+export async function restoreReportRow(tx, reportId) {
+  const rows = await tx`
+    UPDATE public.reports
+    SET
+      previous_status = CASE WHEN status = 'deleted' THEN NULL ELSE status END,
+      status = 'pending_review',
+      status_reason = 'restored_for_review',
+      hidden_at = NULL,
+      deleted_at = NULL
+    WHERE id = ${reportId}
+    RETURNING
+      id,
+      status,
+      status_reason,
+      previous_status,
+      accepted_at,
+      published_at,
+      public_until,
+      hidden_at,
+      deleted_at
+  `;
+  return rows[0];
+}
+
 export async function deleteReport(tx, reportId) {
   const rows = await tx`
     UPDATE public.reports
