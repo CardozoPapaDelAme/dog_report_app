@@ -7,6 +7,7 @@ import {
   insertModerationAudit,
   listModerationQueue,
   lockReportForModeration,
+  restoreReportRow,
 } from '../repositories/moderation-repository.js';
 
 function moderationValues(report) {
@@ -50,6 +51,17 @@ export function hide({ actor, reportId, note }) {
     command: 'hide',
     action: 'report_hidden',
     persist: hideReportRow,
+  });
+}
+
+export function restore({ actor, reportId, note }) {
+  return executeTransition({
+    actor,
+    reportId,
+    note,
+    command: 'restore',
+    action: 'report_restored',
+    persist: restoreReportRow,
   });
 }
 
