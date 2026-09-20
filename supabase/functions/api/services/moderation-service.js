@@ -3,6 +3,7 @@ import { assertTransition } from '../domain/report-moderation.js';
 import {
   approveReport,
   deleteReport as persistDeletedReport,
+  hideReportRow,
   insertModerationAudit,
   listModerationQueue,
   lockReportForModeration,
@@ -38,6 +39,17 @@ export function approve({ actor, reportId, note }) {
     command: 'approve',
     action: 'report_approved',
     persist: approveReport,
+  });
+}
+
+export function hide({ actor, reportId, note }) {
+  return executeTransition({
+    actor,
+    reportId,
+    note,
+    command: 'hide',
+    action: 'report_hidden',
+    persist: hideReportRow,
   });
 }
 

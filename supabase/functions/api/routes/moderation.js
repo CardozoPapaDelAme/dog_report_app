@@ -4,6 +4,7 @@ import {
   approveReport,
   deleteReport,
   getModerationQueue,
+  hideReport,
 } from '../controllers/moderation-controller.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -16,5 +17,7 @@ moderationRoutes.post('/admin/reports/:report_id/approve', administratorOnly, ap
 moderationRoutes.post('/api/admin/reports/:report_id/approve', administratorOnly, approveReport);
 moderationRoutes.post('/admin/reports/:report_id/delete', administratorOnly, deleteReport);
 moderationRoutes.post('/api/admin/reports/:report_id/delete', administratorOnly, deleteReport);
+moderationRoutes.post('/admin/reports/:report_id/hide', administratorOnly, hideReport);
+moderationRoutes.post('/api/admin/reports/:report_id/hide', administratorOnly, hideReport);
 
 export { moderationRoutes };
