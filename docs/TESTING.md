@@ -253,3 +253,22 @@ skipped in this integration run because its disposable local database is not
 configured; its earlier eight-scenario result remains the prior verification.
 Live Administrator GET/POST verification remains pending against an agreed staging
 deployment containing FAB-1. No deployment or shared database mutation was performed.
+
+
+### FAB-1 simulated Administrator session (2026-09-19)
+
+`tests/identity-configuration.test.js` joins Ricky's real identity controller,
+service and presenter with the real configuration routes, controller, Service,
+validation and presenter in one Hono test application under `/api`. A test-only
+middleware supplies a verified-session-shaped actor; an in-memory repository
+supplies configuration and profile state. No production authentication code is
+modified and no Supabase account is created or granted privileges.
+
+Three scenarios cover identity → read → publish → reread with matching actor/audit
+attribution; an association identity denied access to Administrator configuration;
+and invalid values plus profile revocation after GET /me causing no publication.
+These are integration tests between application layers, not JWT verification or
+real PostgreSQL atomicity tests. The complete backend suite now passes 50 tests;
+the opt-in PostgreSQL suite remains skipped without its disposable database.
+An actual Administrator profile, matching JWT claims and staging deployment are
+still required before claiming live Supabase verification.

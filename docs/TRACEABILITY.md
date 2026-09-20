@@ -137,3 +137,10 @@ FAB-1 integration with main `65f2cda` extends RNF20/RNF21 regression coverage in
 the shared application prefix, and identity (`/api/me`), moderation queue and JP's
 hide route remain mounted and authenticated. RF18/HU-18 authenticated session
 verification still requires the managed staging smoke test.
+
+
+`tests/identity-configuration.test.js` adds FAB-1 simulated-session coverage for
+RF18/HU-18, RNF20/RNF21 and RNF33: the identity view and configuration audit refer
+to the same actor, association access is denied, and profile revocation prevents
+publication. Its session and persistence are simulated; real JWT/Supabase
+verification remains pending.
