@@ -236,3 +236,20 @@ with the team's managed PostgreSQL version or the entire target schema.
 The final managed smoke test still needs an active app Administrator with matching
 JWT role, server environment configuration, and permission to change staging
 thresholds. No shared Supabase data was changed by these tests.
+
+
+### FAB-1 integration with main (2026-09-19)
+
+Merged main `65f2cda`, including Ricky's identity flow and JP's hide command.
+The shared app registration preserves identity, configuration and moderation
+routes and main's `/api` base path. Updated the L1 mounted-route test to request
+`/api/admin/configuration`; an unprefixed application request must return 404.
+Added a regression test for `/api/me`, the moderation queue and the hide route: all
+remain registered, return `401 authentication_required` without a session, and
+include `X-Request-Id`. These tests do not prove authenticated live access.
+
+The combined backend suite passes 47 tests. The opt-in PostgreSQL suite was
+skipped in this integration run because its disposable local database is not
+configured; its earlier eight-scenario result remains the prior verification.
+Live Administrator GET/POST verification remains pending against an agreed staging
+deployment containing FAB-1. No deployment or shared database mutation was performed.

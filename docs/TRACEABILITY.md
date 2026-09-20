@@ -130,3 +130,10 @@ All paths below are relative to `supabase/functions/api/`.
 Live Supabase session/JWT/profile integration remains a release check requiring a
 provisioned Administrator. The isolated PostgreSQL suite validates the actual
 configuration-related DDL and policies, not the entire PostGIS/Storage deployment.
+
+
+FAB-1 integration with main `65f2cda` extends RNF20/RNF21 regression coverage in
+`controllers/configuration-controller.test.js`: `/api/admin/configuration` uses
+the shared application prefix, and identity (`/api/me`), moderation queue and JP's
+hide route remain mounted and authenticated. RF18/HU-18 authenticated session
+verification still requires the managed staging smoke test.

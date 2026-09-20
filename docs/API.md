@@ -253,8 +253,11 @@ configuration on GET returns `503 configuration_unavailable`. Known persistence
 conflicts return `409 configuration_conflict`; connection failures return
 `503 dependency_unavailable`. Unexpected failures return `500 internal_error`
 without SQL or private diagnostics. Unsupported methods return `405` with
-`Allow: GET, POST`. Both relative and existing `/api`-prefixed local routing
-conventions are supported.
+`Allow: GET, POST`. The route module supports relative paths; the application now mounts it under
+Hono `basePath('/api')`, alongside identity. Direct application requests use
+`/api/admin/configuration`, and identity uses `/api/me`. The managed invocation
+URL remains `/functions/v1/api/admin/configuration`; do not append another `/api`
+to the configured mobile API base URL.
 
 `POST /admin/zone-sets` accepts `name`, `source_uri`, `source_version`, lowercase
 64-hex `source_sha256`, and Polygon/MultiPolygon GeoJSON. It validates geometry and

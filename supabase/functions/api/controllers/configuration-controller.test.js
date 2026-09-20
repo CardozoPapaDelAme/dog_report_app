@@ -81,12 +81,29 @@ Deno.test('FAB-1 HTTP-RED-001/002: malformed requests and wrong methods never in
   assert(calls() === 0, 'Service must not receive malformed requests');
 });
 
-Deno.test('FAB-1 HTTP: both route aliases are mounted in the real application', async () => {
-  for (const path of ['/admin/configuration', '/api/admin/configuration']) {
-    const response = await actualApp.request(path);
+Deno.test('FAB-1 HTTP: configuration uses the application /api base path', async () => {
+  const path = '/api/admin/configuration';
+  for (const method of ['GET', 'POST']) {
+    const response = await actualApp.request(path, { method });
     assert(response.status === 401, 'Mounted route must require authentication');
-    const wrongMethod = await actualApp.request(path, { method: 'PUT' });
-    assert(wrongMethod.status === 405, 'Mounted route must reject unsupported methods');
+    assert((await response.json()).error.code === 'authentication_required', 'Authentication must run');
+  }
+  const wrongMethod = await actualApp.request(path, { method: 'PUT' });
+  assert(wrongMethod.status === 405, 'Mounted route must reject unsupported methods');
+  const unprefixed = await actualApp.request('/admin/configuration');
+  assert(unprefixed.status === 404, 'The application base path must be respected');
+});
+
+Deno.test('FAB-1 integration: identity and team moderation routes remain mounted', async () => {
+  for (const [path, method] of [
+    ['/api/me', 'GET'],
+    ['/api/admin/moderation-queue', 'GET'],
+    ['/api/admin/reports/00000000-0000-4000-8000-000000000001/hide', 'POST'],
+  ]) {
+    const response = await actualApp.request(path, { method });
+    assert(response.status === 401, `Team route ${path} must remain protected and reachable`);
+    assert((await response.json()).error.code === 'authentication_required', 'Expected authentication middleware');
+    assert(response.headers.has('X-Request-Id'), 'Request id must survive integration');
   }
 });
 
