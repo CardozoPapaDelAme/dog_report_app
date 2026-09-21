@@ -227,7 +227,8 @@ request fields, the five server-controlled `*_retention_days` fields,
 `created_by`, and UTC `created_at`. Numeric thresholds are JSON numbers.
 `zone_set`, when an active set exists in the same environment, contains `id`,
 `environment`, `version`, `name`, `source_uri`, `source_version`, `source_sha256`,
-`status`, `association_approval_reference`, `approved_at`, and `activated_at`.
+`status`, `association_approval_reference`, `approved_at`, `activated_at`, and
+`retired_at`.
 Absent geometry is represented as `zone_set: null`; it does not prevent managing
 thresholds. This route never creates or activates zones.
 
