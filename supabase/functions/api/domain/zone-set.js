@@ -174,3 +174,25 @@ export function validateZoneSetActivation(input) {
   }
   return { association_approval_reference: approvalResult.value, note };
 }
+
+// The partial unique index is the database backstop. This domain rule makes the
+// application invariant explicit before replacement is attempted.
+export function assertAtMostOneActiveZone(zoneSets) {
+  if (!Array.isArray(zoneSets) || zoneSets.length > 1) {
+    throw new ZoneSetError('zone_set_conflict', 'More than one active zone set is not allowed.');
+  }
+}
+
+export async function assertActivatableZoneSet(zoneSet) {
+  if (!zoneSet || zoneSet.status !== 'draft' || !zoneSet.source_geojson ||
+      typeof zoneSet.source_sha256 !== 'string' || !SHA256_PATTERN.test(zoneSet.source_sha256)) {
+    throw new ZoneSetError('zone_set_conflict', 'Zone set is not eligible for activation.');
+  }
+  let canonicalGeometry;
+  try { canonicalGeometry = canonicalZoneGeometry(zoneSet.source_geojson); } catch {
+    throw new ZoneSetError('zone_set_conflict', 'Zone set geometry is not eligible for activation.');
+  }
+  if (await sha256Hex(canonicalGeometry) !== zoneSet.source_sha256) {
+    throw new ZoneSetError('zone_set_conflict', 'Zone set checksum does not match its stored geometry.');
+  }
+}

@@ -1,5 +1,5 @@
 import {
-  ZoneSetError, canonicalZoneGeometry, sha256Hex, validateZoneSetActivation,
+  ZoneSetError, assertActivatableZoneSet, assertAtMostOneActiveZone, canonicalZoneGeometry, sha256Hex, validateZoneSetActivation,
   validateZoneSetCreation,
 } from './zone-set.js';
 
@@ -59,5 +59,23 @@ Deno.test('FAB-2 DOMAIN: activation keeps Association approval separate from Adm
     let caught;
     try { validateZoneSetActivation(input); } catch (error) { caught = error; }
     assert(caught instanceof ZoneSetError && caught.code === 'invalid_request', 'Activation validation required');
+  }
+});
+
+Deno.test('FAB-2 DOMAIN: activation permits at most one active zone and only a checksum-matched draft', async () => {
+  assertAtMostOneActiveZone([]);
+  let activeConflict;
+  try { assertAtMostOneActiveZone([{ id: 'first' }, { id: 'second' }]); } catch (error) { activeConflict = error; }
+  assert(activeConflict instanceof ZoneSetError && activeConflict.code === 'zone_set_conflict', 'Only one active set allowed');
+  const source_geojson = JSON.parse(canonicalZoneGeometry(polygon));
+  const source_sha256 = await sha256Hex(canonicalZoneGeometry(source_geojson));
+  await assertActivatableZoneSet({ status: 'draft', source_geojson, source_sha256 });
+  for (const zoneSet of [
+    { status: 'retired', source_geojson, source_sha256 },
+    { status: 'draft', source_geojson, source_sha256: 'a'.repeat(64) },
+  ]) {
+    let conflict;
+    try { await assertActivatableZoneSet(zoneSet); } catch (error) { conflict = error; }
+    assert(conflict instanceof ZoneSetError && conflict.code === 'zone_set_conflict', 'Only valid draft can activate');
   }
 });
