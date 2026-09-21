@@ -156,11 +156,23 @@ CREATE TABLE public.zone_sets (
   association_approval_reference TEXT,
   approved_at TIMESTAMPTZ,
   activated_at TIMESTAMPTZ,
+  retired_at TIMESTAMPTZ,
   created_by UUID NOT NULL REFERENCES public.profiles(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (environment, version),
-  CHECK (status NOT IN ('approved', 'active') OR association_approval_reference IS NOT NULL),
-  CHECK ((status = 'active') = (activated_at IS NOT NULL))
+  -- A retired version preserves when it was active and when it was retired.
+  -- This protects immutable provenance while allowing exactly one current set.
+  CONSTRAINT zone_sets_lifecycle_check CHECK (
+    (status = 'draft' AND association_approval_reference IS NULL
+      AND approved_at IS NULL AND activated_at IS NULL AND retired_at IS NULL)
+    OR (status = 'approved' AND length(btrim(association_approval_reference)) > 0
+      AND approved_at IS NOT NULL AND activated_at IS NULL AND retired_at IS NULL)
+    OR (status = 'active' AND length(btrim(association_approval_reference)) > 0
+      AND approved_at IS NOT NULL AND activated_at IS NOT NULL AND retired_at IS NULL)
+    OR (status = 'retired' AND length(btrim(association_approval_reference)) > 0
+      AND approved_at IS NOT NULL AND activated_at IS NOT NULL AND retired_at IS NOT NULL
+      AND retired_at >= activated_at)
+  )
 );
 CREATE UNIQUE INDEX uq_zone_sets_one_active_per_environment
   ON public.zone_sets (environment) WHERE status = 'active';
@@ -400,7 +412,7 @@ COMMENT ON COLUMN public.reports.client_created_at IS 'Device timestamp. New sub
 COMMENT ON TABLE public.photo_assets IS 'Private sanitized-photo processing, approval, rejection, and purge lifecycle. Raw input and raw EXIF are never persisted.';
 COMMENT ON TABLE public.duplicate_groups IS 'Audited, reversible human duplicate resolution with one canonical report.';
 COMMENT ON TABLE public.config_versions IS 'Typed, validated, versioned operational thresholds. Direct client mutation is prohibited.';
-COMMENT ON TABLE public.zone_sets IS 'Versioned geofence metadata. source_sha256 is required. association_approval_reference cites an external Asociación de Hoteles de Chihuahua decision; Administrator notes are not that approval.';
+COMMENT ON TABLE public.zone_sets IS 'Versioned immutable geofence metadata. source_sha256 is the SHA-256 of the canonical normalized GeoJSON accepted by the API. association_approval_reference cites an external Asociación de Hoteles de Chihuahua decision; Administrator notes are not that approval. Retired versions retain activation and retirement timestamps.';
 COMMENT ON TABLE public.audit_log IS 'Append-only audit evidence retained for two years; direct UPDATE and DELETE are prohibited.';
 COMMENT ON COLUMN public.reports.client_created_at IS 'Validated device observation timestamp, never a server lifecycle timestamp.';
 COMMENT ON COLUMN public.reports.trust_config_id IS 'Configuration version used for the persisted trust assessment, including photo-free assessment.';
