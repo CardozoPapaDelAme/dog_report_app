@@ -152,6 +152,7 @@ CREATE TABLE public.zone_sets (
   source_uri TEXT NOT NULL CHECK (length(source_uri) BETWEEN 1 AND 1000),
   source_version TEXT NOT NULL CHECK (length(source_version) BETWEEN 1 AND 120),
   source_sha256 TEXT NOT NULL CHECK (source_sha256 ~ '^[0-9a-f]{64}$'),
+  source_geojson JSONB NOT NULL CHECK (jsonb_typeof(source_geojson) = 'object'),
   status public.zone_set_status NOT NULL DEFAULT 'draft',
   association_approval_reference TEXT,
   approved_at TIMESTAMPTZ,
@@ -412,7 +413,7 @@ COMMENT ON COLUMN public.reports.client_created_at IS 'Device timestamp. New sub
 COMMENT ON TABLE public.photo_assets IS 'Private sanitized-photo processing, approval, rejection, and purge lifecycle. Raw input and raw EXIF are never persisted.';
 COMMENT ON TABLE public.duplicate_groups IS 'Audited, reversible human duplicate resolution with one canonical report.';
 COMMENT ON TABLE public.config_versions IS 'Typed, validated, versioned operational thresholds. Direct client mutation is prohibited.';
-COMMENT ON TABLE public.zone_sets IS 'Versioned immutable geofence metadata. source_sha256 is the SHA-256 of the canonical normalized GeoJSON accepted by the API. association_approval_reference cites an external Asociación de Hoteles de Chihuahua decision; Administrator notes are not that approval. Retired versions retain activation and retirement timestamps.';
+COMMENT ON TABLE public.zone_sets IS 'Versioned immutable geofence metadata and canonical source GeoJSON. source_sha256 is the SHA-256 of source_geojson serialized canonically by the API. association_approval_reference cites an external Asociación de Hoteles de Chihuahua decision; Administrator notes are not that approval. Retired versions retain activation and retirement timestamps.';
 COMMENT ON TABLE public.audit_log IS 'Append-only audit evidence retained for two years; direct UPDATE and DELETE are prohibited.';
 COMMENT ON COLUMN public.reports.client_created_at IS 'Validated device observation timestamp, never a server lifecycle timestamp.';
 COMMENT ON COLUMN public.reports.trust_config_id IS 'Configuration version used for the persisted trust assessment, including photo-free assessment.';
