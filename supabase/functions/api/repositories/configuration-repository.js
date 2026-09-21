@@ -28,7 +28,7 @@ export async function readActiveConfiguration(tx, environment) {
         'name', z.name, 'source_uri', z.source_uri, 'source_version', z.source_version,
         'source_sha256', z.source_sha256, 'status', z.status,
         'association_approval_reference', z.association_approval_reference,
-        'approved_at', z.approved_at, 'activated_at', z.activated_at
+        'approved_at', z.approved_at, 'activated_at', z.activated_at, 'retired_at', z.retired_at
       ) FROM public.zone_sets z
        WHERE z.environment = ${environment} AND z.status = 'active') AS zone_set
   `;

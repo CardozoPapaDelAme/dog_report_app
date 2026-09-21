@@ -188,10 +188,12 @@ Deno.test({
         for (const environment of ['staging', 'production']) {
           await sql`INSERT INTO public.zone_sets (
             environment, version, name, source_uri, source_version, source_sha256,
-            status, association_approval_reference, approved_at, activated_at, created_by
+            source_geojson, status, association_approval_reference, approved_at, activated_at, created_by
           ) VALUES (
             ${environment}, 1, ${'Local fixture ' + environment}, 'urn:test:zone', 'test-v1',
-            ${'a'.repeat(64)}, 'active', 'Local test fixture only', now(), now(), ${userId}
+            ${'a'.repeat(64)}, ${sql.json({
+              type: 'MultiPolygon', coordinates: [[[[0, 0], [1, 0], [1, 1], [0, 0]]]],
+            })}, 'active', 'Local test fixture only', now(), now(), ${userId}
           )`;
         }
         const result = await service.read({ actor });

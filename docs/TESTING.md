@@ -272,3 +272,20 @@ real PostgreSQL atomicity tests. The complete backend suite now passes 50 tests;
 the opt-in PostgreSQL suite remains skipped without its disposable database.
 An actual Administrator profile, matching JWT claims and staging deployment are
 still required before claiming live Supabase verification.
+
+## FAB-2 / L2 executable zone-set tests
+
+The L2 unit and HTTP suites run with the same backend command. They verify strict
+request shapes, lowercase checksums, deterministic `Polygon` → `MultiPolygon`
+normalization, coordinate bounds and closed rings, checksum mismatch rejection,
+separate Asociación approval and Administrator note, protected canonical `/api`
+routes, Service profile/environment rechecks, draft-only creation, and transaction
+rollback for missing/corrupt targets or a one-active-zone violation.
+
+Before deployment, run a separate disposable **PostgreSQL with PostGIS** suite
+against the complete ordered migrations. It must prove `ST_GeomFromGeoJSON` rejects
+self-intersecting/empty geometry, app_backend/RLS grants deny direct rewrites,
+concurrent activation keeps exactly one active set per environment, retiring a
+set preserves `activated_at` and writes `retired_at`, and failures after retire,
+activate, or audit roll back all changes. Do not use the L1 reduced fixture: it
+does not install PostGIS and must never target Wildogscanner or any shared database.

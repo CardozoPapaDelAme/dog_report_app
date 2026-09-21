@@ -137,12 +137,23 @@ publications. Configuration publication uses transaction advisory lock namespace
 a version. All future configuration publishers must use the same lock protocol.
 Version numbers increase within each environment independently.
 
-Zone sets carry source URI/version and a required SHA-256 checksum plus geometry.
-Create and activate reject a missing or malformed checksum. Activation stores an
-Asociación de Hoteles de Chihuahua approval citation that is distinct from the Administrator note. SQL
-cannot prove the Asociación de Hoteles de Chihuahua approved; Production activation remains an external
-gate. Direct table writes are unavailable to mobile roles. Production begins with
-no active geometry and fails closed until the candidate is approved.
+Zone sets carry immutable source URI/version, canonical normalized GeoJSON, and
+its required SHA-256 checksum. The checksum is calculated over the API's UTF-8
+canonical `MultiPolygon` JSON, never over client formatting or an unrelated raw
+file. The `zones.boundary` geography is derived from that same canonical source
+and PostGIS enforces valid, non-empty `MULTIPOLYGON(4326)` geometry.
+
+Creation produces only a `draft`. Activation revalidates the stored checksum,
+requires a distinct meaningful Asociación de Hoteles de Chihuahua approval
+citation and may include a separate Administrator note. An environment-scoped
+advisory lock (`102002`, staging key `1`, production key `2`) serializes version
+allocation and replacement. The partial unique index is the database backstop
+and the Domain explicitly rejects more than one active set. Replacement retires
+the prior set in the same transaction, preserving `activated_at` and `retired_at`
+as well as append-only audit before/after state. SQL cannot prove the Asociación
+approved; Production activation remains an external gate. Direct table writes
+are unavailable to mobile roles. Production begins with no active geometry and
+fails closed until the candidate is approved.
 
 ## Dynamic-form JSON contract
 

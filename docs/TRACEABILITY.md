@@ -144,3 +144,15 @@ RF18/HU-18, RNF20/RNF21 and RNF33: the identity view and configuration audit ref
 to the same actor, association access is denied, and profile revocation prevents
 publication. Its session and persistence are simulated; real JWT/Supabase
 verification remains pending.
+
+## FAB-2 / L2 zone-set implementation
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`) |
+| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js` |
+| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; rollback/orchestration tests in `services/zone-service.test.js` |
+
+The PostgreSQL/PostGIS migration adds preserved retirement evidence and immutable
+canonical source GeoJSON. Managed staging verification and a disposable PostGIS
+concurrency test remain required before claiming a live activation.
