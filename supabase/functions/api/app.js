@@ -3,12 +3,13 @@ import { Hono } from 'hono';
 import { optionalAuth } from './middleware/auth.js';
 import { requestId } from './middleware/request-id.js';
 import { presentError } from './presenters/error.js';
+import { associationRoutes } from './routes/associationRoutes.js';
 import { healthRoutes } from './routes/health.js';
 import { moderationRoutes } from './routes/moderation.js';
 import { retentionRoutes } from './routes/retention.js';
 import { identityRoutes } from './routes/identity-routes.js';
 
-const app = new Hono().basePath('/api');//all endpoints in Hono will have the prefix /api
+const app = new Hono().basePath('/api'); // All Hono endpoints use the /api prefix.
 
 app.use('*', requestId);
 app.use('*', optionalAuth);
@@ -17,6 +18,7 @@ app.route('/', healthRoutes);
 app.route('/', moderationRoutes);
 app.route('/', retentionRoutes);
 app.route('/', identityRoutes);
+app.route('/', associationRoutes);
 
 app.notFound((c) => presentError(c, 404, 'not_found', 'No route matched this request.'));
 

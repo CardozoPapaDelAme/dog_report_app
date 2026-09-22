@@ -70,6 +70,9 @@ or retry state through spies/fakes before any live-project exercise.
 - Asociación de Hoteles de Chihuahua can call only its accepted canonical projection and cannot retrieve
   flags, trust, moderation, operator identities, pending/hidden/deleted rows, or
   non-canonical duplicates.
+- `GET /association/reports` rejects Administrator, validates RFC 3339 date
+  bounds, `limit` 1–5000, and cursor shape; its repository enforces the five-year
+  accepted/canonical window and its presenter allowlists the business projection.
 - Administrator can read moderation context and execute audited commands but cannot
   call Asociación de Hoteles de Chihuahua export or edit original report fields.
 - Disabled/missing profiles and JWT claim/profile/route-role mismatches fail
