@@ -52,6 +52,7 @@ yarn-debug.log*
 .expo/
 .expo-shared/
 dist/
+dist-native/
 web-build/
 expo-env.d.ts
 .kotlin/
@@ -66,6 +67,8 @@ expo-env.d.ts
 
 # Testing
 coverage/
+test-results/
+playwright-report/
 
 # Temporary files
 *.log
