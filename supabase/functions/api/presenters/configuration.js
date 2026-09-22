@@ -23,7 +23,7 @@ export function presentConfiguration(c, state, status = 200) {
     id: zone.id, environment: zone.environment, version: zone.version, name: zone.name,
     source_uri: zone.source_uri, source_version: zone.source_version, source_sha256: zone.source_sha256,
     status: zone.status, association_approval_reference: zone.association_approval_reference,
-    approved_at: utc(zone.approved_at), activated_at: utc(zone.activated_at),
+    approved_at: utc(zone.approved_at), activated_at: utc(zone.activated_at), retired_at: utc(zone.retired_at),
   } : null;
   c.header('X-Request-Id', c.get('requestId') ?? '');
   return c.json({ data: { configuration, zone_set: zoneSet } }, status);

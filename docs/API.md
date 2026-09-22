@@ -227,7 +227,8 @@ request fields, the five server-controlled `*_retention_days` fields,
 `created_by`, and UTC `created_at`. Numeric thresholds are JSON numbers.
 `zone_set`, when an active set exists in the same environment, contains `id`,
 `environment`, `version`, `name`, `source_uri`, `source_version`, `source_sha256`,
-`status`, `association_approval_reference`, `approved_at`, and `activated_at`.
+`status`, `association_approval_reference`, `approved_at`, `activated_at`, and
+`retired_at`.
 Absent geometry is represented as `zone_set: null`; it does not prevent managing
 thresholds. This route never creates or activates zones.
 
@@ -259,11 +260,63 @@ Hono `basePath('/api')`, alongside identity. Direct application requests use
 URL remains `/functions/v1/api/admin/configuration`; do not append another `/api`
 to the configured mobile API base URL.
 
-`POST /admin/zone-sets` accepts `name`, `source_uri`, `source_version`, lowercase
-64-hex `source_sha256`, and Polygon/MultiPolygon GeoJSON. It validates geometry and
-creates an immutable version. `POST /admin/zone-sets/:zone_set_id/activate` accepts
-`association_approval_reference` plus optional distinct Administrator `note`,
-atomically retires the prior set, and audits. Production has no active geometry
+### `POST /admin/zone-sets`
+
+Body:
+
+```json
+{
+  "name": "Creel candidate",
+  "source_uri": "https://example.org/creel.geojson",
+  "source_version": "creel-2026-v1",
+  "source_sha256": "lowercase-64-hex-sha256",
+  "geometry": { "type": "Polygon", "coordinates": [] }
+}
+```
+
+This command creates a new immutable `draft` version; it never activates it.
+`name`, `source_uri`, and `source_version` are meaningful strings bounded to
+120, 1,000, and 120 Unicode characters. `source_uri` must be absolute.
+`geometry` is a direct GeoJSON `Polygon` or `MultiPolygon`, contains only `type`
+and `coordinates`, uses finite WGS84 longitude/latitude pairs, and has closed
+rings. A Polygon is normalized to a MultiPolygon before storage; PostGIS rejects
+any remaining invalid or empty geometry.
+
+The checksum is verifiable: the API serializes the normalized object as
+`JSON.stringify({ type: "MultiPolygon", coordinates: ... })`, UTF-8 encodes it,
+and requires `source_sha256` to equal its lowercase SHA-256 digest. This canonical
+GeoJSON and its checksum are immutable provenance; arbitrary client whitespace,
+key order, or a checksum of a different source file is not accepted. Success is
+`201 { "data": { "zone_set": { ... } } }`.
+
+### `POST /admin/zone-sets/:zone_set_id/activate`
+
+Body:
+
+```json
+{
+  "association_approval_reference": "AHC-2026-09-21-01",
+  "note": "Optional Administrator activation note"
+}
+```
+
+`zone_set_id` is a UUID. The approval reference is required, meaningful, and
+distinct from the optional Administrator note. The Service accepts only a draft
+in the deployment environment whose stored canonical GeoJSON still matches its
+stored checksum. In one transaction it locks the environment, confirms the
+one-active-zone invariant, retires the prior active set, activates the target,
+and inserts `zone_set_activated` audit evidence. Retired sets retain their
+activation and retirement timestamps; the audit also records prior/target state.
+Success is `200 { "data": { "zone_set": { ... } } }`.
+
+Both commands require an active Administrator, reject query parameters and
+client-selected environment/version/status/timestamps, and use the canonical
+application paths `/api/admin/zone-sets` and
+`/api/admin/zone-sets/:zone_set_id/activate`. They return `400 invalid_request`
+for body/geometry/checksum errors, `401 authentication_required`, `403 forbidden`,
+`404 not_found` for a zone outside the current environment, `409 zone_set_conflict`
+for concurrent or ineligible activation, `503` for deployment/storage preflight,
+and `405 Allow: POST` for unsupported methods. Production has no active geometry
 until the Asociación de Hoteles de Chihuahua approves the exact checksum/version.
 
 ## Internal retention

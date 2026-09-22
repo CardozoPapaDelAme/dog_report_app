@@ -272,3 +272,45 @@ real PostgreSQL atomicity tests. The complete backend suite now passes 50 tests;
 the opt-in PostgreSQL suite remains skipped without its disposable database.
 An actual Administrator profile, matching JWT claims and staging deployment are
 still required before claiming live Supabase verification.
+
+## FAB-2 / L2 executable zone-set tests
+
+The L2 unit and HTTP suites run with the same backend command. They verify strict
+request shapes, lowercase checksums, deterministic `Polygon` → `MultiPolygon`
+normalization, coordinate bounds and closed rings, checksum mismatch rejection,
+separate Asociación approval and Administrator note, protected canonical `/api`
+routes, Service profile/environment rechecks, draft-only creation, and transaction
+rollback for missing/corrupt targets or a one-active-zone violation.
+
+The opt-in `tests/zone-postgres.test.js` applies the complete ordered migration
+chain to a fresh disposable **PostgreSQL with PostGIS** database. It proves real
+PostGIS rejection of self-intersecting and empty geometry, narrow `retired_at`
+privilege for `app_backend`, RLS/grant denial of direct mutations, atomic
+replacement with retained timestamps, audit rollback, concurrent one-active-zone
+behavior, and the actionable legacy-lifecycle migration preflight. It must never
+target Wildogscanner or a shared database.
+
+For a local Docker run, create the database *after* the container starts so its
+PostGIS extension is not preinstalled in `public`; the migrations intentionally
+install it in `extensions`:
+
+```sh
+docker run --platform linux/amd64 --detach --rm --name fab2-postgis-test \
+  --tmpfs /var/lib/postgresql/data:rw \
+  --env POSTGRES_PASSWORD=local-test-only \
+  --publish 127.0.0.1:55433:5432 postgis/postgis:17-3.5
+docker exec fab2-postgis-test sh -c \
+  'until pg_isready -U postgres -d postgres; do sleep 1; done'
+docker exec fab2-postgis-test psql -U postgres -d postgres \
+  -c 'CREATE DATABASE fab2_zone_test;'
+ZONE_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:55433/fab2_zone_test' \
+  deno test --no-lock --allow-env --allow-net=127.0.0.1:55433 \
+  --allow-read=supabase/migrations \
+  --config supabase/functions/api/deno.json \
+  supabase/functions/api/tests/zone-postgres.test.js
+docker stop fab2-postgis-test
+```
+
+Use the portable Deno executable if it is not on `PATH`. On an Intel Docker host,
+omit `--platform linux/amd64`. The test refuses a non-loopback, nonempty, or
+wrongly named database.

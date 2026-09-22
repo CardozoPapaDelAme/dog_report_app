@@ -144,3 +144,21 @@ RF18/HU-18, RNF20/RNF21 and RNF33: the identity view and configuration audit ref
 to the same actor, association access is denied, and profile revocation prevents
 publication. Its session and persistence are simulated; real JWT/Supabase
 verification remains pending.
+
+## FAB-2 / L2 zone-set implementation
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`); `tests/zone-postgres.test.js` (`FAB-2 SQL`) |
+| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js`; `tests/zone-postgres.test.js` |
+| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; real rollback/concurrency/column-grant coverage in `tests/zone-postgres.test.js` |
+
+The PostgreSQL/PostGIS migrations preserve retirement evidence, canonical source
+GeoJSON, and the narrow `retired_at` update grant required for replacement. Their
+legacy-data preflight stops instead of fabricating lifecycle evidence. Managed
+staging verification remains required before claiming a live activation.
+
+`FAB-2 HTTP integration` exercises the real Controller and Service together
+with simulated authentication and persistence, covering creation and activation
+with the optional note omitted. It guards against passing internal normalized
+fields back through the external-input validator; it does not verify a real JWT.

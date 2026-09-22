@@ -8,6 +8,7 @@ import { moderationRoutes } from './routes/moderation.js';
 import { retentionRoutes } from './routes/retention.js';
 import { configurationRoutes } from './routes/configuration.js';
 import { identityRoutes } from './routes/identity-routes.js';
+import { zoneRoutes } from './routes/zone-sets.js';
 
 const app = new Hono().basePath('/api');//all endpoints in Hono will have the prefix /api
 
@@ -19,6 +20,7 @@ app.route('/', moderationRoutes);
 app.route('/', retentionRoutes);
 app.route('/', configurationRoutes);
 app.route('/', identityRoutes);
+app.route('/', zoneRoutes);
 
 app.notFound((c) => presentError(c, 404, 'not_found', 'No route matched this request.'));
 
