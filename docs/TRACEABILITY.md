@@ -149,10 +149,11 @@ verification remains pending.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`) |
-| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js` |
-| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; rollback/orchestration tests in `services/zone-service.test.js` |
+| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`); `tests/zone-postgres.test.js` (`FAB-2 SQL`) |
+| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js`; `tests/zone-postgres.test.js` |
+| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; real rollback/concurrency/column-grant coverage in `tests/zone-postgres.test.js` |
 
-The PostgreSQL/PostGIS migration adds preserved retirement evidence and immutable
-canonical source GeoJSON. Managed staging verification and a disposable PostGIS
-concurrency test remain required before claiming a live activation.
+The PostgreSQL/PostGIS migrations preserve retirement evidence, canonical source
+GeoJSON, and the narrow `retired_at` update grant required for replacement. Their
+legacy-data preflight stops instead of fabricating lifecycle evidence. Managed
+staging verification remains required before claiming a live activation.
