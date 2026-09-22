@@ -180,3 +180,95 @@ or retry state through spies/fakes before any live-project exercise.
 [`TRACEABILITY.md`](TRACEABILITY.md) is the complete pre-implementation inventory.
 Replace each verification focus with concrete test IDs as suites are implemented;
 preserve its many-to-many mappings.
+
+## FAB-1 / L1 executable configuration tests
+
+From the repository root, with Deno installed:
+
+```sh
+deno test --no-lock --config supabase/functions/api/deno.json supabase/functions/api
+```
+
+The configuration coverage includes all numeric limits/types/precision, strict
+trust-band ordering, nonblank bounded notes, unknown/server-owned fields, HTTP
+parsing and methods, request ids, both registered route aliases, missing/invalid
+authentication, Service authorization, environment checks, typed errors, and
+transaction orchestration. HTTP RED tests were run before the configuration route
+module existed. The database integration test is skipped unless its dedicated
+local test URL is supplied.
+
+For actual SQL atomicity/concurrency tests, use a **fresh disposable local
+PostgreSQL cluster** with an empty database named `fab1_configuration_test` and a
+local owner connection. The suite refuses non-loopback URLs, other database
+names, and nonempty application schemas. It creates the `app_backend` role in
+this disposable cluster; never run it against Wildogscanner or a shared cluster.
+
+```sh
+CONFIGURATION_TEST_DATABASE_URL='postgres://LOCAL_TEST_OWNER:LOCAL_TEST_PASSWORD@127.0.0.1:55432/fab1_configuration_test' \
+  deno test --no-lock --allow-env --allow-net=127.0.0.1:55432 --allow-read=db/schema.sql \
+  --config supabase/functions/api/deno.json \
+  supabase/functions/api/tests/configuration-postgres.test.js
+```
+
+Replace the local-only credentials and port with those of that disposable
+instance, then discard the cluster after testing. The suite extracts the relevant
+DDL, triggers, constraints and RLS policies from `db/schema.sql`; it uses real
+PostgreSQL connections with `SET LOCAL ROLE app_backend` and NOBYPASSRLS. PostGIS
+geometry and managed Auth/Storage catalogs are outside this fixture's scope.
+
+Its eight steps verify:
+
+1. GET after POST returns the new version, with unchanged historical values,
+   actor attribution, JSON audit objects and untouched production configuration.
+2. Failures after insert, activation or audit roll back rows and audit together.
+3. A concurrent reader sees the old active version until the writer commits.
+4. Six concurrent publications produce consecutive unique versions and one active row.
+5. Invalid input, a disabled profile and environment mismatch leave data unchanged.
+6. Database privileges/immutability reject history deletion/rewrites, audit edits
+   and missing actor context; pooled transactions do not leak that context.
+7. Active zone metadata is selected only from the deployment environment.
+8. Missing active configuration returns `configuration_unavailable`; publication
+   can restore an active version without deleting history.
+
+Local verification used Deno 2.9.6 and PostgreSQL 18.4 in a temporary cluster.
+This proves L1 SQL behavior on that local version, not migration compatibility
+with the team's managed PostgreSQL version or the entire target schema.
+The final managed smoke test still needs an active app Administrator with matching
+JWT role, server environment configuration, and permission to change staging
+thresholds. No shared Supabase data was changed by these tests.
+
+
+### FAB-1 integration with main (2026-09-19)
+
+Merged main `65f2cda`, including Ricky's identity flow and JP's hide command.
+The shared app registration preserves identity, configuration and moderation
+routes and main's `/api` base path. Updated the L1 mounted-route test to request
+`/api/admin/configuration`; an unprefixed application request must return 404.
+Added a regression test for `/api/me`, the moderation queue and the hide route: all
+remain registered, return `401 authentication_required` without a session, and
+include `X-Request-Id`. These tests do not prove authenticated live access.
+
+The combined backend suite passes 47 tests. The opt-in PostgreSQL suite was
+skipped in this integration run because its disposable local database is not
+configured; its earlier eight-scenario result remains the prior verification.
+Live Administrator GET/POST verification remains pending against an agreed staging
+deployment containing FAB-1. No deployment or shared database mutation was performed.
+
+
+### FAB-1 simulated Administrator session (2026-09-19)
+
+`tests/identity-configuration.test.js` joins Ricky's real identity controller,
+service and presenter with the real configuration routes, controller, Service,
+validation and presenter in one Hono test application under `/api`. A test-only
+middleware supplies a verified-session-shaped actor; an in-memory repository
+supplies configuration and profile state. No production authentication code is
+modified and no Supabase account is created or granted privileges.
+
+Three scenarios cover identity → read → publish → reread with matching actor/audit
+attribution; an association identity denied access to Administrator configuration;
+and invalid values plus profile revocation after GET /me causing no publication.
+These are integration tests between application layers, not JWT verification or
+real PostgreSQL atomicity tests. The complete backend suite now passes 50 tests;
+the opt-in PostgreSQL suite remains skipped without its disposable database.
+An actual Administrator profile, matching JWT claims and staging deployment are
+still required before claiming live Supabase verification.

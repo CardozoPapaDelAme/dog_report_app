@@ -111,3 +111,36 @@ Executable Deno tests cover Hono, domain, repository, service, and mobile
 model/client behavior. Expo Doctor and Android/web exports provide mobile-shell
 and bundling checks; supported-device interaction and accessibility smoke tests
 remain release evidence as described by [`TESTING.md`](TESTING.md).
+
+## FAB-1 / L1 configuration implementation
+
+Approved amendment #5 adds Administrator configuration management to the existing
+requirements below. These mappings cover threshold management only; they do not
+claim implementation of flagging, trust assessment, duplicate resolution, or L4 UI.
+All paths below are relative to `supabase/functions/api/`.
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RF21; HU-21; RNF29 | `GET/POST /admin/configuration`; flag threshold/rate validation | `domain/configuration.test.js` (`FAB-1 VALIDATION`); `controllers/configuration-controller.test.js` (`FAB-1 HTTP`) |
+| RF23; HU-23; RNF30 | Versioned duplicate radius/time thresholds, without resolving duplicates | `domain/configuration.test.js`; `tests/configuration-postgres.test.js` (`FAB-1 SQL`) |
+| RNF09, RNF26, RNF28, RNF31 | GPS, trust-band and hourly rate constraints; active-zone metadata projection | `domain/configuration.test.js`; `services/configuration-service.test.js` (`FAB-1 SERVICE`); zone/environment steps in `FAB-1 SQL` |
+| RNF20, RNF21 | Administrator middleware, Service profile recheck, local actor context, SQL/RLS and environment separation | `controllers/configuration-controller.test.js`; `services/configuration-service.test.js`; privilege/context steps in `FAB-1 SQL` |
+| RNF33 | Immutable history, sequential versions, atomic activation and JSON audit evidence | `repositories/configuration-repository.js`; rollback, concurrent-reader and six-writer steps in `FAB-1 SQL` |
+
+Live Supabase session/JWT/profile integration remains a release check requiring a
+provisioned Administrator. The isolated PostgreSQL suite validates the actual
+configuration-related DDL and policies, not the entire PostGIS/Storage deployment.
+
+
+FAB-1 integration with main `65f2cda` extends RNF20/RNF21 regression coverage in
+`controllers/configuration-controller.test.js`: `/api/admin/configuration` uses
+the shared application prefix, and identity (`/api/me`), moderation queue and JP's
+hide route remain mounted and authenticated. RF18/HU-18 authenticated session
+verification still requires the managed staging smoke test.
+
+
+`tests/identity-configuration.test.js` adds FAB-1 simulated-session coverage for
+RF18/HU-18, RNF20/RNF21 and RNF33: the identity view and configuration audit refer
+to the same actor, association access is denied, and profile revocation prevents
+publication. Its session and persistence are simulated; real JWT/Supabase
+verification remains pending.
