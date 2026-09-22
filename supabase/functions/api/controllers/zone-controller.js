@@ -68,7 +68,8 @@ export function createZoneController(service = zoneService) {
       try {
         rejectQuery(c);
         // Validate at HTTP boundary; the Service validates again for non-HTTP callers.
-        const input = await validateZoneSetCreation(await readJson(c));
+        const input = await readJson(c);
+        await validateZoneSetCreation(input);
         return presentZoneSet(
           c,
           await service.create({ actor: c.get("auth"), input }),
@@ -88,7 +89,8 @@ export function createZoneController(service = zoneService) {
             "zone_set_id must be a UUID.",
           );
         }
-        const input = validateZoneSetActivation(await readJson(c));
+        const input = await readJson(c);
+        validateZoneSetActivation(input);
         return presentZoneSet(
           c,
           await service.activate({ actor: c.get("auth"), zoneSetId, input }),

@@ -157,3 +157,8 @@ The PostgreSQL/PostGIS migrations preserve retirement evidence, canonical source
 GeoJSON, and the narrow `retired_at` update grant required for replacement. Their
 legacy-data preflight stops instead of fabricating lifecycle evidence. Managed
 staging verification remains required before claiming a live activation.
+
+`FAB-2 HTTP integration` exercises the real Controller and Service together
+with simulated authentication and persistence, covering creation and activation
+with the optional note omitted. It guards against passing internal normalized
+fields back through the external-input validator; it does not verify a real JWT.

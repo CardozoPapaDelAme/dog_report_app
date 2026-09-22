@@ -3,6 +3,7 @@ import { canonicalZoneGeometry, sha256Hex } from "../domain/zone-set.js";
 import { requestId } from "../middleware/request-id.js";
 import { createZoneRoutes } from "../routes/zone-sets.js";
 import { app as actualApp } from "../app.js";
+import { createZoneService } from "../services/zone-service.js";
 
 const zoneSetId = "00000000-0000-4000-8000-000000000001";
 const geometry = {
@@ -55,8 +56,8 @@ function harness({ failure = null } = {}) {
     create({ input }) {
       calls++;
       assert(
-        input.geometry.type === "MultiPolygon",
-        "Boundary must normalize first",
+        input.geometry.type === "Polygon" && !("canonical_geometry" in input),
+        "Boundary must preserve the external input for service validation",
       );
       if (failure) throw failure;
       return state();
@@ -80,6 +81,80 @@ function harness({ failure = null } = {}) {
   app.route("/", createZoneRoutes({ service, authorize }));
   return { app, calls: () => calls };
 }
+
+Deno.test("FAB-2 HTTP integration: real service creates and activates with optional note omitted", async () => {
+  const actor = {
+    type: "authenticated",
+    userId: zoneSetId,
+    role: "administrator",
+    profile: { id: zoneSetId, role: "administrator", active: true },
+  };
+  let row;
+  const audits = [];
+  const service = createZoneService({
+    getConfig: () => ({ expectedEnvironment: "staging" }),
+    getSql: () => ({ begin: (operation) => operation(() => {}) }),
+    repository: {
+      readZoneActor: () => actor.profile,
+      readZoneEnvironment: () => "staging",
+      lockZoneEnvironment: () => {},
+      insertZoneSet: (_tx, { values }) => {
+        row = {
+          ...state(),
+          source_geojson: values.geometry,
+          source_sha256: values.source_sha256,
+        };
+        return zoneSetId;
+      },
+      readZoneSet: () => row,
+      readActiveZoneSets: () => [],
+      activateZoneSet: (_tx, { associationApprovalReference }) => {
+        row = {
+          ...row,
+          status: "active",
+          association_approval_reference: associationApprovalReference,
+        };
+      },
+      insertZoneAudit: (_tx, audit) => audits.push(audit),
+    },
+  });
+  const app = new Hono().basePath("/api");
+  app.route(
+    "/",
+    createZoneRoutes({
+      service,
+      authorize: async (c, next) => {
+        c.set("auth", actor);
+        await next();
+      },
+    }),
+  );
+  const created = await app.request("/api/admin/zone-sets", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(await creationInput()),
+  });
+  assert(
+    created.status === 201,
+    `Creation must succeed: ${await created.text()}`,
+  );
+  const activated = await app.request(
+    `/api/admin/zone-sets/${zoneSetId}/activate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ association_approval_reference: "AHC-TEST-1" }),
+    },
+  );
+  assert(
+    activated.status === 200,
+    `Activation without note must succeed: ${await activated.text()}`,
+  );
+  assert(
+    audits.length === 2 && audits[1].note === null && row.status === "active",
+    "Both commands must reach persistence and audit",
+  );
+});
 
 Deno.test("FAB-2 HTTP: creation and activation expose only typed zone-set data", async () => {
   const { app, calls } = harness();
