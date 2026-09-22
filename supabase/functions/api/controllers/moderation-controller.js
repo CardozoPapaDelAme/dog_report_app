@@ -6,7 +6,9 @@ import {
 import {
   approve,
   deleteReport as deleteReportCommand,
+  hide,
   listQueue,
+  restore,
 } from '../services/moderation-service.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -106,6 +108,14 @@ export function parseDeleteBody(raw) {
   return parseNoteBody(raw, true);
 }
 
+export function parseHideBody(raw) {
+  return parseNoteBody(raw, true);
+}
+
+export function parseRestoreBody(raw) {
+  return parseNoteBody(raw, true);
+}
+
 export async function approveReport(c) {
   const reportId = c.req.param('report_id');
   if (!UUID_PATTERN.test(reportId)) {
@@ -134,6 +144,74 @@ export async function approveReport(c) {
         409,
         'invalid_approve_transition',
         'The report cannot be approved from its current state.',
+      );
+    }
+    throw error;
+  }
+}
+
+export async function hideReport(c) {
+  const reportId = c.req.param('report_id');
+  if (!UUID_PATTERN.test(reportId)) {
+    return presentError(c, 400, 'invalid_request', 'report_id must be a UUID.');
+  }
+
+  const body = parseHideBody(await c.req.text());
+  if (!body.ok) {
+    return presentError(c, 400, 'invalid_request', 'Body must contain a non-empty string note.');
+  }
+
+  try {
+    const report = await hide({
+      actor: c.get('auth'),
+      reportId,
+      note: body.note,
+    });
+    return presentModerationCommand(c, report);
+  } catch (error) {
+    if (error?.code === 'not_found') {
+      return presentError(c, 404, 'not_found', 'Report was not found.');
+    }
+    if (error?.code === 'invalid_hide_transition') {
+      return presentError(
+        c,
+        409,
+        'invalid_hide_transition',
+        'The report cannot be hidden from its current state.',
+      );
+    }
+    throw error;
+  }
+}
+
+export async function restoreReport(c) {
+  const reportId = c.req.param('report_id');
+  if (!UUID_PATTERN.test(reportId)) {
+    return presentError(c, 400, 'invalid_request', 'report_id must be a UUID.');
+  }
+
+  const body = parseRestoreBody(await c.req.text());
+  if (!body.ok) {
+    return presentError(c, 400, 'invalid_request', 'Body must contain a non-empty string note.');
+  }
+
+  try {
+    const report = await restore({
+      actor: c.get('auth'),
+      reportId,
+      note: body.note,
+    });
+    return presentModerationCommand(c, report);
+  } catch (error) {
+    if (error?.code === 'not_found') {
+      return presentError(c, 404, 'not_found', 'Report was not found.');
+    }
+    if (error?.code === 'invalid_restore_transition') {
+      return presentError(
+        c,
+        409,
+        'invalid_restore_transition',
+        'The report cannot be restored from its current state.',
       );
     }
     throw error;

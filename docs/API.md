@@ -190,24 +190,188 @@ pending/visible → hidden; delete allows non-deleted → reversible deleted; re
 allows hidden/deleted → pending review. Each locks the row and inserts audit in the
 same transaction. Invalid/stale state returns `409 invalid_*_transition`.
 
-`GET /admin/duplicate-groups` returns active group id, canonical id, member ids,
-resolved timestamp and version. `POST /admin/duplicate-groups` accepts
-`{ "canonical_report_id": "uuid", "report_ids": ["uuid", "uuid"], "note"?: string }`.
-Members must form a connected pending-candidate graph and have no active membership.
-`POST /admin/duplicate-groups/:group_id/reverse` requires `{ "note": string }`.
-Both are locked, reversible, and audited.
+### Duplicate groups (FAB-3 / L3)
 
-`GET /admin/configuration` returns the active typed configuration and versioned
-zone metadata. `POST /admin/configuration` accepts all nine validated values:
-flag threshold, duplicate radius/window, high/medium trust thresholds, GPS maximum,
-report/flag hourly rates, and `change_note`; it creates and activates a new version
-atomically and audits it.
+Canonical Hono routes are `/api/admin/duplicate-groups` and
+`/api/admin/duplicate-groups/:group_id/reverse`; do not add a second `/api`
+to the mobile API base URL. All require an active Administrator.
 
-`POST /admin/zone-sets` accepts `name`, `source_uri`, `source_version`, lowercase
-64-hex `source_sha256`, and Polygon/MultiPolygon GeoJSON. It validates geometry and
-creates an immutable version. `POST /admin/zone-sets/:zone_set_id/activate` accepts
-`association_approval_reference` plus optional distinct Administrator `note`,
-atomically retires the prior set, and audits. Production has no active geometry
+`GET /admin/duplicate-groups` accepts no body or query parameters. It returns
+`200 { "data": { "duplicate_groups": [] } }`, containing only active groups,
+ordered by `resolved_at DESC, id DESC`. This prototype route has no pagination.
+
+`POST /admin/duplicate-groups` accepts exactly:
+
+```json
+{
+  "canonical_report_id": "uuid",
+  "report_ids": ["uuid", "uuid"],
+  "note": "Optional human review reason"
+}
+```
+
+`report_ids` contains 2–500 distinct lowercase canonical UUIDs, including the
+canonical report. Every report must exist, must not be logically deleted, and
+must have no active membership. Pending candidate edges with **both endpoints
+selected** must connect the entire set. A chain is sufficient; a clique is not
+required. Paths through unselected reports, dismissed edges and confirmed edges
+cannot establish connectivity. Missing reports return `404 not_found`.
+
+Creation returns `201 { "data": { "duplicate_group": DuplicateGroupView } }`.
+It creates the group at `resolution_version: 1`, inserts one canonical and all
+duplicate memberships, confirms the selected internal pending candidates and
+audits atomically. External and dismissed candidates are unchanged. An omitted
+note is stored as null; a supplied note must be a nonblank string of at most
+1000 Unicode characters after trimming. Unknown fields, client-supplied status,
+versions and timestamps, malformed JSON/UUIDs and query parameters return 400.
+
+`POST /admin/duplicate-groups/:group_id/reverse` accepts exactly
+`{ "note": "Required reason" }`, with the same note validation. It returns
+`200` with the same single-group envelope, `status: "reversed"`, incremented
+`resolution_version` and `reversed_at`. It deactivates memberships and returns
+confirmed internal candidates to `pending`, clearing their review actor/time.
+The original resolution, memberships and audit history remain stored. A later
+resolution creates a new group; it does not reactivate the old one.
+
+Reversal preserves **all original report/photo data and moderation state**,
+including later hiding or logical deletion; pending review here means candidate
+review. It does not publish a hidden report or restore a deleted one. This was
+explicitly confirmed by Fabián on 2026-09-22. If retention has already purged a
+noncanonical member, reversal releases the surviving memberships. If the group
+itself no longer exists, the result is `404 not_found`.
+
+`DuplicateGroupView` contains only `id`, `canonical_report_id`, `report_ids`
+(sorted ascending), `status`, `resolution_version`, `resolved_at` and
+`reversed_at` (UTC, nullable). It exposes no private report content or operator
+profile. Mutation reasons and operator attribution are preserved in audit.
+
+Conflicts return `409 duplicate_graph_disconnected`,
+`409 duplicate_membership_conflict` or `409 duplicate_group_conflict` (including
+repeat reversal/concurrent stale state). Profile/role denial is 403, missing
+authentication is 401, environment mismatch or storage unavailability is 503.
+Unknown failures return a generic 500 without SQL. Unsupported methods return
+405 with `Allow: GET, POST` on the collection or `Allow: POST` on reversal.
+
+### Configuration (FAB-1 / L1)
+
+`GET /admin/configuration` accepts no body or query parameters and returns `200`.
+`POST /admin/configuration` accepts a complete JSON object with **eight numeric
+thresholds plus `change_note` (nine fields total)** and returns `201`. The earlier
+“nine values” wording includes the note; there is no ninth numeric threshold.
+Exact ranges and decimal precision are listed in
+[`DATA-MODEL.md`](DATA-MODEL.md#typed-configuration-and-zones) and enforced by
+[`../db/schema.sql`](../db/schema.sql).
+
+```json
+{
+  "flag_auto_hide_threshold": 5,
+  "duplicate_radius_meters": 150,
+  "duplicate_time_window_minutes": 120,
+  "trust_high_threshold": 0.8,
+  "trust_medium_threshold": 0.5,
+  "gps_accuracy_max_meters": 50,
+  "report_rate_limit_per_hour": 10,
+  "flag_rate_limit_per_hour": 30,
+  "change_note": "Adjust thresholds after Administrator review"
+}
+```
+
+Both responses use `{ "data": { "configuration": { ... }, "zone_set": null } }`.
+`configuration` contains `id`, `environment`, `version`, `is_active`, all nine
+request fields, the five server-controlled `*_retention_days` fields,
+`created_by`, and UTC `created_at`. Numeric thresholds are JSON numbers.
+`zone_set`, when an active set exists in the same environment, contains `id`,
+`environment`, `version`, `name`, `source_uri`, `source_version`, `source_sha256`,
+`status`, `association_approval_reference`, `approved_at`, `activated_at`, and
+`retired_at`.
+Absent geometry is represented as `zone_set: null`; it does not prevent managing
+thresholds. This route never creates or activates zones.
+
+Only an active Administrator may read or publish. The Service rechecks the
+profile inside its transaction. The environment comes from
+`deployment_metadata` and must match server `EXPECTED_DEPLOYMENT_ENVIRONMENT`;
+a missing/invalid expected environment or mismatch returns `503 preflight_mismatch`.
+Caller-supplied environment, version, activation, author, timestamps, retention
+fields, unknown fields, partial updates, and query parameters are rejected.
+
+Publication inserts a new inactive row, deactivates the previous row, activates
+the new row, and inserts `configuration_published` audit evidence in one
+transaction. An environment-scoped transaction advisory lock serializes version
+allocation and publication, including when no active version exists. Audit
+`previous_values` and `new_values` are JSON objects (the former is JSON null for
+initial publication), with the authenticated actor and change note. Any failure
+rolls back the entire operation. A POST always creates a version, even when the
+thresholds equal the prior version; this endpoint has no idempotency key.
+
+Validation failures return `400 invalid_request` with
+`error.details.fields.<field>` describing invalid values. Missing active
+configuration on GET returns `503 configuration_unavailable`. Known persistence
+conflicts return `409 configuration_conflict`; connection failures return
+`503 dependency_unavailable`. Unexpected failures return `500 internal_error`
+without SQL or private diagnostics. Unsupported methods return `405` with
+`Allow: GET, POST`. The route module supports relative paths; the application now mounts it under
+Hono `basePath('/api')`, alongside identity. Direct application requests use
+`/api/admin/configuration`, and identity uses `/api/me`. The managed invocation
+URL remains `/functions/v1/api/admin/configuration`; do not append another `/api`
+to the configured mobile API base URL.
+
+### `POST /admin/zone-sets`
+
+Body:
+
+```json
+{
+  "name": "Creel candidate",
+  "source_uri": "https://example.org/creel.geojson",
+  "source_version": "creel-2026-v1",
+  "source_sha256": "lowercase-64-hex-sha256",
+  "geometry": { "type": "Polygon", "coordinates": [] }
+}
+```
+
+This command creates a new immutable `draft` version; it never activates it.
+`name`, `source_uri`, and `source_version` are meaningful strings bounded to
+120, 1,000, and 120 Unicode characters. `source_uri` must be absolute.
+`geometry` is a direct GeoJSON `Polygon` or `MultiPolygon`, contains only `type`
+and `coordinates`, uses finite WGS84 longitude/latitude pairs, and has closed
+rings. A Polygon is normalized to a MultiPolygon before storage; PostGIS rejects
+any remaining invalid or empty geometry.
+
+The checksum is verifiable: the API serializes the normalized object as
+`JSON.stringify({ type: "MultiPolygon", coordinates: ... })`, UTF-8 encodes it,
+and requires `source_sha256` to equal its lowercase SHA-256 digest. This canonical
+GeoJSON and its checksum are immutable provenance; arbitrary client whitespace,
+key order, or a checksum of a different source file is not accepted. Success is
+`201 { "data": { "zone_set": { ... } } }`.
+
+### `POST /admin/zone-sets/:zone_set_id/activate`
+
+Body:
+
+```json
+{
+  "association_approval_reference": "AHC-2026-09-21-01",
+  "note": "Optional Administrator activation note"
+}
+```
+
+`zone_set_id` is a UUID. The approval reference is required, meaningful, and
+distinct from the optional Administrator note. The Service accepts only a draft
+in the deployment environment whose stored canonical GeoJSON still matches its
+stored checksum. In one transaction it locks the environment, confirms the
+one-active-zone invariant, retires the prior active set, activates the target,
+and inserts `zone_set_activated` audit evidence. Retired sets retain their
+activation and retirement timestamps; the audit also records prior/target state.
+Success is `200 { "data": { "zone_set": { ... } } }`.
+
+Both commands require an active Administrator, reject query parameters and
+client-selected environment/version/status/timestamps, and use the canonical
+application paths `/api/admin/zone-sets` and
+`/api/admin/zone-sets/:zone_set_id/activate`. They return `400 invalid_request`
+for body/geometry/checksum errors, `401 authentication_required`, `403 forbidden`,
+`404 not_found` for a zone outside the current environment, `409 zone_set_conflict`
+for concurrent or ineligible activation, `503` for deployment/storage preflight,
+and `405 Allow: POST` for unsupported methods. Production has no active geometry
 until the Asociación de Hoteles de Chihuahua approves the exact checksum/version.
 
 ## Internal retention
@@ -235,7 +399,7 @@ does no work. Scheduler retries use bounded backoff and converge.
 | 403 | `forbidden`, `inactive_profile`, `role_mismatch` |
 | 404 | `not_found`, `report_not_flaggable`, `photo_not_available` |
 | 405 | `method_not_allowed` |
-| 409 | `report_id_payload_conflict`, `flag_already_submitted`, `photo_content_conflict`, `invalid_*_transition`, duplicate/zone conflicts |
+| 409 | `report_id_payload_conflict`, `flag_already_submitted`, `photo_content_conflict`, `invalid_*_transition`, `configuration_conflict`, duplicate/zone conflicts |
 | 413 | `photo_too_large` |
 | 415 | `unsupported_photo_type` |
 | 422 | `photo_decode_failed` |
