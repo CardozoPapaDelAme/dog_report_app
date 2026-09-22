@@ -89,7 +89,7 @@ function ReportCard({ report, busy, onApprove, onDelete, t }) {
   );
 }
 
-export default function CommandCenterScreen({ accessToken }) {
+export default function CommandCenterScreen({ accessToken, onOpenConfiguration }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const queue = useModerationQueue(accessToken);
@@ -113,6 +113,11 @@ export default function CommandCenterScreen({ accessToken }) {
         <Text style={styles.eyebrow}>{t('commandCenter.eyebrow')}</Text>
         <Text style={styles.title}>{t('commandCenter.title')}</Text>
         <Text style={styles.subtitle}>{t('commandCenter.subtitle')}</Text>
+        {onOpenConfiguration ? (
+          <Pressable accessibilityRole="button" onPress={onOpenConfiguration} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
+            <Text style={styles.moreText}>{t('configuration.open')}</Text>
+          </Pressable>
+        ) : null}
       </View>
       <View style={styles.metricsRow}>
         <Metric label={t('moderation.onPage')} value={summary.total} />
