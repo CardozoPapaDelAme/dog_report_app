@@ -190,12 +190,67 @@ pending/visible → hidden; delete allows non-deleted → reversible deleted; re
 allows hidden/deleted → pending review. Each locks the row and inserts audit in the
 same transaction. Invalid/stale state returns `409 invalid_*_transition`.
 
-`GET /admin/duplicate-groups` returns active group id, canonical id, member ids,
-resolved timestamp and version. `POST /admin/duplicate-groups` accepts
-`{ "canonical_report_id": "uuid", "report_ids": ["uuid", "uuid"], "note"?: string }`.
-Members must form a connected pending-candidate graph and have no active membership.
-`POST /admin/duplicate-groups/:group_id/reverse` requires `{ "note": string }`.
-Both are locked, reversible, and audited.
+### Duplicate groups (FAB-3 / L3)
+
+Canonical Hono routes are `/api/admin/duplicate-groups` and
+`/api/admin/duplicate-groups/:group_id/reverse`; do not add a second `/api`
+to the mobile API base URL. All require an active Administrator.
+
+`GET /admin/duplicate-groups` accepts no body or query parameters. It returns
+`200 { "data": { "duplicate_groups": [] } }`, containing only active groups,
+ordered by `resolved_at DESC, id DESC`. This prototype route has no pagination.
+
+`POST /admin/duplicate-groups` accepts exactly:
+
+```json
+{
+  "canonical_report_id": "uuid",
+  "report_ids": ["uuid", "uuid"],
+  "note": "Optional human review reason"
+}
+```
+
+`report_ids` contains 2–500 distinct lowercase canonical UUIDs, including the
+canonical report. Every report must exist, must not be logically deleted, and
+must have no active membership. Pending candidate edges with **both endpoints
+selected** must connect the entire set. A chain is sufficient; a clique is not
+required. Paths through unselected reports, dismissed edges and confirmed edges
+cannot establish connectivity. Missing reports return `404 not_found`.
+
+Creation returns `201 { "data": { "duplicate_group": DuplicateGroupView } }`.
+It creates the group at `resolution_version: 1`, inserts one canonical and all
+duplicate memberships, confirms the selected internal pending candidates and
+audits atomically. External and dismissed candidates are unchanged. An omitted
+note is stored as null; a supplied note must be a nonblank string of at most
+1000 Unicode characters after trimming. Unknown fields, client-supplied status,
+versions and timestamps, malformed JSON/UUIDs and query parameters return 400.
+
+`POST /admin/duplicate-groups/:group_id/reverse` accepts exactly
+`{ "note": "Required reason" }`, with the same note validation. It returns
+`200` with the same single-group envelope, `status: "reversed"`, incremented
+`resolution_version` and `reversed_at`. It deactivates memberships and returns
+confirmed internal candidates to `pending`, clearing their review actor/time.
+The original resolution, memberships and audit history remain stored. A later
+resolution creates a new group; it does not reactivate the old one.
+
+Reversal preserves **all original report/photo data and moderation state**,
+including later hiding or logical deletion; pending review here means candidate
+review. It does not publish a hidden report or restore a deleted one. This was
+explicitly confirmed by Fabián on 2026-09-22. If retention has already purged a
+noncanonical member, reversal releases the surviving memberships. If the group
+itself no longer exists, the result is `404 not_found`.
+
+`DuplicateGroupView` contains only `id`, `canonical_report_id`, `report_ids`
+(sorted ascending), `status`, `resolution_version`, `resolved_at` and
+`reversed_at` (UTC, nullable). It exposes no private report content or operator
+profile. Mutation reasons and operator attribution are preserved in audit.
+
+Conflicts return `409 duplicate_graph_disconnected`,
+`409 duplicate_membership_conflict` or `409 duplicate_group_conflict` (including
+repeat reversal/concurrent stale state). Profile/role denial is 403, missing
+authentication is 401, environment mismatch or storage unavailability is 503.
+Unknown failures return a generic 500 without SQL. Unsupported methods return
+405 with `Allow: GET, POST` on the collection or `Allow: POST` on reversal.
 
 ### Configuration (FAB-1 / L1)
 

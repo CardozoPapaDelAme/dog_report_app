@@ -162,3 +162,16 @@ staging verification remains required before claiming a live activation.
 with simulated authentication and persistence, covering creation and activation
 with the optional note omitted. It guards against passing internal normalized
 fields back through the external-input validator; it does not verify a real JWT.
+
+## FAB-3 / L3 duplicate resolution implementation
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RF23; HU-23; RNF30 | Human canonical selection over a connected induced pending-candidate graph; no arbitrary grouping | `domain/duplicate-group.test.js` (`FAB-3 DOMAIN`); `services/duplicate-service.test.js` (`FAB-3 SERVICE`); `tests/duplicate-postgres.test.js` (`FAB-3 SQL`) |
+| RF19; HU-19; RNF20, RNF21 | Administrator-only active-group listing, creation and reversal; profile/environment/context checks | `controllers/duplicate-controller.test.js` (`FAB-3 HTTP`); `FAB-3 SERVICE`; real RLS and grants in `FAB-3 SQL` |
+| RF13, RF23; RNF30, RNF33 | Single active membership; canonical filtering; reversible candidate review with unchanged reports/photos; atomic audit | `repositories/duplicate-repository.js`; `FAB-3 SQL` rollback, concurrency, anonymous/Association visibility and original-evidence assertions |
+
+HTTP tests exercise the real Controller and Service together. SQL tests extend
+that path through the real Repository and PostgreSQL/PostGIS under `app_backend`.
+Authentication is injected only in tests; a real Administrator JWT and managed
+Supabase deployment remain pending. L3 adds no UI (the duplicate screen is L6).

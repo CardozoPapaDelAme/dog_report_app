@@ -97,6 +97,32 @@ the Administrator duplicate-group route exposes active group ids so reversal is
 discoverable. Reversal marks the group reversed, deactivates memberships, restores
 candidate review, and writes an audit entry.
 
+L3 uses only pending edges whose endpoints are both selected. A chain is valid;
+paths through unselected reports are not. A resolution accepts 2–500 distinct
+existing, non-deleted reports including the canonical, confirms internal pending
+edges and leaves external/dismissed edges alone. It never updates `reports` or
+`photo_assets`; canonical membership does not itself approve or publish a report.
+
+As confirmed by Fabián on 2026-09-22, reversal reopens **candidate review**, not
+report moderation. Visible/pending/hidden/deleted states and original evidence
+remain unchanged, including moderation performed after resolution. Confirmed
+internal edges become pending with cleared review metadata, while the previous
+state remains in audit. Reversed memberships remain as inactive history. Each
+new group starts at `resolution_version = 1`; reversal increments it, and a later
+resolution creates a new group. A purged noncanonical member does not prevent
+reversal of surviving members; existing retention cascades still apply.
+
+Duplicate Service mutations serialize on database-wide
+`pg_advisory_xact_lock(103003, 1)` (reports have no environment partition).
+They then lock report rows in UUID order and internal candidate rows in UUID
+order; reversal also locks its group. Future duplicate writers must use this
+protocol. Report row locks coordinate with moderation/retention, and the existing
+partial unique indexes backstop active-membership and canonical uniqueness.
+Deadlocks/serialization/uniqueness conflicts return a retryable 409 with complete
+rollback. Group, memberships, candidate review and JSONB audit commit together.
+GET reads groups and memberships in one SQL snapshot. Existing tables, grants,
+RLS and indexes suffice for L3; no new migration or exposed SQL RPC is added.
+
 Phase 1 candidate generation uses only stored time, distance, and manual dog
 attributes. Optional Phase 2 may add one embedding per sanitized photo and
 pgvector similarity through a separate future migration. It may rank/suggest
