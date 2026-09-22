@@ -14,7 +14,9 @@
 --   NOBYPASSRLS, owns no objects, and receives explicit least-privilege grants.
 -- * Services own authorization and transactions. Before repository access they
 --   set transaction-local app.user_id, app.role, and (for anonymous origin-bound
---   operations) app.origin_hash. Missing or inconsistent context fails closed.
+--   operations) app.origin_hash plus the request-scoped app.report_id where
+--   an idempotent replay lookup is required. Missing or inconsistent context
+--   fails closed.
 -- * PostgreSQL owns constraints, RLS, grants, PostGIS, locks, audit integrity,
 --   dynamic-details validation, duplicate detection, durable rate buckets, and
 --   narrow backend-only atomic/set-based primitives.
@@ -436,6 +438,10 @@ AS $$ SELECT NULLIF(pg_catalog.current_setting('app.user_id', true), '')::UUID $
 CREATE FUNCTION app_private.origin_hash()
 RETURNS TEXT LANGUAGE sql STABLE SET search_path = ''
 AS $$ SELECT NULLIF(pg_catalog.current_setting('app.origin_hash', true), '') $$;
+
+CREATE FUNCTION app_private.requested_report_id()
+RETURNS UUID LANGUAGE sql STABLE SET search_path = ''
+AS $$ SELECT NULLIF(pg_catalog.current_setting('app.report_id', true), '')::UUID $$;
 
 CREATE FUNCTION app_private.current_environment()
 RETURNS public.deployment_environment
@@ -880,6 +886,7 @@ CREATE POLICY reports_backend_select ON public.reports FOR SELECT TO app_backend
   OR (app_private.actor_role() = 'anonymous' AND (
       (status = 'visible' AND public_until > now() AND NOT app_private.is_noncanonical(id))
       OR device_fingerprint_hash = app_private.origin_hash()
+      OR id = app_private.requested_report_id()
   ))
 );
 CREATE POLICY reports_backend_insert ON public.reports FOR INSERT TO app_backend
@@ -982,7 +989,8 @@ REVOKE DELETE, TRUNCATE ON ALL TABLES IN SCHEMA public FROM app_backend;
 
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA app_private FROM app_backend;
 GRANT EXECUTE ON FUNCTION app_private.actor_role(), app_private.actor_id(),
-  app_private.origin_hash(), app_private.current_environment(),
+  app_private.origin_hash(), app_private.requested_report_id(),
+  app_private.current_environment(),
   app_private.is_active_actor(public.user_role),
   app_private.is_noncanonical(UUID),
   app_private.incident_severity(public.incident_type),
