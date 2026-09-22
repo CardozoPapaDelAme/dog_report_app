@@ -314,3 +314,66 @@ docker stop fab2-postgis-test
 Use the portable Deno executable if it is not on `PATH`. On an Intel Docker host,
 omit `--platform linux/amd64`. The test refuses a non-loopback, nonempty, or
 wrongly named database.
+
+## FAB-3 / L3 executable duplicate-group tests
+
+Run the complete backend suite with the existing Deno command above. L3 adds
+14 domain, Service and HTTP tests. The HTTP suite uses real routes, Controller,
+Service, Domain and Presenter with test-only authentication and persistence.
+It covers connected chains, disconnected/externally connected sets, strict input,
+optional creation note, mandatory reversal reason, conflicting memberships,
+profile/environment rejection, safe errors, and L1/L2 route registration.
+
+For real SQL verification, use a new disposable PostgreSQL/PostGIS container
+and a new empty database named `fab3_duplicate_test`:
+
+```sh
+docker run --platform linux/amd64 --detach --rm --name fab3-postgis-test \
+  --tmpfs /var/lib/postgresql/data:rw \
+  --env POSTGRES_PASSWORD=local-test-only \
+  --publish 127.0.0.1:55434:5432 postgis/postgis:17-3.5
+docker exec fab3-postgis-test sh -c \
+  'until pg_isready -U postgres -d postgres; do sleep 1; done'
+docker exec fab3-postgis-test psql -U postgres -d postgres \
+  -c 'CREATE DATABASE fab3_duplicate_test;'
+DUPLICATE_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:55434/fab3_duplicate_test' \
+  deno test --no-lock --allow-env --allow-net=127.0.0.1:55434 \
+  --allow-read=supabase/migrations --config supabase/functions/api/deno.json \
+  supabase/functions/api/tests/duplicate-postgres.test.js
+docker stop fab3-postgis-test
+```
+
+Use a fresh container for every run: the suite creates database roles as well as
+app tables. It refuses a non-loopback URL, another database name, existing tables
+or preinstalled PostGIS. It applies the six existing migrations in order and runs
+the real Repository under `app_backend` with local actor context. It never runs
+against Wildogscanner. No L3 migration is required.
+
+Its ten steps verify real system-generated candidate chains and HTTP resolution;
+canonical filtering for anonymous and Association roles; reversal and new
+resolution history; disconnected/missing/deleted/overlapping/nonpending rejection;
+rollback after actual audit insertion; competing resolutions and reversals;
+concurrent reverse/resolve; RLS, narrow grants and nonleaking pooled context;
+preservation of later moderation and release after retention purges a member;
+and disabled-profile/environment denial. Report and photo rows are compared
+before/after commands, including timestamps and moderation state.
+
+Verified 2026-09-22: full backend **78 passed, 0 failed, 3 ignored** (SQL suites
+are opt-in); dedicated L3 PostgreSQL/PostGIS **1 passed, 10 steps, 0 failed**.
+This proves local application/SQL behavior, not a managed Supabase JWT session.
+
+Pending managed Administrator smoke test, after deployment is agreed:
+
+1. Verify `/me`, role `administrator`, matching profile and staging environment.
+2. Obtain genuine pending candidate pairs from the moderation context and record
+   their original report/photo/moderation data. Do not invent unrelated report IDs.
+3. GET active groups; POST a disconnected set and confirm 409 with no mutation.
+4. POST a connected set including its canonical id and a review note; expect 201,
+   one active membership per report, confirmed internal candidates and audit.
+5. GET the new group and attempt an overlapping resolution; expect 409.
+6. Reverse with a note; expect 200, version 2, inactive memberships, pending
+   internal candidates, unchanged reports/photos/moderation and a reversal audit.
+7. Repeating reversal must return 409; an Association account must receive 403.
+
+The live test remains deferred by Fabián; no real account or shared database was
+created/changed as part of this implementation.
