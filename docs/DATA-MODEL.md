@@ -143,6 +143,13 @@ canonical `MultiPolygon` JSON, never over client formatting or an unrelated raw
 file. The `zones.boundary` geography is derived from that same canonical source
 and PostGIS enforces valid, non-empty `MULTIPOLYGON(4326)` geometry.
 
+The target schema snapshot requires `source_geojson`. Its compatibility migration
+uses a not-yet-validated check instead of retroactively fabricating source bytes:
+historical rows that predate L2 may remain readable with `NULL`, but every new or
+changed row must carry a GeoJSON object. The Service refuses to activate a legacy
+row without its original canonical bytes; publish a new immutable version from the
+original GeoJSON instead.
+
 Creation produces only a `draft`. Activation revalidates the stored checksum,
 requires a distinct meaningful Asociación de Hoteles de Chihuahua approval
 citation and may include a separate Administrator note. An environment-scoped
@@ -154,6 +161,17 @@ as well as append-only audit before/after state. SQL cannot prove the Asociació
 approved; Production activation remains an external gate. Direct table writes
 are unavailable to mobile roles. Production begins with no active geometry and
 fails closed until the candidate is approved.
+
+Replacement timestamps use the database wall clock after the environment lock is
+acquired, not the transaction-start clock. A request that waits behind another
+activation therefore cannot record a retirement earlier than the activation it
+replaces.
+
+Before applying the L2 lifecycle migration to a populated database, operators
+must resolve rows without real approval, activation, or retirement evidence. The
+migration stops with a descriptive check-violation rather than creating dates or
+approval citations. Those facts must be recovered from authoritative records, or
+the affected version must be deliberately replaced.
 
 ## Dynamic-form JSON contract
 

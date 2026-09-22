@@ -1,5 +1,6 @@
 export async function readZoneActor(tx, userId) {
-  const rows = await tx`SELECT id, role, active FROM public.profiles WHERE id = ${userId}`;
+  const rows =
+    await tx`SELECT id, role, active FROM public.profiles WHERE id = ${userId}`;
   return rows[0] ?? null;
 }
 
@@ -13,7 +14,9 @@ export async function readZoneEnvironment(tx) {
 export async function lockZoneEnvironment(tx, environment) {
   // A distinct stable advisory lock serializes both version allocation and
   // active-set replacement, including environments with no current active set.
-  await tx`SELECT pg_catalog.pg_advisory_xact_lock(102002, ${environment === 'staging' ? 1 : 2})`;
+  await tx`SELECT pg_catalog.pg_advisory_xact_lock(102002, ${
+    environment === "staging" ? 1 : 2
+  })`;
 }
 
 export async function insertZoneSet(tx, { environment, actorId, values }) {
@@ -74,23 +77,40 @@ export async function readActiveZoneSets(tx, environment) {
   `;
 }
 
-export async function activateZoneSet(tx, { environment, id, associationApprovalReference }) {
+export async function activateZoneSet(
+  tx,
+  { environment, id, associationApprovalReference },
+) {
   await tx`
     UPDATE public.zone_sets
-    SET status = 'retired', retired_at = now()
+    -- A waiting transaction may have begun before the active row it now
+    -- replaces. Use the wall clock rather than transaction-start now() so the
+    -- lifecycle evidence can never precede that row's activation.
+    SET status = 'retired',
+      retired_at = GREATEST(pg_catalog.clock_timestamp(), activated_at)
     WHERE environment = ${environment} AND status = 'active'
   `;
   const rows = await tx`
-    UPDATE public.zone_sets
+    WITH activation_time AS (
+      SELECT pg_catalog.clock_timestamp() AS value
+    )
+    UPDATE public.zone_sets AS zone_set
     SET status = 'active', association_approval_reference = ${associationApprovalReference},
-      approved_at = now(), activated_at = now()
-    WHERE environment = ${environment} AND id = ${id} AND status = 'draft'
-    RETURNING id
+      approved_at = activation_time.value, activated_at = activation_time.value
+    FROM activation_time
+    WHERE zone_set.environment = ${environment} AND zone_set.id = ${id}
+      AND zone_set.status = 'draft'
+    RETURNING zone_set.id
   `;
-  if (rows.length !== 1) throw new Error('Zone set activation did not update one draft row.');
+  if (rows.length !== 1) {
+    throw new Error("Zone set activation did not update one draft row.");
+  }
 }
 
-export async function insertZoneAudit(tx, { actorId, action, previous, current, note }) {
+export async function insertZoneAudit(
+  tx,
+  { actorId, action, previous, current, note },
+) {
   await tx`
     INSERT INTO public.audit_log (
       actor_id, action, entity_type, entity_id, previous_values, new_values, note

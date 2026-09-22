@@ -974,7 +974,7 @@ GRANT UPDATE (status, reviewed_by, reviewed_at) ON public.duplicate_candidates T
 GRANT UPDATE (status, resolution_version, reversed_by, reversed_at) ON public.duplicate_groups TO app_backend;
 GRANT UPDATE (active) ON public.duplicate_memberships TO app_backend;
 GRANT UPDATE (is_active) ON public.config_versions TO app_backend;
-GRANT UPDATE (status, association_approval_reference, approved_at, activated_at) ON public.zone_sets TO app_backend;
+GRANT UPDATE (status, association_approval_reference, approved_at, activated_at, retired_at) ON public.zone_sets TO app_backend;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_backend;
 
 REVOKE UPDATE, DELETE, TRUNCATE ON public.audit_log FROM app_backend;

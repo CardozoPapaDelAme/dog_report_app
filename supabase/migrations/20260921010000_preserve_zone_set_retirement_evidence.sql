@@ -4,6 +4,41 @@
 ALTER TABLE public.zone_sets
   ADD COLUMN IF NOT EXISTS retired_at TIMESTAMPTZ;
 
+-- Do not silently manufacture lifecycle evidence for rows that existed before
+-- L2.  A compatible legacy row may keep its real approval/activation facts;
+-- every incompatible row needs a deliberate operational decision before this
+-- stricter constraint can replace the old one.
+DO $$
+DECLARE
+  incompatible_count INTEGER;
+BEGIN
+  SELECT count(*) INTO incompatible_count
+  FROM public.zone_sets
+  WHERE (
+    CASE status
+      WHEN 'draft' THEN association_approval_reference IS NULL
+        AND approved_at IS NULL AND activated_at IS NULL AND retired_at IS NULL
+      WHEN 'approved' THEN COALESCE(length(btrim(association_approval_reference)) > 0, FALSE)
+        AND approved_at IS NOT NULL AND activated_at IS NULL AND retired_at IS NULL
+      WHEN 'active' THEN COALESCE(length(btrim(association_approval_reference)) > 0, FALSE)
+        AND approved_at IS NOT NULL AND activated_at IS NOT NULL AND retired_at IS NULL
+      WHEN 'retired' THEN COALESCE(length(btrim(association_approval_reference)) > 0, FALSE)
+        AND approved_at IS NOT NULL AND activated_at IS NOT NULL AND retired_at IS NOT NULL
+        AND retired_at >= activated_at
+      ELSE FALSE
+    END
+  ) IS NOT TRUE;
+
+  IF incompatible_count > 0 THEN
+    RAISE EXCEPTION USING
+      ERRCODE = 'check_violation',
+      MESSAGE = 'FAB-2 zone lifecycle migration requires compatible historical evidence',
+      DETAIL = format('%s existing zone_sets row(s) do not meet the L2 lifecycle contract.', incompatible_count),
+      HINT = 'Preserve real Association approval, approval, activation, and retirement evidence or deliberately replace the zone version before retrying. Do not invent timestamps.';
+  END IF;
+END;
+$$;
+
 DO $$
 DECLARE
   lifecycle_constraint TEXT;
