@@ -377,3 +377,82 @@ Pending managed Administrator smoke test, after deployment is agreed:
 
 The live test remains deferred by Fabián; no real account or shared database was
 created/changed as part of this implementation.
+
+## FAB-4 / L4 configuration form
+
+The mobile screen follows `screens/ConfigurationScreen.js` →
+`hooks/useConfiguration.js` → `services/configurationApi.js` → existing
+`services/apiClient.js`. `models/configuration.js` owns editable strings, numeric
+conversion and local validation. Tests check every numeric rule against FAB-1.
+The contract remains **eight numeric thresholds plus change_note**, not nine
+numeric settings. No API, SQL or migration change is required.
+
+Run model, adapter, FAB-1 integration and backend regression tests:
+
+```sh
+deno test --no-lock --config supabase/functions/api/deno.json models services supabase/functions/api
+```
+
+Verified result: **104 passed, 0 failed, 3 ignored** (the existing opt-in SQL
+suites). L4 adds eight model/adapter/integration cases. The integration test joins
+the real mobile adapter to FAB-1 Controller/Service with in-memory persistence;
+it does not claim a real JWT or PostgreSQL session.
+
+Install locked development dependencies and the browser once, then run UI tests:
+
+```sh
+npm ci
+npx playwright install chromium
+npm run test:configuration-ui
+```
+
+**Eight browser tests pass** using the real Screen, hook, model and API adapter.
+Playwright intercepts only the configuration HTTP endpoint; no Supabase traffic
+or real credentials are used. Tests cover initial values, a blank new reason,
+GPS 501 with the precise field message, numeric comma conversion, complete POST
+payload, new active version, exact server field errors, double-click prevention,
+logout during saving, denied/expired sessions, ambiguous POST recovery, reload,
+unsaved-change confirmation and mobile/desktop layouts. Screenshots are generated
+under ignored `test-results/`. The fixture and its test-session buttons live only
+in `tests/ui`; they are never imported into the app entry point.
+
+The test server is bound to loopback port 4174. Without Playwright interception,
+its API route deliberately returns 500; `preview:configuration-test` is a fixture,
+not a working session or a connection to shared data. Tests require that port free.
+
+Build verification:
+
+```sh
+CI=1 EXPO_NO_TELEMETRY=1 npx expo export --platform all
+```
+
+Web, Android and iOS bundles were successfully exported. This is compilation,
+not a physical-device/emulator test. Manually check screen-reader focus, the
+numeric keyboard and Android hardware back on a development build before release.
+The screen handles hardware back with the same unsaved-change confirmation.
+
+### Runtime behavior and remaining live validation
+
+`App` still receives its access token from the team's session integration; the
+current `index.js` does not create a login. With no token, no configuration request
+is sent. With a token, the protected FAB-1 GET must succeed before any editable
+values appear. The backend remains the role/profile authority; 401/403 removes
+the form. No session secrets are persisted by this screen.
+
+From moderation, choose **Configurar umbrales**. Values load from FAB-1; the last
+publication reason is read-only and the new reason starts blank. Client errors
+are localized; `error.details.fields` messages from the server are preserved
+verbatim beside the matching field. Invalid submissions focus the first affected
+field. A successful POST supplies the new active version and resets the draft.
+
+No POST is retried automatically. When its result is uncertain or conflicted,
+editing/saving is blocked until the user explicitly reads the active version;
+this avoids silently repeating a non-idempotent FAB-1 publication. Dirty reload
+and navigation ask before discarding the draft. Late replies after token change
+or unmount cannot update the form.
+
+The deferred live check needs a real Administrator session and an agreed staging
+deployment containing FAB-1. Read values, attempt GPS 501 and verify no publication,
+correct it and enter a reason, publish once, then verify the new version and audit
+in staging. Confirm the old configuration remains in history. No live publication,
+account creation, migration or deployment was performed for L4.
