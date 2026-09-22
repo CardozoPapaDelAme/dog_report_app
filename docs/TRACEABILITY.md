@@ -176,6 +176,19 @@ that path through the real Repository and PostgreSQL/PostGIS under `app_backend`
 Authentication is injected only in tests; a real Administrator JWT and managed
 Supabase deployment remain pending. L3 adds no UI (the duplicate screen is L6).
 
+## FAB-4 / L4 threshold configuration screen
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RF21, RF23; RNF09, RNF26–RNF31; HU-21, HU-23 | Eight numeric FAB-1 thresholds plus a new required change reason; exact ranges, precision and trust ordering | `models/configuration.test.js` checks parity with FAB-1 and field validation |
+| RNF20, RNF21, RNF33 | Screen → hook → mobile API adapter → authenticated FAB-1; complete version publication without client-owned metadata | `services/configurationApi.test.js`; `services/configurationIntegration.test.js` with real FAB-1 Controller/Service and simulated session/storage |
+| RNF20, RNF34; FAB-4 / L4 acceptance criteria | Per-field messages, loading/retry, 401/403, unsaved edits, guarded submission, stale-session responses | `tests/ui/configuration.spec.js` (`npm run test:configuration-ui`), mobile/desktop browser viewport verification |
+
+`ConfigurationScreen` uses `useConfiguration`, `models/configuration.js` and
+`services/configurationApi.js`; it never calls fetch or database tables directly.
+The existing session layer supplies `App.accessToken`; no login provisioning,
+server credential or live Administrator session is introduced by L4.
+
 TD-92-eri-1-post-reports
 Current report-intake coverage maps as follows:
 
@@ -184,4 +197,3 @@ Current report-intake coverage maps as follows:
 | `supabase/functions/api/controllers/report-controller.test.js` | RF01, RF06, RF24, RNF12, RNF36, HU-01, HU-06, HU-24 | Public command parsing, raw fingerprint handoff, unknown-field rejection, dynamic details validation |
 | `supabase/functions/api/services/report-service.test.js` | RF01, RNF09, RNF12, RNF26, HU-01 | Canonical idempotency hash, fingerprint-independent replay, replay short-circuit before geofence/rate/trust, server-time `client_created_at` window, hourly retry calculation |
 | `supabase/functions/api/services/trust-service.test.js` | RNF27, RNF28 | High-trust publication path and mandatory review for mock/imprecise location signals |
-

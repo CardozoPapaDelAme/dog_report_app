@@ -1,115 +1,110 @@
 # Handoff — Wildogscanner / Fabián (`fab`)
 
-Actualizado: 2026-09-22. Estado al terminar la implementación local de L3.
+Actualizado: 2026-09-22. Entrega local de L4 / TD-105 / FAB-4.
 
-## Estado de entrega
+## Estado
 
 - Repositorio: `/Users/fabianfuentes/Documents/RetoFronEnd/RepoJP/dog_report_app`.
-- Rama L3: `TD-104-fab-3-get-post-admin-duplicate-groups-reverse`.
-- Base: `0a2a579`, merge de L2 mediante PR #15. Incluye L1 y la corrección
-  `ee3258c` de integración Controller → Service de L2.
-- L1 (`TD-102`, `FAB-1`) y L2 (`TD-103`, `FAB-2`) están integrados en `main`.
-- L3 (`TD-104`, `FAB-3`) implementado y probado localmente, en commits separados.
-  Consultar `git log origin/main..HEAD` para la lista exacta.
-- No se hizo push, PR, merge, despliegue ni mutación de Supabase para L3.
-- La prueba con un Administrador real sigue aplazada por Fabián. Las sesiones
-  HTTP de prueba son simuladas; la prueba SQL usa PostgreSQL/PostGIS real local.
-- El handoff del Escritorio describe el cierre anterior de L2; su afirmación de
-  que L2 aún no está fusionado quedó superada por PR #15.
+- Rama: `TD-105-fab-4-pantalla-de-configuracion-de-umbrales`.
+- Base: `dd2614f`, main actualizado con L1, L2, L3 y el PR #17 de reportes de Erick.
+- L2 está fusionado mediante PR #15 (`0a2a579`) y L3 mediante PR #16 (`43688e8`).
+- L4 está implementado y probado en commits pequeños `FAB-4`.
+  Consultar `git log origin/main..HEAD` para los hashes exactos.
+- Sin push, PR, merge, despliegue ni cambios de Supabase para L4.
+- La prueba con Administrador real continúa aplazada por Fabián.
+- El handoff del Escritorio corresponde al cierre local de L2 y es histórico;
+  no usar sus pendientes de publicación como estado actual.
 
-## Alcance L3 y decisión confirmada
+## Alcance entregado
 
-Tres rutas bajo la única aplicación Hono con `basePath('/api')`:
+Pantalla de configuración de umbrales conectada a FAB-1 desde el botón
+**Configurar umbrales** de la cola de moderación. Conserva estilo, fuentes e i18n
+español/inglés de la app. No incluye las pantallas de zonas (L5) o duplicados (L6).
 
-1. `GET /api/admin/duplicate-groups`: grupos activos, canónico, miembros,
-   versión y fechas. Sin body, query ni paginación en el prototipo.
-2. `POST /api/admin/duplicate-groups`: crea una resolución humana, 201.
-   Recibe `canonical_report_id`, `report_ids` (2–500 UUID distintos, incluyendo
-   el canónico) y `note` opcional según el contrato existente.
-3. `POST /api/admin/duplicate-groups/:group_id/reverse`: revierte una resolución
-   activa, 200; `note` obligatorio, significativo y máximo 1000 caracteres.
+La guía `../GuiaDeConstruccion.md` dice nueve valores. El contrato ya aclarado
+por FAB-1 es **ocho umbrales numéricos más change_note**, nueve campos en total.
+No se inventó un noveno umbral ni se alteró el backend.
 
-**Decisión explícita de Fabián:** conservar la moderación y reabrir candidatos.
-Revertir no pasa los reportes a `pending_review`, no publica ocultos ni restaura
-eliminados. No modifica ningún campo de `reports` ni `photo_assets`.
+- Carga valores actuales y muestra versión activa, entorno y motivo anterior.
+- El motivo para la nueva publicación siempre empieza vacío.
+- Valida rangos, enteros, precisión decimal, confianza media menor que alta y
+  motivo significativo de hasta 1000 caracteres Unicode.
+- Acepta punto/coma decimal, convierte a números y envía el body completo de FAB-1.
+- Los errores locales son específicos por campo; los del servidor en
+  `error.details.fields` se muestran literalmente junto al campo correspondiente.
+- Hace foco en el primer error y anuncia validación/éxito para accesibilidad.
+- Al guardar, muestra la nueva versión activa devuelta por el servidor y limpia
+  el nuevo motivo. No reutiliza el motivo anterior.
+- Previene doble envío con un bloqueo síncrono, además de deshabilitar el botón.
+- No reintenta POST automáticamente: FAB-1 no tiene idempotency key. Ante resultado
+  incierto/conflicto, exige consultar de nuevo la versión activa antes de guardar.
+- Cambiar sesión/desmontar invalida respuestas antiguas. 401/403 retira el formulario.
+- Recargar/salir con cambios pregunta antes de descartarlos. Android hardware back
+  usa la misma confirmación; durante guardado se bloquea la salida de la pantalla.
 
-La conectividad se comprueba sobre candidatos `pending` con ambos extremos en la
-selección. A–B–C es válido aunque A–C no exista. Un camino mediante un reporte no
-seleccionado o un candidato confirmed/dismissed no cuenta. Todos los miembros
-existen, no están eliminados lógicamente y no pertenecen a otro grupo activo.
+## Arquitectura y archivos
 
-Resolver crea grupo versión 1 y membresías, confirma los candidatos internos y
-registra `duplicate_resolved`. Revertir conserva el grupo como `reversed`, sube
-su versión a 2, desactiva membresías, reabre candidatos internos confirmados y
-registra `duplicate_reversed`. La auditoría conserva motivo, actor y estado
-anterior/nuevo. Una nueva resolución crea otro grupo, sin borrar la anterior.
-Los candidatos externos/dismissed permanecen intactos. La eliminación física de
-un miembro no canónico por retención no bloquea liberar el grupo restante.
+Leer `AGENTS.md` y la precedencia documental antes de modificar. Se conserva
+la única API Hono, SQL directo, roles hermanos, RLS/grants y auditoría de FAB-1.
+La pantalla no llama directamente a HTTP ni a tablas.
 
-## Arquitectura y concurrencia
+| Archivo | Responsabilidad |
+|---|---|
+| `models/configuration.js` | Campos, rangos, draft, conversión, errores, respuesta válida |
+| `services/configurationApi.js` | GET/POST por `apiClient`, Bearer, preservación de errores |
+| `hooks/useConfiguration.js` | Carga, edición, publicación, sesión y resultados tardíos |
+| `screens/ConfigurationScreen.js` | Formulario, estados, accesibilidad y confirmación |
+| `App.js`, `screens/CommandCenterScreen.js` | Entrada y retorno a moderación |
+| `i18n/locales/es.json`, `en.json` | Etiquetas y validaciones localizadas |
+| `tests/ui/` y `playwright.config.mjs` | Pruebas de interfaz aisladas del producto |
 
-- Leer `AGENTS.md`; prioridad: aclaraciones aprobadas → SRS v2 → API y SQL como
-  contratos pares → modelo, ADR, seguridad, despliegue, pruebas y trazabilidad.
-- La guía externa está en `../GuiaDeConstruccion.md`; no reemplaza contratos.
-- Controller adapta HTTP; Service autoriza, valida y abre transacciones;
-  Repository usa SQL parametrizado; Domain contiene el grafo y las reglas;
-  Presenter usa allowlist. Una sola Edge Function `api`, sin PostgREST/RPC.
-- Service fija `app.user_id`/`app.role` locales antes de SQL, reconsulta perfil y
-  comprueba entorno contra `EXPECTED_DEPLOYMENT_ENVIRONMENT`.
-- Resolución/reversión usan `pg_advisory_xact_lock(103003, 1)` para toda la BD,
-  porque reports no tiene columna environment. También bloquean reportes por
-  UUID y candidatos por UUID; reversal bloquea el grupo. Todo escritor futuro
-  de duplicados debe respetar este protocolo.
-- Índices existentes respaldan la exclusividad de membresía activa y canónico.
-  SQL/RLS/grants existentes bastan: L3 no añade migraciones.
-- GET toma grupo/miembros en una misma consulta para una lectura consistente.
-- Fallos de auditoría o conflictos revierten la transacción completa. Conflictos
-  conocidos retornan 409; SQL desconocido retorna 500 genérico sin detalles.
-- Nunca usar `service_role` en cliente, guardar secretos ni aplicar el snapshot
+No hay migraciones ni cambios del contrato API/SQL. El cliente solicita
+`/admin/configuration`; `EXPO_PUBLIC_API_BASE_URL` ya incluye `/functions/v1/api`.
+No duplicar `/api`.
+
+## Sesión: límite de integración existente
+
+La app recibe `App.accessToken` de la futura/concurrente capa de sesión del equipo.
+`index.js` aún no inicia sesión ni suministra un token. L4 reutiliza ese contrato;
+no crea usuarios, roles, tokens, login alternativo ni credenciales embebidas.
+
+Sin token, no se consulta configuración. Con token, solo un GET FAB-1 autorizado
+habilita el formulario. JWT/perfil/rol se verifican en el servidor; una respuesta
+401/403 muestra el estado de acceso correspondiente. La prueba con Administrador
+real sigue siendo necesaria antes de afirmar funcionamiento en staging.
+
+## Pruebas ejecutadas
+
+- Deno, cliente + backend: **104 passed, 0 failed, 3 ignored** (SQL opt-in existente).
+- Playwright: **8 pruebas aprobadas**, con pantalla/hook/API reales y HTTP simulado.
+- Integración del adaptador móvil con Controller/Service reales de FAB-1, usando
+  sesión y persistencia en memoria; valida publicación y errores exactos del backend.
+- Capturas inspeccionadas en 390 × 844 y 1200 × 900: error junto a GPS, éxito y
+  distribución sin desbordamientos. Se generan en `test-results/` (ignorado).
+- Exportación Expo correcta para web, Android e iOS; no equivale a prueba en
+  dispositivo físico o emulador. Teclado, lector de pantalla y hardware back
+  requieren la comprobación manual de desarrollo documentada.
+- `npm ci --dry-run` verifica el lockfile sincronizado. Antes faltaban entradas
+  de hono, jose y postgres ya declaradas; se repararon sin cambiar sus rangos.
+- Nuevas dependencias solo de desarrollo: Playwright y esbuild para pruebas UI.
+  El bundle de producción no importa fixtures, sesiones de prueba ni esas herramientas.
+
+Comandos y validación administrada pendientes: `docs/TESTING.md`, sección FAB-4.
+Deno local disponible en caché:
+`/Users/fabianfuentes/.npm/_npx/05b6ef7b13673c57/node_modules/deno/deno`.
+No asumir que esa ruta existe en otro equipo. Usar `--no-lock` en las pruebas Deno.
+
+## Decisiones anteriores que siguen vigentes
+
+- L3 resuelve solo grafos conectados de candidatos pending; no agrupación aleatoria.
+- Fabián confirmó que revertir L3 conserva moderación y reabre candidatos, sin
+  modificar reportes/fotos. Candado de duplicados: `pg_advisory_xact_lock(103003,1)`.
+- L2 crea borrador y activa por separado con evidencia de aprobación de Asociación.
+- Nunca guardar secretos, modificar una migración publicada o aplicar el snapshot
   completo `db/schema.sql` a una BD existente.
 
-## Archivos principales
+## Siguiente paso
 
-Bajo `supabase/functions/api/`:
-
-| Archivo | Función |
-|---|---|
-| `domain/duplicate-group.js` | UUID, campos, notas, disponibilidad y grafo conectado |
-| `services/duplicate-service.js` | Autorización, transacciones, resolución y reversión |
-| `repositories/duplicate-repository.js` | SQL directo, candados, memberships, candidatos y auditoría |
-| `controllers/duplicate-controller.js` | Parsing HTTP, códigos de error y comandos |
-| `routes/duplicate-groups.js` | GET/POST, Administrator y métodos permitidos |
-| `presenters/duplicate-group.js` | Vista pública del comando sin campos privados |
-| `tests/duplicate-postgres.test.js` | Integración real HTTP + Service + SQL/PostGIS |
-| `tests/helpers/duplicate-fixture.js` | Fixture aislado para pruebas de Service/HTTP |
-
-`docs/API.md`, `docs/DATA-MODEL.md`, `docs/TESTING.md` y `docs/TRACEABILITY.md`
-describen el contrato exacto, candados, límites, runbook y cobertura.
-
-## Verificación ejecutada
-
-- Suite backend completa: **78 passed, 0 failed, 3 ignored**. Los tres ignorados
-  son suites SQL opt-in; L3 se ejecutó aparte con base real.
-- L3 PostgreSQL/PostGIS local: **1 passed, 10 pasos, 0 failed**.
-- Prueba real aplica las seis migraciones existentes en una BD vacía, genera
-  candidatos con el trigger real y opera como `app_backend` (NOBYPASSRLS).
-- Verifica grafo, HTTP, canonicalidad pública/Asociación, rollback tras insertar
-  auditoría, concurrencia, RLS/grants, contexto local, reversión tras moderación
-  posterior y retención. Compara reportes/fotos antes y después sin cambios.
-- Docker temporal `fab3-postgis-test`, puerto local 55434; eliminado al terminar.
-  El runbook para recrearlo está en `docs/TESTING.md`.
-- Deno utilizado desde caché local:
-  `/Users/fabianfuentes/.npm/_npx/05b6ef7b13673c57/node_modules/deno/deno`.
-  No es ruta portable. Usar `--no-lock` para no tocar lockfiles del equipo.
-
-## Próximo paso
-
-Revisar la entrega L3 y, si Fabián lo pide, publicar la rama y abrir PR a main.
-La autorización anterior de merge fue para L2; no extenderla automáticamente a L3.
-La validación administrada en staging sigue pendiente y requiere revisión del
-proyecto/entorno/despliegue según `docs/DEPLOYMENT.md`. No afirmar que L3 esté activo
-allí. El siguiente bloque de la guía es L4 (pantalla de configuración); L6 es la
-pantalla de duplicados y no forma parte de este ticket backend.
-
-Mantener commits pequeños con prefijo del ticket, conservar cambios del equipo
-y evitar operaciones destructivas o reescritura de historia.
+Revisión/entrega de L4; publicar o fusionar solo cuando Fabián lo indique.
+La autorización de merge de L3 no cubre automáticamente L4. El siguiente ticket
+funcional de la guía es L5 (pantalla de zonas), fuera de esta entrega.
