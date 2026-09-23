@@ -1,4 +1,4 @@
-import { deleteStorageObject } from './storage-repository.js';
+import { deleteStorageObject } from './storageRepository.js';
 
 function assert(condition, message) {
   if (!condition) {

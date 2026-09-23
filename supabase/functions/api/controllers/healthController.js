@@ -1,6 +1,6 @@
 import { presentError } from '../presenters/error.js';
 import { presentHealth } from '../presenters/health.js';
-import { checkHealth } from '../services/health-service.js';
+import { checkHealth } from '../services/healthService.js';
 
 export async function getHealth(c) {
   try {

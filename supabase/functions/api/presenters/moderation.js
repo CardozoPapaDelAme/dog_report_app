@@ -1,4 +1,4 @@
-import { allowedCommands } from '../domain/report-moderation.js';
+import { allowedCommands } from '../domain/reportModeration.js';
 
 function asArray(value) {
   if (Array.isArray(value)) {

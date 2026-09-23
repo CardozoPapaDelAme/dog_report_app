@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-import { identityRoutes } from '../routes/identity-routes.js';
+import { identityRoutes } from '../routes/identityRoutes.js';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

@@ -6,8 +6,8 @@ import {
   getDeploymentEnvironment,
   listPendingPhotoPurges,
   prepareRetention,
-} from '../repositories/retention-repository.js';
-import { deleteStorageObject } from '../repositories/storage-repository.js';
+} from '../repositories/retentionRepository.js';
+import { deleteStorageObject } from '../repositories/storageRepository.js';
 
 function dependencyError(cause) {
   const error = new Error('retention_dependency_unavailable', { cause });

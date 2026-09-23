@@ -1,6 +1,6 @@
 import { presentError } from '../presenters/error.js';
 import { presentRetentionResult } from '../presenters/retention.js';
-import { runRetention } from '../services/retention-service.js';
+import { runRetention } from '../services/retentionService.js';
 
 export function validateRetentionBody(raw) {
   if (!raw) {

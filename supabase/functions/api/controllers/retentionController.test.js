@@ -1,4 +1,4 @@
-import { validateRetentionBody } from './retention-controller.js';
+import { validateRetentionBody } from './retentionController.js';
 
 function assert(condition, message) {
   if (!condition) {

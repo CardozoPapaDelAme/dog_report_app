@@ -9,7 +9,7 @@ import {
   hide,
   listQueue,
   restore,
-} from '../services/moderation-service.js';
+} from '../services/moderationService.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

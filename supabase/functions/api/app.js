@@ -1,13 +1,13 @@
 import { Hono } from 'hono';
 
 import { optionalAuth } from './middleware/auth.js';
-import { requestId } from './middleware/request-id.js';
+import { requestId } from './middleware/requestId.js';
 import { presentError } from './presenters/error.js';
 import { associationRoutes } from './routes/associationRoutes.js';
 import { healthRoutes } from './routes/health.js';
 import { moderationRoutes } from './routes/moderation.js';
 import { retentionRoutes } from './routes/retention.js';
-import { identityRoutes } from './routes/identity-routes.js';
+import { identityRoutes } from './routes/identityRoutes.js';
 
 const app = new Hono().basePath('/api'); // All Hono endpoints use the /api prefix.
 

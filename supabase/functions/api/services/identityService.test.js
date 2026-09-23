@@ -1,4 +1,4 @@
-import { getCurrentProfile } from '../services/identity-service.js';
+import { getCurrentProfile } from '../services/identityService.js';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

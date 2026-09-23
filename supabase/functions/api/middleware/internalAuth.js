@@ -1,5 +1,5 @@
 import { getConfig } from '../infrastructure/config.js';
-import { constantTimeEqual } from '../infrastructure/constant-time.js';
+import { constantTimeEqual } from '../infrastructure/constantTime.js';
 import { presentError } from '../presenters/error.js';
 
 export async function isInternalSecretValid(suppliedSecret, configuredSecret) {

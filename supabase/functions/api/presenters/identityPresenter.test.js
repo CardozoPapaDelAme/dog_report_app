@@ -1,4 +1,4 @@
-import { presentIdentity } from '../presenters/identify-presenter.js   ';
+import { presentIdentity } from '../presenters/identityPresenter.js';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

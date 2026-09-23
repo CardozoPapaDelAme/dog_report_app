@@ -1,4 +1,4 @@
-import { constantTimeEqual } from './constant-time.js';
+import { constantTimeEqual } from './constantTime.js';
 
 function assert(condition, message) {
   if (!condition) {

@@ -1,4 +1,4 @@
-import { parseApproveBody, parseDeleteBody } from './moderation-controller.js';
+import { parseApproveBody, parseDeleteBody } from './moderationController.js';
 
 function assertEquals(actual, expected) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {

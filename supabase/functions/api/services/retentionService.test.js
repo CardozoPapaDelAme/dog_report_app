@@ -1,4 +1,4 @@
-import { runRetention, validateRetentionConfig } from './retention-service.js';
+import { runRetention, validateRetentionConfig } from './retentionService.js';
 
 function assert(condition, message) {
   if (!condition) {

@@ -1,4 +1,4 @@
-import { getCurrentProfileController } from '../controllers/identity-controller.js';
+import { getCurrentProfileController } from '../controllers/identityController.js';
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

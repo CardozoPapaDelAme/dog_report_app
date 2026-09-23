@@ -3,7 +3,7 @@ import {
   assertTransition,
   canTransition,
   nextStatus,
-} from './report-moderation.js';
+} from './reportModeration.js';
 
 function assert(condition, message) {
   if (!condition) {

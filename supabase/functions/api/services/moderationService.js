@@ -1,5 +1,5 @@
 import { getSql } from '../infrastructure/db.js';
-import { assertTransition } from '../domain/report-moderation.js';
+import { assertTransition } from '../domain/reportModeration.js';
 import {
   approveReport,
   deleteReport as persistDeletedReport,
@@ -8,7 +8,7 @@ import {
   listModerationQueue,
   lockReportForModeration,
   restoreReportRow,
-} from '../repositories/moderation-repository.js';
+} from '../repositories/moderationRepository.js';
 
 function moderationValues(report) {
   return {

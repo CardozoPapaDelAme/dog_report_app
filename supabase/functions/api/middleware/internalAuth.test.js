@@ -1,4 +1,4 @@
-import { isInternalSecretValid } from './internal-auth.js';
+import { isInternalSecretValid } from './internalAuth.js';
 
 function assert(condition, message) {
   if (!condition) {

@@ -1,5 +1,5 @@
-import {getCurrentProfile} from '../services/identity-service.js';
-import { presentIdentity } from '../presenters/identify-presenter.js';
+import {getCurrentProfile} from '../services/identityService.js';
+import { presentIdentity } from '../presenters/identityPresenter.js';
 
 
 export async function getCurrentProfileController(c) {
