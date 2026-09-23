@@ -1,6 +1,10 @@
 {
   "ready": "The client is ready.",
-  "common": { "yes": "Yes", "no": "No", "cancel": "Cancel" },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel"
+  },
   "commandCenter": {
     "eyebrow": "Administrator workspace",
     "title": "Command Center",
@@ -31,7 +35,12 @@
     "noteLabel": "Deletion reason",
     "notePlaceholder": "Describe why it should be removed...",
     "confirmDelete": "Confirm deletion",
-    "status": { "pending_review": "Pending", "hidden": "Hidden", "visible": "Visible", "deleted": "Deleted" },
+    "status": {
+      "pending_review": "Pending",
+      "hidden": "Hidden",
+      "visible": "Visible",
+      "deleted": "Deleted"
+    },
     "incidents": {
       "avistamiento_simple": "Sighting",
       "ataque_mascota": "Pet attack",
@@ -39,6 +48,88 @@
       "ataque_humano": "Human attack",
       "perro_lastimado": "Injured dog",
       "otro": "Other incident"
+    }
+  },
+  "configuration": {
+    "open": "Configure thresholds",
+    "back": "Back to moderation",
+    "eyebrow": "System configuration",
+    "title": "Review thresholds",
+    "subtitle": "Adjust the criteria used to review and protect reports.",
+    "loading": "Loading the current configuration…",
+    "version": "Version {{version}} active",
+    "environments": {
+      "staging": "Testing",
+      "production": "Production"
+    },
+    "history": "Each publication preserves earlier versions.",
+    "previousNote": "Previous reason: {{note}}",
+    "groups": {
+      "flags": "Flags",
+      "duplicates": "Potential duplicates",
+      "trust": "Trust levels",
+      "location": "Location accuracy",
+      "limits": "Hourly limits"
+    },
+    "fields": {
+      "flag_auto_hide_threshold": "Flags required to hide a report",
+      "duplicate_radius_meters": "Distance between reports (m)",
+      "duplicate_time_window_minutes": "Time window (min)",
+      "trust_high_threshold": "High trust threshold",
+      "trust_medium_threshold": "Medium trust threshold",
+      "gps_accuracy_max_meters": "Maximum GPS accuracy (m)",
+      "report_rate_limit_per_hour": "Reports per hour",
+      "flag_rate_limit_per_hour": "Flags per hour"
+    },
+    "help": {
+      "flag_auto_hide_threshold": "Flags from distinct origins that trigger review.",
+      "duplicate_radius_meters": "Maximum distance for suggesting a potential duplicate.",
+      "duplicate_time_window_minutes": "Maximum time between possible duplicate reports.",
+      "trust_high_threshold": "Minimum score for high trust.",
+      "trust_medium_threshold": "Must be lower than the high trust threshold.",
+      "gps_accuracy_max_meters": "Less accurate positions require report review.",
+      "report_rate_limit_per_hour": "Maximum new reports per origin in one hour.",
+      "flag_rate_limit_per_hour": "Maximum flags per origin in one hour."
+    },
+    "integerHint": "{{min}}–{{max}} · whole number",
+    "decimalHint": "{{min}}–{{max}} · up to {{decimals}} decimal places",
+    "reasonTitle": "Reason for the change",
+    "reasonHelp": "Required. Explain why you are publishing this configuration.",
+    "reasonPlaceholder": "For example: adjust the distance after reviewing nearby reports.",
+    "saveExplanation": "Saving publishes a new version. The previous configuration remains in history.",
+    "save": "Save new version",
+    "saving": "Saving…",
+    "reload": "Reload values",
+    "verify": "Check active version",
+    "retry": "Retry loading",
+    "saved": "Version {{version}} saved and active.",
+    "fixFields": "Check the highlighted fields before saving.",
+    "sessionTitle": "Sign in as an Administrator",
+    "sessionBody": "You need a current Administrator session to view and change these values.",
+    "forbiddenTitle": "Access denied",
+    "forbiddenBody": "Only an active Administrator account can manage thresholds.",
+    "loadError": "Unable to load thresholds",
+    "verifyBeforeRetry": "Publication could not be confirmed. Check the active version before saving again to avoid creating an extra version by mistake.",
+    "discardTitle": "Discard unsaved changes?",
+    "discardBody": "Your edits to this form will be lost. The published configuration will not change.",
+    "keepEditing": "Keep editing",
+    "discard": "Discard and continue",
+    "validation": {
+      "number": "Enter a valid number.",
+      "range": "Must be between {{min}} and {{max}}.",
+      "integer": "Must be a whole number without decimal places.",
+      "precision": "Use no more than {{decimals}} decimal places.",
+      "trustOrder": "Must be lower than the high trust threshold.",
+      "note": "Enter a nonblank reason with 1–1000 characters."
+    },
+    "errors": {
+      "request_failed": "The request could not be completed. Check your connection and try again.",
+      "configuration_unavailable": "No active configuration is available. Ask the technical team to check the environment.",
+      "dependency_unavailable": "The service is currently unavailable.",
+      "preflight_mismatch": "The server environment requires technical review.",
+      "invalid_response": "The server did not return a valid configuration. Reload the values.",
+      "invalid_request": "Check the values and the reason for the change.",
+      "configuration_conflict": "Configuration changed during publication. Check the active version."
     }
   }
 }

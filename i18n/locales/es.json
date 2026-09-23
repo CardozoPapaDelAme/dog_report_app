@@ -1,6 +1,10 @@
 {
   "ready": "El cliente está listo.",
-  "common": { "yes": "Sí", "no": "No", "cancel": "Cancelar" },
+  "common": {
+    "yes": "Sí",
+    "no": "No",
+    "cancel": "Cancelar"
+  },
   "commandCenter": {
     "eyebrow": "Espacio del administrador",
     "title": "Command Center",
@@ -31,7 +35,12 @@
     "noteLabel": "Motivo de eliminación",
     "notePlaceholder": "Describe por qué debe retirarse...",
     "confirmDelete": "Confirmar eliminación",
-    "status": { "pending_review": "Pendiente", "hidden": "Oculto", "visible": "Visible", "deleted": "Eliminado" },
+    "status": {
+      "pending_review": "Pendiente",
+      "hidden": "Oculto",
+      "visible": "Visible",
+      "deleted": "Eliminado"
+    },
     "incidents": {
       "avistamiento_simple": "Avistamiento",
       "ataque_mascota": "Ataque a mascota",
@@ -39,6 +48,88 @@
       "ataque_humano": "Ataque a persona",
       "perro_lastimado": "Perro lastimado",
       "otro": "Otro incidente"
+    }
+  },
+  "configuration": {
+    "open": "Configurar umbrales",
+    "back": "Volver a moderación",
+    "eyebrow": "Configuración del sistema",
+    "title": "Umbrales de revisión",
+    "subtitle": "Ajusta los criterios que utiliza el sistema para revisar y proteger los reportes.",
+    "loading": "Cargando la configuración vigente…",
+    "version": "Versión {{version}} activa",
+    "environments": {
+      "staging": "Pruebas",
+      "production": "Producción"
+    },
+    "history": "Cada publicación conserva las versiones anteriores.",
+    "previousNote": "Último motivo: {{note}}",
+    "groups": {
+      "flags": "Denuncias",
+      "duplicates": "Posibles duplicados",
+      "trust": "Niveles de confianza",
+      "location": "Precisión de ubicación",
+      "limits": "Límites por hora"
+    },
+    "fields": {
+      "flag_auto_hide_threshold": "Denuncias para ocultar un reporte",
+      "duplicate_radius_meters": "Distancia entre reportes (m)",
+      "duplicate_time_window_minutes": "Ventana de tiempo (min)",
+      "trust_high_threshold": "Umbral de confianza alta",
+      "trust_medium_threshold": "Umbral de confianza media",
+      "gps_accuracy_max_meters": "Precisión GPS máxima (m)",
+      "report_rate_limit_per_hour": "Reportes por hora",
+      "flag_rate_limit_per_hour": "Denuncias por hora"
+    },
+    "help": {
+      "flag_auto_hide_threshold": "Cantidad de denuncias de orígenes distintos que activa la revisión.",
+      "duplicate_radius_meters": "Distancia máxima para sugerir un posible duplicado.",
+      "duplicate_time_window_minutes": "Tiempo máximo entre reportes que podrían ser duplicados.",
+      "trust_high_threshold": "Puntuación mínima para el nivel de confianza alta.",
+      "trust_medium_threshold": "Debe ser menor que el umbral de confianza alta.",
+      "gps_accuracy_max_meters": "Una menor precisión requiere revisión del reporte.",
+      "report_rate_limit_per_hour": "Máximo de nuevos reportes por origen en una hora.",
+      "flag_rate_limit_per_hour": "Máximo de denuncias por origen en una hora."
+    },
+    "integerHint": "De {{min}} a {{max}} · número entero",
+    "decimalHint": "De {{min}} a {{max}} · hasta {{decimals}} decimales",
+    "reasonTitle": "Motivo del cambio",
+    "reasonHelp": "Obligatorio. Explica por qué publicas esta configuración.",
+    "reasonPlaceholder": "Por ejemplo: ajustar la distancia tras revisar reportes de la zona.",
+    "saveExplanation": "Guardar publica una nueva versión. La configuración anterior permanece en el historial.",
+    "save": "Guardar nueva versión",
+    "saving": "Guardando…",
+    "reload": "Recargar valores",
+    "verify": "Consultar versión activa",
+    "retry": "Reintentar carga",
+    "saved": "Versión {{version}} guardada y activa.",
+    "fixFields": "Revisa los campos marcados antes de guardar.",
+    "sessionTitle": "Inicia sesión como Administrador",
+    "sessionBody": "Necesitas una sesión de Administrador vigente para consultar y cambiar estos valores.",
+    "forbiddenTitle": "Acceso no permitido",
+    "forbiddenBody": "Solo una cuenta activa de Administrador puede gestionar los umbrales.",
+    "loadError": "No pudimos cargar los umbrales",
+    "verifyBeforeRetry": "No se pudo confirmar la publicación. Consulta la versión activa antes de volver a guardar para evitar crear otra versión por error.",
+    "discardTitle": "¿Descartar los cambios sin guardar?",
+    "discardBody": "Se perderá lo que has escrito en este formulario. La configuración publicada no se modificará.",
+    "keepEditing": "Seguir editando",
+    "discard": "Descartar y continuar",
+    "validation": {
+      "number": "Escribe un número válido.",
+      "range": "Debe estar entre {{min}} y {{max}}.",
+      "integer": "Debe ser un número entero, sin decimales.",
+      "precision": "Admite como máximo {{decimals}} decimales.",
+      "trustOrder": "Debe ser menor que el umbral de confianza alta.",
+      "note": "Escribe un motivo de entre 1 y 1000 caracteres; no puede estar vacío."
+    },
+    "errors": {
+      "request_failed": "No pudimos completar la solicitud. Comprueba tu conexión e inténtalo de nuevo.",
+      "configuration_unavailable": "No hay una configuración activa disponible. Solicita al equipo técnico que revise el entorno.",
+      "dependency_unavailable": "El servicio no está disponible en este momento.",
+      "preflight_mismatch": "El entorno del servidor requiere revisión del equipo técnico.",
+      "invalid_response": "El servidor no devolvió una configuración válida. Vuelve a consultar los valores.",
+      "invalid_request": "Revisa los valores y el motivo del cambio.",
+      "configuration_conflict": "La configuración cambió durante la publicación. Consulta la versión activa."
     }
   }
 }

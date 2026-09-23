@@ -6,9 +6,22 @@ Chihuahua. The prototype targets the Asociación de Hoteles de Chihuahua, A.C.
 
 ## Status
 
-The mobile client skeleton is in the repository root. `GET /health` is deployed;
-product screens and `GET /me` are not started. Production report intake remains
-blocked until the Asociación de Hoteles de Chihuahua approves a geofence version.
+The mobile client is in the repository root and includes moderation and threshold
+configuration screens. The backend includes identity (`GET /me`), configuration,
+zones, duplicate resolution and report intake. Implementation does not imply
+deployment or validation with a real Administrator session. Production report
+intake remains blocked until the Asociación de Hoteles de Chihuahua approves a
+geofence version.
+
+### Threshold configuration (FAB-4)
+
+With an Administrator session supplied through `App.accessToken`, open
+**Configurar umbrales** from moderation. The screen loads the eight numeric FAB-1
+thresholds, requires a new change reason and displays validation beside each
+field. `index.js` does not yet supply a login/session; the screen uses the team's
+existing token integration point. It never embeds a test token or real credential.
+See [`docs/TESTING.md`](docs/TESTING.md#fab-4--l4-configuration-form) for isolated
+UI tests and the remaining managed-session check.
 
 ## Team setup
 

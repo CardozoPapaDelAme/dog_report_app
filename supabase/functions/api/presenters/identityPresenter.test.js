@@ -15,7 +15,7 @@ Deno.test('identity presenter returns profile inside data', async () => {
   const context = {
     get(key) {
       if (key === 'requestId') {
-        return 'test-request-id';
+        return 'test-requestId';
       }
 
       return undefined;
@@ -56,7 +56,7 @@ Deno.test('identity presenter returns profile inside data', async () => {
   );
 
   assert(
-    context.headers['X-Request-Id'] === 'test-request-id',
+    context.headers['X-Request-Id'] === 'test-requestId',
     'presenter should include X-Request-Id',
   );
 });

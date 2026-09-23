@@ -23,7 +23,7 @@ Deno.test('identity controller returns authenticated profile', async () => {
       }
 
       if (key === 'requestId') {
-        return 'controller-test-request-id';
+        return 'controller-test-requestId';
       }
 
       return undefined;

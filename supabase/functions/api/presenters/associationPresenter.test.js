@@ -28,7 +28,7 @@ Deno.test("association presenter exposes only the business projection and next c
     ...sensitive,
   };
   const context = {
-    get: () => "request-id",
+    get: () => "requestId",
     header(name, value) {
       this.headers ??= {};
       this.headers[name] = value;
