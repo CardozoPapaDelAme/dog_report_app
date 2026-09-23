@@ -6,7 +6,7 @@ import {
   getModerationQueue,
   hideReport,
   restoreReport,
-} from '../controllers/moderation-controller.js';
+} from '../controllers/moderationController.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const moderationRoutes = new Hono();

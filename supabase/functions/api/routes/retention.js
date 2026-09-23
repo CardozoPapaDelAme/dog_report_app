@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 
-import { runRetentionController } from '../controllers/retention-controller.js';
-import { requireInternalSecret } from '../middleware/internal-auth.js';
+import { runRetentionController } from '../controllers/retentionController.js';
+import { requireInternalSecret } from '../middleware/internalAuth.js';
 
 const retentionRoutes = new Hono();
 

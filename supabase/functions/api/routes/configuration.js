@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { createConfigurationController } from '../controllers/configuration-controller.js';
+import { createConfigurationController } from '../controllers/configurationController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { presentError } from '../presenters/error.js';
 

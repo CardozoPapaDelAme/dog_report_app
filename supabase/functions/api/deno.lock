@@ -1,9 +1,19 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@hono/hono@4": "4.13.8",
+    "npm:jose@5": "5.10.0",
     "npm:postgres@3": "3.4.9"
   },
+  "jsr": {
+    "@hono/hono@4.13.8": {
+      "integrity": "bbb566d9ebb81e74c0d7eeff1f9221ba9f3fda6f1832e5ca66cbddcecb2f7fec"
+    }
+  },
   "npm": {
+    "jose@5.10.0": {
+      "integrity": "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg=="
+    },
     "postgres@3.4.9": {
       "integrity": "sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw=="
     }

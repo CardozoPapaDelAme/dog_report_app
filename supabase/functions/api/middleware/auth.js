@@ -1,6 +1,6 @@
 import { verifyAccessToken } from '../infrastructure/jwt.js';
 import { presentError } from '../presenters/error.js';
-import { findProfileById } from '../repositories/profile-repository.js';
+import { findProfileById } from '../repositories/profileRepository.js';
 
 const KNOWN_ROLES = new Set(['association', 'administrator']);
 

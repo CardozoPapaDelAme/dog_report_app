@@ -1,18 +1,19 @@
 import { Hono } from 'hono';
 
 import { optionalAuth } from './middleware/auth.js';
-import { requestId } from './middleware/request-id.js';
+import { requestId } from './middleware/requestId.js';
 import { presentError } from './presenters/error.js';
+import { associationRoutes } from './routes/associationRoutes.js';
 import { healthRoutes } from './routes/health.js';
 import { moderationRoutes } from './routes/moderation.js';
 import { reportRoutes } from './routes/report.js';
 import { retentionRoutes } from './routes/retention.js';
 import { configurationRoutes } from './routes/configuration.js';
-import { identityRoutes } from './routes/identity-routes.js';
-import { zoneRoutes } from './routes/zone-sets.js';
-import { duplicateRoutes } from './routes/duplicate-groups.js';
+import { duplicateRoutes } from './routes/duplicateGroups.js';
+import { identityRoutes } from './routes/identityRoutes.js';
+import { zoneRoutes } from './routes/zoneSets.js';
 
-const app = new Hono().basePath('/api');//all endpoints in Hono will have the prefix /api
+const app = new Hono().basePath('/api'); // All Hono endpoints use the /api prefix.
 
 app.use('*', requestId);
 app.use('*', optionalAuth);
@@ -23,6 +24,7 @@ app.route('/', moderationRoutes);
 app.route('/', retentionRoutes);
 app.route('/', configurationRoutes);
 app.route('/', identityRoutes);
+app.route('/', associationRoutes);
 app.route('/', zoneRoutes);
 app.route('/', duplicateRoutes);
 

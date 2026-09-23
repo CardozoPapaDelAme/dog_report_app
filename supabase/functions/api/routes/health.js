@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-import { getHealth } from '../controllers/health-controller.js';
+import { getHealth } from '../controllers/healthController.js';
 
 const healthRoutes = new Hono();
 
