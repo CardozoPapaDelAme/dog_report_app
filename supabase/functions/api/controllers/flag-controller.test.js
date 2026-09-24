@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { app as actualApp } from "../app.js";
-import { requestId } from "../middleware/request-id.js";
+import { requestId } from "../middleware/requestId.js";
 import { createFlagController, parseFlagBody } from "./flag-controller.js";
 
 const reportId = "11111111-2222-4333-8444-555555555555";

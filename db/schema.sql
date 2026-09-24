@@ -933,7 +933,6 @@ USING (
   OR app_private.is_active_actor('administrator')
   OR (
     app_private.actor_role() = 'anonymous'
-    AND report_id = app_private.requested_report_id()
     AND EXISTS (
       SELECT 1 FROM public.reports r
       WHERE r.id = report_id
