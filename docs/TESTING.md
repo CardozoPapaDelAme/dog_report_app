@@ -147,6 +147,25 @@ or retry state through spies/fakes before any live-project exercise.
   cap rather than scanning unbounded history.
 - Test online loading under the RNF02 prototype target and explicit offline UX.
 
+Executable L3 API coverage:
+
+- `controllers/publicMapController.test.js`, `services/publicMapService.test.js`
+  and `repositories/publicMapRepository.test.js` cover query defaults, invalid
+  requests, anonymous Service context, zoom-radius mapping, highest severity,
+  complete six-key `type_counts`, read-time public approximation and repository
+  exclusions.
+- `tests/publicMapPostgres.test.js` is opt-in against a fresh local
+  PostgreSQL/PostGIS database named `fab_public_map_test`. It applies the real
+  migrations and verifies stable non-exact public pins, canonical filtering,
+  viewport clustering, highest severity and all six count keys.
+
+```sh
+PUBLIC_MAP_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:55435/fab_public_map_test' \
+  deno test --allow-env --allow-net=127.0.0.1:55435 \
+  --allow-read=supabase/migrations --config supabase/functions/api/deno.json \
+  supabase/functions/api/tests/publicMapPostgres.test.js
+```
+
 ## Mobile/native tests
 
 - Build development and release clients for supported iOS/Android targets; Expo Go

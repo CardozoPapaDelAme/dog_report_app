@@ -18,6 +18,7 @@ const migrations = [
   "20260921010500_store_immutable_zone_set_geojson.sql",
   "20260921011000_grant_zone_set_retirement_update.sql",
   "20260923090000_allow_anonymous_flag_origin_reads.sql",
+  "20260924010000_allow_public_map_flag_reads.sql",
 ];
 
 function assert(condition, message) {
@@ -142,7 +143,7 @@ Deno.test({
       await seedReport(rollbackReport);
 
       await t.step(
-        "anonymous RLS reads flags only for the requested public canonical report",
+        "anonymous RLS reads flags for visible public canonical reports",
         async () => {
           await service(firstReport, "sql-device-fingerprint-0001");
           const visible = await withAnonymous(
@@ -150,7 +151,7 @@ Deno.test({
             (tx) =>
               tx`SELECT id FROM public.report_flags WHERE report_id = ${firstReport}`,
           );
-          const blocked = await withAnonymous(
+          const visibleFromOtherPublicContext = await withAnonymous(
             secondReport,
             (tx) =>
               tx`SELECT id FROM public.report_flags WHERE report_id = ${firstReport}`,
@@ -161,8 +162,8 @@ Deno.test({
             "Requested public canonical report flags should be readable.",
           );
           assert(
-            blocked.length === 0,
-            "Other reports' flags must stay hidden.",
+            visibleFromOtherPublicContext.length === 1,
+            "Public map projections need batched flag-existence reads.",
           );
         },
       );

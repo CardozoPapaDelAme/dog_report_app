@@ -35,6 +35,14 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF23 | Duplicate review | Administrator duplicate routes; candidates/groups/memberships | Human-only, pending connected set, canonical, reversible, audited |
 | RF24 | Dynamic form | `details` JSONB validator | Allowed keys/types per incident |
 
+L3 public map executable coverage is split across
+`controllers/publicMapController.test.js`, `services/publicMapService.test.js`,
+`repositories/publicMapRepository.test.js`, and the opt-in
+`tests/publicMapPostgres.test.js`. Together they cover RF10–RF14 and HU-10–HU-14:
+stable read-time 50 m public approximation, bounded public report and cluster
+queries, server-side metric clustering, highest severity and complete six-key
+type counts.
+
 ## Non-functional requirements
 
 | ID | Flow/component | Data/API/operations boundary | Verification focus |
