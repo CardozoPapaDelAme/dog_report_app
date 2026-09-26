@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { getConfiguration, publishConfiguration } from './configurationApi.js';
 import { configurationFieldErrors, configurationToDraft, validateConfigurationDraft } from '../models/configuration.js';
 import { createConfigurationRoutes } from '../supabase/functions/api/routes/configuration.js';
-import { createConfigurationService } from '../supabase/functions/api/services/configuration-service.js';
+import { createConfigurationService } from '../supabase/functions/api/services/configurationService.js';
 const initial = {id:'00000000-0000-4000-8000-000000000002',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30,change_note:'Initial'};
 const userId='00000000-0000-4000-8000-000000000001';
 function assert(value,message='Assertion failed'){if(!value)throw new Error(message);}

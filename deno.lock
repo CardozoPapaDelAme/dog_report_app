@@ -3085,6 +3085,8 @@
       "dependencies": [
         "npm:@expo-google-fonts/plus-jakarta-sans@~0.4.2",
         "npm:@expo/metro-runtime@~57.0.15",
+        "npm:@playwright/test@1.63.0",
+        "npm:esbuild@0.28.2",
         "npm:expo-font@~57.0.3",
         "npm:expo-status-bar@~57.0.1",
         "npm:expo@~57.0.21",
