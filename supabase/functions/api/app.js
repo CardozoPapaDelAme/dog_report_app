@@ -6,6 +6,7 @@ import { presentError } from './presenters/error.js';
 import { associationRoutes } from './routes/associationRoutes.js';
 import { healthRoutes } from './routes/health.js';
 import { moderationRoutes } from './routes/moderation.js';
+import { photoRoutes } from './routes/photo.js';
 import { publicMapRoutes } from './routes/publicMap.js';
 import { reportRoutes } from './routes/report.js';
 import { retentionRoutes } from './routes/retention.js';
@@ -21,6 +22,7 @@ app.use('*', optionalAuth);
 
 app.route('/', healthRoutes);
 app.route('/', reportRoutes);
+app.route('/', photoRoutes);
 app.route('/', publicMapRoutes);
 app.route('/', moderationRoutes);
 app.route('/', retentionRoutes);
