@@ -7,11 +7,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useState } from 'react';
 
 import './i18n';
+import CameraScreen from './screens/CameraScreen.js';
 import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
+import ReportDraftScreen from './screens/ReportDraftScreen.js';
 
 export default function App({ accessToken = null }) {
-  const [screen, setScreen] = useState('moderation');
+  const [screen, setScreen] = useState('camera');
+  const [draft, setDraft] = useState(null);
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_600SemiBold,
@@ -27,8 +30,29 @@ export default function App({ accessToken = null }) {
       <StatusBar style="light" />
       {screen === 'configuration' ? (
         <ConfigurationScreen accessToken={accessToken} onBack={() => setScreen('moderation')} />
+      ) : screen === 'moderation' ? (
+        <CommandCenterScreen
+          accessToken={accessToken}
+          onOpenConfiguration={() => setScreen('configuration')}
+        />
+      ) : screen === 'reportDraft' ? (
+        <ReportDraftScreen
+          draft={draft}
+          onBackToCamera={() => setScreen('camera')}
+        />
       ) : (
-        <CommandCenterScreen accessToken={accessToken} onOpenConfiguration={() => setScreen('configuration')} />
+        <CameraScreen
+          showModerationShortcut={Boolean(accessToken)}
+          onOpenModeration={() => setScreen('moderation')}
+          onReportWithoutPhoto={() => {
+            setDraft({ photo: null });
+            setScreen('reportDraft');
+          }}
+          onPhotoAccepted={(photo) => {
+            setDraft({ photo });
+            setScreen('reportDraft');
+          }}
+        />
       )}
     </SafeAreaProvider>
   );

@@ -5,6 +5,42 @@
     "no": "No",
     "cancel": "Cancelar"
   },
+  "camera": {
+    "permissionTitle": "Permite el acceso a la cámara",
+    "permissionBody": "La app abre directo en cámara para capturar evidencia del reporte. La foto se valida en el teléfono antes de continuar.",
+    "permissionButton": "Permitir cámara",
+    "withoutPhoto": "Reportar sin foto",
+    "helper": "Toma una foto clara del perro",
+    "modelHelp": "Validación local no disponible",
+    "admin": "Revisión",
+    "retryTitle": "Vuelve a tomar la foto",
+    "model": {
+      "loading": "Cargando modelo",
+      "ready": "Validación offline lista",
+      "missing": "Modelo pendiente",
+      "error": "Modelo no disponible"
+    },
+    "rejections": {
+      "no_dog": "No detectamos un perro con suficiente confianza.",
+      "blurry": "La foto está borrosa o tiene poca definición.",
+      "model_missing": "Falta versionar el archivo TFLite antes de aceptar fotos.",
+      "model_unavailable": "El modelo todavía no está listo. Intenta de nuevo en unos segundos."
+    },
+    "errors": {
+      "capture": "No pudimos validar esta foto. Intenta tomarla nuevamente."
+    }
+  },
+  "reportDraft": {
+    "eyebrow": "Borrador local",
+    "title": "Foto lista para el reporte",
+    "subtitle": "La imagen quedó guardada como archivo privado local. Aún no se sube ni se guarda en la base de datos.",
+    "noPhoto": "Continuar sin foto",
+    "validationTitle": "Validación local",
+    "dogProbability": "Probabilidad perro: {{value}}%",
+    "blurVariance": "Varianza Laplaciana: {{value}}",
+    "back": "Volver a cámara",
+    "formPending": "Formulario en siguiente entrega"
+  },
   "commandCenter": {
     "eyebrow": "Espacio del administrador",
     "title": "Command Center",

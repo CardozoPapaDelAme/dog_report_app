@@ -1,0 +1,36 @@
+{
+  "name": "MobileNetV3-Small 100 224 classification INT8",
+  "source": {
+    "model_page": "https://www.kaggle.com/models/google/mobilenet-v3/TfLite/small-100-224-classification-metadata/1",
+    "api_download": "https://www.kaggle.com/api/v1/models/google/mobilenet-v3/tfLite/small-100-224-classification-metadata/1/download",
+    "status": "pending_download",
+    "notes": "Direct public download attempts from this workspace returned 404 without Kaggle credentials. Do not fabricate the binary, license evidence, labels, or checksum."
+  },
+  "expected_files": {
+    "model": "models/mobilenet_v3_small_100_224_int8.tflite",
+    "labels": "models/mobilenet_v3_small_100_224_labels.txt"
+  },
+  "license": {
+    "expected": "Apache-2.0",
+    "status": "pending_confirmation_from_downloaded_metadata"
+  },
+  "sha256": null,
+  "input": {
+    "shape": [1, 224, 224, 3],
+    "preprocessing": "Resize captured JPEG to 224x224 RGB. Quantized uint8/int8 uses raw channels; float32 uses channel/255."
+  },
+  "dog_classes": {
+    "fallback_zero_based_range": [151, 268],
+    "status": "must_verify_against_downloaded_labels_before_acceptance"
+  },
+  "thresholds": {
+    "dog_probability": {
+      "value": 0.3,
+      "status": "provisional_until_real_photo_calibration"
+    },
+    "laplacian_blur_variance": {
+      "value": 120,
+      "status": "provisional_until_real_photo_calibration"
+    }
+  }
+}

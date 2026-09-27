@@ -22,7 +22,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permite que Creel Stray-Dog Reporting use la cámara para fotografiar el reporte."
+        }
+      ]
     ]
   }
 }
