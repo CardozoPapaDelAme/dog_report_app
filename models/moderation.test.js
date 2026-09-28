@@ -42,3 +42,23 @@ Deno.test('moderation results remove published/deleted cards but retain queue st
   });
   assert(restored[0].status === 'pending_review', 'restored report should remain in the queue');
 });
+
+Deno.test('hiding keeps the card in the queue and swaps hide for restore', () => {
+  const reports = [
+    normalizeModerationReport({
+      id: 'report',
+      incident_type: 'otro',
+      status: 'pending_review',
+      allowed_commands: ['approve', 'hide', 'delete'],
+    }),
+  ];
+  const hidden = applyModerationResult(reports, 'report', {
+    report_id: 'report',
+    status: 'hidden',
+    allowed_commands: ['approve', 'delete', 'restore'],
+  });
+  assert(hidden.length === 1, 'hidden report should stay in the queue');
+  assert(hidden[0].status === 'hidden', 'hidden report should show the hidden status');
+  assert(!hidden[0].allowed_commands.includes('hide'), 'hidden report cannot be hidden again');
+  assert(hidden[0].allowed_commands.includes('restore'), 'hidden report can be restored');
+});
