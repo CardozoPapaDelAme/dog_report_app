@@ -2,6 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@hono/hono@4": "4.13.8",
+    "npm:jimp-compact@0.16.1": "0.16.1",
     "npm:jose@5": "5.10.0",
     "npm:postgres@3": "3.4.9"
   },
@@ -11,6 +12,9 @@
     }
   },
   "npm": {
+    "jimp-compact@0.16.1": {
+      "integrity": "sha512-dZ6Ra7u1G8c4Letq/B5EzAxj4tLFHL+cGtdpR+PVm4yzPDj+lCk+AbivWt1eOM+ikzkowtyV7qSqX6qr3t71Ww=="
+    },
     "jose@5.10.0": {
       "integrity": "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg=="
     },
@@ -21,6 +25,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@hono/hono@4",
+      "npm:jimp-compact@0.16.1",
       "npm:jose@5",
       "npm:postgres@3"
     ]
