@@ -22,7 +22,7 @@ Deno.test('L5 photo validation resolves dog labels from downloaded labels when p
     'zebra',
   ];
   const indices = resolveDogClassIndices(labels);
-  assert(JSON.stringify(indices) === JSON.stringify([1, 2, 3, 4]));
+  assert(JSON.stringify(indices) === JSON.stringify([1, 2, 3]));
 });
 
 Deno.test('L5 photo validation falls back to the ImageNet dog range', () => {

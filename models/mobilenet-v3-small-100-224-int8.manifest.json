@@ -3,8 +3,8 @@
   "source": {
     "model_page": "https://www.kaggle.com/models/google/mobilenet-v3/TfLite/small-100-224-classification-metadata/1",
     "api_download": "https://www.kaggle.com/api/v1/models/google/mobilenet-v3/tfLite/small-100-224-classification-metadata/1/download",
-    "status": "pending_download",
-    "notes": "Direct public download attempts from this workspace returned 404 without Kaggle credentials. Do not fabricate the binary, license evidence, labels, or checksum."
+    "status": "downloaded_manually",
+    "notes": "User supplied C:/Users/MINEC/OneDrive/Documentos/1.tflite from mobilenet-v3-tflite-small-100-224-classification-metadata-v1.tar."
   },
   "expected_files": {
     "model": "models/mobilenet_v3_small_100_224_int8.tflite",
@@ -12,16 +12,19 @@
   },
   "license": {
     "expected": "Apache-2.0",
-    "status": "pending_confirmation_from_downloaded_metadata"
+    "status": "confirmed_from_kaggle_model_page"
   },
-  "sha256": null,
+  "sha256": "77C98343789C066287E1A5E85314428F47BD4302F053C920CE00A46D90CB1388",
   "input": {
     "shape": [1, 224, 224, 3],
     "preprocessing": "Resize captured JPEG to 224x224 RGB. Quantized uint8/int8 uses raw channels; float32 uses channel/255."
   },
   "dog_classes": {
-    "fallback_zero_based_range": [151, 268],
-    "status": "must_verify_against_downloaded_labels_before_acceptance"
+    "downloaded_label_count": 1001,
+    "verified_range": [152, 269],
+    "first_label": "Chihuahua",
+    "last_label": "Mexican hairless",
+    "status": "verified_against_embedded_labels_txt"
   },
   "thresholds": {
     "dog_probability": {

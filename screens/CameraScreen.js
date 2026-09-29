@@ -41,7 +41,6 @@ export default function CameraScreen({
   const [permission, requestPermission] = useCameraPermissions();
   const capture = useCameraCapture({ onPhotoAccepted });
   const feedback = reasonText(t, capture.captureState);
-  const modelReady = capture.modelStatus === 'ready';
   const busy = capture.captureState.phase === 'capturing';
   const captureDisabled = busy || !capture.cameraReady;
 
@@ -78,19 +77,14 @@ export default function CameraScreen({
       />
       <View pointerEvents="none" style={styles.vignette} />
 
-      <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.statusPill}>
-          <View style={[styles.statusDot, modelReady ? styles.statusDotReady : styles.statusDotWarning]} />
-          <Text style={styles.statusText}>
-            {t(`camera.model.${capture.modelStatus}`)}
-          </Text>
-        </View>
-        {showModerationShortcut ? (
+      {showModerationShortcut ? (
+        <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+          <View style={styles.topBarSpacer} />
           <Pressable accessibilityRole="button" onPress={onOpenModeration} style={styles.adminButton}>
             <Text style={styles.adminText}>{t('camera.admin')}</Text>
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
 
       {feedback ? (
         <Pressable accessibilityRole="button" onPress={capture.clearFeedback} style={styles.toast}>
@@ -99,7 +93,7 @@ export default function CameraScreen({
         </Pressable>
       ) : null}
 
-      <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, 18) }]}>
+      <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, 24) }]}>
         <Pressable
           accessibilityRole="button"
           disabled={busy}
@@ -117,17 +111,11 @@ export default function CameraScreen({
           style={({ pressed }) => [
             styles.captureButton,
             pressed && styles.pressed,
-            (captureDisabled || !modelReady) && styles.captureDisabled,
+            captureDisabled && styles.captureDisabled,
           ]}
         >
           {busy ? <ActivityIndicator color={colors.primary} /> : <View style={styles.captureInner} />}
         </Pressable>
-
-        <View style={styles.sideSlot}>
-          <Text style={styles.helperText}>
-            {modelReady ? t('camera.helper') : t('camera.modelHelp')}
-          </Text>
-        </View>
       </View>
     </View>
   );
@@ -143,24 +131,18 @@ const styles = StyleSheet.create({
   permissionButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.primary },
   permissionButtonText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', gap: 10, paddingHorizontal: 20 },
-  statusPill: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 999, backgroundColor: colors.glass, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 13 },
-  statusDot: { width: 9, height: 9, borderRadius: 99 },
-  statusDotReady: { backgroundColor: '#90d689' },
-  statusDotWarning: { backgroundColor: '#ffa000' },
-  statusText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 12 },
+  topBarSpacer: { flex: 1 },
   adminButton: { minHeight: 42, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.glass, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 14 },
   adminText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12 },
   toast: { position: 'absolute', top: '18%', left: 20, right: 20, borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14 },
   toastTitle: { color: colors.warning, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   toastBody: { color: '#4a3510', fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13, lineHeight: 19, marginTop: 3 },
-  bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingHorizontal: 20, paddingTop: 16 },
-  noPhotoButton: { flex: 1, minHeight: 48, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.glass, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 13 },
+  bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingTop: 16 },
+  noPhotoButton: { minHeight: 46, minWidth: 178, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.glass, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 18 },
   noPhotoText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12, textAlign: 'center' },
   captureButton: { width: 82, height: 82, borderRadius: 999, borderWidth: 5, borderColor: colors.primary, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
   captureInner: { width: 57, height: 57, borderRadius: 999, backgroundColor: '#ffffff', borderColor: '#d8dbd2', borderWidth: 1 },
   captureDisabled: { opacity: 0.62 },
-  sideSlot: { flex: 1, minHeight: 48, justifyContent: 'center' },
-  helperText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 11, lineHeight: 16, textAlign: 'center' },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.5 },
 });

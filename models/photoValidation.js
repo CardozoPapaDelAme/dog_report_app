@@ -12,7 +12,7 @@ export const DEFAULT_PHOTO_VALIDATION_THRESHOLDS = Object.freeze({
 });
 
 const DOG_START_MARKERS = ['chihuahua'];
-const DOG_END_MARKERS = ['mexican hairless', 'mexican_hairless', 'timber wolf', 'timber_wolf'];
+const DOG_END_MARKERS = ['mexican hairless', 'mexican_hairless'];
 
 function asArray(values) {
   if (!values) return [];

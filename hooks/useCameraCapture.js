@@ -1,37 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { useCallback, useRef, useState } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
-import jpeg from 'jpeg-js';
-
-import {
-  DEFAULT_PHOTO_VALIDATION_THRESHOLDS,
-  IMAGE_SIZE,
-  rgbaToModelInput,
-  validatePhotoFrame,
-} from '../models/photoValidation.js';
-import {
-  MOBILENET_V3_LABELS,
-  MOBILENET_V3_MODEL_ASSET,
-} from '../models/mobileNetV3Model.js';
 
 const PHOTO_DIRECTORY = `${FileSystem.documentDirectory ?? ''}reports/photos/`;
-
-async function loadTfliteModel(asset) {
-  const { loadTensorflowModel } = require('react-native-fast-tflite');
-  return loadTensorflowModel(asset, []);
-}
-
-function base64ToBytes(base64) {
-  if (typeof globalThis.atob === 'function') {
-    const binary = globalThis.atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index += 1) {
-      bytes[index] = binary.charCodeAt(index);
-    }
-    return bytes;
-  }
-  throw new Error('base64_decode_unavailable');
-}
 
 async function deleteIfPossible(uri) {
   if (!uri) return;
@@ -47,14 +17,6 @@ async function ensurePhotoDirectory() {
   await FileSystem.makeDirectoryAsync(PHOTO_DIRECTORY, { intermediates: true });
 }
 
-async function resizeForValidation(uri) {
-  return manipulateAsync(
-    uri,
-    [{ resize: { width: IMAGE_SIZE, height: IMAGE_SIZE } }],
-    { compress: 0.86, format: SaveFormat.JPEG, base64: true },
-  );
-}
-
 async function persistValidatedPhoto(uri) {
   await ensurePhotoDirectory();
   const fileName = `report-photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
@@ -63,22 +25,12 @@ async function persistValidatedPhoto(uri) {
   return destination;
 }
 
-function firstModelInputType(model) {
-  const dataType = model?.inputs?.[0]?.dataType;
-  if (dataType === 'float32' || dataType === 'int8') return dataType;
-  return 'uint8';
-}
-
 export function useCameraCapture({
   onPhotoAccepted,
-  thresholds = DEFAULT_PHOTO_VALIDATION_THRESHOLDS,
 } = {}) {
   const cameraRef = useRef(null);
-  const modelRef = useRef(null);
   const [cameraReady, setCameraReady] = useState(false);
-  const [modelStatus, setModelStatus] = useState(
-    MOBILENET_V3_MODEL_ASSET ? 'loading' : 'missing',
-  );
+  const [modelStatus] = useState('preview');
   const [captureState, setCaptureState] = useState({
     phase: 'idle',
     rejection: null,
@@ -86,39 +38,12 @@ export function useCameraCapture({
     validation: null,
   });
 
-  useEffect(() => {
-    let mounted = true;
-    if (!MOBILENET_V3_MODEL_ASSET) return undefined;
-
-    setModelStatus('loading');
-    loadTfliteModel(MOBILENET_V3_MODEL_ASSET)
-      .then((model) => {
-        if (!mounted) return;
-        modelRef.current = model;
-        setModelStatus('ready');
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setModelStatus('error');
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   const capture = useCallback(async () => {
     if (!cameraRef.current || !cameraReady || captureState.phase === 'capturing') {
       return null;
     }
-    if (!modelRef.current) {
-      const code = modelStatus === 'missing' ? 'model_missing' : 'model_unavailable';
-      setCaptureState({ phase: 'rejected', rejection: code, error: null, validation: null });
-      return { accepted: false, reason: code };
-    }
 
     let capturedUri = null;
-    let validationUri = null;
     setCaptureState({ phase: 'capturing', rejection: null, error: null, validation: null });
 
     try {
@@ -127,38 +52,15 @@ export function useCameraCapture({
         skipProcessing: false,
       });
       capturedUri = captured.uri;
-      const prepared = await resizeForValidation(captured.uri);
-      validationUri = prepared.uri;
-      const bytes = base64ToBytes(prepared.base64);
-      const decoded = jpeg.decode(bytes, { useTArray: true });
-      const input = rgbaToModelInput(decoded.data, firstModelInputType(modelRef.current));
-      const outputs = modelRef.current.runSync([input]);
-      const validation = validatePhotoFrame({
-        classifierOutput: outputs[0],
-        rgba: decoded.data,
-        width: decoded.width,
-        height: decoded.height,
-        labels: MOBILENET_V3_LABELS,
-        thresholds,
-      });
 
-      if (!validation.passed) {
-        await deleteIfPossible(validationUri);
-        if (capturedUri !== validationUri) await deleteIfPossible(capturedUri);
-        const rejection = validation.reasons.includes('no_dog') ? 'no_dog' : 'blurry';
-        setCaptureState({ phase: 'rejected', rejection, error: null, validation });
-        return { accepted: false, reason: rejection, validation };
-      }
-
-      const photoUri = await persistValidatedPhoto(validationUri);
-      if (capturedUri !== validationUri) await deleteIfPossible(capturedUri);
-      const accepted = { photoUri, validation };
-      setCaptureState({ phase: 'accepted', rejection: null, error: null, validation });
+      const photoUri = await persistValidatedPhoto(capturedUri);
+      capturedUri = null;
+      const accepted = { photoUri, validation: null, validationSkipped: 'expo_go' };
+      setCaptureState({ phase: 'accepted', rejection: null, error: null, validation: null });
       onPhotoAccepted?.(accepted);
       return { accepted: true, ...accepted };
     } catch (error) {
-      await deleteIfPossible(validationUri);
-      if (capturedUri !== validationUri) await deleteIfPossible(capturedUri);
+      await deleteIfPossible(capturedUri);
       setCaptureState({
         phase: 'error',
         rejection: null,
@@ -167,7 +69,7 @@ export function useCameraCapture({
       });
       return { accepted: false, reason: 'capture_failed', error };
     }
-  }, [cameraReady, captureState.phase, modelStatus, onPhotoAccepted, thresholds]);
+  }, [cameraReady, captureState.phase, onPhotoAccepted]);
 
   const clearFeedback = useCallback(() => {
     setCaptureState((current) => ({
