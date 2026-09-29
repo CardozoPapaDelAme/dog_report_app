@@ -10,6 +10,7 @@ import './i18n';
 import CameraScreen from './screens/CameraScreen.js';
 import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
+import ZoneSetScreen from './screens/ZoneSetScreen.js';
 import ReportDraftScreen from './screens/ReportDraftScreen.js';
 
 export default function App({ accessToken = null }) {
@@ -28,12 +29,15 @@ export default function App({ accessToken = null }) {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      {screen === 'configuration' ? (
+      {screen === 'zoneSets' ? (
+        <ZoneSetScreen accessToken={accessToken} onBack={() => setScreen('moderation')} />
+      ) : screen === 'configuration' ? (
         <ConfigurationScreen accessToken={accessToken} onBack={() => setScreen('moderation')} />
       ) : screen === 'moderation' ? (
         <CommandCenterScreen
           accessToken={accessToken}
           onOpenConfiguration={() => setScreen('configuration')}
+          onOpenZoneSets={() => setScreen('zoneSets')}
         />
       ) : screen === 'reportDraft' ? (
         <ReportDraftScreen
