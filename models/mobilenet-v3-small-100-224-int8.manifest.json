@@ -1,0 +1,39 @@
+{
+  "name": "MobileNetV3-Small 100 224 classification INT8",
+  "source": {
+    "model_page": "https://www.kaggle.com/models/google/mobilenet-v3/TfLite/small-100-224-classification-metadata/1",
+    "api_download": "https://www.kaggle.com/api/v1/models/google/mobilenet-v3/tfLite/small-100-224-classification-metadata/1/download",
+    "status": "downloaded_manually",
+    "notes": "User supplied C:/Users/MINEC/OneDrive/Documentos/1.tflite from mobilenet-v3-tflite-small-100-224-classification-metadata-v1.tar."
+  },
+  "expected_files": {
+    "model": "models/mobilenet_v3_small_100_224_int8.tflite",
+    "labels": "models/mobilenet_v3_small_100_224_labels.txt"
+  },
+  "license": {
+    "expected": "Apache-2.0",
+    "status": "confirmed_from_kaggle_model_page"
+  },
+  "sha256": "77C98343789C066287E1A5E85314428F47BD4302F053C920CE00A46D90CB1388",
+  "input": {
+    "shape": [1, 224, 224, 3],
+    "preprocessing": "Resize captured JPEG to 224x224 RGB. Quantized uint8/int8 uses raw channels; float32 uses channel/255."
+  },
+  "dog_classes": {
+    "downloaded_label_count": 1001,
+    "verified_range": [152, 269],
+    "first_label": "Chihuahua",
+    "last_label": "Mexican hairless",
+    "status": "verified_against_embedded_labels_txt"
+  },
+  "thresholds": {
+    "dog_probability": {
+      "value": 0.3,
+      "status": "provisional_until_real_photo_calibration"
+    },
+    "laplacian_blur_variance": {
+      "value": 120,
+      "status": "provisional_until_real_photo_calibration"
+    }
+  }
+}

@@ -5,6 +5,41 @@
     "no": "No",
     "cancel": "Cancel"
   },
+  "camera": {
+    "permissionTitle": "Allow camera access",
+    "permissionBody": "The app opens directly to the camera to capture report evidence. The photo is validated on the phone before continuing.",
+    "permissionButton": "Allow camera",
+    "withoutPhoto": "Report without photo",
+    "helper": "Take a clear photo of the dog",
+    "admin": "Review",
+    "retryTitle": "Retake the photo",
+    "model": {
+      "loading": "Loading model",
+      "ready": "Offline validation ready",
+      "missing": "Model pending",
+      "error": "Model unavailable"
+    },
+    "rejections": {
+      "no_dog": "We did not detect a dog with enough confidence.",
+      "blurry": "The photo is blurry or lacks detail.",
+      "model_missing": "The TFLite file must be versioned before photos can be accepted.",
+      "model_unavailable": "The model is not ready yet. Try again in a few seconds."
+    },
+    "errors": {
+      "capture": "We could not validate this photo. Try taking it again."
+    }
+  },
+  "reportDraft": {
+    "eyebrow": "Local draft",
+    "title": "Photo ready for the report",
+    "subtitle": "The image is saved as a private local file. It has not been uploaded or stored in the database yet.",
+    "noPhoto": "Continue without photo",
+    "validationTitle": "Local validation",
+    "dogProbability": "Dog probability: {{value}}%",
+    "blurVariance": "Laplacian variance: {{value}}",
+    "back": "Back to camera",
+    "formPending": "Form in next delivery"
+  },
   "commandCenter": {
     "eyebrow": "Administrator workspace",
     "title": "Command Center",
