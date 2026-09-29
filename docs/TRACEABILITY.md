@@ -205,3 +205,19 @@ Current report-intake coverage maps as follows:
 | `supabase/functions/api/controllers/report-controller.test.js` | RF01, RF06, RF24, RNF12, RNF36, HU-01, HU-06, HU-24 | Public command parsing, raw fingerprint handoff, unknown-field rejection, dynamic details validation |
 | `supabase/functions/api/services/report-service.test.js` | RF01, RNF09, RNF12, RNF26, HU-01 | Canonical idempotency hash, fingerprint-independent replay, replay short-circuit before geofence/rate/trust, server-time `client_created_at` window, hourly retry calculation |
 | `supabase/functions/api/services/trust-service.test.js` | RNF27, RNF28 | High-trust publication path and mandatory review for mock/imprecise location signals |
+
+## FAB-5 / L5 zone-set screen
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RNF09; approved decisions 5 and 17; L5 acceptance | File/paste input, WGS84 structural validation, normalized MultiPolygon SHA-256 and immutable draft metadata | `models/zoneSet.test.js` parity with FAB-2; `tests/ui/zoneSet.spec.js` file selection and stale-checksum prevention |
+| RNF20, RNF21, RNF33 | Screen → hook → authenticated command adapter; creation and approval-gated activation are independent POSTs | `services/zoneSetApi.test.js` reaches real FAB-2 Controller/Service; browser assertion of exact separate payloads and prior active-zone preservation |
+| RNF09, RNF33, RNF34 | No optimistic activation; exact field errors; blocked duplicate/uncertain submissions; session isolation; explicit navigation warning | 15 cases in `tests/ui/zoneSet.spec.js`, including GET-only activation reconciliation and revoked/changed sessions |
+
+`ZoneSetScreen`, `useZoneSets`, `models/zoneSet.js`, `services/zoneSetApi.js`
+and the native/web `zoneFile` adapters implement the client boundary. No table,
+RLS, transaction or approval policy changes. `routes/zoneSets.js` restores the
+documented `/admin/zone-sets` URLs and retains `/admin/zoneSets` aliases with
+identical guards. FAB-2 HTTP tests now assert the canonical URLs and auth on both
+spellings. Real JWT, managed deployment and physical-device checks remain pending;
+see `docs/TESTING.md` for exact simulated/compiled evidence and recovery limits.
