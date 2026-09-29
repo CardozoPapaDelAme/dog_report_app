@@ -1,5 +1,25 @@
 {
   "ready": "The client is ready.",
+  "login": {
+    "eyebrow": "Private workspace",
+    "title": "Sign in",
+    "subtitle": "Use the account provided by the technical team.",
+    "checking": "Checking session…",
+    "email": "Email address",
+    "emailPlaceholder": "name@hotel.com",
+    "password": "Password",
+    "showPassword": "Show",
+    "hidePassword": "Hide",
+    "submit": "Sign in",
+    "logout": "Sign out",
+    "footer": "Access is limited to authorized accounts.",
+    "error": "We could not sign in or verify access. Check your details and try again."
+  },
+  "associationDashboard": {
+    "eyebrow": "Chihuahua Hotel Association",
+    "title": "Association dashboard",
+    "body": "Your access is active. Report browsing will be added to this screen."
+  },
   "common": {
     "yes": "Yes",
     "no": "No",

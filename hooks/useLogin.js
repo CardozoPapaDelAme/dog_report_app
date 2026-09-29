@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-/** UI state adapter only; authentication policy lives in loginController. */
 export function useLogin(controller) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);

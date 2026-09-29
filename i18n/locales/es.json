@@ -1,5 +1,25 @@
 {
   "ready": "El cliente está listo.",
+  "login": {
+    "eyebrow": "Panel privado",
+    "title": "Inicia sesión",
+    "subtitle": "Ingresa con la cuenta que te proporcionó el equipo técnico.",
+    "checking": "Comprobando sesión…",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "nombre@hotel.com",
+    "password": "Contraseña",
+    "showPassword": "Mostrar",
+    "hidePassword": "Ocultar",
+    "submit": "Entrar",
+    "logout": "Cerrar sesión",
+    "footer": "El acceso está limitado a cuentas autorizadas.",
+    "error": "No pudimos iniciar sesión o validar el acceso. Revisa tus datos e inténtalo de nuevo."
+  },
+  "associationDashboard": {
+    "eyebrow": "Asociación de Hoteles de Chihuahua",
+    "title": "Panel de la Asociación",
+    "body": "Tu acceso está activo. La consulta de reportes se habilitará en esta pantalla."
+  },
   "common": {
     "yes": "Sí",
     "no": "No",

@@ -459,3 +459,24 @@ deployment containing FAB-1. Read values, attempt GPS 501 and verify no publicat
 correct it and enter a reason, publish once, then verify the new version and audit
 in staging. Confirm the old configuration remains in history. No live publication,
 account creation, migration or deployment was performed for L4.
+
+## RF15 / RF18 / RNF07 Expo login (L3)
+
+Run the focused login and secure-storage checks with:
+
+```sh
+npm run test:auth
+npx expo export --platform web
+```
+
+The controller checks that the role returned by `GET /me` selects the dashboard,
+expired sessions refresh before profile lookup, unknown roles fail closed, and a
+profile/refresh failure clears the current Supabase session. Secure-storage
+checks cover chunked Unicode values, replacement failure, cleanup, and corrupt
+or partial data. These tests use injected services and fake storage; they do not
+prove a live Supabase login or device Keychain/Android Keystore behavior.
+
+Copy the placeholders from `.env.example` into local Expo configuration and
+provide only the Supabase URL and publishable client key. Then sign in on a
+development build using provisioned accounts for both sibling roles and confirm
+the `/me`-selected destinations. Do not use a `service_role` key in the app.
