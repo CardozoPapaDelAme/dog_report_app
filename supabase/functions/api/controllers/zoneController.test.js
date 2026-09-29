@@ -129,7 +129,7 @@ Deno.test("FAB-2 HTTP integration: real service creates and activates with optio
       },
     }),
   );
-  const created = await app.request("/api/admin/zoneSets", {
+  const created = await app.request("/api/admin/zone-sets", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(await creationInput()),
@@ -139,7 +139,7 @@ Deno.test("FAB-2 HTTP integration: real service creates and activates with optio
     `Creation must succeed: ${await created.text()}`,
   );
   const activated = await app.request(
-    `/api/admin/zoneSets/${zoneSetId}/activate`,
+    `/api/admin/zone-sets/${zoneSetId}/activate`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -158,13 +158,13 @@ Deno.test("FAB-2 HTTP integration: real service creates and activates with optio
 
 Deno.test("FAB-2 HTTP: creation and activation expose only typed zoneSet data", async () => {
   const { app, calls } = harness();
-  const created = await app.request("/admin/zoneSets", {
+  const created = await app.request("/admin/zone-sets", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(await creationInput()),
   });
   const activated = await app.request(
-    `/admin/zoneSets/${zoneSetId}/activate`,
+    `/admin/zone-sets/${zoneSetId}/activate`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -208,27 +208,27 @@ Deno.test("FAB-2 HTTP: malformed input, query, identifiers and methods do not in
       }),
     ]
   ) {
-    const response = await app.request("/admin/zoneSets", {
+    const response = await app.request("/admin/zone-sets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,
     });
     assert(response.status === 400, "Invalid creation must return 400");
   }
-  const wrongId = await app.request("/admin/zoneSets/not-a-uuid/activate", {
+  const wrongId = await app.request("/admin/zone-sets/not-a-uuid/activate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ association_approval_reference: "AHC-1" }),
   });
   assert(wrongId.status === 400, "Invalid identifier must return 400");
-  const query = await app.request("/admin/zoneSets?environment=production", {
+  const query = await app.request("/admin/zone-sets?environment=production", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(await creationInput()),
   });
   assert(query.status === 400, "Environment query must be rejected");
   for (
-    const path of ["/admin/zoneSets", `/admin/zoneSets/${zoneSetId}/activate`]
+    const path of ["/admin/zone-sets", `/admin/zone-sets/${zoneSetId}/activate`]
   ) {
     const response = await app.request(path, { method: "PUT" });
     assert(
@@ -242,6 +242,8 @@ Deno.test("FAB-2 HTTP: malformed input, query, identifiers and methods do not in
 Deno.test("FAB-2 HTTP: application mounts canonical API routes and protects them", async () => {
   for (
     const path of [
+      "/api/admin/zone-sets",
+      `/api/admin/zone-sets/${zoneSetId}/activate`,
       "/api/admin/zoneSets",
       `/api/admin/zoneSets/${zoneSetId}/activate`,
     ]
@@ -253,7 +255,7 @@ Deno.test("FAB-2 HTTP: application mounts canonical API routes and protects them
       "Canonical route must require auth",
     );
   }
-  const unprefixed = await actualApp.request("/admin/zoneSets", {
+  const unprefixed = await actualApp.request("/admin/zone-sets", {
     method: "POST",
   });
   assert(unprefixed.status === 404, "Application basePath must be respected");

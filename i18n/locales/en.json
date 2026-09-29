@@ -180,5 +180,77 @@
       "invalid_request": "Check the values and the reason for the change.",
       "configuration_conflict": "Configuration changed during publication. Check the active version."
     }
+  },
+  "zoneSets": {
+    "open": "Manage zones",
+    "title": "Zone map",
+    "subtitle": "Prepare a map version, then activate it after Association approval.",
+    "current": "Current active zone",
+    "noActive": "There is no active zone in this environment.",
+    "version": "Version {{version}}",
+    "sourceVersion": "Source version",
+    "stepOne": "01 · Create draft",
+    "stepOneHelp": "Select a file or paste its content. Saving creates a new version and keeps the current active zone.",
+    "pick": "Select GeoJSON file",
+    "file": "File: {{name}}",
+    "content": "GeoJSON content",
+    "fileHelp": "A direct Polygon or MultiPolygon in WGS84 (longitude, latitude). Maximum 1 MiB. For a Feature or FeatureCollection, first export the reviewed geometry.",
+    "calculate": "Calculate checksum",
+    "checksum": "Fingerprint · SHA-256",
+    "checksumHelp": "Calculated from the normalized geometry stored by the server. Whitespace and key order do not change this fingerprint. The server also validates the geometry.",
+    "polygons_one": "{{count}} polygon prepared",
+    "polygons_other": "{{count}} polygons prepared",
+    "fields": {
+      "name": "Zone name",
+      "source_uri": "Original source URI",
+      "source_version": "Source version"
+    },
+    "create": "Save draft",
+    "created": "Draft saved. Uploading alone does not activate the zone.",
+    "stepTwo": "02 · Activate with approval",
+    "waitForDraft": "This step becomes available after the server confirms the draft was saved.",
+    "draftStatus": "Draft · not active yet",
+    "pendingConfirmation": "Status awaiting confirmation",
+    "approval": "Association approval reference",
+    "approvalHelp": "The Asociación de Hoteles de Chihuahua must approve this version and checksum outside the app. Enter the evidence reference; this field does not replace approval.",
+    "replaceHelp": "Activating this version retires the previous active zone. Its data and history are preserved.",
+    "activate": "Activate this version",
+    "activated": "Activation confirmed. This version is active.",
+    "newDraft": "Prepare another draft",
+    "uncertainTitle": "Result awaiting confirmation",
+    "uncertain": {
+      "create": "The draft could not be confirmed as saved. It will not be sent again automatically. Before creating another draft, ask the operator to check the operation record; there is no draft lookup to recover it here yet.",
+      "activate": "Activation could not be confirmed. Check the active zone before continuing. This operation will not be retried automatically."
+    },
+    "verify": "Check active zone",
+    "notConfirmed": "The current active zone does not match this draft. Keep its ID and ask the operator to verify its status before another activation attempt.",
+    "requestId": "Operation reference",
+    "leaveTitle": "Leave this draft?",
+    "leaveSaved": "The saved draft stays on the server, but this screen cannot retrieve drafts when you return yet. Keep its ID for an operator to review. A pending operation may have completed.",
+    "stay": "Stay here",
+    "leave": "Continue",
+    "validation": {
+      "empty": "Select a file or paste GeoJSON.",
+      "size": "The content exceeds the 1 MiB limit.",
+      "json": "The content is not valid JSON.",
+      "geometry": "Use a nonempty Polygon or MultiPolygon with only type and coordinates.",
+      "ring": "Each ring needs at least four positions and must end at its starting position.",
+      "position": "Each position must contain longitude from −180 to 180 and latitude from −90 to 90, without a third coordinate.",
+      "required": "Enter 1 to {{max}} characters; it cannot be blank.",
+      "uri": "Enter an absolute source URI, such as https://…",
+      "prepare": "Calculate the checksum of the current content before saving.",
+      "approval": "Enter an approval reference of 1 to 1000 characters."
+    },
+    "errors": {
+      "request_failed": "The operation could not be completed. Check your connection and the displayed status.",
+      "invalid_request": "The server rejected the data. Check the fields and geometry validity.",
+      "zone_set_conflict": "The draft cannot be activated or a concurrent change occurred. Check its status.",
+      "not_found": "The draft was not found in this environment.",
+      "dependency_unavailable": "The service is temporarily unavailable.",
+      "preflight_mismatch": "The service environment is not ready for this operation.",
+      "invalid_response": "The response cannot confirm the zone version.",
+      "checksum_unavailable": "The checksum could not be calculated. Prepare the content again."
+    },
+    "approvalHint": "Required: 1 to 1000 characters."
   }
 }
