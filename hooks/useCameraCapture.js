@@ -50,6 +50,7 @@ export function useCameraCapture({
       const captured = await cameraRef.current.takePictureAsync({
         quality: 0.9,
         skipProcessing: false,
+        shutterSound: false,
       });
       capturedUri = captured.uri;
 

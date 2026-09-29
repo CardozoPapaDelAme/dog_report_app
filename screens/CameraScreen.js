@@ -41,43 +41,26 @@ export default function CameraScreen({
   const [permission, requestPermission] = useCameraPermissions();
   const capture = useCameraCapture({ onPhotoAccepted });
   const feedback = reasonText(t, capture.captureState);
+  const hasPermission = Boolean(permission?.granted);
   const busy = capture.captureState.phase === 'capturing';
-  const captureDisabled = busy || !capture.cameraReady;
-
-  if (!permission) {
-    return (
-      <SafeAreaView style={styles.stateScreen}>
-        <ActivityIndicator color={colors.primary} />
-      </SafeAreaView>
-    );
-  }
-
-  if (!permission.granted) {
-    return (
-      <SafeAreaView style={styles.stateScreen}>
-        <View style={styles.permissionCard}>
-          <Text style={styles.permissionTitle}>{t('camera.permissionTitle')}</Text>
-          <Text style={styles.permissionBody}>{t('camera.permissionBody')}</Text>
-          <Pressable accessibilityRole="button" onPress={requestPermission} style={styles.permissionButton}>
-            <Text style={styles.permissionButtonText}>{t('camera.permissionButton')}</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const captureDisabled = busy || !capture.cameraReady || !hasPermission;
 
   return (
     <View style={styles.root}>
-      <CameraView
-        ref={capture.cameraRef}
-        style={StyleSheet.absoluteFill}
-        facing="back"
-        mode="picture"
-        onCameraReady={() => capture.setCameraReady(true)}
-      />
+      {hasPermission ? (
+        <CameraView
+          ref={capture.cameraRef}
+          style={StyleSheet.absoluteFill}
+          facing="back"
+          mode="picture"
+          onCameraReady={() => capture.setCameraReady(true)}
+        />
+      ) : (
+        <View style={styles.cameraFallback} />
+      )}
       <View pointerEvents="none" style={styles.vignette} />
 
-      {showModerationShortcut ? (
+      {showModerationShortcut && hasPermission ? (
         <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
           <View style={styles.topBarSpacer} />
           <Pressable accessibilityRole="button" onPress={onOpenModeration} style={styles.adminButton}>
@@ -86,46 +69,67 @@ export default function CameraScreen({
         </View>
       ) : null}
 
-      {feedback ? (
+      {!hasPermission ? (
+        <SafeAreaView pointerEvents="box-none" style={styles.permissionOverlay}>
+          <View style={styles.permissionCard}>
+            {!permission ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <>
+                <Text style={styles.permissionTitle}>{t('camera.permissionTitle')}</Text>
+                <Text style={styles.permissionBody}>{t('camera.permissionBody')}</Text>
+                <Pressable accessibilityRole="button" onPress={requestPermission} style={styles.permissionButton}>
+                  <Text style={styles.permissionButtonText}>{t('camera.permissionButton')}</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </SafeAreaView>
+      ) : null}
+
+      {feedback && hasPermission ? (
         <Pressable accessibilityRole="button" onPress={capture.clearFeedback} style={styles.toast}>
           <Text style={styles.toastTitle}>{t('camera.retryTitle')}</Text>
           <Text style={styles.toastBody}>{feedback}</Text>
         </Pressable>
       ) : null}
 
-      <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-        <Pressable
-          accessibilityRole="button"
-          disabled={busy}
-          onPress={onReportWithoutPhoto}
-          style={({ pressed }) => [styles.noPhotoButton, pressed && styles.pressed, busy && styles.disabled]}
-        >
-          <Text style={styles.noPhotoText}>{t('camera.withoutPhoto')}</Text>
-        </Pressable>
+      {hasPermission ? (
+        <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={onReportWithoutPhoto}
+            style={({ pressed }) => [styles.noPhotoButton, pressed && styles.pressed, busy && styles.disabled]}
+          >
+            <Text style={styles.noPhotoText}>{t('camera.withoutPhoto')}</Text>
+          </Pressable>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ busy, disabled: captureDisabled }}
-          disabled={captureDisabled}
-          onPress={capture.capture}
-          style={({ pressed }) => [
-            styles.captureButton,
-            pressed && styles.pressed,
-            captureDisabled && styles.captureDisabled,
-          ]}
-        >
-          {busy ? <ActivityIndicator color={colors.primary} /> : <View style={styles.captureInner} />}
-        </Pressable>
-      </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ busy, disabled: captureDisabled }}
+            disabled={captureDisabled}
+            onPress={capture.capture}
+            style={({ pressed }) => [
+              styles.captureButton,
+              pressed && styles.pressed,
+              captureDisabled && styles.captureDisabled,
+            ]}
+          >
+            {busy ? <ActivityIndicator color={colors.primary} /> : <View style={styles.captureInner} />}
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
+  cameraFallback: { ...StyleSheet.absoluteFillObject, backgroundColor: '#111711' },
   vignette: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.12)' },
-  stateScreen: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f7fbf1', padding: 24 },
-  permissionCard: { width: '100%', maxWidth: 420, borderRadius: 16, backgroundColor: '#ffffff', padding: 20, gap: 12 },
+  permissionOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  permissionCard: { width: '100%', maxWidth: 420, borderRadius: 16, backgroundColor: '#ffffff', padding: 20, gap: 12, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 8 },
   permissionTitle: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 22, lineHeight: 29 },
   permissionBody: { color: '#5d6859', fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14, lineHeight: 21 },
   permissionButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.primary },
