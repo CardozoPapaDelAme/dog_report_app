@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -23,6 +26,37 @@ const colors = {
   warningSoft: '#fff0c2', danger: '#ba1a1a', dangerSoft: '#ffdad6', sky: '#e3f2fd',
 };
 
+// Commands that require a written reason (docs/API.md: note is required except for approve).
+const NOTE_COMMANDS = {
+  delete: {
+    eyebrow: 'moderation.deleteEyebrow',
+    title: 'moderation.deleteTitle',
+    body: 'moderation.deleteBody',
+    label: 'moderation.noteLabel',
+    placeholder: 'moderation.notePlaceholder',
+    confirm: 'moderation.confirmDelete',
+    tone: colors.danger,
+  },
+  hide: {
+    eyebrow: 'moderation.hideEyebrow',
+    title: 'moderation.hideTitle',
+    body: 'moderation.hideBody',
+    label: 'moderation.hideNoteLabel',
+    placeholder: 'moderation.hideNotePlaceholder',
+    confirm: 'moderation.confirmHide',
+    tone: colors.warning,
+  },
+  restore: {
+    eyebrow: 'moderation.restoreEyebrow',
+    title: 'moderation.restoreTitle',
+    body: 'moderation.restoreBody',
+    label: 'moderation.restoreNoteLabel',
+    placeholder: 'moderation.restoreNotePlaceholder',
+    confirm: 'moderation.confirmRestore',
+    tone: colors.primary,
+  },
+};
+
 function Metric({ label, value, tone }) {
   return (
     <View style={[styles.metric, tone === 'danger' && styles.metricDanger]}>
@@ -32,8 +66,10 @@ function Metric({ label, value, tone }) {
   );
 }
 
-function ReportCard({ report, busy, onApprove, onDelete, t }) {
+function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t }) {
   const canApprove = report.allowed_commands?.includes('approve');
+  const canHide = report.allowed_commands?.includes('hide');
+  const canRestore = report.allowed_commands?.includes('restore');
   const canDelete = report.allowed_commands?.includes('delete');
   const incident = t(`moderation.incidents.${report.incident_type}`, report.incident_type);
   return (
@@ -68,43 +104,70 @@ function ReportCard({ report, busy, onApprove, onDelete, t }) {
       </View>
 
       <View style={styles.actions}>
-        <Pressable
-          accessibilityRole="button"
-          disabled={!canApprove || busy}
-          onPress={() => onApprove(report.id)}
-          style={({ pressed }) => [styles.approveButton, pressed && styles.pressed, (!canApprove || busy) && styles.disabled]}
-        >
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.approveText}>{t('moderation.approve')}</Text>}
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          disabled={!canDelete || busy}
-          onPress={() => onDelete(report)}
-          style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed, (!canDelete || busy) && styles.disabled]}
-        >
-          <Text style={styles.deleteText}>{t('moderation.delete')}</Text>
-        </Pressable>
+        {canApprove ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => onApprove(report.id)}
+            style={({ pressed }) => [styles.approveButton, pressed && styles.pressed, busy && styles.disabled]}
+          >
+            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.approveText}>{t('moderation.approve')}</Text>}
+          </Pressable>
+        ) : null}
+        {canHide ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => onHide(report)}
+            style={({ pressed }) => [styles.hideButton, pressed && styles.pressed, busy && styles.disabled]}
+          >
+            <Text style={styles.hideText}>{t('moderation.hide')}</Text>
+          </Pressable>
+        ) : null}
+        {canRestore ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => onRestore(report)}
+            style={({ pressed }) => [styles.restoreButton, pressed && styles.pressed, busy && styles.disabled]}
+          >
+            <Text style={styles.restoreText}>{t('moderation.restore')}</Text>
+          </Pressable>
+        ) : null}
+        {canDelete ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => onDelete(report)}
+            style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed, busy && styles.disabled]}
+          >
+            <Text style={styles.deleteText}>{t('moderation.delete')}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
 }
 
-export default function CommandCenterScreen({ accessToken, onOpenConfiguration, onLogout, logoutPending = false }) {
+export default function CommandCenterScreen({ accessToken, onOpenConfiguration, onOpenZoneSets, onLogout, logoutPending = false }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const queue = useModerationQueue(accessToken);
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [noteTarget, setNoteTarget] = useState(null);
   const [note, setNote] = useState('');
   const columns = width >= 820 ? 2 : 1;
   const summary = summarizeModerationPage(queue.reports);
+  const noteCopy = noteTarget ? NOTE_COMMANDS[noteTarget.command] : null;
 
-  async function confirmDelete() {
-    if (!deleteTarget || !note.trim()) return;
-    const succeeded = await queue.execute(deleteTarget.id, 'delete', note.trim());
-    if (succeeded) {
-      setDeleteTarget(null);
-      setNote('');
-    }
+  function closeNoteModal() {
+    setNoteTarget(null);
+    setNote('');
+  }
+
+  async function confirmNote() {
+    if (!noteTarget || !note.trim()) return;
+    const succeeded = await queue.execute(noteTarget.report.id, noteTarget.command, note.trim());
+    if (succeeded) closeNoteModal();
   }
 
   const header = (
@@ -113,6 +176,11 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
         <Text style={styles.eyebrow}>{t('commandCenter.eyebrow')}</Text>
         <Text style={styles.title}>{t('commandCenter.title')}</Text>
         <Text style={styles.subtitle}>{t('commandCenter.subtitle')}</Text>
+        {onOpenZoneSets ? (
+          <Pressable accessibilityRole="button" onPress={onOpenZoneSets} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
+            <Text style={styles.moreText}>{t('zoneSets.open')}</Text>
+          </Pressable>
+        ) : null}
         {onOpenConfiguration ? (
           <Pressable accessibilityRole="button" onPress={onOpenConfiguration} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
             <Text style={styles.moreText}>{t('configuration.open')}</Text>
@@ -169,7 +237,9 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
               report={item}
               busy={queue.pendingReportId === item.id}
               onApprove={(id) => queue.execute(id, 'approve')}
-              onDelete={(report) => setDeleteTarget(report)}
+              onHide={(report) => setNoteTarget({ report, command: 'hide' })}
+              onRestore={(report) => setNoteTarget({ report, command: 'restore' })}
+              onDelete={(report) => setNoteTarget({ report, command: 'delete' })}
               t={t}
             />
           </View>
@@ -185,32 +255,41 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
         columnWrapperStyle={columns === 2 ? styles.gridRow : undefined}
       />
 
-      <Modal transparent animationType="fade" visible={Boolean(deleteTarget)} onRequestClose={() => setDeleteTarget(null)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalEyebrow}>{t('moderation.deleteEyebrow')}</Text>
-            <Text style={styles.modalTitle}>{t('moderation.deleteTitle')}</Text>
-            <Text style={styles.modalBody}>{t('moderation.deleteBody')}</Text>
-            <TextInput
-              accessibilityLabel={t('moderation.noteLabel')}
-              multiline
-              maxLength={1000}
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('moderation.notePlaceholder')}
-              placeholderTextColor={colors.muted}
-              style={styles.noteInput}
-            />
-            <View style={styles.modalActions}>
-              <Pressable accessibilityRole="button" onPress={() => { setDeleteTarget(null); setNote(''); }} style={styles.cancelButton}>
-                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-              </Pressable>
-              <Pressable accessibilityRole="button" disabled={!note.trim()} onPress={confirmDelete} style={[styles.confirmDelete, !note.trim() && styles.disabled]}>
-                <Text style={styles.confirmDeleteText}>{t('moderation.confirmDelete')}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
+      <Modal transparent animationType="fade" visible={Boolean(noteTarget)} onRequestClose={closeNoteModal}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalBackdrop}>
+          {noteCopy ? (
+            <Pressable accessible={false} onPress={Keyboard.dismiss} style={styles.modalCard}>
+              <Text style={[styles.modalEyebrow, { color: noteCopy.tone }]}>{t(noteCopy.eyebrow)}</Text>
+              <Text style={styles.modalTitle}>{t(noteCopy.title)}</Text>
+              <Text style={styles.modalBody}>{t(noteCopy.body)}</Text>
+              <TextInput
+                accessibilityLabel={t(noteCopy.label)}
+                multiline
+                maxLength={1000}
+                returnKeyType="done"
+                submitBehavior="blurAndSubmit"
+                value={note}
+                onChangeText={setNote}
+                placeholder={t(noteCopy.placeholder)}
+                placeholderTextColor={colors.muted}
+                style={styles.noteInput}
+              />
+              <View style={styles.modalActions}>
+                <Pressable accessibilityRole="button" onPress={closeNoteModal} style={styles.cancelButton}>
+                  <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={!note.trim() || Boolean(queue.pendingReportId)}
+                  onPress={confirmNote}
+                  style={[styles.confirmButton, { backgroundColor: noteCopy.tone }, (!note.trim() || queue.pendingReportId) && styles.disabled]}
+                >
+                  <Text style={styles.confirmText}>{t(noteCopy.confirm)}</Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          ) : null}
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -258,6 +337,10 @@ const styles = StyleSheet.create({
   approveText: { color: '#fff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   deleteButton: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderColor: colors.danger, borderWidth: 1, borderRadius: 14 },
   deleteText: { color: colors.danger, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
+  hideButton: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderColor: colors.warning, borderWidth: 1, borderRadius: 14 },
+  hideText: { color: colors.warning, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
+  restoreButton: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderColor: colors.primary, borderWidth: 1, borderRadius: 14 },
+  restoreText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   pressed: { opacity: 0.78 }, disabled: { opacity: 0.42 },
   loader: { padding: 30 }, empty: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', textAlign: 'center', padding: 40 },
   moreButton: { alignSelf: 'center', borderColor: colors.primary, borderWidth: 1, borderRadius: 999, minWidth: 150, padding: 13, alignItems: 'center', marginTop: 4 },
@@ -271,13 +354,13 @@ const styles = StyleSheet.create({
   authBody: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14, lineHeight: 21, marginTop: 8, maxWidth: 420, textAlign: 'center' },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(17, 25, 15, 0.58)' },
   modalCard: { backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 34 },
-  modalEyebrow: { color: colors.danger, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
+  modalEyebrow: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
   modalTitle: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 22, marginTop: 7 },
   modalBody: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14, lineHeight: 21, marginTop: 7 },
   noteInput: { minHeight: 108, color: colors.ink, backgroundColor: '#f2f5ec', borderColor: colors.outline, borderWidth: 1, borderRadius: 12, fontFamily: 'PlusJakartaSans_400Regular', marginTop: 16, padding: 12, textAlignVertical: 'top' },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
   cancelButton: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
   cancelText: { color: colors.muted, fontFamily: 'PlusJakartaSans_700Bold' },
-  confirmDelete: { flex: 1.4, alignItems: 'center', justifyContent: 'center', minHeight: 48, backgroundColor: colors.danger, borderRadius: 14 },
-  confirmDeleteText: { color: '#fff', fontFamily: 'PlusJakartaSans_700Bold' },
+  confirmButton: { flex: 1.4, alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 14 },
+  confirmText: { color: '#fff', fontFamily: 'PlusJakartaSans_700Bold' },
 });

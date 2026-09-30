@@ -28,6 +28,22 @@ Deno.test('moderation API keeps commands generic for hide and restore extensions
   assert(captured.options.body === JSON.stringify({ note: 'Reason' }), 'command note should be serialized');
 });
 
+Deno.test('moderation API sends hide and restore with their required note', async () => {
+  for (const command of ['hide', 'restore']) {
+    let captured;
+    await runModerationCommand(
+      { accessToken: 'token', reportId: 'report-id', command, note: 'Reason' },
+      (path, options) => {
+        captured = { path, options };
+        return Promise.resolve(Response.json({ data: { status: 'pending_review' } }));
+      },
+    );
+    assert(captured.path === `/admin/reports/report-id/${command}`, `${command} path should be exact`);
+    assert(captured.options.method === 'POST', `${command} should be a POST`);
+    assert(captured.options.body === JSON.stringify({ note: 'Reason' }), `${command} note should be serialized`);
+  }
+});
+
 Deno.test('moderation API exposes typed server failures', async () => {
   try {
     await getModerationQueue({ accessToken: 'expired' }, () =>

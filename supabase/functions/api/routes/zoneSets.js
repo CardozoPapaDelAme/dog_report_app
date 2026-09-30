@@ -16,14 +16,14 @@ export function createZoneRoutes(
 ) {
   const routes = new Hono();
   const controller = createZoneController(service);
-  routes.use("/admin/zoneSets", onlyPost);
-  routes.use("/admin/zoneSets/:zone_set_id/activate", onlyPost);
-  routes.post("/admin/zoneSets", authorize, controller.create);
-  routes.post(
-    "/admin/zoneSets/:zone_set_id/activate",
-    authorize,
-    controller.activate,
-  );
+  // Keep the documented FAB-2 contract; the camelCase spelling shipped in main
+  // remains an alias with the exact same authorization and command semantics.
+  for (const path of ["/admin/zone-sets", "/admin/zoneSets"]) {
+    routes.use(path, onlyPost);
+    routes.use(`${path}/:zone_set_id/activate`, onlyPost);
+    routes.post(path, authorize, controller.create);
+    routes.post(`${path}/:zone_set_id/activate`, authorize, controller.activate);
+  }
   return routes;
 }
 

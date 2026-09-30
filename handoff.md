@@ -1,3 +1,34 @@
+# Handoff — Wildogscanner / Fabián — L5 actualizado
+
+Actualizado: 2026-09-29. TD-106 / FAB-5, entrega local.
+
+- Rama: `TD-106-fab-5-pantalla-de-zone-sets`, creada desde `origin/main` (`afef615`).
+- L4 ya está integrado por PR #18 (`b80cad0`); los pendientes L4 del historial
+  inferior y del handoff del Escritorio están superados.
+- L5 implementado: archivo o texto GeoJSON, checksum canónico, procedencia,
+  creación de borrador y activación explícita con aprobación externa.
+- Pantalla/hook/modelos/servicios separados; misma navegación y estilo que L4.
+- Recuperada la URL contractual `/admin/zone-sets`; se conserva el alias
+  `/admin/zoneSets` que había llegado a main. Misma autorización y servicio.
+- Deno: 156 aprobadas, 0 fallidas, 5 SQL omitidas. Playwright: 23 aprobadas
+  (15 de L5 y 8 de L4). Exportación Android/iOS/web correcta.
+- No push, PR, merge ni despliegue L5. Ver commits `FAB-5` con
+  `git log afef615..HEAD --oneline`.
+- La prueba con Administrador real sigue aplazada. No hubo cambios de Supabase.
+- Sesión: `App.accessToken` continúa pendiente de conexión a la capa del equipo.
+- Importante: FAB-2 no ofrece GET de borradores. La pantalla advierte al salir
+  que no podrá recuperar el borrador guardado aquí. Resultado incierto de creación
+  se revisa con operador; activación incierta se puede confirmar con GET de zona
+  activa por ID/checksum. Nunca reenviar POST automáticamente.
+- Pendiente prueba física/emulador del selector nativo, teclado, accesibilidad y atrás.
+- Entrega completa y decisiones: `docs/FAB-5-DELIVERY.md`.
+- Pruebas reproducibles: `docs/TESTING.md`, sección FAB-5.
+- Próximo ticket de la guía: L6, pantalla de duplicados; no iniciado.
+
+---
+
+## Historial L4 (conservado; estado de publicación superado)
+
 # Handoff — Wildogscanner / Fabián (`fab`)
 
 Actualizado: 2026-09-22. Entrega local de L4 / TD-105 / FAB-4.

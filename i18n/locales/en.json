@@ -25,6 +25,57 @@
     "no": "No",
     "cancel": "Cancel"
   },
+  "camera": {
+    "permissionTitle": "Allow camera access",
+    "permissionBody": "The app opens directly to the camera to capture report evidence. The photo is validated on the phone before continuing.",
+    "permissionButton": "Allow camera",
+    "withoutPhoto": "Report without photo",
+    "helper": "Take a clear photo of the dog",
+    "admin": "Review",
+    "staffLogin": "Staff login",
+    "retryTitle": "Retake the photo",
+    "model": {
+      "loading": "Loading model",
+      "ready": "Offline validation ready",
+      "missing": "Model pending",
+      "error": "Model unavailable"
+    },
+    "rejections": {
+      "no_dog": "We did not detect a dog with enough confidence.",
+      "blurry": "The photo is blurry or lacks detail.",
+      "model_missing": "The TFLite file must be versioned before photos can be accepted.",
+      "model_unavailable": "The model is not ready yet. Try again in a few seconds."
+    },
+    "errors": {
+      "capture": "We could not validate this photo. Try taking it again."
+    }
+  },
+  "reportDraft": {
+    "eyebrow": "Local draft",
+    "title": "Photo ready for the report",
+    "subtitle": "The image is saved as a private local file. It has not been uploaded or stored in the database yet.",
+    "noPhoto": "Continue without photo",
+    "savingDraft": "Saving local draft…",
+    "queueTitle": "Local queue",
+    "id": "UUID: {{value}}",
+    "localState": "Local state: {{value}}",
+    "photoFile": "Photo in local file: {{value}}",
+    "locationTitle": "Saved location",
+    "coordinates": "Coordinates: {{value}}",
+    "accuracy": "Accuracy: {{value}}",
+    "mockSuspected": "Mock location suspected: {{value}}",
+    "clientCreatedAt": "Client timestamp: {{value}}",
+    "errorTitle": "We could not create the draft",
+    "validationTitle": "Local validation",
+    "dogProbability": "Dog probability: {{value}}%",
+    "blurVariance": "Laplacian variance: {{value}}",
+    "back": "Back to camera",
+    "formPending": "Form in next delivery",
+    "errors": {
+      "location_permission_denied": "Location permission is required to save where the report happened.",
+      "default": "Try again from the camera."
+    }
+  },
   "commandCenter": {
     "eyebrow": "Administrator workspace",
     "title": "Command Center",
@@ -42,6 +93,8 @@
     "exactLocation": "Exact location",
     "suspiciousSignals": "Needs attention: suspicious signals were detected.",
     "approve": "Approve",
+    "hide": "Hide",
+    "restore": "Restore",
     "delete": "Delete",
     "loadMore": "Load more",
     "empty": "There are no pending reports on this page.",
@@ -55,6 +108,18 @@
     "noteLabel": "Deletion reason",
     "notePlaceholder": "Describe why it should be removed...",
     "confirmDelete": "Confirm deletion",
+    "hideEyebrow": "Hide report",
+    "hideTitle": "Hide this report",
+    "hideBody": "The report will stop being shown publicly, but it stays in the queue and can be restored. Record the reason for the audit trail.",
+    "hideNoteLabel": "Reason for hiding",
+    "hideNotePlaceholder": "Describe why it should be hidden...",
+    "confirmHide": "Confirm hide",
+    "restoreEyebrow": "Restore report",
+    "restoreTitle": "Restore this report",
+    "restoreBody": "The report goes back to pending review; it will not be public until someone approves it. Record the reason for the audit trail.",
+    "restoreNoteLabel": "Reason for restoring",
+    "restoreNotePlaceholder": "Describe why it should be restored...",
+    "confirmRestore": "Confirm restore",
     "status": {
       "pending_review": "Pending",
       "hidden": "Hidden",
@@ -151,5 +216,77 @@
       "invalid_request": "Check the values and the reason for the change.",
       "configuration_conflict": "Configuration changed during publication. Check the active version."
     }
+  },
+  "zoneSets": {
+    "open": "Manage zones",
+    "title": "Zone map",
+    "subtitle": "Prepare a map version, then activate it after Association approval.",
+    "current": "Current active zone",
+    "noActive": "There is no active zone in this environment.",
+    "version": "Version {{version}}",
+    "sourceVersion": "Source version",
+    "stepOne": "01 · Create draft",
+    "stepOneHelp": "Select a file or paste its content. Saving creates a new version and keeps the current active zone.",
+    "pick": "Select GeoJSON file",
+    "file": "File: {{name}}",
+    "content": "GeoJSON content",
+    "fileHelp": "A direct Polygon or MultiPolygon in WGS84 (longitude, latitude). Maximum 1 MiB. For a Feature or FeatureCollection, first export the reviewed geometry.",
+    "calculate": "Calculate checksum",
+    "checksum": "Fingerprint · SHA-256",
+    "checksumHelp": "Calculated from the normalized geometry stored by the server. Whitespace and key order do not change this fingerprint. The server also validates the geometry.",
+    "polygons_one": "{{count}} polygon prepared",
+    "polygons_other": "{{count}} polygons prepared",
+    "fields": {
+      "name": "Zone name",
+      "source_uri": "Original source URI",
+      "source_version": "Source version"
+    },
+    "create": "Save draft",
+    "created": "Draft saved. Uploading alone does not activate the zone.",
+    "stepTwo": "02 · Activate with approval",
+    "waitForDraft": "This step becomes available after the server confirms the draft was saved.",
+    "draftStatus": "Draft · not active yet",
+    "pendingConfirmation": "Status awaiting confirmation",
+    "approval": "Association approval reference",
+    "approvalHelp": "The Asociación de Hoteles de Chihuahua must approve this version and checksum outside the app. Enter the evidence reference; this field does not replace approval.",
+    "replaceHelp": "Activating this version retires the previous active zone. Its data and history are preserved.",
+    "activate": "Activate this version",
+    "activated": "Activation confirmed. This version is active.",
+    "newDraft": "Prepare another draft",
+    "uncertainTitle": "Result awaiting confirmation",
+    "uncertain": {
+      "create": "The draft could not be confirmed as saved. It will not be sent again automatically. Before creating another draft, ask the operator to check the operation record; there is no draft lookup to recover it here yet.",
+      "activate": "Activation could not be confirmed. Check the active zone before continuing. This operation will not be retried automatically."
+    },
+    "verify": "Check active zone",
+    "notConfirmed": "The current active zone does not match this draft. Keep its ID and ask the operator to verify its status before another activation attempt.",
+    "requestId": "Operation reference",
+    "leaveTitle": "Leave this draft?",
+    "leaveSaved": "The saved draft stays on the server, but this screen cannot retrieve drafts when you return yet. Keep its ID for an operator to review. A pending operation may have completed.",
+    "stay": "Stay here",
+    "leave": "Continue",
+    "validation": {
+      "empty": "Select a file or paste GeoJSON.",
+      "size": "The content exceeds the 1 MiB limit.",
+      "json": "The content is not valid JSON.",
+      "geometry": "Use a nonempty Polygon or MultiPolygon with only type and coordinates.",
+      "ring": "Each ring needs at least four positions and must end at its starting position.",
+      "position": "Each position must contain longitude from −180 to 180 and latitude from −90 to 90, without a third coordinate.",
+      "required": "Enter 1 to {{max}} characters; it cannot be blank.",
+      "uri": "Enter an absolute source URI, such as https://…",
+      "prepare": "Calculate the checksum of the current content before saving.",
+      "approval": "Enter an approval reference of 1 to 1000 characters."
+    },
+    "errors": {
+      "request_failed": "The operation could not be completed. Check your connection and the displayed status.",
+      "invalid_request": "The server rejected the data. Check the fields and geometry validity.",
+      "zone_set_conflict": "The draft cannot be activated or a concurrent change occurred. Check its status.",
+      "not_found": "The draft was not found in this environment.",
+      "dependency_unavailable": "The service is temporarily unavailable.",
+      "preflight_mismatch": "The service environment is not ready for this operation.",
+      "invalid_response": "The response cannot confirm the zone version.",
+      "checksum_unavailable": "The checksum could not be calculated. Prepare the content again."
+    },
+    "approvalHint": "Required: 1 to 1000 characters."
   }
 }

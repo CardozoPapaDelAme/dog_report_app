@@ -29,11 +29,19 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF17 | Asociación de Hoteles de Chihuahua export | Same paginated role route/view | CSV/Excel parity and authorization |
 | RF18 | Administrator login | `LoginScreen` → `useLogin` → login Controller/Service → Supabase Auth + `GET /me` | Provisioned account; no signup; role from server |
 | RF19 | Administrator Command Center and moderation queue | `GET /admin/moderation-queue`; `CommandCenterScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; page-scoped responsive ES/EN summary; no aggregate/BI endpoint |
-| RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/delete update the queue projection; no direct mobile database update; audited reversible deletion |
+| RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/hide/restore/delete update the queue projection; hide, restore and delete require a written reason; no direct mobile database update; audited reversible deletion |
 | RF21 | Flag review/state machine | FlagService + restore/approve routes | Threshold, audit, restore semantics |
 | RF22 | On-device attributes | Structured report columns | Color automatic; size/collar manual |
 | RF23 | Duplicate review | Administrator duplicate routes; candidates/groups/memberships | Human-only, pending connected set, canonical, reversible, audited |
 | RF24 | Dynamic form | `details` JSONB validator | Allowed keys/types per incident |
+
+L3 public map executable coverage is split across
+`controllers/publicMapController.test.js`, `services/publicMapService.test.js`,
+`repositories/publicMapRepository.test.js`, and the opt-in
+`tests/publicMapPostgres.test.js`. Together they cover RF10–RF14 and HU-10–HU-14:
+stable read-time 50 m public approximation, bounded public report and cluster
+queries, server-side metric clustering, highest severity and complete six-key
+type counts.
 
 ## Non-functional requirements
 
@@ -99,7 +107,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | HU-17 | RF17 | Asociación de Hoteles de Chihuahua export | Same role route/presenter | Export parity |
 | HU-18 | RF18, RNF07 | Administrator auth | JWT/profile/role + `GET /me` | Provisioned access |
 | HU-19 | RF19, RF08 | Command Center moderation queue | Administrator route/presenter + responsive Expo screen | Flag/trust context, explicitly page-scoped summary, pagination, refresh, empty/error/session states |
-| HU-20 | RF20, RNF33 | Moderation | Hono approve/delete routes + generic Expo command client | Audited logical deletion; successful commands update the local queue projection |
+| HU-20 | RF20, RNF33 | Moderation | Hono approve/hide/restore/delete routes + generic Expo command client | Audited logical deletion; buttons follow `allowed_commands`; successful commands update the local queue projection |
 | HU-21 | RF21, RNF29 | Flag review | FlagService + restore/approve routes | Configured threshold workflow |
 | HU-22 | RF22, RNF11 | Attributes | Structured columns | Color/size/collar semantics |
 | HU-23 | RF23, RNF30 | Duplicate review | Administrator duplicate routes | Canonical/reverse/audit |
@@ -214,3 +222,19 @@ Current report-intake coverage maps as follows:
 | `supabase/functions/api/controllers/report-controller.test.js` | RF01, RF06, RF24, RNF12, RNF36, HU-01, HU-06, HU-24 | Public command parsing, raw fingerprint handoff, unknown-field rejection, dynamic details validation |
 | `supabase/functions/api/services/report-service.test.js` | RF01, RNF09, RNF12, RNF26, HU-01 | Canonical idempotency hash, fingerprint-independent replay, replay short-circuit before geofence/rate/trust, server-time `client_created_at` window, hourly retry calculation |
 | `supabase/functions/api/services/trust-service.test.js` | RNF27, RNF28 | High-trust publication path and mandatory review for mock/imprecise location signals |
+
+## FAB-5 / L5 zone-set screen
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RNF09; approved decisions 5 and 17; L5 acceptance | File/paste input, WGS84 structural validation, normalized MultiPolygon SHA-256 and immutable draft metadata | `models/zoneSet.test.js` parity with FAB-2; `tests/ui/zoneSet.spec.js` file selection and stale-checksum prevention |
+| RNF20, RNF21, RNF33 | Screen → hook → authenticated command adapter; creation and approval-gated activation are independent POSTs | `services/zoneSetApi.test.js` reaches real FAB-2 Controller/Service; browser assertion of exact separate payloads and prior active-zone preservation |
+| RNF09, RNF33, RNF34 | No optimistic activation; exact field errors; blocked duplicate/uncertain submissions; session isolation; explicit navigation warning | 15 cases in `tests/ui/zoneSet.spec.js`, including GET-only activation reconciliation and revoked/changed sessions |
+
+`ZoneSetScreen`, `useZoneSets`, `models/zoneSet.js`, `services/zoneSetApi.js`
+and the native/web `zoneFile` adapters implement the client boundary. No table,
+RLS, transaction or approval policy changes. `routes/zoneSets.js` restores the
+documented `/admin/zone-sets` URLs and retains `/admin/zoneSets` aliases with
+identical guards. FAB-2 HTTP tests now assert the canonical URLs and auth on both
+spellings. Real JWT, managed deployment and physical-device checks remain pending;
+see `docs/TESTING.md` for exact simulated/compiled evidence and recovery limits.

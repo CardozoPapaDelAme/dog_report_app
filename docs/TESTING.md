@@ -147,6 +147,25 @@ or retry state through spies/fakes before any live-project exercise.
   cap rather than scanning unbounded history.
 - Test online loading under the RNF02 prototype target and explicit offline UX.
 
+Executable L3 API coverage:
+
+- `controllers/publicMapController.test.js`, `services/publicMapService.test.js`
+  and `repositories/publicMapRepository.test.js` cover query defaults, invalid
+  requests, anonymous Service context, zoom-radius mapping, highest severity,
+  complete six-key `type_counts`, read-time public approximation and repository
+  exclusions.
+- `tests/publicMapPostgres.test.js` is opt-in against a fresh local
+  PostgreSQL/PostGIS database named `fab_public_map_test`. It applies the real
+  migrations and verifies stable non-exact public pins, canonical filtering,
+  viewport clustering, highest severity and all six count keys.
+
+```sh
+PUBLIC_MAP_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:55435/fab_public_map_test' \
+  deno test --allow-env --allow-net=127.0.0.1:55435 \
+  --allow-read=supabase/migrations --config supabase/functions/api/deno.json \
+  supabase/functions/api/tests/publicMapPostgres.test.js
+```
+
 ## Mobile/native tests
 
 - Build development and release clients for supported iOS/Android targets; Expo Go
@@ -480,3 +499,60 @@ Copy the placeholders from `.env.example` into local Expo configuration and
 provide only the Supabase URL and publishable client key. Then sign in on a
 development build using provisioned accounts for both sibling roles and confirm
 the `/me`-selected destinations. Do not use a `service_role` key in the app.
+## FAB-5 / L5 zone-set screen verification (2026-09-29)
+
+Run the complete client/backend suite using the API Deno configuration:
+
+```sh
+deno test --no-lock --config supabase/functions/api/deno.json models services supabase/functions/api
+npm run test:admin-ui
+CI=1 EXPO_NO_TELEMETRY=1 npx expo export --platform all
+```
+
+Verified: **156 passed, 0 failed, 5 ignored** in Deno; the ignored suites require
+an explicitly configured isolated PostgreSQL environment and were not executed
+for this UI ticket. FAB-5 adds **six model/adapter/integration cases**, including
+real FAB-2 Controller/Service calls with simulated authentication and persistence.
+The canonical hyphenated FAB-2 routes are covered again after a main-branch file
+rename also changed their URLs; the camelCase URLs remain compatibility aliases.
+
+**23 browser tests pass: 15 FAB-5 and eight FAB-4 regression cases.** Run just
+L5 with `npm run test:zone-sets-ui`, or just L4 with
+`npm run test:configuration-ui`. The shared isolated fixture still lives at
+`tests/ui/serve-configuration.mjs`; `/?zones` selects the actual ZoneSetScreen.
+HTTP interception supplies test responses, never real credentials or shared data.
+
+FAB-5 browser coverage includes selecting a real browser File, canonical SHA-256,
+paste/invalid JSON, replacing a valid file with an invalid one, checksum
+invalidation after edits, exact server field errors, independent draft/activation
+requests, required approval, prior active-zone preservation, double-click guards,
+changed/revoked/missing sessions, late creation/activation replies, uncertain
+POST results, GET-only activation reconciliation, conflict blocking and draft
+navigation/reset. Screenshots under ignored `test-results/` were visually
+inspected at 390 × 844 and 1200 × 900.
+
+Android, iOS and web exports pass. Device file selection uses Expo DocumentPicker
+with a cache copy and FileSystem File.text; native SHA-256 uses Expo Crypto.
+Web uses a separate browser adapter. Native modules require a development build.
+Reference APIs: [DocumentPicker SDK 57](https://docs.expo.dev/versions/v57.0.0/sdk/document-picker/),
+[Crypto SDK 57](https://docs.expo.dev/versions/v57.0.0/sdk/crypto/).
+These exports are not a physical-device/emulator run: native picker cancellation,
+keyboard/focus, screen-reader feedback and hardware back remain manual checks.
+
+The postponed real Administrator check remains pending. In an agreed staging
+project, with the canonical FAB-2 routes deployed, enter **Gestionar zonas** from
+moderation. Select an explicitly labeled reviewed test geometry, verify its
+checksum, enter source metadata and save. Verify that the old zone remains active
+and the new version is a draft. Obtain the appropriate external test approval,
+enter its reference, activate once, and verify the new active version, prior
+retirement and both audit records. A successful GET configuration does not itself
+supply a session: the L3 login flow restores Supabase Auth and supplies its access
+token only after `GET /me` confirms an active profile and role.
+
+There is no draft GET/list endpoint in FAB-2. The screen can activate the draft
+returned in the current screen session, but cannot retrieve it after leaving or
+recover a lost creation response. It warns before leaving, displays the immutable
+ID/checksum and blocks uncertain resubmission. An uncertain activation can only be
+confirmed when GET configuration returns that exact ID/checksum; otherwise an
+operator must inspect the result. No extra lookup endpoint or automatic replay
+was invented for L5. See [the delivery record](FAB-5-DELIVERY.md).
