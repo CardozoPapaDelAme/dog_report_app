@@ -104,6 +104,10 @@ export function createDuplicateService(dependencies = {}) {
     }
   }
   return {
+    async candidates({ actor }) {
+      assertAdministrator(actor);
+      return inTransaction(actor, (tx) => repo.listPendingDuplicateCandidates(tx));
+    },
     async list({ actor }) {
       assertAdministrator(actor);
       return inTransaction(actor, (tx) => repo.listActiveDuplicateGroups(tx));

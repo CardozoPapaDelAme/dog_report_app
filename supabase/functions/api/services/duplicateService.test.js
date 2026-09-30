@@ -158,3 +158,17 @@ Deno.test("FAB-3 SERVICE: known storage failures are mapped and unknown errors s
     await rejects(() => f.service.list({ actor }), code);
   }
 });
+Deno.test('FAB-6 SERVICE: candidate reads recheck actor/environment inside local context',async()=>{
+  const f=duplicateFixture();
+  const snapshot=await f.service.candidates({actor});
+  assert(snapshot.reports.length===3 && snapshot.candidates.length===2);
+  assert(f.events[1][0].includes('app.user_id') && f.events[2][0].includes('app.role'));
+  for (const [repository,code] of [
+    [{readDuplicateActor:()=>({...actor.profile,active:false})},'forbidden'],
+    [{readDuplicateEnvironment:()=> 'production'},'preflight_mismatch'],
+  ]) {
+    const denied=duplicateFixture({repository});
+    await rejects(()=>denied.service.candidates({actor}),code);
+    assert(denied.events.at(-1)==='rollback');
+  }
+});

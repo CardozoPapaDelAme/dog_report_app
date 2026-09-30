@@ -31,7 +31,7 @@ function harness(options = {}) {
     });
   return { ...f, app, request };
 }
-const root = "/admin/duplicateGroups";
+const root = "/admin/duplicate-groups";
 Deno.test("FAB-3 HTTP integration: list, resolve without note and reverse use real Controller and Service", async () => {
   const f = harness();
   const empty = await f.request(root, undefined, "GET");
@@ -162,4 +162,36 @@ Deno.test("FAB-3 HTTP: canonical app routes require authentication and preserve 
       headers: { Authorization: "not bearer" },
     })).status === 401,
   );
+});
+
+Deno.test('FAB-6 HTTP: candidate snapshot includes visible reports, disappears on resolution and returns on reversal', async () => {
+  const f = harness();
+  f.state().reports[0].fingerprint_hash = 'private';
+  const read = async () => {
+    const response = await f.request('/admin/duplicate-candidates', undefined, 'GET');
+    assert(response.status === 200 && response.headers.has('X-Request-Id'));
+    return (await response.json()).data;
+  };
+  const before = await read();
+  assert(before.reports.length === 3 && before.candidates.length === 2);
+  assert(before.reports[0].status === 'visible' && !('fingerprint_hash' in before.reports[0]));
+  const group = (await (await f.request(root, input)).json()).data.duplicate_group;
+  assert((await read()).candidates.length === 0);
+  await f.request(`${root}/${group.id}/reverse`, {note:'Reopen'});
+  assert((await read()).candidates.length === 2 && f.state().reports.every((r)=>r.status==='visible'));
+});
+Deno.test('FAB-6 HTTP: candidate read denies query, wrong method, anonymous and Association actors', async () => {
+  const f = harness();
+  assert((await f.request('/admin/duplicate-candidates?limit=1',undefined,'GET')).status===400);
+  const wrong = await f.request('/admin/duplicate-candidates',{},'POST');
+  assert(wrong.status===405 && wrong.headers.get('Allow')==='GET');
+  assert(f.events.length===0);
+  for (const [denied, status] of [[{type:'anonymous'},401],[{...actor,role:'association'},403]]) {
+    const deniedHarness = harness({actor:denied});
+    assert((await deniedHarness.request('/admin/duplicate-candidates',undefined,'GET')).status===status);
+    assert(deniedHarness.events.length===0);
+  }
+  for (const path of ['/api/admin/duplicate-candidates','/api/admin/duplicate-groups','/api/admin/duplicateGroups']) {
+    assert((await actualApp.request(path)).status===401);
+  }
 });

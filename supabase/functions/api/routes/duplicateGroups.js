@@ -21,15 +21,15 @@ export function createDuplicateRoutes(
 ) {
   const routes = new Hono();
   const controller = createDuplicateController(service);
-  routes.use("/admin/duplicateGroups", methods(["GET", "POST"]));
-  routes.use("/admin/duplicateGroups/:group_id/reverse", methods(["POST"]));
-  routes.get("/admin/duplicateGroups", authorize, controller.list);
-  routes.post("/admin/duplicateGroups", authorize, controller.resolve);
-  routes.post(
-    "/admin/duplicateGroups/:group_id/reverse",
-    authorize,
-    controller.reverse,
-  );
+  for (const path of ["/admin/duplicate-groups", "/admin/duplicateGroups"]) {
+    routes.use(path, methods(["GET", "POST"]));
+    routes.use(`${path}/:group_id/reverse`, methods(["POST"]));
+    routes.get(path, authorize, controller.list);
+    routes.post(path, authorize, controller.resolve);
+    routes.post(`${path}/:group_id/reverse`, authorize, controller.reverse);
+  }
+  routes.use("/admin/duplicate-candidates", methods(["GET"]));
+  routes.get("/admin/duplicate-candidates", authorize, controller.candidates);
   return routes;
 }
 export const duplicateRoutes = createDuplicateRoutes();
