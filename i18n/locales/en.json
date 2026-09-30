@@ -34,11 +34,26 @@
     "title": "Photo ready for the report",
     "subtitle": "The image is saved as a private local file. It has not been uploaded or stored in the database yet.",
     "noPhoto": "Continue without photo",
+    "savingDraft": "Saving local draft…",
+    "queueTitle": "Local queue",
+    "id": "UUID: {{value}}",
+    "localState": "Local state: {{value}}",
+    "photoFile": "Photo in local file: {{value}}",
+    "locationTitle": "Saved location",
+    "coordinates": "Coordinates: {{value}}",
+    "accuracy": "Accuracy: {{value}}",
+    "mockSuspected": "Mock location suspected: {{value}}",
+    "clientCreatedAt": "Client timestamp: {{value}}",
+    "errorTitle": "We could not create the draft",
     "validationTitle": "Local validation",
     "dogProbability": "Dog probability: {{value}}%",
     "blurVariance": "Laplacian variance: {{value}}",
     "back": "Back to camera",
-    "formPending": "Form in next delivery"
+    "formPending": "Form in next delivery",
+    "errors": {
+      "location_permission_denied": "Location permission is required to save where the report happened.",
+      "default": "Try again from the camera."
+    }
   },
   "commandCenter": {
     "eyebrow": "Administrator workspace",
