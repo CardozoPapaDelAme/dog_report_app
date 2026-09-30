@@ -99,3 +99,37 @@ export async function insertDuplicateAudit(
     VALUES (${actorId}, ${action}, 'duplicate_group', ${current.group.id},
       ${tx.json(previous)}, ${tx.json(current)}, ${note ?? null})`;
 }
+
+export async function listPendingDuplicateCandidates(tx) {
+  // One snapshot returns complete edges and their reviewable endpoints, including
+  // visible reports absent from the moderation queue. Never truncate a graph.
+  const rows = await tx`
+    WITH eligible AS (
+      SELECT c.id, c.report_a, c.report_b, c.status,
+        c.distance_meters, c.minutes_apart, c.matched_signals
+      FROM public.duplicate_candidates c
+      JOIN public.reports a ON a.id = c.report_a
+      JOIN public.reports b ON b.id = c.report_b
+      WHERE c.status = 'pending' AND a.status <> 'deleted' AND b.status <> 'deleted'
+        AND NOT EXISTS (
+          SELECT 1 FROM public.duplicate_memberships m
+          WHERE m.active AND m.report_id IN (c.report_a, c.report_b)
+        )
+    ), endpoints AS (
+      SELECT report_a AS id FROM eligible UNION SELECT report_b AS id FROM eligible
+    )
+    SELECT
+      COALESCE((SELECT jsonb_agg(jsonb_build_object(
+        'id', r.id, 'status', r.status, 'incident_type', r.incident_type,
+        'sighting_type', r.sighting_type, 'details', r.details,
+        'dog', jsonb_build_object('predominant_color', r.color_predominante,
+          'size', r.tamano, 'has_collar', r.tiene_collar),
+        'location', jsonb_build_object(
+          'longitude', extensions.ST_X(r.location::extensions.geometry),
+          'latitude', extensions.ST_Y(r.location::extensions.geometry)),
+        'client_created_at', r.client_created_at
+      ) ORDER BY r.id) FROM public.reports r JOIN endpoints e ON e.id = r.id), '[]'::jsonb) AS reports,
+      COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id) FROM eligible e), '[]'::jsonb) AS candidates
+  `;
+  return rows[0];
+}

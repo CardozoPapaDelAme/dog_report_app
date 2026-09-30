@@ -48,6 +48,14 @@ export function duplicateFixture(overrides = {}) {
     profile: { ...actor.profile },
   };
   const repository = {
+    listPendingDuplicateCandidates: () => {
+      const available = state.reports.filter((report) => report.status !== "deleted" &&
+        !state.memberships.some((m) => m.active && m.report_id === report.id));
+      const ids = new Set(available.map((r) => r.id));
+      const candidates = state.candidates.filter((c) => c.status === "pending" && ids.has(c.report_a) && ids.has(c.report_b));
+      const endpoints = new Set(candidates.flatMap((c) => [c.report_a, c.report_b]));
+      return structuredClone({ reports: available.filter((r) => endpoints.has(r.id)), candidates });
+    },
     readDuplicateActor: () => {
       events.push("profile");
       return state.profile;

@@ -1,3 +1,40 @@
+# Handoff — Wildogscanner / Fabián — L6 actualizado
+
+Actualizado: 2026-09-30. TD-107 / FAB-6, entrega local.
+
+- Rama: `TD-107-fab-6-pantalla-de-gestion-de-duplicados`.
+- Base: `ed36681` de `origin/main`. L5 ya fue mergeado mediante PR #25
+  (`5da050c`); el histórico inferior de L5 es previo a ese merge.
+- Main ahora incluye la sesión de Ricardo y la cola de borradores de Erick.
+  L6 recibe `login.session.accessToken` desde App y tiene entrada en moderación.
+- Pantalla de candidatos agrupados por conexiones reales, selección de reportes,
+  canónico explícito, validación local del subgrafo seleccionado, resolución,
+  listado de grupos activos y reversión con motivo.
+- A–B–C es válido con los tres seleccionados; A/C sin B muestra error sin POST.
+- Revertir reabre candidatos y conserva originales/moderación, como acordó Fabián.
+- Se añadió GET `/admin/duplicate-candidates` en las capas de FAB-3: la cola de
+  moderación no incluye reportes visibles y era insuficiente para este flujo.
+  Una sola consulta SQL, contexto/RLS/grants existentes; sin migraciones.
+- La consulta retorna el grafo completo, sin truncar ni paginar. Escalado futuro
+  requiere preservar componentes; no paginar arbitrariamente sus reportes.
+- Rutas `/admin/duplicate-groups` restablecidas; aliases camelCase conservados.
+- POST inciertos/conflictos requieren GET antes de otra selección. Ningún
+  reintento automático. Respuestas tardías y 401/403 no exponen datos de otra sesión.
+- Deno: 194 aprobadas, 0 fallidas, 5 SQL omitidas en suite general.
+- SQL local separado: 1 suite, 10 pasos aprobados con PostgreSQL/PostGIS,
+  Repository real y app_backend. Contenedor desechable retirado.
+- Playwright: 39 aprobadas (16 L6, 23 L4/L5). Exportación Android/iOS/web correcta.
+- Administrador real sigue aplazado. Pendiente prueba nativa de teclado,
+  accesibilidad y botón atrás; no se tocó Supabase.
+- Para staging desplegar el nuevo GET y las rutas contractuales con la única API.
+- Sin push, PR o merge de L6; revisar commits con `git log ed36681..HEAD --oneline`.
+- Entrega y decisiones: `docs/FAB-6-DELIVERY.md`.
+- Contrato, pruebas, trazabilidad y ADR-021 actualizados.
+
+---
+
+## Historial L5 (estado de publicación superado por PR #25)
+
 # Handoff — Wildogscanner / Fabián — L5 actualizado
 
 Actualizado: 2026-09-29. TD-106 / FAB-5, entrega local.

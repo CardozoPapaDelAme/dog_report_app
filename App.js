@@ -17,6 +17,7 @@ import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
 import LoginScreen from './screens/loginScreen.js';
 import ReportDraftScreen from './screens/ReportDraftScreen.js';
+import DuplicateManagementScreen from './screens/DuplicateManagementScreen.js';
 import ZoneSetScreen from './screens/ZoneSetScreen.js';
 import { createAuthService } from './services/authService.js';
 import { supabase } from './services/supabaseClient.js';
@@ -87,6 +88,8 @@ export default function App() {
         logoutPending={login.pending}
       />
     );
+  } else if (login.session && screen === 'duplicates') {
+    content = <DuplicateManagementScreen accessToken={login.session.accessToken} onBack={() => setScreen('moderation')} />;
   } else if (login.session && screen === 'zoneSets') {
     content = <ZoneSetScreen accessToken={login.session.accessToken} onBack={() => setScreen('moderation')} />;
   } else if (login.session) {
@@ -95,6 +98,7 @@ export default function App() {
         accessToken={login.session.accessToken}
         onOpenConfiguration={() => setScreen('configuration')}
         onOpenZoneSets={() => setScreen('zoneSets')}
+        onOpenDuplicates={() => setScreen('duplicates')}
         onLogout={login.logout}
         logoutPending={login.pending}
       />
