@@ -288,5 +288,74 @@
       "checksum_unavailable": "The checksum could not be calculated. Prepare the content again."
     },
     "approvalHint": "Required: 1 to 1000 characters."
+  },
+  "duplicates": {
+    "open": "Manage duplicates",
+    "title": "Duplicate management",
+    "subtitle": "Review system suggestions. Choose a canonical report and reports that represent the same case.",
+    "loading": "Loading candidates and active groups…",
+    "pending": "Pending candidates",
+    "empty": "There are no suggestions available to resolve.",
+    "component": "Suggestion {{number}} · {{count}} connected reports",
+    "report": "Report {{id}}",
+    "select": "Select {{report}}",
+    "chooseCanonical": "Choose {{report}} as canonical",
+    "canonicalChosen": "Canonical selected",
+    "canonicalOption": "Use as canonical report",
+    "willBeDuplicate": "When confirmed, this will be marked as a duplicate of the selected canonical report.",
+    "observed": "Observed",
+    "dog": "Attributes",
+    "collar": "Collar",
+    "links": "Connections suggested by the system",
+    "selection": "Selection: {{count}} reports",
+    "reviewSelection": "Review selection ({{count}})",
+    "canonicalSummary": "Canonical: report {{id}}",
+    "chooseHelp": "Select at least two reports and choose one of them as canonical.",
+    "note": "Resolution reason (optional)",
+    "noteHint": "Up to 1000 characters.",
+    "preserve": "Resolution only marks the canonical report and its duplicates. It does not delete, combine or modify original information.",
+    "resolve": "Confirm resolution",
+    "active": "Active groups",
+    "noActive": "There are no active resolved groups.",
+    "members": "Group reports",
+    "resolutionVersion": "Resolution version {{version}}",
+    "reverse": "Reverse resolution",
+    "reverseNote": "Reversal reason",
+    "reverseHelp": "Candidates return to review. All original information and each report’s moderation state are preserved, including hidden or deleted reports.",
+    "confirmReverse": "Confirm reversal",
+    "refresh": "Refresh candidates and groups",
+    "verify": "Check status before continuing",
+    "uncertain": "The result could not be confirmed. The request will not be retried automatically. Read the current groups and candidates before preparing another operation.",
+    "refreshAfterSuccess": "The operation was confirmed, but the list could not be refreshed. Check current status before continuing.",
+    "discardTitle": "Discard this selection?",
+    "discardBody": "The selection and written reasons will be lost. No reports will be changed.",
+    "success": {
+      "resolve": "Resolution confirmed. The group is active.",
+      "reverse": "Reversal confirmed. Candidates return to review; moderation is preserved."
+    },
+    "busy": {
+      "resolve": "Saving resolution…",
+      "reverse": "Reversing resolution…",
+      "refresh": "Refreshing candidates…"
+    },
+    "validation": {
+      "count": "Select 2 to 500 distinct reports.",
+      "unavailable": "A selected report is no longer available or belongs to an active group. Refresh the list.",
+      "disconnected": "Selected reports are not connected. Include the reports connecting them or select another set. The resolution will not be sent.",
+      "canonical": "Choose one of the selected reports as canonical.",
+      "note": "Enter a valid reason of 1 to 1000 characters."
+    },
+    "errors": {
+      "request_failed": "The request could not be completed. Check your connection.",
+      "invalid_response": "The server response cannot verify the candidates or group.",
+      "invalid_request": "The server rejected the resolution. Check the indicated fields.",
+      "duplicate_graph_disconnected": "Candidates changed and these reports are no longer connected. Refresh the list.",
+      "duplicate_membership_conflict": "A report already belongs to another active group. Refresh the list.",
+      "duplicate_group_conflict": "The group changed or has already been reversed. Check its status.",
+      "not_found": "The group or a report was not found.",
+      "dependency_unavailable": "The service is temporarily unavailable.",
+      "preflight_mismatch": "The service environment is not ready for this operation."
+    },
+    "selectionWarning": "Invalid selection: review its connections before confirming."
   }
 }

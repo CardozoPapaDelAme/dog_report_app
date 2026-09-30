@@ -288,5 +288,74 @@
       "checksum_unavailable": "No se pudo calcular el checksum. Vuelve a preparar el contenido."
     },
     "approvalHint": "Obligatoria: entre 1 y 1000 caracteres."
+  },
+  "duplicates": {
+    "open": "Gestionar duplicados",
+    "title": "Gestión de duplicados",
+    "subtitle": "Revisa las sugerencias del sistema. Elige un reporte canónico y los reportes que representan el mismo caso.",
+    "loading": "Cargando candidatos y grupos activos…",
+    "pending": "Candidatos pendientes",
+    "empty": "No hay sugerencias disponibles para resolver.",
+    "component": "Sugerencia {{number}} · {{count}} reportes conectados",
+    "report": "Reporte {{id}}",
+    "select": "Seleccionar {{report}}",
+    "chooseCanonical": "Elegir {{report}} como canónico",
+    "canonicalChosen": "Canónico elegido",
+    "canonicalOption": "Usar como reporte canónico",
+    "willBeDuplicate": "Si confirmas, se marcará como duplicado del canónico elegido.",
+    "observed": "Observado",
+    "dog": "Características",
+    "collar": "Collar",
+    "links": "Conexiones sugeridas por el sistema",
+    "selection": "Selección: {{count}} reportes",
+    "reviewSelection": "Revisar selección ({{count}})",
+    "canonicalSummary": "Canónico: reporte {{id}}",
+    "chooseHelp": "Selecciona al menos dos reportes y elige uno de ellos como canónico.",
+    "note": "Motivo de la resolución (opcional)",
+    "noteHint": "Hasta 1000 caracteres.",
+    "preserve": "Resolver solo marca el canónico y sus duplicados. No borra, combina ni modifica la información original.",
+    "resolve": "Confirmar resolución",
+    "active": "Grupos activos",
+    "noActive": "No hay grupos resueltos activos.",
+    "members": "Reportes del grupo",
+    "resolutionVersion": "Versión de resolución {{version}}",
+    "reverse": "Revertir resolución",
+    "reverseNote": "Motivo de la reversión",
+    "reverseHelp": "Los candidatos vuelven a revisión. Se conserva toda la información original y el estado de moderación de cada reporte, incluso si está oculto o eliminado.",
+    "confirmReverse": "Confirmar reversión",
+    "refresh": "Actualizar candidatos y grupos",
+    "verify": "Consultar estado antes de continuar",
+    "uncertain": "No se confirmó el resultado. La petición no se repetirá automáticamente. Consulta los grupos y candidatos actuales antes de preparar otra operación.",
+    "refreshAfterSuccess": "La operación fue confirmada, pero la lista no pudo actualizarse. Consulta el estado actual antes de continuar.",
+    "discardTitle": "¿Descartar esta selección?",
+    "discardBody": "Se perderán la selección y los motivos escritos. No se modificará ningún reporte.",
+    "success": {
+      "resolve": "Resolución confirmada. El grupo está activo.",
+      "reverse": "Reversión confirmada. Los candidatos vuelven a revisión; la moderación se conserva."
+    },
+    "busy": {
+      "resolve": "Guardando resolución…",
+      "reverse": "Revirtiendo resolución…",
+      "refresh": "Actualizando candidatos…"
+    },
+    "validation": {
+      "count": "Selecciona entre 2 y 500 reportes distintos.",
+      "unavailable": "Un reporte seleccionado ya no está disponible o pertenece a un grupo activo. Actualiza la lista.",
+      "disconnected": "Los reportes seleccionados no están conectados entre sí. Incluye los reportes que los conectan o selecciona otro conjunto. No se enviará la resolución.",
+      "canonical": "Elige como canónico uno de los reportes seleccionados.",
+      "note": "Escribe un motivo válido de entre 1 y 1000 caracteres."
+    },
+    "errors": {
+      "request_failed": "No se pudo completar la consulta u operación. Revisa tu conexión.",
+      "invalid_response": "La respuesta del servidor no permite verificar los candidatos o el grupo.",
+      "invalid_request": "El servidor rechazó la resolución. Revisa los campos indicados.",
+      "duplicate_graph_disconnected": "Los candidatos cambiaron y los reportes ya no están conectados. Actualiza la lista.",
+      "duplicate_membership_conflict": "Algún reporte ya pertenece a otro grupo activo. Actualiza la lista.",
+      "duplicate_group_conflict": "El grupo cambió o ya fue revertido. Consulta su estado actual.",
+      "not_found": "No se encontró el grupo o alguno de los reportes.",
+      "dependency_unavailable": "El servicio no está disponible por el momento.",
+      "preflight_mismatch": "El entorno del servicio no está listo para esta operación."
+    },
+    "selectionWarning": "Selección inválida: revisa las conexiones antes de confirmar."
   }
 }
