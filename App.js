@@ -4,21 +4,20 @@ import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/70
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import './i18n';
 import CameraScreen from './screens/CameraScreen.js';
 import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
 import ZoneSetScreen from './screens/ZoneSetScreen.js';
-import ReportDraftScreen from './screens/ReportDraftScreen.js';
-import { useReportDraftQueue } from './hooks/useReportDraftQueue.js';
+import ReportFormScreen from './screens/ReportFormScreen.js';
+import { useReportDraftFlow } from './hooks/useReportDraftFlow.js';
 
 export default function App({ accessToken = null }) {
   const [screen, setScreen] = useState('camera');
-  const [draftId, setDraftId] = useState(null);
-  const [draftError, setDraftError] = useState(null);
-  const draftQueue = useReportDraftQueue();
+  const openReportForm = useCallback(() => setScreen('reportDraft'), []);
+  const reportDraftFlow = useReportDraftFlow({ onOpenReportForm: openReportForm });
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_600SemiBold,
@@ -27,19 +26,6 @@ export default function App({ accessToken = null }) {
 
   if (!fontsLoaded && !fontError) {
     return null;
-  }
-  const activeDraft = draftQueue.drafts.find((draft) => draft.id === draftId) ?? null;
-
-  async function openReportDraft(photo) {
-    setScreen('reportDraft');
-    setDraftId(null);
-    setDraftError(null);
-    try {
-      const created = await draftQueue.createDraft({ photo });
-      setDraftId(created.id);
-    } catch (error) {
-      setDraftError(error);
-    }
   }
 
   return (
@@ -56,10 +42,12 @@ export default function App({ accessToken = null }) {
           onOpenZoneSets={() => setScreen('zoneSets')}
         />
       ) : screen === 'reportDraft' ? (
-        <ReportDraftScreen
-          draft={activeDraft}
-          loading={draftQueue.loading || (!activeDraft && !draftError)}
-          error={draftError ?? draftQueue.error}
+        <ReportFormScreen
+          draft={reportDraftFlow.activeDraft}
+          loading={reportDraftFlow.loading}
+          error={reportDraftFlow.error}
+          queueDraft={reportDraftFlow.queueDraft}
+          syncDraft={reportDraftFlow.syncDraft}
           onBackToCamera={() => setScreen('camera')}
         />
       ) : (
@@ -67,10 +55,10 @@ export default function App({ accessToken = null }) {
           showModerationShortcut={Boolean(accessToken)}
           onOpenModeration={() => setScreen('moderation')}
           onReportWithoutPhoto={() => {
-            void openReportDraft(null);
+            void reportDraftFlow.openReportDraft(null);
           }}
           onPhotoAccepted={(photo) => {
-            void openReportDraft(photo);
+            void reportDraftFlow.openReportDraft(photo);
           }}
         />
       )}

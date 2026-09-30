@@ -11,6 +11,7 @@
     "test:configuration-ui": "playwright test configuration.spec.js",
     "preview:configuration-test": "node tests/ui/serve-configuration.mjs",
     "test:zone-sets-ui": "playwright test zoneSet.spec.js",
+    "test:report-form-ui": "playwright test reportForm.spec.js",
     "test:admin-ui": "playwright test"
   },
   "dependencies": {

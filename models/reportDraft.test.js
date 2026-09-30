@@ -91,9 +91,10 @@ Deno.test('L6 draft model keeps mock suspicion when provider or detector reports
 
 Deno.test('L6 draft model freezes payload with same UUID and rejects server-owned fields', () => {
   const draft = createLocalReportDraft({ id, locationSnapshot });
+  const rawFingerprint = '  device-fingerprint-1  ';
   const queued = queueReportDraft(draft, {
     reportFields,
-    deviceFingerprint: 'device-fingerprint-1',
+    deviceFingerprint: rawFingerprint,
     now: '2026-09-28T20:02:00.000Z',
   });
   const payload = thawReportPayload(queued.payload_json);
@@ -102,13 +103,13 @@ Deno.test('L6 draft model freezes payload with same UUID and rejects server-owne
   assert(payload.client_created_at === locationSnapshot.captured_at);
   assert(payload.location.mock_suspected === false);
   assert(payload.photo.expected === false);
-  assert(payload.anti_abuse.device_fingerprint === 'device-fingerprint-1');
+  assert(payload.anti_abuse.device_fingerprint === rawFingerprint);
 
   let failed = false;
   try {
     queueReportDraft(draft, {
       reportFields: { ...reportFields, status: 'visible' },
-      deviceFingerprint: 'device-fingerprint-1',
+      deviceFingerprint: rawFingerprint,
     });
   } catch (error) {
     failed = error.message.includes('unsupported_report_fields');

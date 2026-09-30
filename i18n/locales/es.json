@@ -55,6 +55,117 @@
       "default": "Intenta nuevamente desde la cámara."
     }
   },
+  "reportForm": {
+    "eyebrow": "Reporte público",
+    "title": "Nuevo Reporte",
+    "subtitle": "El reporte conserva su UUID local y se sincroniza con el servidor cuando envías este formulario.",
+    "loading": "Preparando reporte local…",
+    "draftErrorTitle": "No pudimos preparar el reporte",
+    "back": "Volver a cámara",
+    "close": "Cerrar",
+    "submit": "Enviar reporte",
+    "retrySubmit": "Reintentar sincronización",
+    "submitting": "Enviando…",
+    "noPhoto": "Sin foto",
+    "photoAttached": "Foto adjunta",
+    "selectPlaceholder": "Selecciona una opción",
+    "summaryTitle": "Reporte",
+    "id": "UUID: {{value}}",
+    "localState": "Estado local: {{value}}",
+    "coordinates": "Coordenadas: {{value}}",
+    "accuracy": "Precisión: {{value}}",
+    "dogProbability": "Probabilidad perro: {{value}}%",
+    "frozenTitle": "Payload congelado",
+    "frozenBody": "Este reporte ya tiene contenido encolado. Reintentar usa el mismo UUID y el mismo payload.",
+    "successTitle": "Reporte enviado",
+    "successBody": "El servidor aceptó este reporte. No se volverá a enviar como reporte nuevo.",
+    "photoPendingTitle": "Foto pendiente",
+    "photoPendingBody": "El reporte fue aceptado y la foto sigue en procesamiento o carga. Esta pantalla conserva el estado para la siguiente etapa.",
+    "errorTitle": "No pudimos completar el envío",
+    "onlyDescription": "Para esta categoría no hay preguntas adicionales.",
+    "sections": {
+      "incident": "Datos base",
+      "details": "Cantidad",
+      "dog": "Detalles Físicos"
+    },
+    "fields": {
+      "incident_type": "Tipo de Incidente",
+      "sighting_type": "Perro solitario o manada",
+      "descripcion": "Descripción Opcional",
+      "cantidad_aprox": "Cantidad aproximada de perros",
+      "hubo_mordida": "¿Hubo mordida?",
+      "tipo_animal": "Tipo de animal afectado",
+      "resulto_herido": "¿Resultó herido?",
+      "cantidad_afectada": "Cantidad afectada",
+      "situacion": "Situación del perro",
+      "dog_size": "Tamaño aproximado",
+      "has_collar": "¿Trae collar?"
+    },
+    "incidents": {
+      "avistamiento_simple": "Avistamiento",
+      "ataque_mascota": "Ataque a mascota",
+      "ataque_ganado": "Ataque a ganado",
+      "ataque_humano": "Ataque a persona",
+      "perro_lastimado": "Perro lastimado",
+      "otro": "Otro"
+    },
+    "sighting": {
+      "solitario": "Solitario",
+      "manada": "Manada"
+    },
+    "dogSize": {
+      "chico": "Chico",
+      "mediano": "Mediano",
+      "grande": "Grande"
+    },
+    "collar": {
+      "no_se": "No sé",
+      "si": "Sí",
+      "no": "No"
+    },
+    "boolean": {
+      "no_se": "No sé",
+      "si": "Sí",
+      "no": "No"
+    },
+    "situations": {
+      "herido": "Herido",
+      "atropellado": "Atropellado",
+      "atrapado": "Atrapado",
+      "mal_estado": "Mal estado"
+    },
+    "validation": {
+      "required": "Este campo es obligatorio.",
+      "requiredChoice": "Elige una opción.",
+      "integerRange": "Escribe un número entero entre {{min}} y {{max}}.",
+      "descriptionLength": "La descripción admite máximo {{max}} caracteres.",
+      "textLength": "Este texto admite máximo {{max}} caracteres."
+    },
+    "errors": {
+      "draft_not_ready": "El reporte local todavía no está listo. Espera un momento y vuelve a intentar.",
+      "location_permission_denied": "Necesitamos permiso de ubicación para registrar dónde ocurrió el reporte.",
+      "invalid_device_fingerprint": "No se pudo preparar la huella local del dispositivo. Reinicia la app antes de enviar.",
+      "invalid_request": "El servidor rechazó la forma del reporte. Revisa los campos obligatorios.",
+      "invalid_coordinates": "La ubicación no está dentro de una zona activa o no cumple el contrato de coordenadas.",
+      "invalid_details": "Las respuestas no coinciden con las preguntas permitidas para este tipo de incidente.",
+      "client_created_at_out_of_bounds": "La hora del teléfono está fuera de la ventana permitida para reportes nuevos.",
+      "report_id_payload_conflict": "Este UUID ya existe con contenido distinto. Crea un reporte nuevo desde la cámara.",
+      "report_rate_limit_exceeded": "Este dispositivo alcanzó el límite temporal de reportes. El reporte queda guardado para reintentar.",
+      "geofence_not_configured": "La zona activa de Creel no está configurada. El reporte queda pendiente.",
+      "configuration_unavailable": "La configuración activa del servidor no está disponible en este momento.",
+      "dependency_unavailable": "El servicio no está disponible ahora. El reporte queda en la cola local.",
+      "preflight_mismatch": "El entorno del servidor requiere revisión técnica antes de aceptar reportes.",
+      "photo_too_large": "La foto supera el tamaño permitido por el servidor.",
+      "unsupported_photo_type": "El servidor solo acepta fotos JPEG o PNG saneadas.",
+      "photo_decode_failed": "El servidor no pudo leer la imagen enviada.",
+      "photo_rate_limit_exceeded": "La carga de foto alcanzó el límite temporal; se reintentará después.",
+      "photo_content_conflict": "Este reporte ya tiene una foto distinta asociada.",
+      "photo_not_available": "La foto no está disponible para este reporte.",
+      "invalid_response": "La respuesta del servidor no permitió confirmar el estado del reporte.",
+      "network_unavailable": "No hay conexión suficiente. El reporte queda guardado para sincronizar.",
+      "request_failed": "No pudimos completar la solicitud. Revisa la conexión e inténtalo de nuevo."
+    }
+  },
   "commandCenter": {
     "eyebrow": "Espacio del administrador",
     "title": "Command Center",
