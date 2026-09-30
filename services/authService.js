@@ -117,12 +117,8 @@ export function createAuthService({ supabase, request = apiRequest }) {
     },
 
     async signOut() {
-      const { error: globalError } = await supabase.auth.signOut({
-        scope: "global",
-      });
-      if (!globalError) return;
-
-      // Ensure this device drops its persisted session even if Auth is offline.
+      // This app clears the current device's persisted session without ending
+      // sessions belonging to another provisioned operator/device.
       const { error: localError } = await supabase.auth.signOut({
         scope: "local",
       });

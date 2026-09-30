@@ -115,21 +115,19 @@ Deno.test("auth service preserves typed /me failures for controller cleanup", as
   );
 });
 
-Deno.test("auth service attempts global logout and clears the local session if Auth fails", async () => {
+Deno.test("auth service clears the current device session without logging out other devices", async () => {
   const calls = [];
   const { client } = fakeSupabase({
     async signOut(options) {
       calls.push(options.scope);
-      return options.scope === "global"
-        ? { error: { code: "network_error", status: 503 } }
-        : { error: null };
+      return options.scope === "local" ? { error: null } : { error: { code: "unexpected_scope" } };
     },
   });
   const service = createAuthService({ supabase: client });
   await service.signOut();
 
   assert(
-    calls.join(",") === "global,local",
-    "should fall back to clearing this device's session",
+    calls.join(",") === "local",
+    "should clear only this device's session",
   );
 });
