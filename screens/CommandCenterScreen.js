@@ -149,7 +149,7 @@ function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t })
   );
 }
 
-export default function CommandCenterScreen({ accessToken, onOpenConfiguration }) {
+export default function CommandCenterScreen({ accessToken, onOpenConfiguration, onOpenZoneSets }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const queue = useModerationQueue(accessToken);
@@ -176,6 +176,11 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration }
         <Text style={styles.eyebrow}>{t('commandCenter.eyebrow')}</Text>
         <Text style={styles.title}>{t('commandCenter.title')}</Text>
         <Text style={styles.subtitle}>{t('commandCenter.subtitle')}</Text>
+        {onOpenZoneSets ? (
+          <Pressable accessibilityRole="button" onPress={onOpenZoneSets} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
+            <Text style={styles.moreText}>{t('zoneSets.open')}</Text>
+          </Pressable>
+        ) : null}
         {onOpenConfiguration ? (
           <Pressable accessibilityRole="button" onPress={onOpenConfiguration} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
             <Text style={styles.moreText}>{t('configuration.open')}</Text>

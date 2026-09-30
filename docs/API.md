@@ -371,7 +371,10 @@ application paths `/api/admin/zone-sets` and
 for body/geometry/checksum errors, `401 authentication_required`, `403 forbidden`,
 `404 not_found` for a zone outside the current environment, `409 zone_set_conflict`
 for concurrent or ineligible activation, `503` for deployment/storage preflight,
-and `405 Allow: POST` for unsupported methods. Production has no active geometry
+and `405 Allow: POST` for unsupported methods. Compatibility aliases
+`/api/admin/zoneSets` and `/api/admin/zoneSets/:zone_set_id/activate` use the same
+controllers and authorization; new clients use the documented hyphenated URLs.
+Production has no active geometry
 until the Asociación de Hoteles de Chihuahua approves the exact checksum/version.
 
 ## Internal retention

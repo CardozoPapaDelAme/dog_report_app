@@ -195,5 +195,77 @@
       "invalid_request": "Revisa los valores y el motivo del cambio.",
       "configuration_conflict": "La configuración cambió durante la publicación. Consulta la versión activa."
     }
+  },
+  "zoneSets": {
+    "open": "Gestionar zonas",
+    "title": "Mapa de zonas",
+    "subtitle": "Prepara una versión del mapa y actívala después de obtener la aprobación de la Asociación.",
+    "current": "Zona activa actual",
+    "noActive": "No hay una zona activa en este entorno.",
+    "version": "Versión {{version}}",
+    "sourceVersion": "Versión de la fuente",
+    "stepOne": "01 · Crear borrador",
+    "stepOneHelp": "Selecciona un archivo o pega su contenido. Guardarlo crea una versión nueva y conserva la zona activa actual.",
+    "pick": "Seleccionar archivo GeoJSON",
+    "file": "Archivo: {{name}}",
+    "content": "Contenido GeoJSON",
+    "fileHelp": "Polygon o MultiPolygon directo, en WGS84 (longitud, latitud). Máximo 1 MiB. Si tienes un Feature o FeatureCollection, exporta primero la geometría revisada.",
+    "calculate": "Calcular checksum",
+    "checksum": "Huella digital · SHA-256",
+    "checksumHelp": "Calculada sobre la geometría normalizada que guardará el servidor. Los espacios y el orden de las claves no cambian esta huella. El servidor valida también la geometría.",
+    "polygons_one": "{{count}} polígono preparado",
+    "polygons_other": "{{count}} polígonos preparados",
+    "fields": {
+      "name": "Nombre de la zona",
+      "source_uri": "URI de la fuente original",
+      "source_version": "Versión de la fuente"
+    },
+    "create": "Guardar borrador",
+    "created": "Borrador guardado. La carga por sí sola no activa la zona.",
+    "stepTwo": "02 · Activar con aprobación",
+    "waitForDraft": "Este paso estará disponible cuando el servidor confirme que el borrador se guardó.",
+    "draftStatus": "Borrador · todavía no activo",
+    "pendingConfirmation": "Estado pendiente de confirmar",
+    "approval": "Referencia de aprobación de la Asociación",
+    "approvalHelp": "La Asociación de Hoteles de Chihuahua debe aprobar esta versión y su checksum fuera de la aplicación. Escribe la referencia de esa evidencia; el campo no sustituye la aprobación.",
+    "replaceHelp": "Al activar esta versión, la zona activa anterior será retirada. Sus datos e historial se conservan.",
+    "activate": "Activar esta versión",
+    "activated": "Activación confirmada. Esta versión está activa.",
+    "newDraft": "Preparar otro borrador",
+    "uncertainTitle": "Resultado pendiente de confirmar",
+    "uncertain": {
+      "create": "No se pudo confirmar si el borrador se guardó. No se volverá a enviar automáticamente. Antes de crear otro, pide al operador revisar el registro de la operación; todavía no existe una consulta de borradores para recuperarlo aquí.",
+      "activate": "No se pudo confirmar la activación de este borrador. Consulta la zona activa antes de continuar. La operación no se repetirá automáticamente."
+    },
+    "verify": "Consultar zona activa",
+    "notConfirmed": "La zona activa consultada no coincide con este borrador. Conserva su ID y pide al operador verificar su estado antes de intentar otra activación.",
+    "requestId": "Referencia de la operación",
+    "leaveTitle": "¿Salir de este borrador?",
+    "leaveSaved": "El borrador guardado permanece en el servidor, pero esta pantalla todavía no permite recuperar borradores al volver. Conserva el ID para que un operador pueda revisarlo. Una operación pendiente podría haber terminado.",
+    "stay": "Permanecer aquí",
+    "leave": "Continuar",
+    "validation": {
+      "empty": "Selecciona un archivo o pega el GeoJSON.",
+      "size": "El contenido supera el límite de 1 MiB.",
+      "json": "El contenido no es JSON válido.",
+      "geometry": "Usa una geometría Polygon o MultiPolygon no vacía, con solo type y coordinates.",
+      "ring": "Cada anillo debe tener al menos cuatro posiciones y terminar en la misma posición donde comienza.",
+      "position": "Cada posición debe contener longitud entre −180 y 180 y latitud entre −90 y 90, sin una tercera coordenada.",
+      "required": "Escribe entre 1 y {{max}} caracteres; no puede quedar en blanco.",
+      "uri": "Escribe una URI absoluta de la fuente, por ejemplo https://…",
+      "prepare": "Calcula el checksum del contenido actual antes de guardar.",
+      "approval": "Escribe una referencia de aprobación de entre 1 y 1000 caracteres."
+    },
+    "errors": {
+      "request_failed": "No se pudo completar la operación. Revisa la conexión y el estado mostrado.",
+      "invalid_request": "El servidor rechazó los datos. Revisa los campos y la validez de la geometría.",
+      "zone_set_conflict": "El borrador ya no puede activarse o hubo un cambio simultáneo. Consulta su estado.",
+      "not_found": "No se encontró el borrador en este entorno.",
+      "dependency_unavailable": "El servicio no está disponible en este momento.",
+      "preflight_mismatch": "El entorno del servicio no está listo para esta operación.",
+      "invalid_response": "La respuesta no permite confirmar la versión de la zona.",
+      "checksum_unavailable": "No se pudo calcular el checksum. Vuelve a preparar el contenido."
+    },
+    "approvalHint": "Obligatoria: entre 1 y 1000 caracteres."
   }
 }

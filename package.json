@@ -8,8 +8,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test:configuration-ui": "playwright test",
-    "preview:configuration-test": "node tests/ui/serve-configuration.mjs"
+    "test:configuration-ui": "playwright test configuration.spec.js",
+    "preview:configuration-test": "node tests/ui/serve-configuration.mjs",
+    "test:zone-sets-ui": "playwright test zoneSet.spec.js",
+    "test:admin-ui": "playwright test"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
@@ -17,6 +19,7 @@
     "expo": "~57.0.21",
     "expo-camera": "~57.0.5",
     "expo-crypto": "~57.0.3",
+    "expo-document-picker": "~57.0.3",
     "expo-file-system": "~57.0.1",
     "expo-font": "~57.0.3",
     "expo-image-manipulator": "~57.0.17",
