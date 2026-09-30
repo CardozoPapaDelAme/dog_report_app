@@ -479,6 +479,26 @@ correct it and enter a reason, publish once, then verify the new version and aud
 in staging. Confirm the old configuration remains in history. No live publication,
 account creation, migration or deployment was performed for L4.
 
+## RF15 / RF18 / RNF07 Expo login (L3)
+
+Run the focused login and secure-storage checks with:
+
+```sh
+npm run test:auth
+npx expo export --platform web
+```
+
+The controller checks that the role returned by `GET /me` selects the dashboard,
+expired sessions refresh before profile lookup, unknown roles fail closed, and a
+profile/refresh failure clears the current Supabase session. Secure-storage
+checks cover chunked Unicode values, replacement failure, cleanup, and corrupt
+or partial data. These tests use injected services and fake storage; they do not
+prove a live Supabase login or device Keychain/Android Keystore behavior.
+
+Copy the placeholders from `.env.example` into local Expo configuration and
+provide only the Supabase URL and publishable client key. Then sign in on a
+development build using provisioned accounts for both sibling roles and confirm
+the `/me`-selected destinations. Do not use a `service_role` key in the app.
 ## FAB-5 / L5 zone-set screen verification (2026-09-29)
 
 Run the complete client/backend suite using the API Deno configuration:
@@ -526,7 +546,8 @@ checksum, enter source metadata and save. Verify that the old zone remains activ
 and the new version is a draft. Obtain the appropriate external test approval,
 enter its reference, activate once, and verify the new active version, prior
 retirement and both audit records. A successful GET configuration does not itself
-supply a session: `App.accessToken` must come from the team's session integration.
+supply a session: the L3 login flow restores Supabase Auth and supplies its access
+token only after `GET /me` confirms an active profile and role.
 
 There is no draft GET/list endpoint in FAB-2. The screen can activate the draft
 returned in the current screen session, but cannot retrieve it after leaving or

@@ -34,6 +34,7 @@ export default function CameraScreen({
   onPhotoAccepted,
   onReportWithoutPhoto,
   onOpenModeration,
+  onOpenLogin,
   showModerationShortcut = false,
 }) {
   const { t } = useTranslation();
@@ -60,12 +61,19 @@ export default function CameraScreen({
       )}
       <View pointerEvents="none" style={styles.vignette} />
 
-      {showModerationShortcut && hasPermission ? (
+      {(onOpenLogin || (showModerationShortcut && hasPermission)) ? (
         <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
           <View style={styles.topBarSpacer} />
-          <Pressable accessibilityRole="button" onPress={onOpenModeration} style={styles.adminButton}>
-            <Text style={styles.adminText}>{t('camera.admin')}</Text>
-          </Pressable>
+          {onOpenLogin ? (
+            <Pressable accessibilityRole="button" onPress={onOpenLogin} style={styles.adminButton}>
+              <Text style={styles.adminText}>{t('camera.staffLogin')}</Text>
+            </Pressable>
+          ) : null}
+          {showModerationShortcut && hasPermission ? (
+            <Pressable accessibilityRole="button" onPress={onOpenModeration} style={styles.adminButton}>
+              <Text style={styles.adminText}>{t('camera.admin')}</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
@@ -81,6 +89,11 @@ export default function CameraScreen({
                 <Pressable accessibilityRole="button" onPress={requestPermission} style={styles.permissionButton}>
                   <Text style={styles.permissionButtonText}>{t('camera.permissionButton')}</Text>
                 </Pressable>
+                {onOpenLogin ? (
+                  <Pressable accessibilityRole="button" onPress={onOpenLogin} style={styles.staffLoginPermission}>
+                    <Text style={styles.staffLoginPermissionText}>{t('camera.staffLogin')}</Text>
+                  </Pressable>
+                ) : null}
               </>
             )}
           </View>
@@ -134,6 +147,8 @@ const styles = StyleSheet.create({
   permissionBody: { color: '#5d6859', fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14, lineHeight: 21 },
   permissionButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.primary },
   permissionButtonText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
+  staffLoginPermission: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  staffLoginPermissionText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13 },
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', gap: 10, paddingHorizontal: 20 },
   topBarSpacer: { flex: 1 },
   adminButton: { minHeight: 42, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.glass, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 14 },

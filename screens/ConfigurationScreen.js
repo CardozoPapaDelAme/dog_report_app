@@ -33,7 +33,7 @@ function ThresholdField({ field, value, error, disabled, t, wide, inputRef, onCh
   </View>;
 }
 
-export default function ConfigurationScreen({ accessToken, onBack, api }) {
+export default function ConfigurationScreen({ accessToken, onBack, onLogout, logoutPending = false, api }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const form = useConfiguration(accessToken, api);
@@ -70,15 +70,17 @@ export default function ConfigurationScreen({ accessToken, onBack, api }) {
   }, [form.fieldErrors, t]);
 
   function navigate(action) {
-    if (form.saving) return;
+    if (form.saving || (action === 'logout' && logoutPending)) return;
     if (form.dirty) setPendingAction(action);
     else if (action === 'back') onBack?.();
+    else if (action === 'logout') onLogout?.();
     else form.reload();
   }
   function confirmAction() {
     const action = pendingAction;
     setPendingAction(null);
     if (action === 'back') onBack?.();
+    else if (action === 'logout') onLogout?.();
     else form.reload();
   }
   const ready = form.phase === 'ready';
@@ -88,9 +90,14 @@ export default function ConfigurationScreen({ accessToken, onBack, api }) {
   return <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-        {onBack ? <Pressable accessibilityRole="button" disabled={form.saving} onPress={() => navigate('back')} style={styles.back}>
-          <Text style={styles.backText}>← {t('configuration.back')}</Text>
-        </Pressable> : null}
+        {onBack || onLogout ? <View style={styles.topActions}>
+          {onBack ? <Pressable accessibilityRole="button" disabled={form.saving} onPress={() => navigate('back')} style={styles.back}>
+            <Text style={styles.backText}>← {t('configuration.back')}</Text>
+          </Pressable> : <View />}
+          {onLogout ? <Pressable accessibilityRole="button" disabled={form.saving || logoutPending} onPress={() => navigate('logout')} style={styles.back}>
+            <Text style={styles.backText}>{t('login.logout')}</Text>
+          </Pressable> : null}
+        </View> : null}
         <View style={styles.hero}>
           <Text style={styles.eyebrow}>{t('configuration.eyebrow')}</Text>
           <Text accessibilityRole="header" style={styles.title}>{t('configuration.title')}</Text>
@@ -153,6 +160,7 @@ export default function ConfigurationScreen({ accessToken, onBack, api }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 }, safeArea: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: 960, alignSelf: 'center', padding: 20, paddingBottom: 32, gap: 18 },
+  topActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   back: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }, backText: { color: colors.primary, fontFamily: boldFont, fontSize: 14 },
   hero: { gap: 9, marginBottom: 6 }, eyebrow: { color: colors.primary, fontFamily: boldFont, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase' },
   title: { color: colors.ink, fontFamily: boldFont, fontSize: 30, lineHeight: 38 }, subtitle: { color: colors.muted, fontFamily: bodyFont, fontSize: 14, lineHeight: 22 },
