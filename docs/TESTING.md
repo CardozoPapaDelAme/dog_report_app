@@ -556,3 +556,60 @@ ID/checksum and blocks uncertain resubmission. An uncertain activation can only 
 confirmed when GET configuration returns that exact ID/checksum; otherwise an
 operator must inspect the result. No extra lookup endpoint or automatic replay
 was invented for L5. See [the delivery record](FAB-5-DELIVERY.md).
+
+## FAB-6 / L6 duplicate management verification (2026-09-30)
+
+```sh
+deno test --no-lock --config supabase/functions/api/deno.json models services controllers hooks supabase/functions/api
+npm run test:admin-ui
+# L6 only:
+npm run test:duplicates-ui
+CI=1 EXPO_NO_TELEMETRY=1 npx expo export --platform all
+```
+
+Deno: **194 passed, 0 failed, 5 ignored** in the normal suite. The five SQL
+suites are opt-in; the duplicate SQL suite was also executed separately with a
+new disposable PostgreSQL 17/PostGIS 3.5 container: **1 passed, 10 steps**.
+No shared/Supabase database is involved. Use the FAB-3 container procedure above,
+with the current test path `supabase/functions/api/tests/duplicatePostgres.test.js`.
+
+L6 adds nine Deno cases (four model, two mobile API/integration, two HTTP and one
+Service). Model tests enumerate all subsets of a five-report graph and compare
+local induced connectivity with FAB-3. API tests join the real mobile adapter,
+Controller and Service with simulated identity/persistence. SQL tests separately
+exercise the actual Repository as `app_backend`, including visible endpoints,
+anonymous/Association denial, candidate removal on resolution, reappearance on
+reversal and preservation of original reports/photos. Existing SQL concurrency,
+audit rollback and retention/reversal cases remain passing.
+
+Playwright: **39 passed**, comprising 16 L6, eight L4 and 15 L5 cases. Real Screen,
+hook, model and adapter run in the fixture; only HTTP is intercepted. Coverage:
+connected components; A–C rejected until selected B connects them; disconnected
+components; canonical deselection; exact server errors; double submission;
+changed/missing/revoked sessions; late resolution/reversal; uncertain POST
+recovery through GET; server conflict; dirty reload confirmation; confirmed
+mutation followed by failed refresh; initial service failure and empty results.
+Selection controls expose checked state to web assistive technology as well as
+native accessibility. Mobile and desktop screenshots were inspected at
+390 × 844 and 1200 × 900 in ignored `test-results/`.
+
+The shared fixture URL `/?duplicates` opens L6. It is not production navigation
+or a live authenticated session. In the app, use Administrator login → moderation
+→ **Gestionar duplicados**. The login integration already exists on this branch's
+main base; it is not a new login implementation in L6.
+
+Web, Android and iOS exports pass. These are compilation checks, not device runs.
+The postponed real Administrator/JWT check remains pending, along with native
+screen-reader, keyboard and Android hardware-back verification. Deploy the single
+API with the new candidate GET and restored FAB-3 URLs before checking the screen
+against managed staging. Without that backend version, L6 fails visibly rather
+than substituting invented candidates. Reversal preserves moderation as agreed:
+a hidden/deleted report is never published/restored by reversing duplicates.
+
+For manual staging acceptance, use reviewed test reports and actual system
+suggestions A–B–C. Select A/C and confirm that no resolution POST is sent. Include
+B, choose a canonical report, resolve and verify the active group/audit. Reverse
+with a reason, verify reviewable candidates return, and compare report/photo
+content and moderation before/after. A component containing deleted reports may
+not reappear until it has eligible endpoints; candidate review state and report
+moderation are intentionally distinct.

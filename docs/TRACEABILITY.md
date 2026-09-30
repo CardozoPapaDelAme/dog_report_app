@@ -238,3 +238,18 @@ documented `/admin/zone-sets` URLs and retains `/admin/zoneSets` aliases with
 identical guards. FAB-2 HTTP tests now assert the canonical URLs and auth on both
 spellings. Real JWT, managed deployment and physical-device checks remain pending;
 see `docs/TESTING.md` for exact simulated/compiled evidence and recovery limits.
+
+## FAB-6 / L6 duplicate management screen
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RF23; HU-23; RNF30 | Full eligible pending-candidate projection including visible reports; components and explicit canonical selection | `controllers/duplicateController.test.js` (`FAB-6 HTTP`); `models/duplicateCandidate.test.js`; SQL candidate snapshot assertions in `tests/duplicatePostgres.test.js` |
+| RNF20, RNF21, RNF33 | Active Administrator only, local transaction context, existing RLS/grants, no private metadata | `services/duplicateService.test.js` (`FAB-6 SERVICE`); real SQL projection denied to anonymous/Association actors |
+| RF13, RF23; HU-23; RNF30, RNF33 | Connected selected subgraph checked before POST; server rechecks; reversal reopens candidates without touching originals or moderation | Exhaustive subset parity with FAB-3 in model tests; `services/duplicateApi.test.js`; real SQL resolve/reverse evidence and unchanged report/photo assertions |
+| RNF34; L6 acceptance | Clear pre-submit graph warning, optional resolution reason, mandatory reversal reason, session isolation and uncertain-result recovery | `tests/ui/duplicateManagement.spec.js` (16 browser cases), plus L4/L5 regressions |
+
+Implementation: `screens/DuplicateManagementScreen.js` →
+`hooks/useDuplicateResolution.js` → `models/duplicateCandidate.js` /
+`services/duplicateApi.js` → FAB-3. `App.js` uses the session integration now on
+main and grants navigation through the Administrator moderation screen. No real
+account, production resolution, migration or deployment is performed by tests.
