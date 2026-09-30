@@ -21,6 +21,12 @@
           "cameraPermission": "Permite que Creel Stray-Dog Reporting use la cámara para fotografiar el reporte.",
           "recordAudioAndroid": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permite que Creel Stray-Dog Reporting use tu ubicación para guardar dónde ocurrió el reporte."
+        }
       ]
     ]
   }

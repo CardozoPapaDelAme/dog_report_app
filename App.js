@@ -12,10 +12,13 @@ import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
 import ZoneSetScreen from './screens/ZoneSetScreen.js';
 import ReportDraftScreen from './screens/ReportDraftScreen.js';
+import { useReportDraftQueue } from './hooks/useReportDraftQueue.js';
 
 export default function App({ accessToken = null }) {
   const [screen, setScreen] = useState('camera');
-  const [draft, setDraft] = useState(null);
+  const [draftId, setDraftId] = useState(null);
+  const [draftError, setDraftError] = useState(null);
+  const draftQueue = useReportDraftQueue();
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_600SemiBold,
@@ -24,6 +27,19 @@ export default function App({ accessToken = null }) {
 
   if (!fontsLoaded && !fontError) {
     return null;
+  }
+  const activeDraft = draftQueue.drafts.find((draft) => draft.id === draftId) ?? null;
+
+  async function openReportDraft(photo) {
+    setScreen('reportDraft');
+    setDraftId(null);
+    setDraftError(null);
+    try {
+      const created = await draftQueue.createDraft({ photo });
+      setDraftId(created.id);
+    } catch (error) {
+      setDraftError(error);
+    }
   }
 
   return (
@@ -41,7 +57,9 @@ export default function App({ accessToken = null }) {
         />
       ) : screen === 'reportDraft' ? (
         <ReportDraftScreen
-          draft={draft}
+          draft={activeDraft}
+          loading={draftQueue.loading || (!activeDraft && !draftError)}
+          error={draftError ?? draftQueue.error}
           onBackToCamera={() => setScreen('camera')}
         />
       ) : (
@@ -49,12 +67,10 @@ export default function App({ accessToken = null }) {
           showModerationShortcut={Boolean(accessToken)}
           onOpenModeration={() => setScreen('moderation')}
           onReportWithoutPhoto={() => {
-            setDraft({ photo: null });
-            setScreen('reportDraft');
+            void openReportDraft(null);
           }}
           onPhotoAccepted={(photo) => {
-            setDraft({ photo });
-            setScreen('reportDraft');
+            void openReportDraft(photo);
           }}
         />
       )}

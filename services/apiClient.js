@@ -20,6 +20,7 @@ export async function apiRequest(path, options = {}) {
     method = 'GET',
     headers,
     body,
+    contentType = 'application/json',
     timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
     requestId = createRequestId(),
     ...rest
@@ -31,16 +32,20 @@ export async function apiRequest(path, options = {}) {
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const requestHeaders = {
+      Accept: 'application/json',
+      'X-Request-Id': requestId,
+      ...headers,
+    };
+    if (contentType !== null && requestHeaders['Content-Type'] === undefined) {
+      requestHeaders['Content-Type'] = contentType;
+    }
+
     const response = await fetch(url, {
       ...rest,
       method,
       signal: rest.signal ?? controller.signal,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Request-Id': requestId,
-        ...headers,
-      },
+      headers: requestHeaders,
       body,
     });
     return response;

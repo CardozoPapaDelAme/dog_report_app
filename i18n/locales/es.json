@@ -34,11 +34,26 @@
     "title": "Foto lista para el reporte",
     "subtitle": "La imagen quedó guardada como archivo privado local. Aún no se sube ni se guarda en la base de datos.",
     "noPhoto": "Continuar sin foto",
+    "savingDraft": "Guardando borrador local…",
+    "queueTitle": "Cola local",
+    "id": "UUID: {{value}}",
+    "localState": "Estado local: {{value}}",
+    "photoFile": "Foto en archivo local: {{value}}",
+    "locationTitle": "Ubicación guardada",
+    "coordinates": "Coordenadas: {{value}}",
+    "accuracy": "Precisión: {{value}}",
+    "mockSuspected": "Sospecha de ubicación simulada: {{value}}",
+    "clientCreatedAt": "Timestamp del cliente: {{value}}",
+    "errorTitle": "No pudimos crear el borrador",
     "validationTitle": "Validación local",
     "dogProbability": "Probabilidad perro: {{value}}%",
     "blurVariance": "Varianza Laplaciana: {{value}}",
     "back": "Volver a cámara",
-    "formPending": "Formulario en siguiente entrega"
+    "formPending": "Formulario en siguiente entrega",
+    "errors": {
+      "location_permission_denied": "Necesitamos permiso de ubicación para guardar dónde ocurrió el reporte.",
+      "default": "Intenta nuevamente desde la cámara."
+    }
   },
   "commandCenter": {
     "eyebrow": "Espacio del administrador",
