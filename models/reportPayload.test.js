@@ -135,4 +135,3 @@ Deno.test('L7 buildReportPayload preserves raw fingerprint byte-for-byte and rej
   }
   assert(failed, 'server-owned fields must be rejected locally');
 });
-
