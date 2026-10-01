@@ -1,6 +1,7 @@
 import { apiRequest } from "./apiClient.js";
 
-const PROFILE_PATH = "/api/me";
+// TODO(auth-routing): keep this isolated for removal if API base URL ownership changes.
+const PROFILE_PATH = "/me";
 
 export class AuthServiceError extends Error {
   constructor(message, { code = "auth_request_failed", status = null } = {}) {
