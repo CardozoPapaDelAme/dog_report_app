@@ -195,11 +195,6 @@ The flag and public map suites load their migrations from hardcoded lists; keep
 those lists complete (including `20260914183000_report_replay_lookup_rls.sql`,
 which defines `app_private.requested_report_id()`) when adding a migration.
 
-Known issue (2026-10-01): the public map suite still fails in the
-"public clusters" step because `listPublicClusters`
-(`repositories/publicMapRepository.js`) sends an untyped query parameter
-(`could not determine data type of parameter $14`), so the cluster route returns
-500. Tracked as a follow-up.
 
 ## Mobile/native tests
 
