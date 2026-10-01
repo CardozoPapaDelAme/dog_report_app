@@ -88,6 +88,13 @@ schema policies.
    `EXPECTED_SUPABASE_PROJECT_REF`, `EXPECTED_DEPLOYMENT_ENVIRONMENT`, and
    `APPROVED_PHOTOS_BUCKET`; `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` remain
    provider-managed server configuration.
+   Admin configuration, zone-set and duplicate routes return
+   `503 preflight_mismatch` unless `EXPECTED_DEPLOYMENT_ENVIRONMENT` is set to
+   `staging` or `production` and equals `public.deployment_metadata.environment`.
+   Supabase never shows secret values back; `supabase secrets list` shows names
+   and digests only. When retention scheduling is configured, regenerate
+   `INTERNAL_RETENTION_SECRET` and set the same value on both the Function and
+   the scheduler together.
 7. Configure/restrict the MapTiler public key and verify attribution/quota.
 8. For a demo/test project, import the INEGI geometry only as a clearly labeled
    candidate/test fixture. An approved live project must fail closed until the
@@ -107,6 +114,22 @@ multipart/body/memory and JPEG/PNG codec behavior; iOS/Android HEIC→JPEG outpu
 orientation and metadata; postgres.js with Supavisor pool mode/concurrency; project
 JWT/JWKS versus supported legacy verification; and managed-Free scheduling. An
 unproven spike blocks the affected capability and fails closed.
+
+## Post-deploy smoke check
+
+After deploying `api` or changing its secrets, verify against the target project:
+
+- `GET /functions/v1/api/health` returns 200.
+- With an Administrator access token, `GET /functions/v1/api/me` and
+  `GET /functions/v1/api/admin/configuration` return 200. A `503 preflight_mismatch`
+  on the latter means the environment secret is missing or does not match
+  `deployment_metadata.environment`.
+
+Run the Supabase security and performance advisors after each migration. The
+current performance advisor still reports informational unindexed foreign keys
+and unused indexes; they are intentionally left unchanged at the prototype's low
+data volume. Leaked-password protection is a Pro-plan feature and stays disabled
+on Free (see [`SECURITY.md`](SECURITY.md)).
 
 ## Promotion and verification
 

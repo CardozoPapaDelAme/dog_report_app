@@ -59,6 +59,12 @@ verification secrets, Storage service keys, or internal scheduler secrets.
 2. Create the Auth account through the installed Supabase administrative tooling.
 3. Set the server-controlled JWT `app_role` metadata and create the matching
    profile role. Never place authorization data in user-editable metadata.
+   Both are required: a `profiles` row with the role and `active=true`, and
+   `auth.users` `app_metadata.app_role` equal to that role. The API reads
+   `app_metadata.app_role` (falling back to `app_metadata.role`); a missing or
+   mismatched claim returns `403 role_mismatch` on every authenticated route, and
+   a missing profile rejects login. `app_metadata` is server-only and cannot be
+   set from the client.
 4. Test allowed and denied Hono routes with that account; do not test using server roles.
 5. Deliver temporary credentials securely and require rotation if supported.
 6. For deprovisioning, set `profiles.active=false`, revoke sessions using installed
@@ -66,6 +72,14 @@ verification secrets, Storage service keys, or internal scheduler secrets.
 
 Exact managed Auth settings and supported revocation controls must be verified in
 the target project before deployment.
+
+### Accepted limitation: leaked password protection
+
+Supabase Auth leaked-password protection (HaveIBeenPwned check) is disabled. It
+requires the Pro plan and Phase 1 targets managed Free. Mitigation: accounts are
+manually provisioned by a technical operator, public signup stays disabled, and
+credentials are delivered out of band. Revisit when the project moves to a paid
+plan (see ADR-022).
 
 ## Anonymous integrity and privacy
 

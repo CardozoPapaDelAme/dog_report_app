@@ -313,3 +313,15 @@ group list. A future scale change must paginate complete components or introduce
 a snapshot protocol, not silently truncate edges. No new persistence, roles,
 grants or moderation semantics are introduced. Resolution/reversal remain
 separate audited commands; reversal changes candidate review, not report data.
+
+## ADR-022 — Accept disabled leaked-password protection on Free
+
+**Decision.** Leave Supabase Auth leaked-password protection disabled while
+Phase 1 runs on managed Free.
+
+**Why.** The feature requires the Pro plan, and ADR-016 selects Free. Accounts are
+manually provisioned with no public signup, which limits exposure to chosen
+operators.
+
+**Constraint.** Reassess on any move to a paid plan or before a public production
+launch. The Supabase security advisor will keep reporting this finding.

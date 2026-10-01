@@ -130,7 +130,7 @@ All paths below are relative to `supabase/functions/api/`.
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
 | RF21; HU-21; RNF29 | `GET/POST /admin/configuration`; flag threshold/rate validation | `domain/configuration.test.js` (`FAB-1 VALIDATION`); `controllers/configuration-controller.test.js` (`FAB-1 HTTP`) |
-| RF23; HU-23; RNF30 | Versioned duplicate radius/time thresholds, without resolving duplicates | `domain/configuration.test.js`; `tests/configuration-postgres.test.js` (`FAB-1 SQL`) |
+| RF23; HU-23; RNF30 | Versioned duplicate radius/time thresholds, without resolving duplicates | `domain/configuration.test.js`; `tests/configurationPostgres.test.js` (`FAB-1 SQL`) |
 | RNF09, RNF26, RNF28, RNF31 | GPS, trust-band and hourly rate constraints; active-zone metadata projection | `domain/configuration.test.js`; `services/configuration-service.test.js` (`FAB-1 SERVICE`); zone/environment steps in `FAB-1 SQL` |
 | RNF20, RNF21 | Administrator middleware, Service profile recheck, local actor context, SQL/RLS and environment separation | `controllers/configuration-controller.test.js`; `services/configuration-service.test.js`; privilege/context steps in `FAB-1 SQL` |
 | RNF33 | Immutable history, sequential versions, atomic activation and JSON audit evidence | `repositories/configuration-repository.js`; rollback, concurrent-reader and six-writer steps in `FAB-1 SQL` |
@@ -174,9 +174,19 @@ remain release checks after local public client configuration is supplied.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`); `tests/zone-postgres.test.js` (`FAB-2 SQL`) |
-| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js`; `tests/zone-postgres.test.js` |
-| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; real rollback/concurrency/column-grant coverage in `tests/zone-postgres.test.js` |
+| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`); `tests/zonePostgres.test.js` (`FAB-2 SQL`) |
+| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js`; `tests/zonePostgres.test.js` |
+| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; real rollback/concurrency/column-grant coverage in `tests/zonePostgres.test.js` |
+
+Migration `20261001120000_split_backend_mutate_policies.sql` replaces the
+`FOR ALL` `config_backend_mutate`, `zones_backend_mutate` and
+`zone_geometry_backend_mutate` policies with per-command
+`config_backend_insert/update`, `zones_backend_insert/update` and
+`zone_geometry_backend_insert` policies (same predicate; no DELETE policies and
+no `zones` UPDATE, matching the grants). It supports RNF20, RNF21 and RNF33; the
+`pg_policies` step in `tests/zonePostgres.test.js` (`FAB-2 SQL`) asserts at most
+one permissive `app_backend` policy per command, and `tests/configurationPostgres.test.js`
+extracts the split policies from `db/schema.sql`.
 
 The PostgreSQL/PostGIS migrations preserve retirement evidence, canonical source
 GeoJSON, and the narrow `retired_at` update grant required for replacement. Their
@@ -192,7 +202,7 @@ fields back through the external-input validator; it does not verify a real JWT.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RF23; HU-23; RNF30 | Human canonical selection over a connected induced pending-candidate graph; no arbitrary grouping | `domain/duplicate-group.test.js` (`FAB-3 DOMAIN`); `services/duplicate-service.test.js` (`FAB-3 SERVICE`); `tests/duplicate-postgres.test.js` (`FAB-3 SQL`) |
+| RF23; HU-23; RNF30 | Human canonical selection over a connected induced pending-candidate graph; no arbitrary grouping | `domain/duplicate-group.test.js` (`FAB-3 DOMAIN`); `services/duplicate-service.test.js` (`FAB-3 SERVICE`); `tests/duplicatePostgres.test.js` (`FAB-3 SQL`) |
 | RF19; HU-19; RNF20, RNF21 | Administrator-only active-group listing, creation and reversal; profile/environment/context checks | `controllers/duplicate-controller.test.js` (`FAB-3 HTTP`); `FAB-3 SERVICE`; real RLS and grants in `FAB-3 SQL` |
 | RF13, RF23; RNF30, RNF33 | Single active membership; canonical filtering; reversible candidate review with unchanged reports/photos; atomic audit | `repositories/duplicate-repository.js`; `FAB-3 SQL` rollback, concurrency, anonymous/Association visibility and original-evidence assertions |
 
