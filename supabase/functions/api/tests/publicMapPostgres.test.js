@@ -23,6 +23,7 @@ const migrations = [
   "20260921011000_grant_zone_set_retirement_update.sql",
   "20260923090000_allow_anonymous_flag_origin_reads.sql",
   "20260924010000_allow_public_map_flag_reads.sql",
+  "20261001034500_grant_rate_limit_bucket_select.sql",
   "20261001120000_split_backend_mutate_policies.sql",
 ];
 
