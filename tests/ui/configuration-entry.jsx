@@ -7,6 +7,7 @@ import DuplicateManagementScreen from '../../screens/DuplicateManagementScreen.j
 import ZoneSetScreen from '../../screens/ZoneSetScreen.js';
 import ConfigurationScreen from '../../screens/ConfigurationScreen.js';
 import ReportFormScreen from '../../screens/ReportFormScreen.js';
+import AssociationDashboardScreen from '../../screens/associationDashboardScreen.js';
 import { buildReportPayload } from '../../models/reportPayload.js';
 import regular from '@expo-google-fonts/plus-jakarta-sans/400Regular/PlusJakartaSans_400Regular.ttf';
 import bold from '@expo-google-fonts/plus-jakarta-sans/700Bold/PlusJakartaSans_700Bold.ttf';
@@ -14,6 +15,26 @@ import bold from '@expo-google-fonts/plus-jakarta-sans/700Bold/PlusJakartaSans_7
 const fonts = document.createElement('style');
 fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})}`;
 document.head.appendChild(fonts);
+
+const previewReport = (id, incident, sighting, details, color, size, collar, acceptedAt) => ({
+  id: `00000000-0000-4000-8000-${String(id).padStart(12, '0')}`,
+  location: { longitude: Number((-106.0802 - id * 0.004).toFixed(4)), latitude: Number((28.6304 + id * 0.003).toFixed(4)) },
+  incident_type: incident,
+  sighting_type: sighting,
+  details,
+  dog: { predominant_color: color, size, has_collar: collar },
+  has_sanitized_photo: id !== 2,
+  occurred_at: '2026-09-27T14:30:00.000Z',
+  accepted_at: acceptedAt,
+});
+const previewRows = [
+  previewReport(1, 'avistamiento_simple', 'solitario', { cantidad_aprox: 1 }, 'café', 'mediano', false, '2026-09-30T10:15:00.000Z'),
+  previewReport(2, 'perro_lastimado', 'solitario', { descripcion: 'Cerca de la plaza' }, 'blanco', 'chico', null, '2026-09-29T18:42:00.000Z'),
+  previewReport(3, 'ataque_mascota', 'manada', { cantidad_aprox: 3 }, 'negro', 'grande', true, '2026-09-28T09:20:00.000Z'),
+];
+async function previewAssociationPage({ from, to }) {
+  return { items: previewRows.filter((row) => row.accepted_at >= from && row.accepted_at <= to), next_cursor: null };
+}
 
 const reportDraft = {
   id: '00000000-0000-4000-8000-000000000006',
@@ -120,8 +141,14 @@ function ReportFixture() {
 
 function Fixture() {
   const params = new URLSearchParams(location.search);
+  if (params.has('association-preview')) return <div style={{height:'100dvh'}}>
+    <SafeAreaProvider><AssociationDashboardScreen accessToken="preview-session" displayName="Vista de demostración"
+      onLogout={() => { window.location.href = 'http://localhost:8081/'; }} getPage={previewAssociationPage} /></SafeAreaProvider>
+  </div>;
   const Screen = params.has('report')
     ? ReportFixture
+    : params.has('association') || params.has('association-preview')
+      ? AssociationDashboardScreen
     : params.has('duplicates')
       ? DuplicateManagementScreen
       : params.has('zones')
@@ -136,7 +163,8 @@ function Fixture() {
       <button onClick={()=>setToken('test-session-b')}>Otra sesión de prueba</button>
       <button onClick={()=>setVisible(true)}>Abrir formulario de prueba</button>
     </div>
-    <SafeAreaProvider>{visible ? <Screen accessToken={token} onBack={()=>setVisible(false)} /> : <p>Formulario cerrado</p>}</SafeAreaProvider>
+    <SafeAreaProvider>{visible ? <Screen accessToken={token} onBack={()=>setVisible(false)} onLogout={()=>setToken(null)}
+      {...(params.has('association-preview') ? { getPage: previewAssociationPage, displayName: 'Vista de demostración' } : {})} /> : <p>Formulario cerrado</p>}</SafeAreaProvider>
   </div>;
 }
 createRoot(document.getElementById('root')).render(<StrictMode><Fixture /></StrictMode>);

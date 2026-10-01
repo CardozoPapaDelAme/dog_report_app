@@ -1,4 +1,4 @@
-import { readAssociationReportPage, validateAssociationDateRange } from './associationReport.js';
+import { ASSOCIATION_REPORT_COLUMNS, associationReportValues, createAssociationCsv, readAssociationReportPage, validateAssociationDateRange } from './associationReport.js';
 
 function assert(value, message = 'Assertion failed') { if (!value) throw new Error(message); }
 const report = {
@@ -41,4 +41,16 @@ Deno.test('RIC-2 model: rejects malformed pages instead of showing partial data'
     try { readAssociationReportPage(data); } catch (error) { failed = error.code === 'invalid_response'; }
     assert(failed);
   }
+});
+
+Deno.test('RIC-4 export: CSV has the same rows and columns as the table, with escaped cells', () => {
+  const rows = [report, { ...report, id: '22222222-2222-4222-8222-222222222222', details: { note: '=HYPERLINK("bad")' }, dog: { ...report.dog, predominant_color: '=SUM(1)' } }];
+  const csv = createAssociationCsv(rows);
+  assert(csv.charCodeAt(0) === 0xFEFF);
+  assert(csv.split('\r\n').length === rows.length + 2);
+  assert(ASSOCIATION_REPORT_COLUMNS.length === associationReportValues(report).length);
+  assert(csv.includes(rows[0].id) && csv.includes(rows[1].id));
+  assert(csv.includes('"\'=SUM(1)"'));
+  assert(csv.includes('"-106.08"'));
+  assert(createAssociationCsv([]).split('\r\n').length === 2);
 });

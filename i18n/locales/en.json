@@ -18,7 +18,28 @@
   "associationDashboard": {
     "eyebrow": "Chihuahua Hotel Association",
     "title": "Association dashboard",
-    "body": "Your access is active. Report browsing will be added to this screen."
+    "from": "From", "to": "To", "search": "Search",
+    "dateHint": "The range includes full days based on the acceptance date.",
+    "results": "Accepted reports",
+    "count_one": "{{count}} report in this range", "count_other": "{{count}} reports in this range",
+    "export": "Export CSV", "exporting": "Preparing file…",
+    "exportError": "Could not save the file. Please try again.",
+    "loading": "Loading all reports in this range…",
+    "empty": "No results in this range.",
+    "invalid": "Check the date range.",
+    "invalidDate": "Use a valid date in YYYY-MM-DD format.",
+    "reversedDate": "The end date must be on or after the start date.",
+    "session": "Your session is unavailable. Sign in again.",
+    "forbidden": "This account cannot access Association reports.",
+    "error": "We could not load reports for this range.",
+    "idle": "Select a range to search reports.",
+    "retry": "Retry",
+    "columns": {
+      "id": "Report ID", "accepted_at": "Accepted at", "occurred_at": "Reported at",
+      "incident_type": "Incident", "sighting_type": "Sighting", "details": "Details",
+      "predominant_color": "Color", "size": "Size", "has_collar": "Collar",
+      "longitude": "Longitude", "latitude": "Latitude", "has_sanitized_photo": "Photo available"
+    }
   },
   "common": {
     "yes": "Yes",

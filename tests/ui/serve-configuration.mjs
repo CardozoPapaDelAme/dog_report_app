@@ -22,7 +22,7 @@ const server = createServer(async (req, res) => {
   } else if (req.url === '/__shutdown') {
     res.end('ok');
     setTimeout(shutdown, 0).unref();
-  } else if (req.url?.startsWith('/admin/')) {
+  } else if (req.url?.startsWith('/admin/') || req.url?.startsWith('/association/')) {
     res.writeHead(500);
     res.end('Tests must intercept API calls');
   } else {

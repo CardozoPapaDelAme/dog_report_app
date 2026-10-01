@@ -69,3 +69,28 @@ export function readAssociationReportPage(data) {
   });
   return { items, next_cursor: data.next_cursor };
 }
+
+export const ASSOCIATION_REPORT_COLUMNS = Object.freeze([
+  'id', 'accepted_at', 'occurred_at', 'incident_type', 'sighting_type', 'details',
+  'predominant_color', 'size', 'has_collar', 'longitude', 'latitude', 'has_sanitized_photo',
+]);
+
+export function associationReportValues(report) {
+  return [report.id, report.accepted_at, report.occurred_at, report.incident_type,
+    report.sighting_type, JSON.stringify(report.details), report.dog.predominant_color,
+    report.dog.size, report.dog.has_collar, report.location.longitude,
+    report.location.latitude, report.has_sanitized_photo];
+}
+
+function csvCell(value) {
+  let text = value == null ? '' : String(value);
+  // Spreadsheet programs may interpret user-provided details as formulas.
+  if (typeof value === 'string' && /^[\s]*[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+export function createAssociationCsv(rows) {
+  const lines = [ASSOCIATION_REPORT_COLUMNS.map(csvCell).join(',')];
+  for (const row of rows) lines.push(associationReportValues(row).map(csvCell).join(','));
+  return `\uFEFF${lines.join('\r\n')}\r\n`;
+}
