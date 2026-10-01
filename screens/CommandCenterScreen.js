@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.primary },
   list: { backgroundColor: colors.background },
   content: { flexGrow: 1, backgroundColor: colors.background, paddingBottom: 32 },
-  hero: { backgroundColor:'#fff', paddingHorizontal: 22, paddingTop: 28, paddingBottom: 34 },
+  hero: { backgroundColor: colors.primary, paddingHorizontal: 22, paddingTop: 28, paddingBottom: 34 },
   eyebrow: { color: '#90d689', fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase' },
   title: { color: '#fff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 28, lineHeight: 34, marginTop: 8 },
   subtitle: { color: '#d9f2d4', fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14, lineHeight: 21, marginTop: 8, maxWidth: 560 },
