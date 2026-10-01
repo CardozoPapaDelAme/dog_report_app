@@ -3,6 +3,8 @@
 This document is the exact domain HTTP contract. All routes are owned by one
 plain-JavaScript Hono app deployed as Supabase Edge Function `api`. The managed
 invocation prefix is `/functions/v1/api`; paths below are relative to it.
+The API implements no CORS handling (browser preflight `OPTIONS` returns 404),
+so browser/Expo web clients cannot call it; only native clients are supported.
 [`../db/schema.sql`](../db/schema.sql) is the peer persistence contract and
 [`DATA-MODEL.md`](DATA-MODEL.md) owns state semantics. A discrepancy is a release
 blocker; neither contract silently overrides the other.

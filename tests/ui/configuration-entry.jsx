@@ -158,6 +158,9 @@ function Fixture() {
   const [token, setToken] = useState(params.has('no-session') ? null : 'test-session-a');
   const [visible, setVisible] = useState(true);
   return <div style={{height:'100dvh',display:'flex',flexDirection:'column'}}>
+    <aside role="note" style={{padding:'8px 12px',background:'#fff3cd',color:'#493b08',font:'13px sans-serif',borderBottom:'1px solid #e2cf83'}}>
+      Demo local: todos los datos son ficticios. Los cambios son temporales y solo se guardan en memoria; se restablecen al reiniciar el proceso de demostración. No se usa ningún backend ni base de datos real.
+    </aside>
     <div style={{display:'flex',gap:8,padding:4,background:'#eee',font:'11px sans-serif'}}>
       <button onClick={()=>setToken(null)}>Cerrar sesión de prueba</button>
       <button onClick={()=>setToken('test-session-b')}>Otra sesión de prueba</button>

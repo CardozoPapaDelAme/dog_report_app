@@ -44,7 +44,8 @@ function fixtureSchema(source) {
   const tables = ['deployment_metadata', 'profiles', 'zone_sets', 'config_versions', 'audit_log'];
   for (const table of tables) parts.push(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY;`);
   for (const policy of ['deployment_backend_select', 'profiles_actor_select', 'zones_backend_select',
-    'zones_backend_mutate', 'config_backend_select', 'config_backend_mutate', 'audit_backend_select', 'audit_backend_insert']) {
+    'zones_backend_insert', 'zones_backend_update', 'config_backend_select', 'config_backend_insert',
+    'config_backend_update', 'audit_backend_select', 'audit_backend_insert']) {
     parts.push(match(new RegExp(`CREATE POLICY ${policy} [\\s\\S]*?;`)));
   }
   parts.push(

@@ -14,11 +14,13 @@ const migrations = [
   "20260908232749_initial_target_schema.sql",
   "20260909023000_add_photo_public_window_reset.sql",
   "20260909163000_split_retention_phases.sql",
+  "20260914183000_report_replay_lookup_rls.sql",
   "20260921010000_preserve_zone_set_retirement_evidence.sql",
   "20260921010500_store_immutable_zone_set_geojson.sql",
   "20260921011000_grant_zone_set_retirement_update.sql",
   "20260923090000_allow_anonymous_flag_origin_reads.sql",
   "20260924010000_allow_public_map_flag_reads.sql",
+  "20261001120000_split_backend_mutate_policies.sql",
 ];
 
 function assert(condition, message) {
