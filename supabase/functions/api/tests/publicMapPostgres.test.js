@@ -17,6 +17,7 @@ const migrations = [
   "20260908232749_initial_target_schema.sql",
   "20260909023000_add_photo_public_window_reset.sql",
   "20260909163000_split_retention_phases.sql",
+  "20260914183000_report_replay_lookup_rls.sql",
   "20260921010000_preserve_zone_set_retirement_evidence.sql",
   "20260921010500_store_immutable_zone_set_geojson.sql",
   "20260921011000_grant_zone_set_retirement_update.sql",
@@ -48,6 +49,13 @@ function withoutOuterTransaction(source) {
 function reportDetails(type, index) {
   if (type === "ataque_humano") {
     return { hubo_mordida: true, descripcion: `Public map attack ${index}` };
+  }
+  if (type === "ataque_ganado") {
+    return {
+      tipo_animal: "vaca",
+      cantidad_afectada: 1,
+      descripcion: `Public map livestock attack ${index}`,
+    };
   }
   return { cantidad_aprox: 1, descripcion: `Public map sighting ${index}` };
 }

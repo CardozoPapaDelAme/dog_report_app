@@ -124,6 +124,7 @@ After deploying `api` or changing its secrets, verify against the target project
   `GET /functions/v1/api/admin/configuration` return 200. A `503 preflight_mismatch`
   on the latter means the environment secret is missing or does not match
   `deployment_metadata.environment`.
+- `POST /auth/v1/signup` with the publishable key returns `422 signup_disabled`.
 
 Run the Supabase security and performance advisors after each migration. The
 current performance advisor still reports informational unindexed foreign keys

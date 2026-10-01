@@ -184,8 +184,8 @@ Migration `20261001120000_split_backend_mutate_policies.sql` replaces the
 `config_backend_insert/update`, `zones_backend_insert/update` and
 `zone_geometry_backend_insert` policies (same predicate; no DELETE policies and
 no `zones` UPDATE, matching the grants). It supports RNF20, RNF21 and RNF33; the
-`pg_policies` step in `tests/zonePostgres.test.js` (`FAB-2 SQL`) asserts at most
-one permissive `app_backend` policy per command, and `tests/configurationPostgres.test.js`
+`pg_policies` step in `tests/zonePostgres.test.js` (`FAB-2 SQL`) asserts the exact
+set of permissive `app_backend` policies (one per granted command), and `tests/configurationPostgres.test.js`
 extracts the split policies from `db/schema.sql`.
 
 The PostgreSQL/PostGIS migrations preserve retirement evidence, canonical source

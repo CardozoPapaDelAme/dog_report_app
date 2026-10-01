@@ -511,33 +511,33 @@ Deno.test({
       );
 
       await t.step(
-        "keeps at most one permissive app_backend policy per command",
+        "keeps exactly one permissive app_backend policy per granted command",
         async () => {
           const policies = await sql`
-            SELECT tablename, policyname, cmd
+            SELECT tablename, cmd, policyname
             FROM pg_policies
             WHERE schemaname = 'public'
               AND tablename IN ('config_versions', 'zone_sets', 'zones')
               AND permissive = 'PERMISSIVE'
               AND roles @> ARRAY['app_backend']::name[]
+            ORDER BY tablename, cmd, policyname
           `;
-          assert(
-            policies.length > 0 && policies.every((row) => row.cmd !== "ALL"),
-            "No FOR ALL policy may remain on configuration or zone tables.",
+          const actual = policies.map((row) =>
+            `${row.tablename}:${row.cmd}:${row.policyname}`
           );
-          const counts = new Map();
-          for (const row of policies) {
-            const key = `${row.tablename}:${row.cmd}`;
-            counts.set(key, (counts.get(key) ?? 0) + 1);
-          }
-          for (const [key, count] of counts) {
-            assert(count === 1, `Overlapping permissive policies for ${key}`);
-          }
+          const expected = [
+            "config_versions:INSERT:config_backend_insert",
+            "config_versions:SELECT:config_backend_select",
+            "config_versions:UPDATE:config_backend_update",
+            "zone_sets:INSERT:zones_backend_insert",
+            "zone_sets:SELECT:zones_backend_select",
+            "zone_sets:UPDATE:zones_backend_update",
+            "zones:INSERT:zone_geometry_backend_insert",
+            "zones:SELECT:zone_geometry_backend_select",
+          ];
           assert(
-            !counts.has("zones:UPDATE") && !counts.has("zones:DELETE") &&
-              !counts.has("zone_sets:DELETE") &&
-              !counts.has("config_versions:DELETE"),
-            "Policies must exist only for granted commands.",
+            JSON.stringify(actual) === JSON.stringify(expected),
+            `Unexpected app_backend policies: ${JSON.stringify(actual)}`,
           );
         },
       );

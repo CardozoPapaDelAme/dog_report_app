@@ -184,17 +184,21 @@ flag and public map suites create cluster-level roles, so each needs a fresh
 cluster (container) per run.
 
 Policy regression: a step in `tests/zonePostgres.test.js` reads `pg_policies` and
-asserts that `app_backend` has no `FOR ALL` policy and at most one permissive
-policy per table and command on `config_versions`, `zone_sets` and `zones`, with
-no `zones` UPDATE and no DELETE policies. This guards against the Supabase
+asserts the exact set of permissive `app_backend` policies on `config_versions`,
+`zone_sets` and `zones`: one per table and granted command, no `FOR ALL`, no
+`zones` UPDATE and no DELETE policies. This guards against the Supabase
 advisor `multiple_permissive_policies`; the migration is
 `20261001120000_split_backend_mutate_policies.sql`.
 
-Known issue (2026-10-01, also reproducible on `main`): `flag-postgres.test.js` and
-`publicMapPostgres.test.js` fail with
-`function app_private.requested_report_id() does not exist` because their
-hardcoded migration lists omit `20260914183000_report_replay_lookup_rls.sql`.
-Tracked as a follow-up; not fixed by this documentation change.
+The flag and public map suites load their migrations from hardcoded lists; keep
+those lists complete (including `20260914183000_report_replay_lookup_rls.sql`,
+which defines `app_private.requested_report_id()`) when adding a migration.
+
+Known issue (2026-10-01): the public map suite still fails in the
+"public clusters" step because `listPublicClusters`
+(`repositories/publicMapRepository.js`) sends an untyped query parameter
+(`could not determine data type of parameter $14`), so the cluster route returns
+500. Tracked as a follow-up.
 
 ## Mobile/native tests
 
