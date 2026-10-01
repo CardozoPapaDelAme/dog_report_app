@@ -983,7 +983,8 @@ GRANT USAGE ON SCHEMA public, app_private, extensions TO app_backend;
 GRANT SELECT ON public.deployment_metadata, public.profiles, public.zone_sets,
   public.zones, public.config_versions, public.reports, public.photo_assets,
   public.report_flags, public.duplicate_candidates, public.duplicate_groups,
-  public.duplicate_memberships, public.audit_log TO app_backend;
+  public.duplicate_memberships, public.audit_log,
+  public.rate_limit_buckets TO app_backend;
 GRANT INSERT ON public.reports, public.photo_assets, public.report_flags,
   public.duplicate_candidates, public.duplicate_groups,
   public.duplicate_memberships, public.config_versions, public.zone_sets,

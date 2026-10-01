@@ -176,6 +176,90 @@ function parseClientCreatedAt(value) {
   return { ok: true, value: parsed.toISOString() };
 }
 
+function logReportOperationalError(c, error, response) {
+  if (!response || response.status < 500) return;
+  console.error(JSON.stringify({
+    event: "report_create_failed",
+    request_id: c.get("requestId") ?? "",
+    status: response.status,
+    code: response.code,
+    category: error?.details?.category ?? error?.logDetails?.category ?? null,
+    sql_code: error?.details?.sql_code ?? error?.logDetails?.sql_code ?? null,
+    sql_message: error?.logDetails?.sql_message ?? null,
+  }));
+}
+
+export function createReportErrorResponse(error) {
+  if (error?.code === "report_id_payload_conflict") {
+    return {
+      status: 409,
+      code: "report_id_payload_conflict",
+      message: "Report id already exists with different content.",
+    };
+  }
+  if (error?.code === "client_created_at_out_of_bounds") {
+    return {
+      status: 400,
+      code: "client_created_at_out_of_bounds",
+      message: "client_created_at is outside the allowed submission window.",
+    };
+  }
+  if (error?.code === "outside_geofence") {
+    return {
+      status: 400,
+      code: "invalid_coordinates",
+      message: "Location is outside the active Creel geofence.",
+    };
+  }
+  if (error?.code === "invalid_details") {
+    return {
+      status: 400,
+      code: "invalid_details",
+      message: "details does not match the incident contract.",
+      details: error.details,
+    };
+  }
+  if (error?.code === "report_rate_limit_exceeded") {
+    return {
+      status: 429,
+      code: "report_rate_limit_exceeded",
+      message: "Hourly report limit exceeded.",
+      retryAfterSeconds: error.retryAfterSeconds ?? 3600,
+    };
+  }
+  if (error?.code === "geofence_not_configured") {
+    return {
+      status: 503,
+      code: "geofence_not_configured",
+      message: "Active Creel geofence is missing.",
+    };
+  }
+  if (error?.code === "configuration_unavailable") {
+    return {
+      status: 503,
+      code: "configuration_unavailable",
+      message: "Active report configuration is missing.",
+    };
+  }
+  if (error?.code === "database_unavailable") {
+    return {
+      status: 503,
+      code: "database_unavailable",
+      message: "Report database is unavailable.",
+      details: error.details,
+    };
+  }
+  if (error?.code === "preflight_mismatch") {
+    return {
+      status: 503,
+      code: "preflight_mismatch",
+      message: "Report API environment needs technical review before accepting reports.",
+      details: error.details,
+    };
+  }
+  return null;
+}
+
 export function parseCreateReportBody(raw) {
   if (!raw) {
     return invalid("invalid_request", "Request body must be a JSON object.");
@@ -276,61 +360,18 @@ export async function createReportController(c) {
     });
     return presentReportReceipt(c, receipt);
   } catch (error) {
-    if (error?.code === "report_id_payload_conflict") {
+    const response = createReportErrorResponse(error);
+    if (response) {
+      logReportOperationalError(c, error, response);
+      if (response.retryAfterSeconds) {
+        c.header("Retry-After", String(response.retryAfterSeconds));
+      }
       return presentError(
         c,
-        409,
-        "report_id_payload_conflict",
-        "Report id already exists with different content.",
-      );
-    }
-    if (error?.code === "client_created_at_out_of_bounds") {
-      return presentError(
-        c,
-        400,
-        "client_created_at_out_of_bounds",
-        "client_created_at is outside the allowed submission window.",
-      );
-    }
-    if (error?.code === "outside_geofence") {
-      return presentError(
-        c,
-        400,
-        "invalid_coordinates",
-        "Location is outside the active Creel geofence.",
-      );
-    }
-    if (error?.code === "invalid_details") {
-      return presentError(
-        c,
-        400,
-        "invalid_details",
-        "details does not match the incident contract.",
-      );
-    }
-    if (error?.code === "report_rate_limit_exceeded") {
-      c.header("Retry-After", String(error.retryAfterSeconds ?? 3600));
-      return presentError(
-        c,
-        429,
-        "report_rate_limit_exceeded",
-        "Hourly report limit exceeded.",
-      );
-    }
-    if (error?.code === "geofence_not_configured") {
-      return presentError(
-        c,
-        503,
-        "geofence_not_configured",
-        "Active Creel geofence is missing.",
-      );
-    }
-    if (error?.code === "configuration_unavailable") {
-      return presentError(
-        c,
-        503,
-        "configuration_unavailable",
-        "Active report configuration is missing.",
+        response.status,
+        response.code,
+        response.message,
+        response.details,
       );
     }
     throw error;

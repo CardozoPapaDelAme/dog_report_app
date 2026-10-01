@@ -223,6 +223,12 @@ Current report-intake coverage maps as follows:
 | `supabase/functions/api/services/report-service.test.js` | RF01, RNF09, RNF12, RNF26, HU-01 | Canonical idempotency hash, fingerprint-independent replay, replay short-circuit before geofence/rate/trust, server-time `client_created_at` window, hourly retry calculation |
 | `supabase/functions/api/services/trust-service.test.js` | RNF27, RNF28 | High-trust publication path and mandatory review for mock/imprecise location signals |
 
+Temporary demo-only missing-geofence bypass coverage lives in
+`supabase/functions/api/services/report-service.test.js`: default behavior still
+fails closed before quota/trust/insert, the explicit non-production flag permits
+photo-flow verification without an active zone, and an existing active geofence
+still rejects outside points.
+
 ## FAB-5 / L5 zone-set screen
 
 | Requirements / stories | Implemented boundary | Executable evidence |
