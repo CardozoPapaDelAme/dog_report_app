@@ -25,8 +25,8 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF13 | Cluster renderer | `highest_severity`; `type_counts` | Highest severity and all six type keys, zeros included |
 | RF14 | Map interaction | Fixed zoom-to-radius repository contract | Progressive expansion to pins |
 | RF15 | Asociación de Hoteles de Chihuahua login | `LoginScreen` → `useLogin` → login Controller/Service → Supabase Auth + `GET /me` | Multiple provisioned accounts; no signup; role from server |
-| RF16 | Asociación de Hoteles de Chihuahua dashboard | `GET /association/reports` | Accepted canonical business data only |
-| RF17 | Asociación de Hoteles de Chihuahua export | Same paginated role route/view | CSV/Excel parity and authorization |
+| RF16 | Asociación de Hoteles de Chihuahua dashboard; `screens/associationDashboardScreen.js`, `models/associationReport.js`, `services/associationReportApi.js`, `hooks/useAssociationReports.js` | `GET /association/reports` through cursor-based range loader | Accepted canonical business data only; date filters, loading, empty/error states, full pagination in model/API/loader and `tests/ui/associationDashboard.spec.js` |
+| RF17 | Asociación de Hoteles de Chihuahua export; shared RIC-2 projection and complete in-memory range | Same paginated role route/view; local CSV download/share, no export endpoint | Loader rejects partial/repeated pages; browser test compares downloaded CSV rows with the filtered table; mobile share requires Expo development build |
 | RF18 | Administrator login | `LoginScreen` → `useLogin` → login Controller/Service → Supabase Auth + `GET /me` | Provisioned account; no signup; role from server |
 | RF19 | Administrator Command Center and moderation queue | `GET /admin/moderation-queue`; `CommandCenterScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; page-scoped responsive ES/EN summary; no aggregate/BI endpoint |
 | RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/hide/restore/delete update the queue projection; hide, restore and delete require a written reason; no direct mobile database update; audited reversible deletion |
@@ -103,8 +103,8 @@ type counts.
 | HU-13 | RF13 | Cluster detail | Severity/count fields | Highest severity and breakdown |
 | HU-14 | RF14 | Map zoom | Fixed zoom levels | Progressive expansion |
 | HU-15 | RF15, RNF07 | Asociación de Hoteles de Chihuahua auth | JWT/profile/role + `GET /me` | Provisioned multi-account role |
-| HU-16 | RF16 | Asociación de Hoteles de Chihuahua dashboard | Role route/presenter | Accepted canonical data only |
-| HU-17 | RF17 | Asociación de Hoteles de Chihuahua export | Same role route/presenter | Export parity |
+| HU-16 | RF16 | Asociación de Hoteles de Chihuahua dashboard | `AssociationDashboardScreen` → `useAssociationReports` → RIC-2 route/presenter | Accepted canonical data; filtered table, loading and empty states |
+| HU-17 | RF17 | Asociación de Hoteles de Chihuahua export | Same in-memory table rows → CSV file | Export parity and disabled action until the complete range loads |
 | HU-18 | RF18, RNF07 | Administrator auth | JWT/profile/role + `GET /me` | Provisioned access |
 | HU-19 | RF19, RF08 | Command Center moderation queue | Administrator route/presenter + responsive Expo screen | Flag/trust context, explicitly page-scoped summary, pagination, refresh, empty/error/session states |
 | HU-20 | RF20, RNF33 | Moderation | Hono approve/hide/restore/delete routes + generic Expo command client | Audited logical deletion; buttons follow `allowed_commands`; successful commands update the local queue projection |
