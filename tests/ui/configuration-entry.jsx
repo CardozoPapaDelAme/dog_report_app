@@ -3,6 +3,7 @@ import React, { StrictMode, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../../i18n/index.js';
+import DuplicateManagementScreen from '../../screens/DuplicateManagementScreen.js';
 import ZoneSetScreen from '../../screens/ZoneSetScreen.js';
 import ConfigurationScreen from '../../screens/ConfigurationScreen.js';
 import ReportFormScreen from '../../screens/ReportFormScreen.js';
@@ -119,8 +120,15 @@ function ReportFixture() {
 
 function Fixture() {
   const params = new URLSearchParams(location.search);
-  const Screen = params.has('report') ? ReportFixture : params.has('zones') ? ZoneSetScreen : ConfigurationScreen;
-  const [token, setToken] = useState(new URLSearchParams(location.search).has('no-session') ? null : 'test-session-a');
+  const Screen = params.has('report')
+    ? ReportFixture
+    : params.has('duplicates')
+      ? DuplicateManagementScreen
+      : params.has('zones')
+        ? ZoneSetScreen
+        : ConfigurationScreen;
+
+  const [token, setToken] = useState(params.has('no-session') ? null : 'test-session-a');
   const [visible, setVisible] = useState(true);
   return <div style={{height:'100dvh',display:'flex',flexDirection:'column'}}>
     <div style={{display:'flex',gap:8,padding:4,background:'#eee',font:'11px sans-serif'}}>

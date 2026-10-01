@@ -79,12 +79,14 @@ sequenceDiagram
 
 ## State effects
 
-| Command | Effect |
-|---|---|
+
+| Command                                  | Effect                                                                             |
+| ---------------------------------------- | ---------------------------------------------------------------------------------- |
 | `POST /admin/reports/:report_id/approve` | `pending_review`/`hidden` → `visible`; starts or restarts the 90-day public window |
-| `POST /admin/reports/:report_id/hide` | `pending_review`/`visible` → `hidden` |
-| `POST /admin/reports/:report_id/delete` | Any non-deleted state → reversible `deleted`; never hard-deletes |
-| `POST /admin/reports/:report_id/restore` | `hidden`/`deleted` → `pending_review`; approval is still required to publish |
+| `POST /admin/reports/:report_id/hide`    | `pending_review`/`visible` → `hidden`                                              |
+| `POST /admin/reports/:report_id/delete`  | Any non-deleted state → reversible `deleted`; never hard-deletes                   |
+| `POST /admin/reports/:report_id/restore` | `hidden`/`deleted` → `pending_review`; approval is still required to publish       |
+
 
 Every successful command locks, transitions, and appends audit evidence in the
 same transaction. Hard deletion belongs only to retention.
@@ -94,3 +96,4 @@ same transaction. Hard deletion belongs only to retention.
 - [`../../API.md`](../../API.md): Administrator queue, command routes, bodies, and errors.
 - [`../../DATA-MODEL.md`](../../DATA-MODEL.md): moderation state machine and retention.
 - [`../../SECURITY.md`](../../SECURITY.md): sibling roles, immutable evidence, and audit controls.
+

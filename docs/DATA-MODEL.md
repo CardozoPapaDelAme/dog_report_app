@@ -87,6 +87,15 @@ represented by active membership, not another overloaded report status.
 
 ## Duplicate model
 
+The L6 Administrator candidate projection reads eligible pending edges and their
+report endpoints in a single SQL statement. It includes visible/hidden/pending
+reports, excludes deleted endpoints and active memberships, and returns complete
+connected-component input without truncation. It derives no new persisted state.
+Both local connectivity checks and grouping use pending edges only; the existing
+FAB-3 Service remains authoritative at command time. Reversal rereads this
+projection rather than fabricating pending edges in the client.
+
+
 Detection writes candidate pairs only. Administrator resolution creates one active
 group, exactly one canonical membership, and one or more duplicate memberships.
 Every member must appear in a pending candidate whose both ends are in the set, and

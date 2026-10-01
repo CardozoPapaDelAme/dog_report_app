@@ -6,6 +6,7 @@ import {
 } from "../domain/duplicateGroup.js";
 import { duplicateService } from "../services/duplicateService.js";
 import {
+  presentDuplicateCandidates,
   presentDuplicateGroup,
   presentDuplicateGroups,
 } from "../presenters/duplicateGroup.js";
@@ -67,6 +68,17 @@ async function readJson(c) {
 }
 export function createDuplicateController(service = duplicateService) {
   return {
+    async candidates(c) {
+      try {
+        rejectQuery(c);
+        if (await c.req.text()) {
+          throw new DuplicateError("invalid_request", "GET does not accept a body.");
+        }
+        return presentDuplicateCandidates(c, await service.candidates({ actor: c.get("auth") }));
+      } catch (error) {
+        return errorResponse(c, error);
+      }
+    },
     async list(c) {
       try {
         rejectQuery(c);

@@ -24,10 +24,10 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF12 | Cluster renderer | `report_count` | Circle size follows count |
 | RF13 | Cluster renderer | `highest_severity`; `type_counts` | Highest severity and all six type keys, zeros included |
 | RF14 | Map interaction | Fixed zoom-to-radius repository contract | Progressive expansion to pins |
-| RF15 | Asociación de Hoteles de Chihuahua login | Auth JWT + `GET /me` + profile/role agreement | Multiple provisioned accounts; no signup |
+| RF15 | Asociación de Hoteles de Chihuahua login | `LoginScreen` → `useLogin` → login Controller/Service → Supabase Auth + `GET /me` | Multiple provisioned accounts; no signup; role from server |
 | RF16 | Asociación de Hoteles de Chihuahua dashboard | `GET /association/reports` | Accepted canonical business data only |
 | RF17 | Asociación de Hoteles de Chihuahua export | Same paginated role route/view | CSV/Excel parity and authorization |
-| RF18 | Administrator login | Auth JWT + `GET /me` + profile/role agreement | Provisioned account; no signup |
+| RF18 | Administrator login | `LoginScreen` → `useLogin` → login Controller/Service → Supabase Auth + `GET /me` | Provisioned account; no signup; role from server |
 | RF19 | Administrator Command Center and moderation queue | `GET /admin/moderation-queue`; `CommandCenterScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; page-scoped responsive ES/EN summary; no aggregate/BI endpoint |
 | RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/hide/restore/delete update the queue projection; hide, restore and delete require a written reason; no direct mobile database update; audited reversible deletion |
 | RF21 | Flag review/state machine | FlagService + restore/approve routes | Threshold, audit, restore semantics |
@@ -153,6 +153,23 @@ to the same actor, association access is denied, and profile revocation prevents
 publication. Its session and persistence are simulated; real JWT/Supabase
 verification remains pending.
 
+## RF15 / RF18 / RNF07 Expo login (L3)
+
+The Expo login sends credentials to Supabase Auth, then the login Controller
+calls `GET /me` and uses only its validated sibling role to select the
+Association or Administrator dashboard. The Supabase session persists through
+the native SecureStore adapter; refresh tokens are never placed in app-owned
+plain storage. Failure to refresh or validate an active profile clears the
+current device session. There is no signup or role selector.
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RF15, RF18, RNF07, RNF20, RNF21; HU-15, HU-18 | `LoginScreen` → `useLogin` → `loginController` → `authService` → Supabase Auth + `GET /me` | `controllers/loginController.test.js`; `services/secureSessionStorage.test.js`; `npm run test:auth` |
+
+These tests use an injected Auth/API service and fake secure storage. Real
+managed Supabase sign-in and physical-device Keychain/Android Keystore behavior
+remain release checks after local public client configuration is supplied.
+
 ## FAB-2 / L2 zone-set implementation
 
 | Requirements / stories | Implemented boundary | Executable evidence |
@@ -221,3 +238,18 @@ documented `/admin/zone-sets` URLs and retains `/admin/zoneSets` aliases with
 identical guards. FAB-2 HTTP tests now assert the canonical URLs and auth on both
 spellings. Real JWT, managed deployment and physical-device checks remain pending;
 see `docs/TESTING.md` for exact simulated/compiled evidence and recovery limits.
+
+## FAB-6 / L6 duplicate management screen
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RF23; HU-23; RNF30 | Full eligible pending-candidate projection including visible reports; components and explicit canonical selection | `controllers/duplicateController.test.js` (`FAB-6 HTTP`); `models/duplicateCandidate.test.js`; SQL candidate snapshot assertions in `tests/duplicatePostgres.test.js` |
+| RNF20, RNF21, RNF33 | Active Administrator only, local transaction context, existing RLS/grants, no private metadata | `services/duplicateService.test.js` (`FAB-6 SERVICE`); real SQL projection denied to anonymous/Association actors |
+| RF13, RF23; HU-23; RNF30, RNF33 | Connected selected subgraph checked before POST; server rechecks; reversal reopens candidates without touching originals or moderation | Exhaustive subset parity with FAB-3 in model tests; `services/duplicateApi.test.js`; real SQL resolve/reverse evidence and unchanged report/photo assertions |
+| RNF34; L6 acceptance | Clear pre-submit graph warning, optional resolution reason, mandatory reversal reason, session isolation and uncertain-result recovery | `tests/ui/duplicateManagement.spec.js` (16 browser cases), plus L4/L5 regressions |
+
+Implementation: `screens/DuplicateManagementScreen.js` →
+`hooks/useDuplicateResolution.js` → `models/duplicateCandidate.js` /
+`services/duplicateApi.js` → FAB-3. `App.js` uses the session integration now on
+main and grants navigation through the Administrator moderation screen. No real
+account, production resolution, migration or deployment is performed by tests.

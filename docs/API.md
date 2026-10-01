@@ -46,6 +46,7 @@ blocker; neither contract silently overrides the other.
 | `POST /admin/reports/:report_id/hide` | Administrator | 200 | ModerationService |
 | `POST /admin/reports/:report_id/delete` | Administrator | 200 | ModerationService |
 | `POST /admin/reports/:report_id/restore` | Administrator | 200 | ModerationService |
+| `GET /admin/duplicate-candidates` | Administrator | 200 | DuplicateService |
 | `GET /admin/duplicate-groups` | Administrator | 200 | DuplicateService |
 | `POST /admin/duplicate-groups` | Administrator | 201 | DuplicateService |
 | `POST /admin/duplicate-groups/:group_id/reverse` | Administrator | 200 | DuplicateService |
@@ -195,6 +196,43 @@ same transaction. Invalid/stale state returns `409 invalid_*_transition`.
 Canonical Hono routes are `/api/admin/duplicate-groups` and
 `/api/admin/duplicate-groups/:group_id/reverse`; do not add a second `/api`
 to the mobile API base URL. All require an active Administrator.
+
+The camelCase `/api/admin/duplicateGroups` and
+`/api/admin/duplicateGroups/:group_id/reverse` remain compatibility aliases with
+identical authorization and commands. New clients use the hyphenated paths.
+
+#### Candidate review projection (FAB-6 / L6)
+
+`GET /admin/duplicate-candidates` requires an active Administrator and accepts no
+body or query parameters. It returns `200 { "data": { "reports": [],
+"candidates": [] } }` in one SQL snapshot. It includes only pending edges whose
+endpoints exist, are not logically deleted and have no active duplicate
+membership. Endpoints can be `visible`, `hidden` or `pending_review`; the
+moderation queue alone cannot supply this view because it excludes visible rows.
+
+`reports` contains the distinct eligible endpoints, ordered by id:
+`{ id, status, incident_type, sighting_type, details,
+dog: { predominant_color, size, has_collar },
+location: { longitude, latitude }, client_created_at }`.
+`candidates`, ordered by id, contains
+`{ id, report_a, report_b, status: "pending", distance_meters, minutes_apart,
+matched_signals }`. No fingerprint, actor profile, raw EXIF, photo bytes or private
+storage paths are exposed. This read uses the existing Service transaction,
+actor/environment checks, SQL privileges and RLS; no new grants are needed.
+
+Like the active-group collection, this prototype projection is not paginated.
+It never truncates an edge set or treats an unloaded neighbor as a disconnected
+report. The client forms connected components for review, then validates the
+**induced graph of the selected reports** before submitting. The Service checks
+membership/connectivity again under locks, since reads may become stale.
+Future scaling must preserve complete components or provide an explicit graph
+snapshot protocol; arbitrary report/edge pagination is not equivalent.
+
+Errors are `400 invalid_request`, `401 authentication_required`, `403 forbidden`,
+`503 preflight_mismatch` / `dependency_unavailable`, or a generic 500.
+Unsupported methods return `405 Allow: GET`.
+
+#### Resolution and reversal
 
 `GET /admin/duplicate-groups` accepts no body or query parameters. It returns
 `200 { "data": { "duplicate_groups": [] } }`, containing only active groups,

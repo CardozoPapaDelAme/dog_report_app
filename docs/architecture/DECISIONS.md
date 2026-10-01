@@ -293,3 +293,23 @@ object deletion.
 
 **Constraint.** Retries converge. Failed deletes remain discoverable. Scheduled
 calls require a dedicated secret and project/environment preflight before work.
+
+## ADR-021 — Complete Administrator candidate projection for duplicate review
+
+**Decision.** L6 consumes `GET /admin/duplicate-candidates` through the existing
+Duplicate Controller, Service, Repository and Presenter. A single SQL snapshot
+returns pending edges and eligible report endpoints. The client groups connected
+components and validates the selected induced subgraph before FAB-3 resolution.
+The command Service retains its locking, membership checks, audit and final
+connectivity decision. Canonical hyphenated FAB-3 URLs are restored; previously
+shipped camelCase spellings remain guarded aliases.
+
+**Why.** The moderation queue omits visible reports, while a valid candidate may
+connect visible, hidden or pending reports. Reading only that queue would hide
+valid resolutions or incorrectly label a partially loaded graph disconnected.
+
+**Constraint.** This prototype read is complete and unpaginated, as is the active
+group list. A future scale change must paginate complete components or introduce
+a snapshot protocol, not silently truncate edges. No new persistence, roles,
+grants or moderation semantics are introduced. Resolution/reversal remain
+separate audited commands; reversal changes candidate review, not report data.

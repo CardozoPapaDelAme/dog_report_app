@@ -93,7 +93,7 @@ Deno.test({
         }),
       );
       const request = (path, body, method = "POST") =>
-        app.request(`/api/admin/duplicateGroups${path}`, {
+        app.request(`/api/admin/duplicate-groups${path}`, {
           method,
           headers: { "Content-Type": "application/json" },
           ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -158,12 +158,21 @@ Deno.test({
             candidates.length === 2,
             "Detection must suggest A–B–C without requiring A–C",
           );
+          const snapshotResponse = await app.request('/api/admin/duplicate-candidates');
+          const snapshot = (await snapshotResponse.json()).data;
+          assert(snapshotResponse.status === 200 && snapshot.reports.length === 3 && snapshot.candidates.length === 2);
+          assert(snapshot.reports.every((r) => r.status === 'visible' && r.details.descripcion === 'Original evidence'));
+          for (const role of ['anonymous', 'association']) {
+            const deniedSnapshot = await asRole(role, repository.listPendingDuplicateCandidates);
+            assert(deniedSnapshot.candidates.length === 0 && deniedSnapshot.reports.length === 0);
+          }
           const original = await evidence();
           const { note: _note, ...withoutNote } = resolution(firstIds);
           const response = await request("", withoutNote);
           const body = await response.json();
           assert(response.status === 201, JSON.stringify(body));
           firstGroup = body.data.duplicate_group;
+          assert((await service.candidates({actor})).candidates.length === 0);
           assert(
             firstGroup.report_ids.length === 3 &&
               firstGroup.resolution_version === 1,
@@ -215,6 +224,8 @@ Deno.test({
             JSON.stringify(body),
           );
           assert(await evidence() === original);
+          const reopened = await service.candidates({actor});
+          assert(reopened.candidates.length === 2 && reopened.reports.length === 3);
           assert(
             (await sql`SELECT * FROM public.duplicate_memberships WHERE group_id=${firstGroup.id} AND active`)
               .length === 0,
