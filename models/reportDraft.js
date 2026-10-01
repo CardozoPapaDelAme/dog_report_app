@@ -37,6 +37,11 @@ const DEFAULT_RETRY_BASE_MS = 30_000;
 const DEFAULT_RETRY_MAX_MS = 15 * 60_000;
 
 export { buildReportPayload } from './reportPayload.js';
+export {
+  photoStatusAllowsLocalCompletion,
+  photoStatusIsPending,
+  photoStatusIsTerminal,
+} from './photoState.js';
 
 function iso(value) {
   if (value instanceof Date) return value.toISOString();
@@ -271,14 +276,6 @@ export function applySyncErrorToDraft(draft, error, options = {}) {
   return isRetryableSyncError(error)
     ? markDraftForRetry(draft, error, options)
     : markDraftTerminalError(draft, error, options);
-}
-
-export function photoStatusIsPending(status) {
-  return Boolean(status?.photo_expected && !status?.processing_complete);
-}
-
-export function photoStatusAllowsLocalCompletion(status) {
-  return Boolean(status?.local_cleanup_allowed);
 }
 
 export function draftSyncIsDue(draft, now = new Date()) {

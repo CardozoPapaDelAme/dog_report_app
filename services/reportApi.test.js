@@ -2,6 +2,7 @@ import {
   createPhotoFormData,
   getReportPhotoStatus,
   submitReport,
+  uploadReportPhotoFile,
   uploadReportPhoto,
 } from './reportApi.js';
 
@@ -93,6 +94,62 @@ Deno.test('L6 report API uploads photo as multipart without JSON content type', 
   assert(calls[0].options.headers['X-Device-Fingerprint'] === 'device-fingerprint-1');
   assert(calls[0].options.contentType === null);
   assert(calls[0].options.body instanceof FormData);
+});
+
+Deno.test('L8 report API uploads native file:// photos as multipart', async () => {
+  const previousProcess = Object.getOwnPropertyDescriptor(globalThis, 'process');
+  Object.defineProperty(globalThis, 'process', {
+    configurable: true,
+    value: { env: { EXPO_PUBLIC_API_BASE_URL: 'https://api.example/functions/v1/api/' } },
+  });
+  const calls = [];
+  const fileSystem = {
+    FileSystemUploadType: { MULTIPART: 1 },
+    async uploadAsync(url, fileUri, options) {
+      calls.push({ url, fileUri, options });
+      return {
+        status: 201,
+        headers: { 'x-request-id': 'native-upload-request' },
+        body: JSON.stringify({
+          data: {
+            report_id: payload.id,
+            photo_expected: true,
+            state: 'approved',
+            rejection_code: null,
+            processing_complete: true,
+            upload_succeeded: true,
+            local_cleanup_allowed: true,
+          },
+        }),
+      };
+    },
+  };
+
+  try {
+    const result = await uploadReportPhotoFile({
+      reportId: payload.id,
+      deviceFingerprint: 'device-fingerprint-1',
+      photoUri: 'file:///cache/prepared.jpg',
+      mimeType: 'image/jpeg',
+      fileSystem,
+      requestId: 'native-upload-request',
+    });
+
+    assert(result.state === 'approved');
+    assert(calls[0].url === `https://api.example/functions/v1/api/reports/${payload.id}/photo`);
+    assert(calls[0].fileUri === 'file:///cache/prepared.jpg');
+    assert(calls[0].options.uploadType === 1);
+    assert(calls[0].options.fieldName === 'photo');
+    assert(calls[0].options.mimeType === 'image/jpeg');
+    assert(calls[0].options.headers['X-Device-Fingerprint'] === 'device-fingerprint-1');
+    assert(calls[0].options.headers['X-Request-Id'] === 'native-upload-request');
+  } finally {
+    if (previousProcess) {
+      Object.defineProperty(globalThis, 'process', previousProcess);
+    } else {
+      delete globalThis.process;
+    }
+  }
 });
 
 Deno.test('L6 report API reads photo status with submitting fingerprint', async () => {
