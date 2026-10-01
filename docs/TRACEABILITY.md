@@ -25,8 +25,8 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF13 | Cluster renderer | `highest_severity`; `type_counts` | Highest severity and all six type keys, zeros included |
 | RF14 | Map interaction | Fixed zoom-to-radius repository contract | Progressive expansion to pins |
 | RF15 | Asociación de Hoteles de Chihuahua login | `LoginScreen` → `useLogin` → login Controller/Service → Supabase Auth + `GET /me` | Multiple provisioned accounts; no signup; role from server |
-| RF16 | Asociación de Hoteles de Chihuahua dashboard | `GET /association/reports` | Accepted canonical business data only |
-| RF17 | Asociación de Hoteles de Chihuahua export | Same paginated role route/view | CSV/Excel parity and authorization |
+| RF16 | Asociación de Hoteles de Chihuahua dashboard; `models/associationReport.js` RIC-2 projection/date-range model | `GET /association/reports` | Accepted canonical business data only; `models/associationReport.test.js` validates response and date range |
+| RF17 | Asociación de Hoteles de Chihuahua export; shared RIC-2 projection model | Same paginated role route/view | CSV/Excel parity and authorization; export UI remains pending |
 | RF18 | Administrator login | `LoginScreen` → `useLogin` → login Controller/Service → Supabase Auth + `GET /me` | Provisioned account; no signup; role from server |
 | RF19 | Administrator Command Center and moderation queue | `GET /admin/moderation-queue`; `CommandCenterScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; page-scoped responsive ES/EN summary; no aggregate/BI endpoint |
 | RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/hide/restore/delete update the queue projection; hide, restore and delete require a written reason; no direct mobile database update; audited reversible deletion |
