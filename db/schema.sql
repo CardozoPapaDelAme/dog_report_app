@@ -863,18 +863,21 @@ USING (id = app_private.actor_id() OR app_private.actor_role() = 'internal');
 
 CREATE POLICY zones_backend_select ON public.zone_sets FOR SELECT TO app_backend
 USING (app_private.actor_role() IN ('anonymous', 'association', 'administrator', 'internal'));
-CREATE POLICY zones_backend_mutate ON public.zone_sets FOR ALL TO app_backend
+CREATE POLICY zones_backend_insert ON public.zone_sets FOR INSERT TO app_backend
+WITH CHECK (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal');
+CREATE POLICY zones_backend_update ON public.zone_sets FOR UPDATE TO app_backend
 USING (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal')
 WITH CHECK (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal');
 CREATE POLICY zone_geometry_backend_select ON public.zones FOR SELECT TO app_backend
 USING (app_private.actor_role() IN ('anonymous', 'administrator', 'internal'));
-CREATE POLICY zone_geometry_backend_mutate ON public.zones FOR ALL TO app_backend
-USING (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal')
+CREATE POLICY zone_geometry_backend_insert ON public.zones FOR INSERT TO app_backend
 WITH CHECK (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal');
 
 CREATE POLICY config_backend_select ON public.config_versions FOR SELECT TO app_backend
 USING (app_private.actor_role() IN ('anonymous', 'association', 'administrator', 'internal'));
-CREATE POLICY config_backend_mutate ON public.config_versions FOR ALL TO app_backend
+CREATE POLICY config_backend_insert ON public.config_versions FOR INSERT TO app_backend
+WITH CHECK (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal');
+CREATE POLICY config_backend_update ON public.config_versions FOR UPDATE TO app_backend
 USING (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal')
 WITH CHECK (app_private.is_active_actor('administrator') OR app_private.actor_role() = 'internal');
 

@@ -39,8 +39,13 @@ npx expo start
 `https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api/health`.
 Set `EXPO_PUBLIC_API_BASE_URL` to
 `https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api`.
+Client request paths are relative to that base (for example `/me`, not `/api/me`).
 Use `services/apiClient.js` for HTTP. Expo Go is enough for the skeleton;
 MapLibre and TFLite later need a development build.
+
+Known limitation: the `api` Function implements no CORS handling, so a browser
+preflight `OPTIONS` returns 404 and Expo web cannot call the live API. Use a
+native client (Expo Go or a development build).
 
 If a ticket needs the shared database, also run:
 

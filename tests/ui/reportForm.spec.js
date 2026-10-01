@@ -9,10 +9,6 @@ test.beforeEach(({ page }) => {
 });
 
 test.afterEach(({ page }) => expect(pageErrors.get(page)).toEqual([]));
-test.afterAll(async () => {
-  await fetch('http://127.0.0.1:4174/__shutdown').catch(() => {});
-});
-
 async function openReport(page, routeHandler, query = '?report') {
   await page.route('**/reports', routeHandler);
   await page.goto(`/${query}`);

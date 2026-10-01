@@ -99,6 +99,7 @@ const l2Migrations = [
   "20260921010000_preserve_zone_set_retirement_evidence.sql",
   "20260921010500_store_immutable_zone_set_geojson.sql",
   "20260921011000_grant_zone_set_retirement_update.sql",
+  "20261001120000_split_backend_mutate_policies.sql",
 ];
 
 async function installPrerequisites(sql) {
@@ -505,6 +506,38 @@ Deno.test({
               `,
               ),
             "42501",
+          );
+        },
+      );
+
+      await t.step(
+        "keeps exactly one permissive app_backend policy per granted command",
+        async () => {
+          const policies = await sql`
+            SELECT tablename, cmd, policyname
+            FROM pg_policies
+            WHERE schemaname = 'public'
+              AND tablename IN ('config_versions', 'zone_sets', 'zones')
+              AND permissive = 'PERMISSIVE'
+              AND roles @> ARRAY['app_backend']::name[]
+            ORDER BY tablename, cmd, policyname
+          `;
+          const actual = policies.map((row) =>
+            `${row.tablename}:${row.cmd}:${row.policyname}`
+          );
+          const expected = [
+            "config_versions:INSERT:config_backend_insert",
+            "config_versions:SELECT:config_backend_select",
+            "config_versions:UPDATE:config_backend_update",
+            "zone_sets:INSERT:zones_backend_insert",
+            "zone_sets:SELECT:zones_backend_select",
+            "zone_sets:UPDATE:zones_backend_update",
+            "zones:INSERT:zone_geometry_backend_insert",
+            "zones:SELECT:zone_geometry_backend_select",
+          ];
+          assert(
+            JSON.stringify(actual) === JSON.stringify(expected),
+            `Unexpected app_backend policies: ${JSON.stringify(actual)}`,
           );
         },
       );

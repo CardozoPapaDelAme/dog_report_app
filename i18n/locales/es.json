@@ -18,7 +18,32 @@
   "associationDashboard": {
     "eyebrow": "Asociación de Hoteles de Chihuahua",
     "title": "Panel de la Asociación",
-    "body": "Tu acceso está activo. La consulta de reportes se habilitará en esta pantalla."
+    "from": "Desde",
+    "to": "Hasta",
+    "search": "Consultar",
+    "dateHint": "El rango incluye días completos según la fecha de aceptación.",
+    "results": "Reportes aceptados",
+    "count_one": "{{count}} reporte en este rango",
+    "count_other": "{{count}} reportes en este rango",
+    "export": "Exportar CSV",
+    "exporting": "Preparando archivo…",
+    "exportError": "No se pudo guardar el archivo. Inténtalo de nuevo.",
+    "loading": "Cargando todos los reportes del rango…",
+    "empty": "No hay resultados en este rango.",
+    "invalid": "Revisa las fechas del rango.",
+    "invalidDate": "Usa una fecha válida con formato AAAA-MM-DD.",
+    "reversedDate": "La fecha final debe ser igual o posterior a la inicial.",
+    "session": "Tu sesión no está disponible. Vuelve a iniciar sesión.",
+    "forbidden": "Esta cuenta no tiene acceso a los reportes de la Asociación.",
+    "error": "No pudimos cargar los reportes del rango.",
+    "idle": "Selecciona un rango para consultar reportes.",
+    "retry": "Reintentar",
+    "columns": {
+      "id": "ID del reporte", "accepted_at": "Fecha de aceptación", "occurred_at": "Fecha del reporte",
+      "incident_type": "Incidente", "sighting_type": "Avistamiento", "details": "Detalles",
+      "predominant_color": "Color", "size": "Tamaño", "has_collar": "Collar",
+      "longitude": "Longitud", "latitude": "Latitud", "has_sanitized_photo": "Foto disponible"
+    }
   },
   "common": {
     "yes": "Sí",

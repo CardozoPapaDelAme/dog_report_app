@@ -167,6 +167,40 @@ PUBLIC_MAP_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:5543
   supabase/functions/api/tests/publicMapPostgres.test.js
 ```
 
+## Database suites: how they run and known issues
+
+Each PostgreSQL suite is opt-in and requires a **fresh disposable loopback
+PostGIS database** with a fixed name, supplied through its own URL variable:
+
+| Suite file | Database name | Variable |
+|---|---|---|
+| `tests/configurationPostgres.test.js` | `fab1_configuration_test` | `CONFIGURATION_TEST_DATABASE_URL` |
+| `tests/zonePostgres.test.js` | `fab2_zone_test` | `ZONE_TEST_DATABASE_URL` |
+| `tests/duplicatePostgres.test.js` | `fab3_duplicate_test` | `DUPLICATE_TEST_DATABASE_URL` |
+| `tests/flag-postgres.test.js` | `fab4_flag_test` | `FLAG_TEST_DATABASE_URL` |
+| `tests/publicMapPostgres.test.js` | `fab_public_map_test` | `PUBLIC_MAP_TEST_DATABASE_URL` |
+
+Suites refuse non-loopback URLs, other database names and nonempty schemas. The
+flag and public map suites create cluster-level roles, so each needs a fresh
+cluster (container) per run.
+
+Policy regression: a step in `tests/zonePostgres.test.js` reads `pg_policies` and
+asserts the exact set of permissive `app_backend` policies on `config_versions`,
+`zone_sets` and `zones`: one per table and granted command, no `FOR ALL`, no
+`zones` UPDATE and no DELETE policies. This guards against the Supabase
+advisor `multiple_permissive_policies`; the migration is
+`20261001120000_split_backend_mutate_policies.sql`.
+
+The flag and public map suites load their migrations from hardcoded lists; keep
+those lists complete (including `20260914183000_report_replay_lookup_rls.sql`,
+which defines `app_private.requested_report_id()`) when adding a migration.
+
+Known issue (2026-10-01): the public map suite still fails in the
+"public clusters" step because `listPublicClusters`
+(`repositories/publicMapRepository.js`) sends an untyped query parameter
+(`could not determine data type of parameter $14`), so the cluster route returns
+500. Tracked as a follow-up.
+
 ## Mobile/native tests
 
 - Build development and release clients for supported iOS/Android targets; Expo Go
@@ -230,7 +264,7 @@ this disposable cluster; never run it against Wildogscanner or a shared cluster.
 CONFIGURATION_TEST_DATABASE_URL='postgres://LOCAL_TEST_OWNER:LOCAL_TEST_PASSWORD@127.0.0.1:55432/fab1_configuration_test' \
   deno test --no-lock --allow-env --allow-net=127.0.0.1:55432 --allow-read=db/schema.sql \
   --config supabase/functions/api/deno.json \
-  supabase/functions/api/tests/configuration-postgres.test.js
+  supabase/functions/api/tests/configurationPostgres.test.js
 ```
 
 Replace the local-only credentials and port with those of that disposable
@@ -305,7 +339,7 @@ separate Asociación approval and Administrator note, protected canonical `/api`
 routes, Service profile/environment rechecks, draft-only creation, and transaction
 rollback for missing/corrupt targets or a one-active-zone violation.
 
-The opt-in `tests/zone-postgres.test.js` applies the complete ordered migration
+The opt-in `tests/zonePostgres.test.js` applies the complete ordered migration
 chain to a fresh disposable **PostgreSQL with PostGIS** database. It proves real
 PostGIS rejection of self-intersecting and empty geometry, narrow `retired_at`
 privilege for `app_backend`, RLS/grant denial of direct mutations, atomic
@@ -330,7 +364,7 @@ ZONE_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:55433/fab2
   deno test --no-lock --allow-env --allow-net=127.0.0.1:55433 \
   --allow-read=supabase/migrations \
   --config supabase/functions/api/deno.json \
-  supabase/functions/api/tests/zone-postgres.test.js
+  supabase/functions/api/tests/zonePostgres.test.js
 docker stop fab2-postgis-test
 ```
 
@@ -362,7 +396,7 @@ docker exec fab3-postgis-test psql -U postgres -d postgres \
 DUPLICATE_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:55434/fab3_duplicate_test' \
   deno test --no-lock --allow-env --allow-net=127.0.0.1:55434 \
   --allow-read=supabase/migrations --config supabase/functions/api/deno.json \
-  supabase/functions/api/tests/duplicate-postgres.test.js
+  supabase/functions/api/tests/duplicatePostgres.test.js
 docker stop fab3-postgis-test
 ```
 
@@ -614,3 +648,7 @@ with a reason, verify reviewable candidates return, and compare report/photo
 content and moderation before/after. A component containing deleted reports may
 not reappear until it has eligible endpoints; candidate review state and report
 moderation are intentionally distinct.
+
+## RIC-4 / L4 Asociación dashboard and CSV export
+
+Run `deno test --no-lock --config supabase/functions/api/deno.json models/associationReport.test.js services/associationReportApi.test.js hooks/associationReportLoader.test.js` for date, projection, pagination and CSV model checks. Run `npx playwright test associationDashboard.spec.js` for the filtered table, downloaded CSV row parity, loading through the last cursor page, and the explicit empty-range state. The browser fixture mocks RIC-2; it does not prove a live managed-project session or native share-sheet behavior. Native CSV sharing uses `expo-sharing` and requires an Expo development build.

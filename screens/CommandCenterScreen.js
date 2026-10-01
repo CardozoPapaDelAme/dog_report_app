@@ -177,23 +177,23 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
         <Text style={styles.title}>{t('commandCenter.title')}</Text>
         <Text style={styles.subtitle}>{t('commandCenter.subtitle')}</Text>
         {onOpenDuplicates ? (
-          <Pressable accessibilityRole="button" onPress={onOpenDuplicates} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
-            <Text style={styles.moreText}>{t('duplicates.open')}</Text>
+          <Pressable accessibilityRole="button" onPress={onOpenDuplicates} style={[styles.heroButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
+            <Text style={styles.heroButtonText}>{t('duplicates.open')}</Text>
           </Pressable>
         ) : null}
         {onOpenZoneSets ? (
-          <Pressable accessibilityRole="button" onPress={onOpenZoneSets} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
-            <Text style={styles.moreText}>{t('zoneSets.open')}</Text>
+          <Pressable accessibilityRole="button" onPress={onOpenZoneSets} style={[styles.heroButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
+            <Text style={styles.heroButtonText}>{t('zoneSets.open')}</Text>
           </Pressable>
         ) : null}
         {onOpenConfiguration ? (
-          <Pressable accessibilityRole="button" onPress={onOpenConfiguration} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
-            <Text style={styles.moreText}>{t('configuration.open')}</Text>
+          <Pressable accessibilityRole="button" onPress={onOpenConfiguration} style={[styles.heroButton, { alignSelf: 'flex-start', marginTop: 16 }]}>
+            <Text style={styles.heroButtonText}>{t('configuration.open')}</Text>
           </Pressable>
         ) : null}
         {onLogout ? (
-          <Pressable accessibilityRole="button" disabled={logoutPending} onPress={onLogout} style={[styles.moreButton, { alignSelf: 'flex-start', marginTop: 10 }]}>
-            <Text style={styles.moreText}>{t('login.logout')}</Text>
+          <Pressable accessibilityRole="button" disabled={logoutPending} onPress={onLogout} style={[styles.heroButton, { alignSelf: 'flex-start', marginTop: 10 }]}>
+            <Text style={styles.heroButtonText}>{t('login.logout')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -348,6 +348,8 @@ const styles = StyleSheet.create({
   restoreText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   pressed: { opacity: 0.78 }, disabled: { opacity: 0.42 },
   loader: { padding: 30 }, empty: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', textAlign: 'center', padding: 40 },
+  heroButton: { alignItems: 'center', borderColor: '#90d689', borderWidth: 1, borderRadius: 999, minWidth: 150, padding: 13, backgroundColor: 'rgba(255, 255, 255, 0.12)' },
+  heroButtonText: { color: '#fff', fontFamily: 'PlusJakartaSans_700Bold' },
   moreButton: { alignSelf: 'center', borderColor: colors.primary, borderWidth: 1, borderRadius: 999, minWidth: 150, padding: 13, alignItems: 'center', marginTop: 4 },
   moreText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold' }, footerSpace: { height: 18 },
   errorBanner: { backgroundColor: colors.dangerSoft, borderColor: '#ffb4ab', borderWidth: 1, borderRadius: 14, marginHorizontal: 20, marginBottom: 16, padding: 13 },

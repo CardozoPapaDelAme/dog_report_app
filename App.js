@@ -60,6 +60,7 @@ export default function App() {
   } else if (login.session?.profile.role === 'association') {
     content = (
       <AssociationDashboardScreen
+        accessToken={login.session.accessToken}
         displayName={login.session.profile.displayName}
         onLogout={login.logout}
         pending={login.pending}
