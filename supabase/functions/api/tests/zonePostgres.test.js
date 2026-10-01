@@ -99,6 +99,7 @@ const l2Migrations = [
   "20260921010000_preserve_zone_set_retirement_evidence.sql",
   "20260921010500_store_immutable_zone_set_geojson.sql",
   "20260921011000_grant_zone_set_retirement_update.sql",
+  "20261001120000_split_backend_mutate_policies.sql",
 ];
 
 async function installPrerequisites(sql) {
@@ -505,6 +506,38 @@ Deno.test({
               `,
               ),
             "42501",
+          );
+        },
+      );
+
+      await t.step(
+        "keeps at most one permissive app_backend policy per command",
+        async () => {
+          const policies = await sql`
+            SELECT tablename, policyname, cmd
+            FROM pg_policies
+            WHERE schemaname = 'public'
+              AND tablename IN ('config_versions', 'zone_sets', 'zones')
+              AND permissive = 'PERMISSIVE'
+              AND roles @> ARRAY['app_backend']::name[]
+          `;
+          assert(
+            policies.length > 0 && policies.every((row) => row.cmd !== "ALL"),
+            "No FOR ALL policy may remain on configuration or zone tables.",
+          );
+          const counts = new Map();
+          for (const row of policies) {
+            const key = `${row.tablename}:${row.cmd}`;
+            counts.set(key, (counts.get(key) ?? 0) + 1);
+          }
+          for (const [key, count] of counts) {
+            assert(count === 1, `Overlapping permissive policies for ${key}`);
+          }
+          assert(
+            !counts.has("zones:UPDATE") && !counts.has("zones:DELETE") &&
+              !counts.has("zone_sets:DELETE") &&
+              !counts.has("config_versions:DELETE"),
+            "Policies must exist only for granted commands.",
           );
         },
       );
