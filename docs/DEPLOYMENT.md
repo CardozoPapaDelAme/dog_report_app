@@ -100,6 +100,29 @@ schema policies.
    candidate/test fixture. An approved live project must fail closed until the
    Asociación de Hoteles de Chihuahua approves the exact checksum/version.
 
+### Current staging test geofence
+
+As of 2026-10-01 the staging project has one active zone set labeled
+`TEST ONLY - Creel INEGI candidate + Chihuahua municipality (team testing, not approved)`
+(`source_version` `test-creel-inegi-2025-v0.1+chihuahua-mun-08019`). It is a
+single `MultiPolygon` with two parts:
+
+- the INEGI Creel locality candidate (`080090034`, same raw response checksum as
+  [`product/GEOFENCE-CANDIDATE.md`](product/GEOFENCE-CANDIDATE.md)); and
+- the INEGI Chihuahua municipality boundary (`08019`), added so the team can
+  submit reports from Chihuahua city without being in Creel.
+
+Its activation reference is `TEST-ONLY: staging team testing, NOT approved by the
+Asociacion`. It was created and activated through `POST /admin/zone-sets` and
+`/activate`, so it is audited like any other zone set. Coordinates live only in
+the database, never in Git.
+
+This zone set must never be activated in production. To drop the Chihuahua part,
+create a new zone set with only the Creel geometry (compute `source_sha256` with
+`canonicalZoneGeometry` and `sha256Hex` from
+`supabase/functions/api/domain/zoneSet.js`) and activate it; activation replaces
+the test set atomically, so staging never runs without a geofence.
+
 ## Required preflight and promotion
 
 Before migration, secret mutation, Function deployment, or scheduler enablement,
