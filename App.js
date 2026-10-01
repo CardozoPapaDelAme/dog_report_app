@@ -3,21 +3,21 @@ import { PlusJakartaSans_600SemiBold } from '@expo-google-fonts/plus-jakarta-san
 import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppState, Platform } from 'react-native';
-import { useEffect, useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useCallback, useEffect, useState } from 'react';
 
 import './i18n';
 import { createLoginController } from './controllers/loginController.js';
 import { useLogin } from './hooks/useLogin.js';
-import { useReportDraftQueue } from './hooks/useReportDraftQueue.js';
+import { useReportDraftFlow } from './hooks/useReportDraftFlow.js';
 import AssociationDashboardScreen from './screens/associationDashboardScreen.js';
 import CameraScreen from './screens/CameraScreen.js';
 import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
-import LoginScreen from './screens/loginScreen.js';
-import ReportDraftScreen from './screens/ReportDraftScreen.js';
 import DuplicateManagementScreen from './screens/DuplicateManagementScreen.js';
+import LoginScreen from './screens/loginScreen.js';
+import ReportFormScreen from './screens/ReportFormScreen.js';
 import ZoneSetScreen from './screens/ZoneSetScreen.js';
 import { createAuthService } from './services/authService.js';
 import { supabase } from './services/supabaseClient.js';
@@ -26,9 +26,8 @@ const loginController = createLoginController({ authService: createAuthService({
 
 export default function App() {
   const [screen, setScreen] = useState('camera');
-  const [draftId, setDraftId] = useState(null);
-  const [draftError, setDraftError] = useState(null);
-  const draftQueue = useReportDraftQueue();
+  const openReportForm = useCallback(() => setScreen('reportDraft'), []);
+  const reportDraftFlow = useReportDraftFlow({ onOpenReportForm: openReportForm });
   const login = useLogin(loginController);
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
@@ -51,19 +50,6 @@ export default function App() {
 
   if (!fontsLoaded && !fontError) {
     return null;
-  }
-  const activeDraft = draftQueue.drafts.find((draft) => draft.id === draftId) ?? null;
-
-  async function openReportDraft(photo) {
-    setScreen('reportDraft');
-    setDraftId(null);
-    setDraftError(null);
-    try {
-      const created = await draftQueue.createDraft({ photo });
-      setDraftId(created.id);
-    } catch (error) {
-      setDraftError(error);
-    }
   }
 
   let content;
@@ -105,10 +91,12 @@ export default function App() {
     );
   } else if (screen === 'reportDraft') {
     content = (
-      <ReportDraftScreen
-        draft={activeDraft}
-        loading={draftQueue.loading || (!activeDraft && !draftError)}
-        error={draftError ?? draftQueue.error}
+      <ReportFormScreen
+        draft={reportDraftFlow.activeDraft}
+        loading={reportDraftFlow.loading}
+        error={reportDraftFlow.error}
+        queueDraft={reportDraftFlow.queueDraft}
+        syncDraft={reportDraftFlow.syncDraft}
         onBackToCamera={() => setScreen('camera')}
       />
     );
@@ -116,8 +104,12 @@ export default function App() {
     content = (
       <CameraScreen
         onOpenLogin={() => setScreen('login')}
-        onReportWithoutPhoto={() => { void openReportDraft(null); }}
-        onPhotoAccepted={(photo) => { void openReportDraft(photo); }}
+        onReportWithoutPhoto={() => {
+          void reportDraftFlow.openReportDraft(null);
+        }}
+        onPhotoAccepted={(photo) => {
+          void reportDraftFlow.openReportDraft(photo);
+        }}
       />
     );
   }

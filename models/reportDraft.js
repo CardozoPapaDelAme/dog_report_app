@@ -1,3 +1,5 @@
+import { buildReportPayload } from './reportPayload.js';
+
 export const REPORT_DRAFT_STATES = Object.freeze([
   'draft',
   'queued',
@@ -31,14 +33,10 @@ const LOCAL_STATE_SET = new Set(REPORT_DRAFT_STATES);
 const MODERATION_STATE_SET = new Set(SERVER_MODERATION_STATES);
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const EDITABLE_REPORT_FIELDS = Object.freeze([
-  'incident_type',
-  'sighting_type',
-  'details',
-  'dog',
-]);
 const DEFAULT_RETRY_BASE_MS = 30_000;
 const DEFAULT_RETRY_MAX_MS = 15 * 60_000;
+
+export { buildReportPayload } from './reportPayload.js';
 
 function iso(value) {
   if (value instanceof Date) return value.toISOString();
@@ -164,47 +162,6 @@ export function createLocalReportDraft({
     last_error: null,
     receipt: null,
     photo_status: null,
-  };
-}
-
-export function buildReportPayload({
-  draft,
-  reportFields,
-  deviceFingerprint,
-  honeypotFilled = false,
-}) {
-  requirePlainObject(draft, 'draft');
-  const fields = requirePlainObject(reportFields, 'report_fields');
-  const unsupported = Object.keys(fields).filter(
-    (key) => !EDITABLE_REPORT_FIELDS.includes(key),
-  );
-  if (unsupported.length) {
-    throw new Error(`unsupported_report_fields:${unsupported.join(',')}`);
-  }
-  if (typeof deviceFingerprint !== 'string' || deviceFingerprint.length < 16) {
-    throw new Error('invalid_device_fingerprint');
-  }
-
-  return {
-    id: assertDraftId(draft.id),
-    location: locationForReportPayload(draft.location_snapshot),
-    incident_type: fields.incident_type,
-    sighting_type: fields.sighting_type,
-    details: fields.details ?? {},
-    dog: fields.dog ?? {
-      predominant_color: null,
-      size: null,
-      has_collar: null,
-    },
-    photo: {
-      expected: Boolean(draft.photo_file_uri),
-      client_check_passed: draft.photo_file_uri ? true : null,
-    },
-    anti_abuse: {
-      device_fingerprint: deviceFingerprint,
-      honeypot_filled: Boolean(honeypotFilled),
-    },
-    client_created_at: clientCreatedAtForReportPayload(draft.location_snapshot),
   };
 }
 

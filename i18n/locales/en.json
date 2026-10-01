@@ -76,6 +76,117 @@
       "default": "Try again from the camera."
     }
   },
+  "reportForm": {
+    "eyebrow": "Public report",
+    "title": "New Report",
+    "subtitle": "The report keeps its local UUID and syncs with the server when you submit this form.",
+    "loading": "Preparing local report…",
+    "draftErrorTitle": "We could not prepare the report",
+    "back": "Back to camera",
+    "close": "Close",
+    "submit": "Submit report",
+    "retrySubmit": "Retry sync",
+    "submitting": "Submitting…",
+    "noPhoto": "No photo",
+    "photoAttached": "Photo attached",
+    "selectPlaceholder": "Select an option",
+    "summaryTitle": "Report",
+    "id": "UUID: {{value}}",
+    "localState": "Local state: {{value}}",
+    "coordinates": "Coordinates: {{value}}",
+    "accuracy": "Accuracy: {{value}}",
+    "dogProbability": "Dog probability: {{value}}%",
+    "frozenTitle": "Payload frozen",
+    "frozenBody": "This report already has queued content. Retry uses the same UUID and same payload.",
+    "successTitle": "Report submitted",
+    "successBody": "The server accepted this report. It will not be sent again as a new report.",
+    "photoPendingTitle": "Photo pending",
+    "photoPendingBody": "The report was accepted and the photo is still processing or uploading. This screen keeps the state for the next stage.",
+    "errorTitle": "We could not complete the submission",
+    "onlyDescription": "This category has no additional questions.",
+    "sections": {
+      "incident": "Base details",
+      "details": "Quantity",
+      "dog": "Physical details"
+    },
+    "fields": {
+      "incident_type": "Incident type",
+      "sighting_type": "Solitary dog or pack",
+      "descripcion": "Optional description",
+      "cantidad_aprox": "Approximate number of dogs",
+      "hubo_mordida": "Was there a bite?",
+      "tipo_animal": "Type of affected animal",
+      "resulto_herido": "Was it injured?",
+      "cantidad_afectada": "Number affected",
+      "situacion": "Dog situation",
+      "dog_size": "Approximate size",
+      "has_collar": "Wearing a collar?"
+    },
+    "incidents": {
+      "avistamiento_simple": "Sighting",
+      "ataque_mascota": "Pet attack",
+      "ataque_ganado": "Livestock attack",
+      "ataque_humano": "Human attack",
+      "perro_lastimado": "Injured dog",
+      "otro": "Other"
+    },
+    "sighting": {
+      "solitario": "Solitary",
+      "manada": "Pack"
+    },
+    "dogSize": {
+      "chico": "Small",
+      "mediano": "Medium",
+      "grande": "Large"
+    },
+    "collar": {
+      "no_se": "Not sure",
+      "si": "Yes",
+      "no": "No"
+    },
+    "boolean": {
+      "no_se": "Not sure",
+      "si": "Yes",
+      "no": "No"
+    },
+    "situations": {
+      "herido": "Injured",
+      "atropellado": "Hit by vehicle",
+      "atrapado": "Trapped",
+      "mal_estado": "Poor condition"
+    },
+    "validation": {
+      "required": "This field is required.",
+      "requiredChoice": "Choose an option.",
+      "integerRange": "Enter a whole number from {{min}} to {{max}}.",
+      "descriptionLength": "The description can be at most {{max}} characters.",
+      "textLength": "This text can be at most {{max}} characters."
+    },
+    "errors": {
+      "draft_not_ready": "The local report is not ready yet. Wait a moment and try again.",
+      "location_permission_denied": "Location permission is required to record where the report happened.",
+      "invalid_device_fingerprint": "The local device fingerprint could not be prepared. Restart the app before submitting.",
+      "invalid_request": "The server rejected the report shape. Check the required fields.",
+      "invalid_coordinates": "The location is outside an active zone or does not match the coordinate contract.",
+      "invalid_details": "The answers do not match the questions allowed for this incident type.",
+      "client_created_at_out_of_bounds": "The phone time is outside the allowed window for new reports.",
+      "report_id_payload_conflict": "This UUID already exists with different content. Create a new report from the camera.",
+      "report_rate_limit_exceeded": "This device reached the temporary report limit. The report stays saved for retry.",
+      "geofence_not_configured": "The active Creel zone is not configured. The report stays pending.",
+      "configuration_unavailable": "The server's active configuration is not available right now.",
+      "dependency_unavailable": "The service is unavailable right now. The report stays in the local queue.",
+      "preflight_mismatch": "The server environment needs technical review before accepting reports.",
+      "photo_too_large": "The photo exceeds the server size limit.",
+      "unsupported_photo_type": "The server only accepts sanitized JPEG or PNG photos.",
+      "photo_decode_failed": "The server could not read the uploaded image.",
+      "photo_rate_limit_exceeded": "Photo upload reached a temporary limit and will retry later.",
+      "photo_content_conflict": "This report already has a different photo attached.",
+      "photo_not_available": "The photo is not available for this report.",
+      "invalid_response": "The server response could not confirm the report state.",
+      "network_unavailable": "There is not enough connectivity. The report stays saved for sync.",
+      "request_failed": "The request could not be completed. Check your connection and try again."
+    }
+  },
   "commandCenter": {
     "eyebrow": "Administrator workspace",
     "title": "Command Center",

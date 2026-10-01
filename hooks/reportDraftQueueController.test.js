@@ -168,3 +168,43 @@ Deno.test('L6 queue controller reuses accepted report receipt and finishes photo
   assert(synced.receipt.moderation_status === 'pending_review');
   assert(synced.photo_status.state === 'approved');
 });
+
+Deno.test('L7 queue controller does not resubmit a synced draft', async () => {
+  const repository = createMemoryRepository();
+  let submitCalls = 0;
+  const controller = createReportDraftQueueController({
+    repository,
+    createDraftRecord: createLocalReportDraft,
+    createId: () => id,
+    getLocationSnapshot: async () => locationSnapshot,
+    submitReport: async ({ payload }) => {
+      submitCalls += 1;
+      return {
+        report_id: payload.id,
+        moderation_status: 'pending_review',
+        photo_expected: false,
+        photo_status_url: `/reports/${payload.id}/photo-status`,
+      };
+    },
+    uploadPhoto: async () => {
+      throw new Error('should_not_upload_without_photo');
+    },
+    getPhotoStatus: async () => {
+      throw new Error('should_not_poll_without_photo');
+    },
+    now: () => new Date('2026-09-28T20:01:00.000Z'),
+  });
+
+  const draft = await controller.createDraft();
+  await controller.queueDraft(draft.id, {
+    reportFields,
+    deviceFingerprint: 'device-fingerprint-1',
+  });
+  const synced = await controller.syncDraft(draft.id);
+  const replay = await controller.syncDraft(draft.id);
+
+  assert(synced.local_state === REPORT_DRAFT_STATE.SYNCED);
+  assert(replay.local_state === REPORT_DRAFT_STATE.SYNCED);
+  assert(submitCalls === 1);
+  assert(replay.payload_json === synced.payload_json);
+});
