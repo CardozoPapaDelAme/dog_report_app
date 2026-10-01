@@ -99,6 +99,10 @@ schema policies.
 8. For a demo/test project, import the INEGI geometry only as a clearly labeled
    candidate/test fixture. An approved live project must fail closed until the
    Asociación de Hoteles de Chihuahua approves the exact checksum/version.
+   While photo upload is being verified before that fixture exists, a temporary
+   non-production Function secret `ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE=true`
+   may be set. It only bypasses the missing-active-zone failure; once an active
+   zone exists, outside points still fail and production must leave this unset.
 
 ### Current staging test geofence
 

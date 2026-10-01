@@ -64,6 +64,17 @@ test('shows only the conditional questions allowed for the selected incident', a
   await expect(page.getByTestId('report-dog_size-chico')).toBeVisible();
 });
 
+test('description is writable and exposes browser form ids before queueing', async ({ page }) => {
+  await openReport(page, (route) => route.fulfill({ status: 500 }));
+
+  const description = page.getByTestId('report-descripcion');
+  await expect(description).toHaveAttribute('id', 'report-descripcion');
+  await description.fill('Cerca de la plaza');
+  await expect(description).toHaveValue('Cerca de la plaza');
+  await expect(page.getByTestId('report-honeypot-website')).toHaveAttribute('id', 'report-honeypot-website');
+  await expect(page.getByTestId('report-honeypot-contact')).toHaveAttribute('id', 'report-honeypot-contact');
+});
+
 test('submits one frozen payload with raw fingerprint and no duplicate POST on double tap', async ({ page }) => {
   const posts = [];
   await openReport(page, async (route) => {
@@ -93,6 +104,8 @@ test('submits one frozen payload with raw fingerprint and no duplicate POST on d
   });
 
   await expect(page.getByTestId('report-success')).toBeVisible();
+  await expect(page.getByTestId('report-success-back')).toBeVisible();
+  await expect(page.getByText('Payload congelado')).toHaveCount(0);
   expect(posts).toHaveLength(1);
   expect(posts[0].id).toBe('00000000-0000-4000-8000-000000000006');
   expect(posts[0].incident_type).toBe('avistamiento_simple');
@@ -112,12 +125,16 @@ test('shows distinct catalogued error messages', async ({ page }) => {
   }));
 
   await page.getByTestId('report-submit').click();
-  await expect(page.getByText('Las respuestas no coinciden con las preguntas permitidas para este tipo de incidente.')).toBeVisible();
+  await expect(page.getByTestId('report-error')).toBeVisible();
+  await expect(page.getByText('Código: invalid_details')).toBeVisible();
+  await expect(page.getByText('request-1')).toHaveCount(0);
+  await expect(page.getByTestId('report-error-back')).toBeVisible();
+  await expect(page.getByTestId('report-error-retry')).toBeVisible();
 
   code = 'geofence_not_configured';
   await page.goto('/?report');
   await page.getByTestId('report-submit').click();
-  await expect(page.getByText('La zona activa de Creel no está configurada. El reporte queda pendiente.')).toBeVisible();
+  await expect(page.getByText('Código: geofence_not_configured')).toBeVisible();
 });
 
 test('sets honeypot signal when a hidden field is filled and surfaces pending photo state', async ({ page }) => {

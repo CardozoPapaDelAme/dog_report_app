@@ -166,7 +166,11 @@ function assertDimensions({ width, height }) {
 
 async function decodeAndEncodeImage(bytes, detectedMimeType) {
   const { default: Jimp } = await import("jimp-compact");
-  const image = await Jimp.read(bytes);
+  const input = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  );
+  const image = await Jimp.read(input);
   const dimensions = {
     width: image.bitmap.width,
     height: image.bitmap.height,

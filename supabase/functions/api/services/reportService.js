@@ -1,4 +1,5 @@
 import { getSql } from "../infrastructure/db.js";
+import { getConfig } from "../infrastructure/config.js";
 import {
   checkActiveCreelGeofence,
   consumeReportRateLimit,
@@ -18,6 +19,23 @@ function serviceError(code, message, details = {}) {
   error.code = code;
   Object.assign(error, details);
   return error;
+}
+
+function sqlDiagnostics(error, category) {
+  const sqlCode = typeof error?.code === "string" && error.code
+    ? error.code
+    : "unknown";
+  return {
+    details: {
+      category,
+      sql_code: sqlCode,
+    },
+    logDetails: {
+      category,
+      sql_code: sqlCode,
+      sql_message: String(error?.message ?? "").slice(0, 500),
+    },
+  };
 }
 
 function canonicalize(value) {
@@ -98,18 +116,104 @@ function mapPersistenceError(error) {
       "report id already exists with different content.",
     );
   }
+  const message = String(error?.message ?? "");
+  if (error?.code === "22023" && message.startsWith("invalid_rate_limit_")) {
+    return serviceError(
+      "preflight_mismatch",
+      "Report rate-limit context does not match the API.",
+      sqlDiagnostics(error, "rate_limit_context"),
+    );
+  }
   if (
-    error?.code === "22023" && String(error.message ?? "").includes("invalid_")
+    error?.code === "22023" &&
+    [
+      "invalid_details_object",
+      "invalid_sighting_count",
+      "invalid_solitary_count",
+      "invalid_pack_count",
+      "invalid_resulto_herido",
+      "invalid_livestock_count",
+      "invalid_injury_situation",
+      "invalid_description",
+      "unexpected_details_key",
+      "missing_hubo_mordida",
+      "missing_pet_type",
+      "missing_livestock_type",
+    ].includes(message)
   ) {
     return serviceError(
       "invalid_details",
       "Report details do not match the incident contract.",
+      {
+        details: {
+          category: "report_details_trigger",
+          reason: message,
+        },
+        logDetails: {
+          category: "report_details_trigger",
+          sql_code: error.code,
+          sql_message: message,
+        },
+      },
+    );
+  }
+  if (String(error?.message ?? "").includes("APP_BACKEND_DATABASE_URL")) {
+    return serviceError(
+      "preflight_mismatch",
+      "Report database connection is not configured.",
+      {
+        details: { category: "database_secret_missing" },
+        logDetails: { category: "database_secret_missing" },
+      },
+    );
+  }
+  if (
+    [
+      "CONNECTION_CLOSED",
+      "CONNECTION_ENDED",
+      "CONNECT_TIMEOUT",
+      "ECONNREFUSED",
+      "ECONNRESET",
+      "ENOTFOUND",
+      "EAI_AGAIN",
+      "57P01",
+      "57P02",
+      "57P03",
+    ].includes(error?.code) || error?.code?.startsWith("08")
+  ) {
+    return serviceError(
+      "database_unavailable",
+      "Report database is unavailable.",
+      sqlDiagnostics(error, "database_connection"),
+    );
+  }
+  if (
+    [
+      "22003",
+      "22P02",
+      "23502",
+      "23503",
+      "23514",
+      "42501",
+      "42704",
+      "42804",
+      "42P01",
+      "42703",
+      "42883",
+      "3F000",
+    ].includes(error?.code)
+  ) {
+    return serviceError(
+      "preflight_mismatch",
+      "Report storage permissions or migrations do not match the API.",
+      sqlDiagnostics(error, "schema_or_privilege_mismatch"),
     );
   }
   return error;
 }
 
 const productionDependencies = {
+  getConfig,
   getSql,
   lockReportIdentity,
   findReportById,
@@ -120,6 +224,10 @@ const productionDependencies = {
   assessReportTrust,
   insertReport,
 };
+
+function allowsMissingActiveGeofence(dependencies) {
+  return dependencies.getConfig?.().allowReportsWithoutActiveGeofence === true;
+}
 
 export async function createReport(
   { command, deviceFingerprint },
@@ -169,12 +277,13 @@ export async function createReport(
         command.location,
       );
       if (!geofence.configured) {
-        throw serviceError(
-          "geofence_not_configured",
-          "Active Creel geofence is missing.",
-        );
-      }
-      if (!geofence.contains) {
+        if (!allowsMissingActiveGeofence(dependencies)) {
+          throw serviceError(
+            "geofence_not_configured",
+            "Active Creel geofence is missing.",
+          );
+        }
+      } else if (!geofence.contains) {
         throw serviceError(
           "outside_geofence",
           "Location is outside the active Creel geofence.",

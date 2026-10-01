@@ -91,7 +91,7 @@ Deno.test("auth service calls /me with the Supabase bearer token", async () => {
   });
 
   const profile = await service.getProfile("signed-access-token");
-  assert(requestPath === "/me", "should use /me relative to the API base URL");
+  assert(requestPath === "/me", "should use the path relative to the configured API base");
   assert(
     requestOptions.headers.Authorization === "Bearer signed-access-token",
     "should send the access token",

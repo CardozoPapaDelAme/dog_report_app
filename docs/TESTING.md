@@ -82,8 +82,9 @@ or retry state through spies/fakes before any live-project exercise.
 - Report UUID replay with identical payload is idempotent even after the active
   geofence no longer covers the original point; changed payload fails.
 - New submissions outside the current geofence still reject; missing geofence
-  fails closed; boundary point behavior is explicit; imprecise/mock inputs remain
-  pending.
+  fails closed unless the explicit non-production
+  `ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE=true` photo-verification flag is set;
+  boundary point behavior is explicit; imprecise/mock inputs remain pending.
 - `client_created_at` 31 days in the past or more than 1 hour in the future rejects
   new rows and does not block identical replay.
 - Details contract receives one boundary/unknown-key/type test per incident,

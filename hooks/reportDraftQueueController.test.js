@@ -36,6 +36,7 @@ function createMemoryRepository() {
 }
 
 const id = '00000000-0000-4000-8000-000000000001';
+const serverReportId = '00000000-0000-4000-8000-000000000002';
 const reportFields = {
   incident_type: 'avistamiento_simple',
   sighting_type: 'solitario',
@@ -167,6 +168,120 @@ Deno.test('L6 queue controller reuses accepted report receipt and finishes photo
   assert(synced.photo_file_uri === null);
   assert(synced.receipt.moderation_status === 'pending_review');
   assert(synced.photo_status.state === 'approved');
+});
+
+Deno.test('L8 queue controller sends photo only after L7 receipt and uses receipt report id', async () => {
+  const repository = createMemoryRepository();
+  const events = [];
+  const deleted = [];
+  const controller = createReportDraftQueueController({
+    repository,
+    createDraftRecord: createLocalReportDraft,
+    createId: () => id,
+    getLocationSnapshot: async () => locationSnapshot,
+    submitReport: async ({ payload }) => {
+      events.push(`submit:${payload.id}`);
+      return {
+        report_id: serverReportId,
+        moderation_status: 'pending_review',
+        photo_expected: true,
+        photo_status_url: `/reports/${serverReportId}/photo-status`,
+      };
+    },
+    uploadPhoto: async ({ reportId, deviceFingerprint, photoUri }) => {
+      events.push(`upload:${reportId}`);
+      assert(events[0] === `submit:${id}`, 'report must be submitted before photo upload');
+      assert(reportId === serverReportId, 'photo upload must use the accepted report id');
+      assert(deviceFingerprint === 'device-fingerprint-1');
+      assert(photoUri === 'file:///private/report.jpg');
+      return {
+        report_id: serverReportId,
+        photo_expected: true,
+        state: 'approved',
+        rejection_code: null,
+        processing_complete: true,
+        upload_succeeded: true,
+        local_cleanup_allowed: true,
+      };
+    },
+    pollPhotoStatus: async () => {
+      throw new Error('final upload response must not be polled again');
+    },
+    deleteLocalPhoto: async (uri) => {
+      deleted.push(uri);
+    },
+    now: () => new Date('2026-09-28T20:01:00.000Z'),
+  });
+
+  const draft = await controller.createDraft({ photo: { photoUri: 'file:///private/report.jpg' } });
+  await controller.queueDraft(draft.id, {
+    reportFields,
+    deviceFingerprint: 'device-fingerprint-1',
+  });
+  const synced = await controller.syncDraft(draft.id);
+
+  assert(JSON.stringify(events) === JSON.stringify([`submit:${id}`, `upload:${serverReportId}`]));
+  assert(synced.local_state === REPORT_DRAFT_STATE.SYNCED);
+  assert(synced.photo_file_uri === null);
+  assert(deleted.length === 1 && deleted[0] === 'file:///private/report.jpg');
+});
+
+Deno.test('L8 queue controller keeps local photo when polling budget ends in processing', async () => {
+  const repository = createMemoryRepository();
+  const deleted = [];
+  let pollCalls = 0;
+  const controller = createReportDraftQueueController({
+    repository,
+    createDraftRecord: createLocalReportDraft,
+    createId: () => id,
+    getLocationSnapshot: async () => locationSnapshot,
+    submitReport: async ({ payload }) => ({
+      report_id: payload.id,
+      moderation_status: 'pending_review',
+      photo_expected: true,
+      photo_status_url: `/reports/${payload.id}/photo-status`,
+    }),
+    uploadPhoto: async () => ({
+      report_id: id,
+      photo_expected: true,
+      state: 'processing',
+      rejection_code: null,
+      processing_complete: false,
+      upload_succeeded: false,
+      local_cleanup_allowed: false,
+    }),
+    pollPhotoStatus: async ({ initialStatus }) => {
+      pollCalls += 1;
+      assert(initialStatus.state === 'processing');
+      return {
+        report_id: id,
+        photo_expected: true,
+        state: 'processing',
+        rejection_code: null,
+        processing_complete: false,
+        upload_succeeded: false,
+        local_cleanup_allowed: false,
+      };
+    },
+    deleteLocalPhoto: async (uri) => {
+      deleted.push(uri);
+    },
+    now: () => new Date('2026-09-28T20:01:00.000Z'),
+  });
+
+  const draft = await controller.createDraft({ photo: { photoUri: 'file:///private/report.jpg' } });
+  await controller.queueDraft(draft.id, {
+    reportFields,
+    deviceFingerprint: 'device-fingerprint-1',
+  });
+  const pending = await controller.syncDraft(draft.id);
+
+  assert(pollCalls === 1);
+  assert(pending.local_state === REPORT_DRAFT_STATE.AWAITING_PROCESSING);
+  assert(pending.photo_file_uri === 'file:///private/report.jpg');
+  assert(pending.photo_status.state === 'processing');
+  assert(pending.next_retry_at === '2026-09-28T20:01:30.000Z');
+  assert(deleted.length === 0, 'local photo must not be deleted before a final status');
 });
 
 Deno.test('L7 queue controller does not resubmit a synced draft', async () => {

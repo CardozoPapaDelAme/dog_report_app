@@ -231,6 +231,9 @@ export function createPhotoService(dependencies = {}) {
       const existing = await deps.repository.lockPhotoForReport(tx, reportId);
       if (existing) {
         if (existing.source_sha256 === sourceSha256) {
+          if (existing.state === "processing") {
+            return { action: "process", report };
+          }
           return {
             action: "existing",
             status: existingStatus(report, existing),

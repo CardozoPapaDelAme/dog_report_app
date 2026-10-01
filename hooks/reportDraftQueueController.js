@@ -16,6 +16,7 @@ const SYNCABLE_STATES = Object.freeze([
   REPORT_DRAFT_STATE.AWAITING_PROCESSING,
   REPORT_DRAFT_STATE.RETRY_WAIT,
 ]);
+const PHOTO_PROCESSING_RETRY_MS = 30_000;
 
 function fingerprintFromPayload(payload) {
   return payload?.anti_abuse?.device_fingerprint;
@@ -43,11 +44,33 @@ async function persist(repository, draft) {
   return draft;
 }
 
-async function cleanupLocalPhoto(draft, deleteLocalPhoto) {
+function reportIdFromReceipt(draft) {
+  const reportId = draft?.receipt?.report_id;
+  if (typeof reportId !== 'string' || !reportId) {
+    throw Object.assign(new Error('report_required_before_photo_upload'), {
+      code: 'invalid_report_receipt',
+      status: 500,
+    });
+  }
+  return reportId;
+}
+
+async function cleanupLocalPhoto(draft, deleteLocalPhoto, deletePreparedPhoto) {
+  const reportId = draft?.receipt?.report_id ?? draft?.id;
   if (draft.photo_file_uri) {
     await deleteLocalPhoto(draft.photo_file_uri);
   }
+  if (reportId) {
+    await deletePreparedPhoto({ reportId });
+  }
   return { ...draft, photo_file_uri: null };
+}
+
+function createSingleStatusPoller(getPhotoStatus) {
+  return async function pollPhotoStatus({ reportId, deviceFingerprint, initialStatus }) {
+    if (!photoStatusIsPending(initialStatus)) return initialStatus;
+    return getPhotoStatus({ reportId, deviceFingerprint });
+  };
 }
 
 export function createReportDraftQueueController({
@@ -57,7 +80,9 @@ export function createReportDraftQueueController({
   submitReport,
   uploadPhoto,
   getPhotoStatus,
+  pollPhotoStatus,
   deleteLocalPhoto = async () => {},
+  deletePreparedPhoto = async () => {},
   createDraftRecord,
   now = () => new Date(),
 }) {
@@ -66,8 +91,13 @@ export function createReportDraftQueueController({
   if (typeof getLocationSnapshot !== 'function') throw new Error('location_provider_required');
   if (typeof submitReport !== 'function') throw new Error('submit_report_required');
   if (typeof uploadPhoto !== 'function') throw new Error('upload_photo_required');
-  if (typeof getPhotoStatus !== 'function') throw new Error('photo_status_required');
+  if (typeof getPhotoStatus !== 'function' && typeof pollPhotoStatus !== 'function') {
+    throw new Error('photo_status_required');
+  }
+  const statusPoller = pollPhotoStatus ?? createSingleStatusPoller(getPhotoStatus);
+  if (typeof statusPoller !== 'function') throw new Error('photo_status_required');
   if (typeof deleteLocalPhoto !== 'function') throw new Error('delete_local_photo_required');
+  if (typeof deletePreparedPhoto !== 'function') throw new Error('delete_prepared_photo_required');
   if (typeof createDraftRecord !== 'function') throw new Error('draft_factory_required');
 
   async function createDraft({ photo = null } = {}) {
@@ -121,7 +151,7 @@ export function createReportDraftQueueController({
       }
 
       if (!draft.photo_file_uri || payload.photo?.expected !== true) {
-        draft = await cleanupLocalPhoto(draft, deleteLocalPhoto);
+        draft = await cleanupLocalPhoto(draft, deleteLocalPhoto, deletePreparedPhoto);
         return persist(
           repository,
           transitionReportDraft(draft, REPORT_DRAFT_STATE.SYNCED, {
@@ -131,9 +161,10 @@ export function createReportDraftQueueController({
         );
       }
 
+      const reportId = reportIdFromReceipt(draft);
       if (draft.local_state !== REPORT_DRAFT_STATE.AWAITING_PROCESSING) {
         const uploaded = await uploadPhoto({
-          reportId: draft.id,
+          reportId,
           deviceFingerprint,
           photoUri: draft.photo_file_uri,
         });
@@ -151,9 +182,10 @@ export function createReportDraftQueueController({
 
       let photoStatus = draft.photo_status;
       if (photoStatusIsPending(photoStatus)) {
-        photoStatus = await getPhotoStatus({
-          reportId: draft.id,
+        photoStatus = await statusPoller({
+          reportId,
           deviceFingerprint,
+          initialStatus: photoStatus,
         });
       }
 
@@ -163,13 +195,13 @@ export function createReportDraftQueueController({
           transitionReportDraft(draft, REPORT_DRAFT_STATE.AWAITING_PROCESSING, {
             now: now(),
             photo_status: photoStatus,
-            next_retry_at: new Date(new Date(now()).getTime() + 30_000).toISOString(),
+            next_retry_at: new Date(new Date(now()).getTime() + PHOTO_PROCESSING_RETRY_MS).toISOString(),
           }),
         );
       }
 
       if (photoStatusAllowsLocalCompletion(photoStatus)) {
-        draft = await cleanupLocalPhoto(draft, deleteLocalPhoto);
+        draft = await cleanupLocalPhoto(draft, deleteLocalPhoto, deletePreparedPhoto);
         return persist(
           repository,
           transitionReportDraft(draft, REPORT_DRAFT_STATE.SYNCED, {
