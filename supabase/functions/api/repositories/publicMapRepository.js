@@ -145,9 +145,9 @@ export async function listPublicClusters(
     SELECT
       concat(
         'z',
-        ${zoom},
+        ${zoom}::text,
         '-r',
-        ${radiusMeters},
+        ${radiusMeters}::text,
         '-',
         md5(array_to_string(member_ids, ','))
       ) AS cluster_id,

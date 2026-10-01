@@ -79,9 +79,7 @@ Behavior to expect:
 - A report outside the geofence is rejected with `400 invalid_coordinates`.
 - On-device photo validation (TFLite) is not wired yet; every photo is accepted
   and real validation will need a development build.
-- The public map and report flagging have server routes but no app screens yet,
-  and `GET /public/clusters` currently returns 500 (see
-  [`docs/TESTING.md`](docs/TESTING.md)).
+- The public map and report flagging have server routes but no app screens yet.
 - The CSV share sheet may not work in Expo Go.
 
 For automated checks see [`docs/TESTING.md`](docs/TESTING.md):
