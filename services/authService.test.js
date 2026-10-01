@@ -77,7 +77,7 @@ Deno.test("auth service signs in directly through Supabase Auth", async () => {
   );
 });
 
-Deno.test("auth service calls /api/me with the Supabase bearer token", async () => {
+Deno.test("auth service calls /me with the Supabase bearer token", async () => {
   const { client } = fakeSupabase();
   let requestPath;
   let requestOptions;
@@ -91,7 +91,7 @@ Deno.test("auth service calls /api/me with the Supabase bearer token", async () 
   });
 
   const profile = await service.getProfile("signed-access-token");
-  assert(requestPath === "/api/me", "should use Hono's /api/me route");
+  assert(requestPath === "/me", "should use /me relative to the API base URL");
   assert(
     requestOptions.headers.Authorization === "Bearer signed-access-token",
     "should send the access token",
