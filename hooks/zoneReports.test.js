@@ -26,3 +26,17 @@ Deno.test('maps transport failures to offline and the rest to error', async () =
     assert(result.phase === phase, code);
   }
 });
+
+Deno.test('recent reports: newest first with limit 100, empty and failure phases', async () => {
+  const { loadRecentReports } = await import('./zoneReports.js');
+  let args;
+  const ready = await loadRecentReports(undefined, {
+    fetchReports: async (value) => { args = value; return [near('a', '2026-09-01T00:00:00Z'), near('b', '2026-09-02T00:00:00Z')]; },
+  });
+  assert(args.limit === 100 && ready.phase === 'ready' && ready.reports.map((item) => item.report_id).join() === 'b,a');
+  assert((await loadRecentReports({}, { fetchReports: async () => [] })).phase === 'empty');
+  const offline = await loadRecentReports({}, { fetchReports: async () => { throw Object.assign(new Error('x'), { code: 'network_unavailable' }); } });
+  assert(offline.phase === 'offline');
+  const failed = await loadRecentReports({}, { fetchReports: async () => { throw new Error('x'); } });
+  assert(failed.phase === 'error');
+});

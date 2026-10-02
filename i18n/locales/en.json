@@ -536,6 +536,15 @@
       "occurredAt": "Date and time",
       "flagged": "The community flagged this report",
       "photo": "Report photo"
+    },
+    "expoGo": {
+      "notice": "The interactive map requires the development build. Meanwhile you can browse the recent public reports.",
+      "hint": "See the README to install the development build.",
+      "title": "Recent public reports",
+      "empty": "There are no public reports yet.",
+      "error": "We could not load the reports.",
+      "offline": "Offline. Try again.",
+      "approximate": "Locations are approximate."
     }
   },
   "zone": {

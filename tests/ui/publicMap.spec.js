@@ -316,3 +316,31 @@ test('a rapid double tap on send submits the flag only once', async ({ page }) =
   await expect(sheet.getByText('Gracias. Revisaremos el reporte.')).toBeVisible();
   expect(flags).toHaveLength(1);
 });
+
+test('Expo Go fallback shows the notice and recent reports, opens flagging, and never requests clusters', async ({ page }) => {
+  const seen = await mockPublic(page);
+  await page.goto('/?map&expo-go');
+  await expect(page.getByTestId('expo-go-notice')).toContainText('El mapa interactivo requiere la development build');
+  const list = page.getByTestId('recent-reports');
+  await expect(list.getByRole('button', { name: /Ataque a mascota/ })).toBeVisible();
+  await expect(list.getByRole('button', { name: /Avistamiento/ })).toBeVisible();
+  expect(seen.reports[0].url.searchParams.get('limit')).toBe('100');
+
+  await list.getByRole('button', { name: /Ataque a mascota/ }).click();
+  await expect(page.getByTestId('pin-sheet').getByText('La comunidad marcó este reporte')).toBeVisible();
+  await page.getByTestId('pin-sheet').getByRole('button', { name: 'Denunciar', exact: true }).click();
+  await expect(page.getByTestId('flag-sheet')).toBeVisible();
+  expect(seen.clusters).toHaveLength(0);
+});
+
+test('Expo Go fallback retries after an error', async ({ page }) => {
+  let broken = true; // StrictMode runs the load twice in dev, so fail by state, not by call count
+  await mockPublic(page, { reportHandler: (route) => (broken
+    ? route.fulfill({ status: 500, json: { error: { code: 'internal_error', message: 'x' } } })
+    : route.fulfill({ json: { data: reports } })) });
+  await page.goto('/?map&expo-go');
+  await expect(page.getByText('No pudimos cargar los reportes.')).toBeVisible();
+  broken = false;
+  await page.getByRole('button', { name: 'Reintentar' }).click();
+  await expect(page.getByRole('button', { name: /Ataque a mascota/ })).toBeVisible();
+});

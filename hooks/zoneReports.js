@@ -15,3 +15,17 @@ export async function loadZoneReports({ cluster, zoom }, { fetchReports = getPub
     return { phase: offline ? 'offline' : 'error', reports: [] };
   }
 }
+
+export const RECENT_REPORTS_LIMIT = 100;
+
+// Expo Go fallback list: newest public reports without a map. Same result shape as loadZoneReports.
+export async function loadRecentReports({ limit = RECENT_REPORTS_LIMIT } = {}, { fetchReports = getPublicReports } = {}) {
+  try {
+    const reports = [...await fetchReports({ limit })]
+      .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at));
+    return { phase: reports.length ? 'ready' : 'empty', reports };
+  } catch (error) {
+    const offline = error?.code === 'network_unavailable' || error?.code === 'request_timeout';
+    return { phase: offline ? 'offline' : 'error', reports: [] };
+  }
+}

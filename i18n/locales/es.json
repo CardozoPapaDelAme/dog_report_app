@@ -540,6 +540,15 @@
       "occurredAt": "Fecha y hora",
       "flagged": "La comunidad marcó este reporte",
       "photo": "Foto del reporte"
+    },
+    "expoGo": {
+      "notice": "El mapa interactivo requiere la development build. Mientras tanto puedes ver los reportes públicos recientes.",
+      "hint": "Consulta el README para instalar la development build.",
+      "title": "Reportes públicos recientes",
+      "empty": "Aún no hay reportes públicos.",
+      "error": "No pudimos cargar los reportes.",
+      "offline": "Sin conexión. Intenta de nuevo.",
+      "approximate": "Las ubicaciones son aproximadas."
     }
   },
   "zone": {
