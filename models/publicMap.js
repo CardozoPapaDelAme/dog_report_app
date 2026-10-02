@@ -201,8 +201,7 @@ function haversineMeters(a, b) {
 // Zone detail (ERI-10): no server endpoint lists cluster members, so filter the public reports locally by
 // distance from the cluster centroid (approximate locations only) within the zoom band radius. Newest first.
 export function reportsInCluster(reports, cluster, zoom) {
-  // clusterRadiusMetersForZoom(NaN) falls into the first band (null >= 0), so reject invalid zoom explicitly.
-  const radius = normalizeZoom(zoom) === null ? null : clusterRadiusMetersForZoom(zoom);
+  const radius = clusterRadiusMetersForZoom(zoom);
   const center = readLocation(cluster?.approximate_location);
   if (!Array.isArray(reports) || radius === null || !center) return [];
   return reports

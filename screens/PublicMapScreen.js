@@ -207,14 +207,14 @@ export default function PublicMapScreen({ onBack }) {
             cluster={selectedCluster}
             onClose={() => setSelectedCluster(null)}
             onZoomIn={zoomIntoCluster}
-            onViewReports={() => { setZoneCluster(selectedCluster); setSelectedCluster(null); }}
+            onViewReports={() => { setZoneCluster({ cluster: selectedCluster, zoom: map.region?.zoom ?? INITIAL_ZOOM }); setSelectedCluster(null); }}
             t={t}
           />
         ) : null}
         {zoneCluster ? (
           <ZoneReportsSheet
-            cluster={zoneCluster}
-            zoom={map.region?.zoom ?? INITIAL_ZOOM}
+            cluster={zoneCluster.cluster}
+            zoom={zoneCluster.zoom}
             onSelect={setSelectedReport}
             onClose={() => setZoneCluster(null)}
             t={t}

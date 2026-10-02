@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { FINAL_FLAG_OUTCOMES, sendReportFlag } from '../hooks/reportFlagSubmit.js';
@@ -19,13 +19,20 @@ export default function ReportFlagSheet({ report, onClose, t, send = sendReportF
   const done = outcome !== null && FINAL_FLAG_OUTCOMES.includes(outcome.key);
   const canSubmit = reason !== null && !tooLong && !submitting;
 
+  // A ref blocks a second tap that lands before the `submitting` state re-renders.
+  const inFlight = useRef(false);
   const submit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || inFlight.current) return;
+    inFlight.current = true;
     setSubmitting(true);
     setOutcome(null);
-    const result = await send({ reportId: report.report_id, reason, detail }, { getFingerprint: getOrCreateDeviceFingerprint });
-    setOutcome(result);
-    setSubmitting(false);
+    try {
+      const result = await send({ reportId: report.report_id, reason, detail }, { getFingerprint: getOrCreateDeviceFingerprint });
+      setOutcome(result);
+    } finally {
+      inFlight.current = false;
+      setSubmitting(false);
+    }
   };
 
   const message = outcome ? t(`flag.outcome.${outcome.key}`, { minutes: outcome.retryAfterMinutes }) : null;

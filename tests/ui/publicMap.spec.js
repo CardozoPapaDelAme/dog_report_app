@@ -302,3 +302,17 @@ test('the detail counter blocks submit above 1000 characters', async ({ page }) 
   await expect(sendButton(sheet)).toBeDisabled();
   expect(flags).toHaveLength(0);
 });
+
+test('a rapid double tap on send submits the flag only once', async ({ page }) => {
+  await mockPublic(page);
+  const flags = await mockFlags(page, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return route.fulfill({ status: 201, json: { data: { flag_id: 'flag-1', report_status: 'visible' } } });
+  });
+  const sheet = await openFlagSheet(page);
+  await sheet.getByRole('radio', { name: 'Otro' }).click();
+  // Two clicks in the same tick, before React can re-render the button as disabled.
+  await sendButton(sheet).evaluate((button) => { button.click(); button.click(); });
+  await expect(sheet.getByText('Gracias. Revisaremos el reporte.')).toBeVisible();
+  expect(flags).toHaveLength(1);
+});
