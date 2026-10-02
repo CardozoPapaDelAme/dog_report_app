@@ -5,6 +5,8 @@ import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import PublicMapView from '../components/PublicMapView';
+import ReportFlagSheet from '../components/ReportFlagSheet';
+import ZoneReportsSheet from '../components/ZoneReportsSheet';
 import { usePublicMap } from '../hooks/usePublicMap.js';
 import { INCIDENT_TYPES, MAX_ZOOM, isInViewport, severityColor } from '../models/publicMap.js';
 import { getApiBaseUrl } from '../services/apiClient.js';
@@ -50,7 +52,7 @@ function photoUrl(reportId) {
   try { return `${getApiBaseUrl()}/reports/${encodeURIComponent(reportId)}/photo`; } catch { return null; }
 }
 
-function ClusterModal({ cluster, onClose, onZoomIn, t }) {
+function ClusterModal({ cluster, onClose, onZoomIn, onViewReports, t }) {
   return (
     <View style={styles.backdrop}>
       <View accessibilityRole="alert" style={styles.modal} testID="cluster-modal">
@@ -64,6 +66,9 @@ function ClusterModal({ cluster, onClose, onZoomIn, t }) {
             <Text style={styles.rowValue}>{cluster.type_counts[type]}</Text>
           </View>
         ))}
+        <Pressable accessibilityRole="button" onPress={onViewReports} style={styles.primaryButton}>
+          <Text style={styles.primaryText}>{t('map.cluster.viewReports')}</Text>
+        </Pressable>
         <View style={styles.actions}>
           <Pressable accessibilityRole="button" onPress={onZoomIn} style={styles.primaryButton}>
             <Text style={styles.primaryText}>{t('map.zoomIn')}</Text>
@@ -83,7 +88,7 @@ function detailValue(t, key, value) {
   return String(value);
 }
 
-function PinSheet({ report, onClose, t }) {
+function PinSheet({ report, onClose, onFlag, t }) {
   const [photoFailed, setPhotoFailed] = useState(false);
   const uri = report.has_sanitized_photo ? photoUrl(report.report_id) : null;
   const { dog } = report;
@@ -119,6 +124,9 @@ function PinSheet({ report, onClose, t }) {
             <Text style={[styles.rowValue, styles.rowValueWrap]}>{value}</Text>
           </View>
         ))}
+        <Pressable accessibilityRole="button" onPress={onFlag} style={styles.flagButton}>
+          <Text style={styles.flagButtonText}>{t('flag.open')}</Text>
+        </Pressable>
         <Pressable accessibilityRole="button" onPress={onClose} style={styles.secondaryButton}>
           <Text style={styles.secondaryText}>{t('map.close')}</Text>
         </Pressable>
@@ -133,6 +141,8 @@ export default function PublicMapScreen({ onBack }) {
   const initialCenter = useInitialCenter();
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [zoneCluster, setZoneCluster] = useState(null);
+  const [flagReport, setFlagReport] = useState(null);
   const [focus, setFocus] = useState(null);
 
   const zoomIntoCluster = useCallback(() => {
@@ -193,9 +203,27 @@ export default function PublicMapScreen({ onBack }) {
         ) : null}
         <Text style={styles.attribution}>{MAP_ATTRIBUTION_TEXT}</Text>
         {selectedCluster ? (
-          <ClusterModal cluster={selectedCluster} onClose={() => setSelectedCluster(null)} onZoomIn={zoomIntoCluster} t={t} />
+          <ClusterModal
+            cluster={selectedCluster}
+            onClose={() => setSelectedCluster(null)}
+            onZoomIn={zoomIntoCluster}
+            onViewReports={() => { setZoneCluster(selectedCluster); setSelectedCluster(null); }}
+            t={t}
+          />
         ) : null}
-        {selectedReport ? <PinSheet key={selectedReport.report_id} report={selectedReport} onClose={() => setSelectedReport(null)} t={t} /> : null}
+        {zoneCluster ? (
+          <ZoneReportsSheet
+            cluster={zoneCluster}
+            zoom={map.region?.zoom ?? INITIAL_ZOOM}
+            onSelect={setSelectedReport}
+            onClose={() => setZoneCluster(null)}
+            t={t}
+          />
+        ) : null}
+        {selectedReport ? (
+          <PinSheet key={selectedReport.report_id} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
+        ) : null}
+        {flagReport ? <ReportFlagSheet key={flagReport.report_id} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
       </View>
     </SafeAreaView>
   );
@@ -235,5 +263,7 @@ const styles = StyleSheet.create({
   sheetContent: { padding: 20, gap: 6 },
   flagNotice: { borderRadius: 12, backgroundColor: colors.warningSoft, padding: 10 },
   flagText: { color: colors.warning, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13 },
+  flagButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderColor: colors.danger, borderWidth: 1, paddingHorizontal: 16, marginTop: 6 },
+  flagButtonText: { color: colors.danger, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   photo: { width: '100%', height: 200, borderRadius: 12, backgroundColor: '#d8dbd2' },
 });

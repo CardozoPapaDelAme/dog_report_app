@@ -74,6 +74,7 @@ Suggested walkthrough:
 |---|---|---|
 | Public | Camera → photo (or report without photo) → form → send | Report accepted; photo uploads |
 | Public | Camera → **Ver mapa** → pan/zoom, tap a cluster, zoom to 17 or more, tap a pin | Clusters with counts and severity colour, six-type breakdown, then approximate pins with details and a flag notice when flagged; offline shows a message |
+| Public | Camera → **Ver mapa** → tap a cluster → **Ver reportes de la zona** → tap a report → **Denunciar** | Area list of approximate reports; flag form with six reasons and optional detail; neutral thanks, "already flagged", "no longer flaggable", rate-limit minutes or offline retry; no counts or moderation state are shown |
 | Administrator | Camera → **Acceso de personal** → login → Command Center | Pending reports in the queue |
 | Administrator | Approve, hide, restore or delete with a note | State changes |
 | Administrator | Thresholds, zone sets, duplicates | Publish a version, see the active zone set, resolve and reverse a group |
@@ -86,7 +87,7 @@ Behavior to expect:
 - A report outside the geofence is rejected with `400 invalid_coordinates`.
 - On-device photo validation (TFLite) is not wired yet; every photo is accepted
   and real validation will need a development build.
-- Report flagging has a server route but no app screen yet.
+- The zone report list filters the latest 1000 public reports locally by distance from the cluster centre (approximate; edge reports may be missing).
 - The public map needs network access and shows a message offline; reporting still works.
 - The CSV share sheet requires the development build.
 
