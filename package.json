@@ -15,6 +15,7 @@
     "test:zone-sets-ui": "playwright test zoneSet.spec.js",
     "test:association-ui": "playwright test associationDashboard.spec.js",
     "test:report-form-ui": "playwright test reportForm.spec.js",
+    "test:public-map-ui": "playwright test publicMap.spec.js",
     "test:admin-ui": "playwright test",
     "test:duplicates-ui": "playwright test duplicateManagement.spec.js"
   },

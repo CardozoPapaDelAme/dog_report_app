@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import PublicMapView from '../components/PublicMapView.js';
+import PublicMapView from '../components/PublicMapView';
 import { usePublicMap } from '../hooks/usePublicMap.js';
 import { INCIDENT_TYPES, MAX_ZOOM, isInViewport, severityColor } from '../models/publicMap.js';
 import { getApiBaseUrl } from '../services/apiClient.js';

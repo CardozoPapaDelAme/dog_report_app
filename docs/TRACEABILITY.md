@@ -43,6 +43,22 @@ stable read-time 50 m public approximation, bounded public report and cluster
 queries, server-side metric clustering, highest severity and complete six-key
 type counts.
 
+## ERI-9 public map screen
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RF10; HU-10 | `screens/PublicMapScreen.js` → `hooks/usePublicMap.js` → `services/publicMapApi.js` (`GET /public/reports` at zoom 17 or more); pin sheet with public fields, photo when `has_sanitized_photo`, flag notice when `has_flags`; "map not available offline" state | `models/publicMap.test.js`; `services/publicMapApi.test.js`; `hooks/publicMapLoader.test.js`; `tests/ui/publicMap.spec.js` (pins, flag notice, offline) |
+| RF11, RF14; HU-11, HU-14 | Zoom below 17 requests `GET /public/clusters` with zoom and full viewport; zooming in re-queries until pins (`models/publicMap.js` zoom bands mirror the server) | `models/publicMap.test.js` (band parity); `hooks/publicMapLoader.test.js`; `tests/ui/publicMap.spec.js` (zoom 13 to 17, all-or-none viewport) |
+| RF12; HU-12 | Cluster size from `report_count` (`clusterRadiusPx`) | `models/publicMap.test.js`; native rendering needs a development build |
+| RF13; HU-13 | Colour from `highest_severity` (`severityColor`); cluster modal with all six `type_counts` keys | `models/publicMap.test.js`; `tests/ui/publicMap.spec.js` (severity, six counts) |
+| RNF02 | Debounced loads, stale-response protection, bounded queries from the server | `hooks/publicMapLoader.test.js`; <5 s load target still needs a device measurement |
+| RNF13 | Anonymous requests (no `Authorization`), approximate coordinates only, no client re-clustering | `tests/ui/publicMap.spec.js` (no Authorization header) |
+
+Provider: OpenFreeMap interim style via `services/mapConfig.js`
+(`EXPO_PUBLIC_MAP_STYLE_URL`; ADR-008 amendment). The native map component
+`components/PublicMapView.js` is verified manually on a development build; the web
+stub `components/PublicMapView.web.js` backs the Playwright spec.
+
 ## Non-functional requirements
 
 | ID | Flow/component | Data/API/operations boundary | Verification focus |

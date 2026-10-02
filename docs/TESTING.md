@@ -647,3 +647,37 @@ moderation are intentionally distinct.
 ## RIC-4 / L4 Asociación dashboard and CSV export
 
 Run `deno test --no-lock --config supabase/functions/api/deno.json models/associationReport.test.js services/associationReportApi.test.js hooks/associationReportLoader.test.js` for date, projection, pagination and CSV model checks. Run `npx playwright test associationDashboard.spec.js` for the filtered table, downloaded CSV row parity, loading through the last cursor page, and the explicit empty-range state. The browser fixture mocks RIC-2; it does not prove a live managed-project session or native share-sheet behavior. Native CSV sharing uses `expo-sharing` and requires an Expo development build.
+
+## ERI-9 public map
+
+The app consumes `GET /public/clusters` and `GET /public/reports` (RF10–RF14,
+HU-10–HU-14). Run the client unit tests (zoom bands, viewport, severity, response
+validation, request building, debounced loader with stale-response protection, map
+style configuration):
+
+```bash
+npx -y deno test --no-lock --config supabase/functions/api/deno.json models/publicMap.test.js services/publicMapApi.test.js hooks/publicMapLoader.test.js services/mapConfig.test.js
+```
+
+Run the browser tests with `npx playwright test publicMap.spec.js` (or
+`npm run test:public-map-ui`). The `?map` fixture entry renders the real
+`PublicMapScreen` with the web stub `components/PublicMapView.web.js`; the spec
+intercepts `**/public/clusters**` and `**/public/reports**`, and `/public/*` is
+never served by the fixture server. Cases: clusters with counts and severity;
+six-type breakdown on cluster tap; zoom 13 to 17 switching to `/public/reports`
+pins; pin details with and without the flag notice; empty state; 500 then 200
+retry; offline (`network_unavailable`) message; no `Authorization` header on public
+requests; viewport query parameters sent all-or-none.
+
+The fixture bundle aliases `expo-location` to `tests/ui/expo-location-stub.js`
+(permission denied, so the map centres on Creel) and resolves
+`PublicMapView.js` to the web stub.
+
+What the web stub proves: the screen's states, the zoom-to-endpoint switch, the
+data shown for clusters and pins, the modal and sheet content, and the HTTP
+contract used by the client. What it does **not** prove: native MapLibre
+rendering (cluster circle size and colour, pins), pan/pinch gestures and real
+viewport bounds, tile and style loading from OpenFreeMap/MapTiler, attribution
+placement on the map surface, location permission prompts, and photo loading.
+These need a device or Expo development build (`npx expo run:ios` or
+`npx expo run:android`) and a manual pass against the staging API.

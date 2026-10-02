@@ -112,6 +112,17 @@ Reference: <https://maplibre.org/maplibre-react-native/docs/setup/expo/> and
 <https://maplibre.org/maplibre-react-native/docs/components/sources/geo-json-source/>.
 Provider integration reference: <https://docs.maptiler.com/react-native/>.
 
+**Amendment (2026-10-02, user decision) — interim OpenFreeMap.** MapTiler Cloud
+remains the target provider, but the first public map (ERI-9) ships with
+OpenFreeMap's `liberty` style (`https://tiles.openfreemap.org/styles/liberty`).
+It needs no account or key, so the team can build and demo the map before the
+MapTiler plan, key restrictions and cost are approved. The style URL is read from
+the optional `EXPO_PUBLIC_MAP_STYLE_URL` (`services/mapConfig.js`), so moving to
+MapTiler is a configuration change with no code change. The attribution
+"© OpenMapTiles © OpenStreetMap contributors" is always rendered. The MapLibre
+renderer, development-build constraint and server-authoritative clustering are
+unchanged. Reassess the provider before any public production launch.
+
 ## ADR-009 — Custom bundled TFLite via react-native-fast-tflite
 
 **Decision.** Bundle one versioned MobileNetV3-Small INT8 TFLite ImageNet

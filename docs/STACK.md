@@ -11,7 +11,7 @@ define deployment steps or external-service operating contracts; see
 | Offline metadata | Expo SQLite | Transactional, restart-safe drafts and queue state |
 | Offline images | App-private local files | Durable media without storing image blobs in SQLite |
 | Map renderer | `@maplibre/maplibre-react-native` | Native vector-map rendering and interaction |
-| Map provider | MapTiler Cloud | Hosted online styles and vector tiles |
+| Map provider | MapTiler Cloud (target); OpenFreeMap (interim) | Hosted online styles and vector tiles. OpenFreeMap liberty is the interim default (no key); `EXPO_PUBLIC_MAP_STYLE_URL` switches to MapTiler without code changes |
 | On-device vision | `react-native-fast-tflite` with MobileNetV3-Small INT8 | Offline dog/quality assistance with a bundled model |
 | Managed platform | Supabase Cloud Free | Prototype Auth, Edge hosting, Storage, and PostgreSQL boundary |
 | Domain HTTP | Hono on Deno Edge runtime, plain JavaScript | One modular Function `api` with portable Web APIs |

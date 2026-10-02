@@ -35,6 +35,7 @@ Fill `.env` with publishable client configuration only (never a service key):
 | `EXPO_PUBLIC_API_BASE_URL` | `https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api` |
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://dcvihomkxkutkckmjvmp.supabase.co` |
 | `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase → Project Settings → API Keys |
+| `EXPO_PUBLIC_MAP_STYLE_URL` | Optional. MapLibre style URL for the public map; defaults to OpenFreeMap liberty (`https://tiles.openfreemap.org/styles/liberty`, no key). Attribution "© OpenMapTiles © OpenStreetMap contributors" must stay visible. Set a MapTiler style URL to switch providers without code changes |
 
 `GET /health` is live at
 `https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api/health`.
@@ -43,13 +44,17 @@ Client request paths are relative to the base URL (for example `/me`, not
 
 Known limitation: the `api` Function implements no CORS handling, so a browser
 preflight `OPTIONS` returns 404 and Expo web cannot call the live API. Use a
-native client (Expo Go or a development build).
+native client (an Expo development build).
 
 ## Run and test the app
 
-1. Install **Expo Go** on a phone, matching the project's Expo SDK 57.
-2. Run `npx expo start` and scan the QR code. If the phone is not on the same
-   network as the computer, use `npx expo start --tunnel`.
+1. The public map uses native MapLibre, so the app needs an **Expo development
+   build** (`expo-dev-client`); **Expo Go no longer runs the full app**. Build and
+   install it once with `npx expo run:ios` (macOS with Xcode), `npx expo run:android`
+   (Android SDK), or an EAS development build.
+2. Run `npx expo start --dev-client` and open the installed development build. If
+   the phone is not on the same network as the computer, use
+   `npx expo start --dev-client --tunnel`.
 3. Grant camera and **location** permissions. Report submission requires the
    phone's GPS to be inside the active staging geofence.
 4. Staff accounts are provisioned manually (public signup is disabled). Ask the
@@ -67,6 +72,7 @@ Suggested walkthrough:
 | Actor | Steps | Expected |
 |---|---|---|
 | Public | Camera → photo (or report without photo) → form → send | Report accepted; photo uploads |
+| Public | Camera → **Ver mapa** → pan/zoom, tap a cluster, zoom to 17 or more, tap a pin | Clusters with counts and severity colour, six-type breakdown, then approximate pins with details and a flag notice when flagged; offline shows a message |
 | Administrator | Camera → **Acceso de personal** → login → Command Center | Pending reports in the queue |
 | Administrator | Approve, hide, restore or delete with a note | State changes |
 | Administrator | Thresholds, zone sets, duplicates | Publish a version, see the active zone set, resolve and reverse a group |
@@ -79,11 +85,12 @@ Behavior to expect:
 - A report outside the geofence is rejected with `400 invalid_coordinates`.
 - On-device photo validation (TFLite) is not wired yet; every photo is accepted
   and real validation will need a development build.
-- The public map and report flagging have server routes but no app screens yet.
-- The CSV share sheet may not work in Expo Go.
+- Report flagging has a server route but no app screen yet.
+- The public map needs network access and shows a message offline; reporting still works.
+- The CSV share sheet requires the development build.
 
 For automated checks see [`docs/TESTING.md`](docs/TESTING.md):
-`npm run test:admin-ui` (Playwright), `npm run test:auth`, and
+`npm run test:admin-ui` (Playwright, includes `npm run test:public-map-ui`), `npm run test:auth`, and
 `deno test --no-lock --config supabase/functions/api/deno.json supabase/functions/api`.
 
 If a ticket needs the shared database, also run:
