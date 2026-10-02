@@ -59,6 +59,12 @@ Known limitation: the `api` Function implements no CORS handling, so a browser
 preflight `OPTIONS` returns 404 and Expo web cannot call the live API. Use a
 native client (Expo Go or a development build).
 
+### Just want to review the app?
+
+Non-developers and reviewers should follow [`docs/REVIEWING.md`](docs/REVIEWING.md):
+Android installs a preview APK from a link (nothing else to install); iPhone uses
+Expo Go with a QR shared by a teammate.
+
 ### Choose how to run
 
 | Option | Best for | Map | Needs |
@@ -85,11 +91,13 @@ same network).
 npm i -g eas-cli        # or prefix every command with: npx eas-cli
 eas login
 eas init                # first time only; commit the projectId/owner it writes to app.json
-eas env:create          # add the EXPO_PUBLIC_* values from the .env table (non-secret only)
+eas env:push --environment development   # upload the EXPO_PUBLIC_* values from your local .env (non-secret only)
 eas build --profile development --platform android
 ```
 
-Share the install link or QR printed by EAS (Android APK, internal distribution).
+EAS builds do not read your local `.env` (it is git-ignored), hence the `env:push`
+step (or `eas env:set --name ... --value ... --environment development --visibility plaintext`
+per variable). Share the install link or QR printed by EAS (Android APK, internal distribution).
 iOS needs a paid Apple Developer account: register each tester device with
 `eas device:create`, then run `eas build --profile development --platform ios`
 (or distribute through TestFlight). Everyone else installs the build once and runs:
