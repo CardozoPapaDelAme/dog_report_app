@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import './i18n';
 import { createLoginController } from './controllers/loginController.js';
+import { useDraftAutoSync } from './hooks/useDraftAutoSync.js';
 import { useLogin } from './hooks/useLogin.js';
 import { useReportDraftFlow } from './hooks/useReportDraftFlow.js';
 import AssociationDashboardScreen from './screens/associationDashboardScreen.js';
@@ -29,6 +30,11 @@ export default function App() {
   const [screen, setScreen] = useState('camera');
   const openReportForm = useCallback(() => setScreen('reportDraft'), []);
   const reportDraftFlow = useReportDraftFlow({ onOpenReportForm: openReportForm });
+  useDraftAutoSync({
+    ready: reportDraftFlow.queueReady,
+    syncDueDrafts: reportDraftFlow.syncDueDrafts,
+    isSyncBusy: reportDraftFlow.isSyncBusy,
+  });
   const login = useLogin(loginController);
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,

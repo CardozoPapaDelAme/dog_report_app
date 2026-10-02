@@ -74,7 +74,7 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 | RNF09 | Location validation | Versioned zones; ReportService + PostGIS repository | New points outside rejected; identical replay still accepted; mock/imprecise reviewed |
 | RNF10 | Photo validation | On-device model; shared 224×224 pixel pipeline; transient EXIF signals | Offline inference with no network call; fail-open to skipped on model error; no raw EXIF persistence |
 | RNF11 | Dog attributes | Structured columns and duplicate signals (server compares `lower(color)` equality) | Offline colour extraction from the same pixels; colour is a signal the user can change or clear, never an identity claim (`models/dogColor.test.js`) |
-| RNF12 | Offline sync | Expo SQLite + local file + Hono receipts/status | Crash-safe idempotent sync; purge states stop upload retry |
+| RNF12 | Offline sync | Expo SQLite + local file + Hono receipts/status; `hooks/draftAutoSync.js` + `hooks/useDraftAutoSync.js` (expo-network listener + AppState `active`, 2 s debounce, single-flight) calling `syncDueDrafts` | Crash-safe idempotent sync (final report UUID replay); backoff/Retry-After respected; `draft`/`terminal_error` never auto-synced; purge states stop upload retry. Tests: `hooks/draftAutoSync.test.js`; airplane-mode toggle is device-only |
 | RNF13 | Privacy | Minimized projections and retention | No solicited public identity; PII moderation |
 | RNF14 | Database recovery | Roles/schema/data dumps plus private-object manifest/export; production backup gate | Isolated `psql`/object restore rehearsal; do not claim Free meets required RPO/RTO |
 | RNF15 | Hosting | Supabase managed Free amendment | Managed project readiness and quota evidence; historical OVH wording superseded |
