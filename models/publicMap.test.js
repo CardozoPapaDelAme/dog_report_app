@@ -1,7 +1,7 @@
 import {
   CLUSTER_RADIUS_MAX_PX, CLUSTER_RADIUS_MIN_PX, INCIDENT_SEVERITY_ORDER, INCIDENT_TYPES, PIN_ZOOM_THRESHOLD,
   SEVERITY_COLORS, ZOOM_RADIUS_BANDS, clusterRadiusMetersForZoom, clusterRadiusPx, isInViewport, queryModeForZoom,
-  readClusters, readPublicReports, severityColor, severityLevel, viewportFromBounds, viewportToQuery,
+  readClusters, readPublicReports, reportsInCluster, severityColor, severityLevel, viewportFromBounds, viewportToQuery,
 } from './publicMap.js';
 import {
   INCIDENT_SEVERITY, INCIDENT_TYPES as SERVER_TYPES, ZOOM_RADIUS_BANDS as SERVER_BANDS, clusterRadiusForZoom,
@@ -87,4 +87,50 @@ Deno.test('ERI9 model: readPublicReports validates the public view and never inv
   assert(items.length === 2 && items[1].report_id === 'r2' && Object.keys(items[1].details).length === 0);
   assert(items[0].dog.has_collar === false && items[0].dog.predominant_color === null);
   throws(() => readPublicReports({}), 'invalid_response');
+});
+
+// ~111.2 m per 0.001 degree of latitude.
+const at = (latitude, id, occurred_at = '2026-09-01T08:00:00.000Z', longitude = -107.6) => ({
+  ...report, report_id: id, occurred_at, approximate_location: { longitude, latitude },
+});
+
+Deno.test('ERI10 model: reportsInCluster keeps reports inside the zoom band radius and drops outside ones', () => {
+  const reports = [at(27.75, 'center'), at(27.7504, 'near-45m'), at(27.7512, 'far-133m'), at(27.76, 'far-1km')];
+  const ids = (zoom) => reportsInCluster(reports, cluster, zoom).map((item) => item.report_id).sort().join();
+  assert(ids(17) === 'center,near-45m', 'zoom 17 radius 50 m');
+  assert(ids(16) === 'center,near-45m' && ids(15) === 'center,near-45m', 'radius 100 m');
+  assert(ids(14) === 'center,far-133m,near-45m', 'radius 250 m');
+  assert(ids(8) === 'center,far-133m,far-1km,near-45m' || ids(8) === 'center,far-133m,near-45m', 'radius 1000 m');
+  assert(!ids(8).includes('far-1km') === (111.2 * 10 > 1000), 'zoom 8 boundary is metric');
+});
+
+Deno.test('ERI10 model: reportsInCluster radius depends on zoom and includes the exact edge', () => {
+  // 0.0004 deg lat ~ 44.5 m (inside 50 m); 0.0005 ~ 55.6 m (outside).
+  const reports = [at(27.7504, 'in'), at(27.7505, 'out')];
+  assert(reportsInCluster(reports, cluster, 17).map((item) => item.report_id).join() === 'in');
+  assert(reportsInCluster(reports, cluster, 16).length === 2, 'wider band at lower zoom');
+  const edge = at(27.75, 'edge');
+  const probe = { ...cluster, approximate_location: { longitude: -107.6, latitude: 27.75 } };
+  assert(reportsInCluster([edge], probe, 22).length === 1, 'zero distance is inside');
+  const lat = 27.75 + (50 / 6371008.8) * (180 / Math.PI);
+  assert(reportsInCluster([at(lat - 1e-9, 'just-in')], cluster, 17).length === 1, 'just inside the edge');
+  assert(reportsInCluster([at(lat + 1e-6, 'just-out')], cluster, 17).length === 0, 'just outside the edge');
+});
+
+Deno.test('ERI10 model: reportsInCluster sorts newest first and is pure and defensive', () => {
+  const reports = [at(27.75, 'old', '2026-08-01T00:00:00.000Z'), at(27.75, 'new', '2026-09-03T00:00:00.000Z'), at(27.75, 'mid', '2026-09-01T00:00:00.000Z')];
+  const snapshot = JSON.stringify(reports);
+  assert(reportsInCluster(reports, cluster, 12).map((item) => item.report_id).join() === 'new,mid,old');
+  assert(JSON.stringify(reports) === snapshot, 'input not mutated');
+  assert(reportsInCluster([], cluster, 12).length === 0);
+  assert(reportsInCluster(reports, null, 12).length === 0 && reportsInCluster(reports, cluster, NaN).length === 0);
+  assert(reportsInCluster(null, cluster, 12).length === 0);
+  assert(reportsInCluster([{ report_id: 'x' }, ...reports], cluster, 12).length === 3, 'skips malformed items');
+  assert(Object.keys(reportsInCluster(reports, cluster, 12)[0]).join() === Object.keys(report).join(), 'items returned unchanged');
+});
+
+Deno.test('clusterRadiusMetersForZoom rejects a non-numeric zoom', () => {
+  assert(clusterRadiusMetersForZoom(Number.NaN) === null);
+  assert(clusterRadiusMetersForZoom(undefined) === null);
+  assert(clusterRadiusMetersForZoom(12) === 250);
 });
