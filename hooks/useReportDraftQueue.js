@@ -89,6 +89,7 @@ export function useReportDraftQueue({
   const controllerRef = useRef(null);
   const repositoryRef = useRef(null);
   const dependenciesRef = useRef(dependencies);
+  const inFlightRef = useRef(0);
   const [state, setState] = useState({
     ready: false,
     loading: true,
@@ -146,18 +147,30 @@ export function useReportDraftQueue({
   const syncDraft = useCallback(async (id) => {
     const controller = controllerRef.current;
     if (!controller) throw new Error('report_draft_queue_not_ready');
-    const draft = await controller.syncDraft(id);
-    await reload();
-    return draft;
+    inFlightRef.current += 1;
+    try {
+      const draft = await controller.syncDraft(id);
+      await reload();
+      return draft;
+    } finally {
+      inFlightRef.current -= 1;
+    }
   }, [reload]);
 
   const syncDueDrafts = useCallback(async () => {
     const controller = controllerRef.current;
     if (!controller) throw new Error('report_draft_queue_not_ready');
-    const drafts = await controller.syncDueDrafts();
-    await reload();
-    return drafts;
+    inFlightRef.current += 1;
+    try {
+      const drafts = await controller.syncDueDrafts();
+      await reload();
+      return drafts;
+    } finally {
+      inFlightRef.current -= 1;
+    }
   }, [reload]);
+
+  const isSyncBusy = useCallback(() => inFlightRef.current > 0, []);
 
   return {
     ...state,
@@ -165,6 +178,7 @@ export function useReportDraftQueue({
     queueDraft,
     syncDraft,
     syncDueDrafts,
+    isSyncBusy,
     reload,
   };
 }

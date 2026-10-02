@@ -14,6 +14,9 @@ export function useReportDraftFlow({ onOpenReportForm, detectColor = detectDogCo
     createDraft,
     queueDraft,
     syncDraft,
+    syncDueDrafts,
+    isSyncBusy,
+    ready,
   } = useReportDraftQueue();
 
   const activeDraft = useMemo(
@@ -39,6 +42,10 @@ export function useReportDraftFlow({ onOpenReportForm, detectColor = detectDogCo
     error: draftError ?? queueError,
     queueDraft,
     syncDraft,
+    syncDueDrafts,
+    isSyncBusy,
+    queueReady: ready,
+    drafts,
     openReportDraft,
   };
 }

@@ -66,13 +66,13 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
         <View style={styles.field}>
           <Text style={styles.label}>{t('associationDashboard.from')}</Text>
           <TextInput accessibilityLabel={t('associationDashboard.from')} value={fromDay} onChangeText={setFromDay}
-            placeholder="AAAA-MM-DD" autoCapitalize="none" style={styles.input} />
+            placeholder={t('associationDashboard.datePlaceholder')} autoCapitalize="none" style={styles.input} />
           {reports.errors.from ? <Text style={styles.fieldError}>{t('associationDashboard.invalidDate')}</Text> : null}
         </View>
         <View style={styles.field}>
           <Text style={styles.label}>{t('associationDashboard.to')}</Text>
           <TextInput accessibilityLabel={t('associationDashboard.to')} value={toDay} onChangeText={setToDay}
-            placeholder="AAAA-MM-DD" autoCapitalize="none" style={styles.input} />
+            placeholder={t('associationDashboard.datePlaceholder')} autoCapitalize="none" style={styles.input} />
           {reports.errors.to ? <Text style={styles.fieldError}>{t(reports.errors.to === 'before_from' ? 'associationDashboard.reversedDate' : 'associationDashboard.invalidDate')}</Text> : null}
         </View>
         <Pressable accessibilityRole="button" disabled={reports.phase === 'loading'} onPress={() => { setExportError(null); loadRange(fromDay, toDay); }}
@@ -95,7 +95,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
       {exportError ? <Text accessibilityRole="alert" style={styles.error}>{t('associationDashboard.exportError')}</Text> : null}
 
       {status ? <View style={styles.status}>
-        {reports.phase === 'loading' ? <ActivityIndicator color="#005a25" /> : null}
+        {reports.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('common.loading')} color="#005a25" /> : null}
         <Text style={styles.statusText}>{status}</Text>
         {reports.phase === 'error' ? <Pressable accessibilityRole="button" onPress={reports.reload} style={styles.retry}>
           <Text style={styles.retryText}>{t('associationDashboard.retry')}</Text>

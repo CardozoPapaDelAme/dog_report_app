@@ -744,3 +744,16 @@ Device-only (not proven here): TFLite model load, inference latency and memory,
 real-photo accuracy of the dog/blur thresholds (dog probability 0.3, Laplacian
 variance 120 on 224 px are provisional), and colour accuracy on real photos
 (lighting, backgrounds). Expo Go and web skip the model by design.
+
+## RNF12 offline auto-sync and model cache reset
+
+- Unit-proven (Deno, `hooks/draftAutoSync.test.js`): an offline-to-online transition schedules one pass; bursts inside the 2 s debounce coalesce; a trigger during an in-flight pass (or a manual sync) does not start another; failures are swallowed and the next trigger retries; eligibility (`draft`, `terminal_error`, `synced` and drafts inside backoff/Retry-After are skipped) via `draftSyncIsDue`.
+- Unit-proven (`services/photoValidationFlow.test.js`): a hung model load times out, the cached promise is dropped, and the next photo starts a new load; successful loads stay cached.
+- Device-only (not proven by unit tests): toggling airplane mode on a development build and watching a queued draft sync after reconnect; `expo-network` events and `AppState` foreground behaviour on real Android/iOS; web `online`/`offline` window events in a browser.
+
+# RNF06 i18n and accessibility
+
+- Unit-proven (Deno, `i18n/locales.test.js`): `es.json` and `en.json` have identical deep key sets, no empty or non-string values, and identical `{{placeholder}}` names per key. `i18n/deviceLanguage.test.js` proves language selection: Spanish by default, English when the device/browser language is English.
+- UI-proven (Playwright): the suite pins `locale: 'es-MX'`; `tests/ui/language.spec.js` checks the Asociación dashboard in English with labelled inputs.
+- Static convention: every `Pressable`/`TextInput` in `screens/` and `components/` has `accessibilityRole` and a label (text child or `accessibilityLabel`); radios/checkboxes/selects expose `accessibilityState`; photo previews are labelled; standalone spinners carry a loading label; modals set `accessibilityViewIsModal`.
+- Manual (not proven): a TalkBack/VoiceOver pass on a development build, and layout with longer English strings. Run it before release.

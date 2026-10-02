@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Camera, Map, ViewAnnotation } from '@maplibre/maplibre-react-native';
 
-import { clusterRadiusPx, severityColor } from '../models/publicMap.js';
+import { INCIDENT_TYPES, clusterRadiusPx, severityColor, severityLevel } from '../models/publicMap.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
 
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
@@ -18,6 +19,7 @@ export default function PublicMapView({
   onSelectCluster,
   onSelectReport,
 }) {
+  const { t } = useTranslation();
   const mapRef = useRef(null);
   const cameraRef = useRef(null);
 
@@ -55,7 +57,12 @@ export default function PublicMapView({
             onPress={() => onSelectCluster?.(cluster)}
           >
             <View
-              accessibilityLabel={`${cluster.report_count}`}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('map.clusterItem', {
+                count: cluster.report_count,
+                severity: t(`map.severity.${severityLevel(cluster.highest_severity)}`),
+              })}
               style={[styles.cluster, {
                 width: radius * 2, height: radius * 2, borderRadius: radius,
                 backgroundColor: severityColor(cluster.highest_severity),
@@ -76,7 +83,12 @@ export default function PublicMapView({
             lngLat={[longitude, latitude]}
             onPress={() => onSelectReport?.(report)}
           >
-            <View style={styles.pinWrap}>
+            <View
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('map.pinItem', { type: t(`reportForm.incidents.${INCIDENT_TYPES.includes(report.incident_type) ? report.incident_type : 'otro'}`) })}
+              style={styles.pinWrap}
+            >
               <View style={[styles.pinHead, { backgroundColor: severityColor(report.incident_type) }]}>
                 <View style={styles.pinDot} />
               </View>

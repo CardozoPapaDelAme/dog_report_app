@@ -68,13 +68,13 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 | RNF03 | API/database | Bounded Hono queries, spatial/time indexes | Load test growth profile |
 | RNF04 | Report UX | Camera-first dynamic form | Usability session under 5 min |
 | RNF05 | Mobile app | Expo development builds, iOS/Android | Supported-device smoke tests |
-| RNF06 | Localization | `react-i18next`; all role flows | ES/EN coverage and layout |
+| RNF06 | Localization | `react-i18next`; device-locale selection (`i18n/deviceLanguage.js`, es default); all role flows | ES/EN key parity (`i18n/locales.test.js`), language selection test, English Playwright spec; TalkBack/VoiceOver and layout manual |
 | RNF07 | Auth/navigation | Two sibling roles; profile checks | No public signup or role inheritance |
 | RNF08 | On-device vision | `react-native-fast-tflite`; bundled MobileNetV3-Small (float32 despite the `int8` file name) | Runs offline in development/standalone builds; not in Expo Go/web. Load/latency device-only |
 | RNF09 | Location validation | Versioned zones; ReportService + PostGIS repository | New points outside rejected; identical replay still accepted; mock/imprecise reviewed |
 | RNF10 | Photo validation | On-device model; shared 224×224 pixel pipeline; transient EXIF signals | Offline inference with no network call; fail-open to skipped on model error; no raw EXIF persistence |
 | RNF11 | Dog attributes | Structured columns and duplicate signals (server compares `lower(color)` equality) | Offline colour extraction from the same pixels; colour is a signal the user can change or clear, never an identity claim (`models/dogColor.test.js`) |
-| RNF12 | Offline sync | Expo SQLite + local file + Hono receipts/status | Crash-safe idempotent sync; purge states stop upload retry |
+| RNF12 | Offline sync | Expo SQLite + local file + Hono receipts/status; `hooks/draftAutoSync.js` + `hooks/useDraftAutoSync.js` (expo-network listener + AppState `active`, 2 s debounce, single-flight) calling `syncDueDrafts` | Crash-safe idempotent sync (final report UUID replay); backoff/Retry-After respected; `draft`/`terminal_error` never auto-synced; purge states stop upload retry. Tests: `hooks/draftAutoSync.test.js`; airplane-mode toggle is device-only |
 | RNF13 | Privacy | Minimized projections and retention | No solicited public identity; PII moderation |
 | RNF14 | Database recovery | Roles/schema/data dumps plus private-object manifest/export; production backup gate | Isolated `psql`/object restore rehearsal; do not claim Free meets required RPO/RTO |
 | RNF15 | Hosting | Supabase managed Free amendment | Managed project readiness and quota evidence; historical OVH wording superseded |

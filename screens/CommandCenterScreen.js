@@ -111,7 +111,7 @@ function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t })
             onPress={() => onApprove(report.id)}
             style={({ pressed }) => [styles.approveButton, pressed && styles.pressed, busy && styles.disabled]}
           >
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.approveText}>{t('moderation.approve')}</Text>}
+            {busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color="#fff" /> : <Text style={styles.approveText}>{t('moderation.approve')}</Text>}
           </Pressable>
         ) : null}
         {canHide ? (
@@ -250,9 +250,9 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
           </View>
         )}
         ListEmptyComponent={!queue.loading ? <Text style={styles.empty}>{t('moderation.empty')}</Text> : null}
-        ListFooterComponent={queue.loading ? <ActivityIndicator color={colors.primary} style={styles.loader} /> : queue.nextCursor ? (
+        ListFooterComponent={queue.loading ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} style={styles.loader} /> : queue.nextCursor ? (
           <Pressable accessibilityRole="button" disabled={queue.loadingMore} onPress={queue.loadMore} style={styles.moreButton}>
-            {queue.loadingMore ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.moreText}>{t('moderation.loadMore')}</Text>}
+            {queue.loadingMore ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /> : <Text style={styles.moreText}>{t('moderation.loadMore')}</Text>}
           </Pressable>
         ) : <View style={styles.footerSpace} />}
         refreshControl={<RefreshControl refreshing={queue.refreshing} onRefresh={queue.refresh} tintColor={colors.primary} />}
@@ -263,7 +263,7 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
       <Modal transparent animationType="fade" visible={Boolean(noteTarget)} onRequestClose={closeNoteModal}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalBackdrop}>
           {noteCopy ? (
-            <Pressable accessible={false} onPress={Keyboard.dismiss} style={styles.modalCard}>
+            <Pressable accessible={false} accessibilityViewIsModal onPress={Keyboard.dismiss} style={styles.modalCard}>
               <Text style={[styles.modalEyebrow, { color: noteCopy.tone }]}>{t(noteCopy.eyebrow)}</Text>
               <Text style={styles.modalTitle}>{t(noteCopy.title)}</Text>
               <Text style={styles.modalBody}>{t(noteCopy.body)}</Text>

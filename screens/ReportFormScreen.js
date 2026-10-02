@@ -387,7 +387,7 @@ export default function ReportFormScreen({
             <>
               <View style={styles.photoCard}>
                 {photoUri ? (
-                  <Image source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
+                  <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
                 ) : (
                   <View style={styles.noPhoto} />
                 )}
@@ -614,6 +614,7 @@ export default function ReportFormScreen({
           <View
             testID={showSuccessDialog ? 'report-success' : 'report-error'}
             style={styles.resultDialog}
+            accessibilityViewIsModal
             accessibilityRole="alert"
           >
             <Text style={[styles.resultTitle, showErrorDialog && styles.resultTitleError]}>

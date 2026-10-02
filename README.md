@@ -46,7 +46,7 @@ commit it):
 | `EXPO_PUBLIC_MAP_STYLE_URL` | Optional. MapLibre style URL for the public map; defaults to OpenFreeMap liberty (`https://tiles.openfreemap.org/styles/liberty`, no key). Attribution "© OpenMapTiles © OpenStreetMap contributors" must stay visible. Set a MapTiler style URL to switch providers without code changes |
 
 For EAS cloud builds, `.env` is not uploaded (it is git-ignored): define the same
-`EXPO_PUBLIC_*` values as EAS environment variables (`eas env:create`, or the
+`EXPO_PUBLIC_*` values as EAS environment variables (`eas env:push` or `eas env:set`, or the
 project's Environment variables page on expo.dev) instead of hardcoding them in
 `eas.json`.
 
@@ -58,6 +58,12 @@ Client request paths are relative to the base URL (for example `/me`, not
 Known limitation: the `api` Function implements no CORS handling, so a browser
 preflight `OPTIONS` returns 404 and Expo web cannot call the live API. Use a
 native client (Expo Go or a development build).
+
+### Just want to review the app?
+
+Non-developers and reviewers should follow [`docs/REVIEWING.md`](docs/REVIEWING.md):
+Android installs a preview APK from a link (nothing else to install); iPhone uses
+Expo Go with a QR shared by a teammate.
 
 ### Choose how to run
 
@@ -85,11 +91,13 @@ same network).
 npm i -g eas-cli        # or prefix every command with: npx eas-cli
 eas login
 eas init                # first time only; commit the projectId/owner it writes to app.json
-eas env:create          # add the EXPO_PUBLIC_* values from the .env table (non-secret only)
+eas env:push --environment development   # upload the EXPO_PUBLIC_* values from your local .env (non-secret only)
 eas build --profile development --platform android
 ```
 
-Share the install link or QR printed by EAS (Android APK, internal distribution).
+EAS builds do not read your local `.env` (it is git-ignored), hence the `env:push`
+step (or `eas env:set --name ... --value ... --environment development --visibility plaintext`
+per variable). Share the install link or QR printed by EAS (Android APK, internal distribution).
 iOS needs a paid Apple Developer account: register each tester device with
 `eas device:create`, then run `eas build --profile development --platform ios`
 (or distribute through TestFlight). Everyone else installs the build once and runs:
