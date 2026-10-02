@@ -8,7 +8,8 @@ Chihuahua. The prototype targets the Asociación de Hoteles de Chihuahua, A.C.
 
 The mobile client is in the repository root. It includes the camera, the report
 form with photo upload and offline draft queue, the public map (server clusters
-and approximate pins, reached from **Ver mapa** on the camera screen), staff login
+and approximate pins, reached from **Ver mapa** on the camera screen) with a zone
+report list and anonymous report flagging (**Denunciar**), staff login
 (`GET /me`), the Administrator Command Center (moderation, thresholds, zone sets, duplicates) and
 the Asociación de Hoteles de Chihuahua dashboard with CSV export. The backend
 `api` Function serves all of these and is deployed to the staging project.
