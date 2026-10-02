@@ -71,7 +71,7 @@ Expo Go with a QR shared by a teammate.
 |---|---|---|---|
 | A. Expo Go | Quick look, flagging, forms | No: shows a notice and a list of recent public reports (open one to flag it) | Expo Go app only |
 | B. EAS development build (recommended) | Whole team, full map | Yes | One teammate with an Expo account builds; others install the link |
-| C. Local native build | Native debugging | Yes | Xcode + CocoaPods or Android Studio |
+| C. Local development build | Each developer testing the full app on their own phone | Yes | Android Studio (any OS) or Xcode (Mac only) + a USB cable |
 
 **A. Expo Go.** No native install. Everything works except the interactive map
 (native MapLibre); **Ver mapa** shows the recent public reports instead, and
@@ -112,13 +112,45 @@ Profiles live in `eas.json`: `development`, `preview` (internal APK) and
 `production`. The app identifier is `com.wildogscanner.app` (iOS
 `bundleIdentifier`, Android `package`).
 
-**C. Local native build.** Installs the development build on a simulator or device:
+**C. Local development build (full app on your own phone).** Compile and install
+once; after that, code changes reload live with no reinstall.
+
+*One-time setup*
+
+| | Android | iPhone |
+|---|---|---|
+| Computer | Windows, macOS or Linux | **macOS only** |
+| Install | [Android Studio](https://developer.android.com/studio) (includes the SDK) and JDK 17; set `ANDROID_HOME` | Xcode (App Store) and CocoaPods (`sudo gem install cocoapods` or `brew install cocoapods`) |
+| Phone | Settings → About phone → tap *Build number* 7 times; then Developer options → **USB debugging** on. Connect by USB and accept the prompt (`adb devices` must list it) | Connect by USB, tap *Trust*. iOS 16+: Settings → Privacy & Security → **Developer Mode** on. In Xcode → Settings → Accounts add your Apple ID |
+| Build and install | `npx expo run:android` | `npx expo run:ios --device` (pick your iPhone) |
+
+The first build takes about 10–20 minutes; it installs the app on the phone.
+Make sure `.env` is filled first (see the table above).
+
+*Every day*
 
 ```bash
-npx expo run:ios        # macOS with Xcode + CocoaPods; a physical iPhone needs signing
-npx expo run:android    # Android SDK with an emulator or USB device
-npx expo start --dev-client
+git pull
+npm install
+npx expo start --dev-client    # add --tunnel if the phone is on another network
 ```
+
+Open the installed app; it loads the latest code from your computer and reloads
+on save. Nothing is reinstalled.
+
+*Rebuild only when native code changes*: run `npx expo run:android` /
+`npx expo run:ios --device` again after a pull that adds or updates a native
+library or changes `app.json` plugins (for example `package.json` gains an
+`expo-*`, `react-native-*` or `@maplibre/*` dependency). PRs that do this should
+say "requires rebuild".
+
+*iPhone signing note*: with a free Apple ID the installed app expires after
+**7 days**; run `npx expo run:ios --device` again to renew. A paid Apple
+Developer account (99 USD/year) lasts one year.
+
+*No Mac for iPhone or no Android Studio?* Use option A (Expo Go) for everything
+except the interactive map and photo validation, or ask a teammate for an
+option B build link.
 
 Simulator location: in the iOS Simulator use Features → Location → Custom Location.
 Mock locations are detected, and such reports go to moderation review instead of
