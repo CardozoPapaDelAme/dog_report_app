@@ -149,3 +149,17 @@ Deno.test('PV-1 client_check_passed is true only when validation actually accept
   assert(build({ ...withPhoto, photo_validation: null }).client_check_passed === null);
   assert(build(withPhoto).expected === true);
 });
+
+Deno.test('RF22 predominant_color is filled from the form (auto-detected) and manual choice overrides it', () => {
+  const build = (dog_color) => buildReportPayload({
+    draft,
+    reportFields: validateReportFormDraft({ ...createEmptyReportFormDraft(), dog_color }).reportFields,
+    deviceFingerprint: 'device-fingerprint-1234',
+  }).dog.predominant_color;
+  assert(build('negro') === 'negro');
+  assert(build('café') === 'café');
+  assert(build('') === null, 'clearing the colour sends null');
+
+  const invalid = validateReportFormDraft({ ...createEmptyReportFormDraft(), dog_color: 'verde' });
+  assert(invalid.reportFields === null && invalid.errors.dog_color, 'unknown colour is rejected');
+});

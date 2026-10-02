@@ -45,7 +45,11 @@ const reportDraft = {
   queued_at: null,
   payload_json: null,
   photo_file_uri: new URLSearchParams(location.search).has('photo') ? 'file:///private/report.jpg' : null,
-  photo_validation: { dogProbability: 0.91, blurVariance: 200 },
+  photo_validation: {
+    dogProbability: 0.91,
+    blurVariance: 200,
+    ...(new URLSearchParams(location.search).has('color') ? { dog_color: { color: 'negro', confidence: 0.9 } } : {}),
+  },
   location_snapshot: {
     longitude: -107.63,
     latitude: 27.75,

@@ -151,6 +151,7 @@
       "cantidad_afectada": "Cantidad afectada",
       "situacion": "Situación del perro",
       "dog_size": "Tamaño aproximado",
+      "dog_color": "Color aproximado",
       "has_collar": "¿Trae collar?"
     },
     "incidents": {
@@ -164,6 +165,15 @@
     "sighting": {
       "solitario": "Solitario",
       "manada": "Manada"
+    },
+    "dogColorDetected": "Color detectado: {{color}}. Es solo una señal; puedes cambiarlo o quitarlo.",
+    "dogColor": {
+      "negro": "Negro",
+      "blanco": "Blanco",
+      "café": "Café",
+      "gris": "Gris",
+      "dorado": "Dorado",
+      "mixto": "Manchado / mixto"
     },
     "dogSize": {
       "chico": "Chico",

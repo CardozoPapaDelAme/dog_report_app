@@ -14,7 +14,7 @@ define deployment steps or external-service operating contracts; see
 | Map provider | MapTiler Cloud (target); OpenFreeMap (interim) | Hosted online styles and vector tiles. OpenFreeMap liberty is the interim default (no key); `EXPO_PUBLIC_MAP_STYLE_URL` switches to MapTiler without code changes |
 | Runtime detection | `expo-constants` | `executionEnvironment === 'storeClient'` means Expo Go; `services/mapAvailability.js` then hides the native map and the screen lazily requires MapLibre only when available |
 | Build service | EAS Build (`eas.json`) | Profiles `development` (dev client, internal, Android APK), `preview` (internal APK) and `production`; app identifier `com.wildogscanner.app` for iOS `bundleIdentifier` and Android `package` (changeable before any store release). EAS `projectId`/`owner` are written by the first `eas init` |
-| On-device vision | `react-native-fast-tflite` with MobileNetV3-Small INT8 | Offline dog/quality assistance with a bundled model |
+| On-device vision | `react-native-fast-tflite` with bundled MobileNetV3-Small (float32 graph; the `int8` file name is historical, see ADR-009 amendment) | Offline dog/quality assistance in development/standalone builds; skipped in Expo Go/web. Dog colour is extracted by pure JS from the same pixels |
 | Managed platform | Supabase Cloud Free | Prototype Auth, Edge hosting, Storage, and PostgreSQL boundary |
 | Domain HTTP | Hono on Deno Edge runtime, plain JavaScript | One modular Function `api` with portable Web APIs |
 | PostgreSQL client | `postgres.js` through Supavisor pooler | Direct parameterized repository queries and short transactions |

@@ -170,8 +170,12 @@ Behavior to expect:
 - High-trust reports auto-publish (`high_trust_auto_publish`) and skip the
   moderation queue; they appear on the Asociación dashboard directly.
 - A report outside the geofence is rejected with `400 invalid_coordinates`.
-- On-device photo validation (TFLite) is not wired yet; every photo is accepted
-  and real validation will need a development build.
+- Development and standalone builds validate each photo on-device (bundled
+  MobileNetV3-Small via TFLite, offline): a non-dog or blurry photo asks for a
+  retake with the reason. Expo Go and web skip validation and accept the photo
+  (thresholds are provisional; model load and latency are only verifiable on a
+  device). The dog colour is detected automatically from the photo (also in Expo
+  Go/web) and shown as "Color detectado" in the form; you can change or clear it.
 - The zone report list filters the latest 1000 public reports locally by distance from the cluster centre (approximate; edge reports may be missing).
 - The public map needs network access and shows a message offline; reporting still works.
 - The CSV share sheet requires the development build.

@@ -147,6 +147,7 @@
       "cantidad_afectada": "Number affected",
       "situacion": "Dog situation",
       "dog_size": "Approximate size",
+      "dog_color": "Approximate colour",
       "has_collar": "Wearing a collar?"
     },
     "incidents": {
@@ -160,6 +161,15 @@
     "sighting": {
       "solitario": "Solitary",
       "manada": "Pack"
+    },
+    "dogColorDetected": "Detected colour: {{color}}. It is only a hint; you can change or clear it.",
+    "dogColor": {
+      "negro": "Black",
+      "blanco": "White",
+      "café": "Brown",
+      "gris": "Grey",
+      "dorado": "Golden",
+      "mixto": "Spotted / mixed"
     },
     "dogSize": {
       "chico": "Small",
