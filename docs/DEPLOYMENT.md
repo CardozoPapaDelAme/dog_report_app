@@ -109,22 +109,29 @@ schema policies.
 
 ### Current staging test geofence
 
-As of 2026-10-01 the staging project has one active zone set labeled
-`TEST ONLY - Creel INEGI candidate + Chihuahua municipality (team testing, not approved)`
-(`source_version` `test-creel-inegi-2025-v0.1+chihuahua-mun-08019`). It is a
-single `MultiPolygon` with two parts:
+As of 2026-10-02 the staging project has one active zone set labeled
+`TEST ONLY - Creel INEGI candidate + Chihuahua, Delicias, Meoqui (team testing, not approved)`
+(`source_version` `test-creel-inegi-2025-v0.1+mun-08019-08021-08045-union`). It is a
+single `MultiPolygon` with three parts:
 
 - the INEGI Creel locality candidate (`080090034`, same raw response checksum as
-  [`product/GEOFENCE-CANDIDATE.md`](product/GEOFENCE-CANDIDATE.md)); and
-- the INEGI Chihuahua municipality boundary (`08019`), added so the team can
-  submit reports from Chihuahua city without being in Creel.
+  [`product/GEOFENCE-CANDIDATE.md`](product/GEOFENCE-CANDIDATE.md));
+- the INEGI Chihuahua municipality boundary (`08019`); and
+- the union of the INEGI Delicias (`08021`) and Meoqui (`08045`) municipality
+  boundaries, added so the team can submit reports from Chihuahua city, Delicias
+  and Meoqui without being in Creel.
 
-Its activation reference is `TEST-ONLY: staging team testing, NOT approved by the
-Asociacion`. It was created and activated through `POST /admin/zone-sets` and
+Adjacent municipalities must be merged (polygon union) before upload: PostGIS
+rejects a `MultiPolygon` whose parts share edges (`ST_IsValid`), which the API
+reports as `400 invalid_request` "Zone set violates a storage constraint". The
+previous test set (Creel + Chihuahua only, 2026-10-01) is retired.
+
+Its activation reference is `TEST-ONLY: staging team testing (Creel + Chihuahua,
+Delicias, Meoqui), NOT approved by the Asociacion`. It was created and activated through `POST /admin/zone-sets` and
 `/activate`, so it is audited like any other zone set. Coordinates live only in
 the database, never in Git.
 
-This zone set must never be activated in production. To drop the Chihuahua part,
+This zone set must never be activated in production. To drop the test municipalities,
 create a new zone set with only the Creel geometry (compute `source_sha256` with
 `canonicalZoneGeometry` and `sha256Hex` from
 `supabase/functions/api/domain/zoneSet.js`) and activate it; activation replaces
