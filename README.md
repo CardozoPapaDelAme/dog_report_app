@@ -46,7 +46,7 @@ commit it):
 | `EXPO_PUBLIC_MAP_STYLE_URL` | Optional. MapLibre style URL for the public map; defaults to OpenFreeMap liberty (`https://tiles.openfreemap.org/styles/liberty`, no key). Attribution "© OpenMapTiles © OpenStreetMap contributors" must stay visible. Set a MapTiler style URL to switch providers without code changes |
 
 For EAS cloud builds, `.env` is not uploaded (it is git-ignored): define the same
-`EXPO_PUBLIC_*` values as EAS environment variables (`eas env:create`, or the
+`EXPO_PUBLIC_*` values as EAS environment variables (`eas env:push` or `eas env:set`, or the
 project's Environment variables page on expo.dev) instead of hardcoding them in
 `eas.json`.
 
