@@ -509,6 +509,10 @@ correct it and enter a reason, publish once, then verify the new version and aud
 in staging. Confirm the old configuration remains in history. No live publication,
 account creation, migration or deployment was performed for L4.
 
+> Update 2026-10-01: the server flow was later exercised on staging with real
+> Administrator and Asociación sessions (see `README.md`). Native-device checks
+> listed here remain pending.
+
 ## RF15 / RF18 / RNF07 Expo login (L3)
 
 Run the focused login and secure-storage checks with:
@@ -569,7 +573,8 @@ Reference APIs: [DocumentPicker SDK 57](https://docs.expo.dev/versions/v57.0.0/s
 These exports are not a physical-device/emulator run: native picker cancellation,
 keyboard/focus, screen-reader feedback and hardware back remain manual checks.
 
-The postponed real Administrator check remains pending. In an agreed staging
+The postponed real Administrator check was pending at delivery time (see the
+2026-10-01 staging update under L4). In an agreed staging
 project, with the canonical FAB-2 routes deployed, enter **Gestionar zonas** from
 moderation. Select an explicitly labeled reviewed test geometry, verify its
 checksum, enter source metadata and save. Verify that the old zone remains active
@@ -629,7 +634,8 @@ or a live authenticated session. In the app, use Administrator login → moderat
 main base; it is not a new login implementation in L6.
 
 Web, Android and iOS exports pass. These are compilation checks, not device runs.
-The postponed real Administrator/JWT check remains pending, along with native
+The postponed real Administrator/JWT check was pending at delivery time (see the
+2026-10-01 staging update under L4), along with native
 screen-reader, keyboard and Android hardware-back verification. Deploy the single
 API with the new candidate GET and restored FAB-3 URLs before checking the screen
 against managed staging. Without that backend version, L6 fails visibly rather

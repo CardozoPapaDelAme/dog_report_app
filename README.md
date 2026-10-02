@@ -7,8 +7,9 @@ Chihuahua. The prototype targets the Asociación de Hoteles de Chihuahua, A.C.
 ## Status
 
 The mobile client is in the repository root. It includes the camera, the report
-form with photo upload and offline draft queue, staff login (`GET /me`), the
-Administrator Command Center (moderation, thresholds, zone sets, duplicates) and
+form with photo upload and offline draft queue, the public map (server clusters
+and approximate pins, reached from **Ver mapa** on the camera screen), staff login
+(`GET /me`), the Administrator Command Center (moderation, thresholds, zone sets, duplicates) and
 the Asociación de Hoteles de Chihuahua dashboard with CSV export. The backend
 `api` Function serves all of these and is deployed to the staging project.
 
@@ -25,7 +26,7 @@ git clone https://github.com/CardozoPapaDelAme/dog_report_app.git
 cd dog_report_app
 npm install
 cp .env.example .env
-npx expo start
+npx expo start --dev-client
 ```
 
 Fill `.env` with publishable client configuration only (never a service key):

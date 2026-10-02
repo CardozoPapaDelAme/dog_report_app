@@ -1,5 +1,12 @@
 # Handoff — Wildogscanner / Fabián — L6 actualizado
 
+> Nota 2026-10-02: este handoff es histórico (L6). Desde entonces: la prueba con
+> Administrador y Asociación reales se ejecutó en staging (2026-10-01); existe la
+> pantalla de mapa público (ERI-9, PR #39, requiere development build con
+> `expo-dev-client`; Expo Go ya no ejecuta la app completa); `GET /public/clusters`
+> fue corregido (PR #38). Sigue sin pantalla para reportar flags (ERI-10) ni
+> validación TFLite en el dispositivo. Estado actual: `README.md`.
+
 Actualizado: 2026-09-30. TD-107 / FAB-6, entrega local.
 
 - Rama: `TD-107-fab-6-pantalla-de-gestion-de-duplicados`.

@@ -225,7 +225,8 @@ fields back through the external-input validator; it does not verify a real JWT.
 HTTP tests exercise the real Controller and Service together. SQL tests extend
 that path through the real Repository and PostgreSQL/PostGIS under `app_backend`.
 Authentication is injected only in tests; a real Administrator JWT and managed
-Supabase deployment remain pending. L3 adds no UI (the duplicate screen is L6).
+Supabase deployment remained pending at L3 time (the server flow was later exercised
+on staging with real sessions on 2026-10-01). L3 adds no UI (the duplicate screen is L6).
 
 ## FAB-4 / L4 threshold configuration screen
 
