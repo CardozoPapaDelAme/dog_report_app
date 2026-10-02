@@ -60,6 +60,8 @@
     "staffLogin": "Acceso de personal",
     "openMap": "Ver mapa",
     "retryTitle": "Vuelve a tomar la foto",
+    "validating": "Validando foto…",
+    "retake": "Tomar otra",
     "model": {
       "loading": "Cargando modelo",
       "ready": "Validación offline lista",
@@ -67,8 +69,8 @@
       "error": "Modelo no disponible"
     },
     "rejections": {
-      "no_dog": "No detectamos un perro con suficiente confianza.",
-      "blurry": "La foto está borrosa o tiene poca definición.",
+      "no_dog": "No detectamos un perro en la foto.",
+      "blurry": "La foto está borrosa.",
       "model_missing": "Falta versionar el archivo TFLite antes de aceptar fotos.",
       "model_unavailable": "El modelo todavía no está listo. Intenta de nuevo en unos segundos."
     },

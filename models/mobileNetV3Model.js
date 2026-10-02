@@ -1,6 +1,7 @@
 import labels from './mobilenet_v3_small_100_224_labels.json';
+import { MOBILENET_V3_MODEL_ASSET } from './mobileNetV3Asset';
 
-export const MOBILENET_V3_MODEL_ASSET = null;
+export { MOBILENET_V3_MODEL_ASSET };
 
 export const MOBILENET_V3_LABELS = labels;
 

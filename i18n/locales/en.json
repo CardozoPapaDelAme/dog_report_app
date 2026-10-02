@@ -56,6 +56,8 @@
     "staffLogin": "Staff login",
     "openMap": "View map",
     "retryTitle": "Retake the photo",
+    "validating": "Validating photo…",
+    "retake": "Take another",
     "model": {
       "loading": "Loading model",
       "ready": "Offline validation ready",
@@ -63,8 +65,8 @@
       "error": "Model unavailable"
     },
     "rejections": {
-      "no_dog": "We did not detect a dog with enough confidence.",
-      "blurry": "The photo is blurry or lacks detail.",
+      "no_dog": "We did not detect a dog in the photo.",
+      "blurry": "The photo is blurry.",
       "model_missing": "The TFLite file must be versioned before photos can be accepted.",
       "model_unavailable": "The model is not ready yet. Try again in a few seconds."
     },

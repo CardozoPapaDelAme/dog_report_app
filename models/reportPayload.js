@@ -304,6 +304,13 @@ function normalizeDog(dog = {}) {
   };
 }
 
+// True only when on-device validation actually accepted the photo; null when it
+// was skipped (Expo Go, web, model error) or there is no photo.
+export function clientCheckPassedForPayload(draft) {
+  if (!draft.photo_file_uri) return null;
+  return draft.photo_validation?.status === 'accepted' ? true : null;
+}
+
 export function buildReportPayload({
   draft,
   reportFields,
@@ -336,7 +343,7 @@ export function buildReportPayload({
     }),
     photo: {
       expected: Boolean(draft.photo_file_uri),
-      client_check_passed: draft.photo_file_uri ? true : null,
+      client_check_passed: clientCheckPassedForPayload(draft),
     },
     anti_abuse: {
       device_fingerprint: deviceFingerprint,

@@ -26,8 +26,8 @@ const colors = {
 
 function reasonText(t, state) {
   if (state.error) return t('camera.errors.capture');
-  if (!state.rejection) return null;
-  return t(`camera.rejections.${state.rejection}`);
+  if (!state.reasons?.length) return null;
+  return state.reasons.map((reason) => t(`camera.rejections.${reason}`)).join(' ');
 }
 
 export default function CameraScreen({
@@ -44,7 +44,8 @@ export default function CameraScreen({
   const capture = useCameraCapture({ onPhotoAccepted });
   const feedback = reasonText(t, capture.captureState);
   const hasPermission = Boolean(permission?.granted);
-  const busy = capture.captureState.phase === 'capturing';
+  const validating = capture.captureState.phase === 'validating';
+  const busy = capture.captureState.phase === 'capturing' || validating;
   const captureDisabled = busy || !capture.cameraReady || !hasPermission;
 
   return (
@@ -115,7 +116,17 @@ export default function CameraScreen({
         <Pressable accessibilityRole="button" onPress={capture.clearFeedback} style={styles.toast}>
           <Text style={styles.toastTitle}>{t('camera.retryTitle')}</Text>
           <Text style={styles.toastBody}>{feedback}</Text>
+          {capture.captureState.phase === 'rejected' ? (
+            <Text style={styles.toastAction}>{t('camera.retake')}</Text>
+          ) : null}
         </Pressable>
+      ) : null}
+
+      {validating ? (
+        <View pointerEvents="none" style={styles.validating}>
+          <ActivityIndicator color={colors.inverse} />
+          <Text style={styles.validatingText}>{t('camera.validating')}</Text>
+        </View>
       ) : null}
 
       {hasPermission ? (
@@ -167,6 +178,9 @@ const styles = StyleSheet.create({
   toast: { position: 'absolute', top: '18%', left: 20, right: 20, borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14 },
   toastTitle: { color: colors.warning, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   toastBody: { color: '#4a3510', fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13, lineHeight: 19, marginTop: 3 },
+  toastAction: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13, marginTop: 10 },
+  validating: { position: 'absolute', top: '18%', left: 20, right: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 14, backgroundColor: colors.glass, padding: 14 },
+  validatingText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingTop: 16 },
   noPhotoButton: { minHeight: 46, minWidth: 178, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.glass, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 18 },
   noPhotoText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12, textAlign: 'center' },

@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 
+import { validateCapturedPhoto } from '../services/photoValidationRuntime.js';
+
 const PHOTO_DIRECTORY = `${FileSystem.documentDirectory ?? ''}reports/photos/`;
 
 async function deleteIfPossible(uri) {
@@ -27,6 +29,7 @@ async function persistValidatedPhoto(uri) {
 
 export function useCameraCapture({
   onPhotoAccepted,
+  validatePhoto = validateCapturedPhoto,
 } = {}) {
   const cameraRef = useRef(null);
   const [cameraReady, setCameraReady] = useState(false);
@@ -34,17 +37,23 @@ export function useCameraCapture({
   const [captureState, setCaptureState] = useState({
     phase: 'idle',
     rejection: null,
+    reasons: [],
     error: null,
     validation: null,
   });
 
   const capture = useCallback(async () => {
-    if (!cameraRef.current || !cameraReady || captureState.phase === 'capturing') {
+    if (
+      !cameraRef.current
+      || !cameraReady
+      || captureState.phase === 'capturing'
+      || captureState.phase === 'validating'
+    ) {
       return null;
     }
 
     let capturedUri = null;
-    setCaptureState({ phase: 'capturing', rejection: null, error: null, validation: null });
+    setCaptureState({ phase: 'capturing', rejection: null, reasons: [], error: null, validation: null });
 
     try {
       const captured = await cameraRef.current.takePictureAsync({
@@ -54,10 +63,32 @@ export function useCameraCapture({
       });
       capturedUri = captured.uri;
 
+      setCaptureState({ phase: 'validating', rejection: null, reasons: [], error: null, validation: null });
+      const outcome = await validatePhoto(capturedUri);
+
+      if (outcome.status === 'rejected') {
+        await deleteIfPossible(capturedUri);
+        capturedUri = null;
+        setCaptureState({
+          phase: 'rejected',
+          rejection: outcome.reasons[0] ?? null,
+          reasons: outcome.reasons,
+          error: null,
+          validation: outcome,
+        });
+        return { accepted: false, reason: 'validation_rejected', validation: outcome };
+      }
+
+      const skipped = outcome.status === 'skipped';
+      const validation = skipped ? { status: 'skipped', reason: outcome.reason } : outcome;
       const photoUri = await persistValidatedPhoto(capturedUri);
       capturedUri = null;
-      const accepted = { photoUri, validation: null, validationSkipped: 'expo_go' };
-      setCaptureState({ phase: 'accepted', rejection: null, error: null, validation: null });
+      const accepted = {
+        photoUri,
+        validation,
+        validationSkipped: skipped ? outcome.reason : null,
+      };
+      setCaptureState({ phase: 'accepted', rejection: null, reasons: [], error: null, validation });
       onPhotoAccepted?.(accepted);
       return { accepted: true, ...accepted };
     } catch (error) {
@@ -65,6 +96,7 @@ export function useCameraCapture({
       setCaptureState({
         phase: 'error',
         rejection: null,
+        reasons: [],
         error: error?.message ?? 'capture_failed',
         validation: null,
       });
@@ -77,6 +109,7 @@ export function useCameraCapture({
       ...current,
       phase: current.phase === 'capturing' ? current.phase : 'idle',
       rejection: null,
+      reasons: [],
       error: null,
     }));
   }, []);
