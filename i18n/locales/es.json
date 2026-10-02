@@ -18,6 +18,7 @@
   "associationDashboard": {
     "eyebrow": "Asociación de Hoteles de Chihuahua",
     "title": "Panel de la Asociación",
+    "datePlaceholder": "AAAA-MM-DD",
     "from": "Desde",
     "to": "Hasta",
     "search": "Consultar",
@@ -48,9 +49,11 @@
   "common": {
     "yes": "Sí",
     "no": "No",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "loading": "Cargando…"
   },
   "camera": {
+    "capture": "Tomar foto",
     "permissionTitle": "Permite el acceso a la cámara",
     "permissionBody": "La app abre directo en cámara para capturar evidencia del reporte. La foto se valida en el teléfono antes de continuar.",
     "permissionButton": "Permitir cámara",
@@ -116,6 +119,7 @@
     "retrySubmit": "Reintentar sincronización",
     "submitting": "Enviando…",
     "noPhoto": "Sin foto",
+    "photoPreview": "Vista previa de la foto del reporte",
     "photoAttached": "Foto adjunta",
     "selectPlaceholder": "Selecciona una opción",
     "summaryTitle": "Reporte",

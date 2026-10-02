@@ -228,7 +228,7 @@ function NativeMapScreen({ onBack }) {
             onSelectReport={setSelectedReport}
           />
         ) : (
-          <View style={styles.centered}><ActivityIndicator color={colors.primary} /></View>
+          <View style={styles.centered}><ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /></View>
         )}
         {map.phase === 'loading' && initialCenter ? (
           <View pointerEvents="none" style={styles.loading}>

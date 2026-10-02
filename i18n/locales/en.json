@@ -18,6 +18,7 @@
   "associationDashboard": {
     "eyebrow": "Chihuahua Hotel Association",
     "title": "Association dashboard",
+    "datePlaceholder": "YYYY-MM-DD",
     "from": "From", "to": "To", "search": "Search",
     "dateHint": "The range includes full days based on the acceptance date.",
     "results": "Accepted reports",
@@ -44,9 +45,11 @@
   "common": {
     "yes": "Yes",
     "no": "No",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "loading": "Loading…"
   },
   "camera": {
+    "capture": "Take photo",
     "permissionTitle": "Allow camera access",
     "permissionBody": "The app opens directly to the camera to capture report evidence. The photo is validated on the phone before continuing.",
     "permissionButton": "Allow camera",
@@ -112,6 +115,7 @@
     "retrySubmit": "Retry sync",
     "submitting": "Submitting…",
     "noPhoto": "No photo",
+    "photoPreview": "Preview of the report photo",
     "photoAttached": "Photo attached",
     "selectPlaceholder": "Select an option",
     "summaryTitle": "Report",

@@ -88,7 +88,7 @@ export default function CameraScreen({
         <SafeAreaView pointerEvents="box-none" style={styles.permissionOverlay}>
           <View style={styles.permissionCard}>
             {!permission ? (
-              <ActivityIndicator color={colors.primary} />
+              <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
             ) : (
               <>
                 <Text style={styles.permissionTitle}>{t('camera.permissionTitle')}</Text>
@@ -124,7 +124,7 @@ export default function CameraScreen({
 
       {validating ? (
         <View pointerEvents="none" style={styles.validating}>
-          <ActivityIndicator color={colors.inverse} />
+          <ActivityIndicator accessibilityLabel={t('camera.validating')} color={colors.inverse} />
           <Text style={styles.validatingText}>{t('camera.validating')}</Text>
         </View>
       ) : null}
@@ -142,6 +142,7 @@ export default function CameraScreen({
 
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('camera.capture')}
             accessibilityState={{ busy, disabled: captureDisabled }}
             disabled={captureDisabled}
             onPress={capture.capture}
@@ -151,7 +152,7 @@ export default function CameraScreen({
               captureDisabled && styles.captureDisabled,
             ]}
           >
-            {busy ? <ActivityIndicator color={colors.primary} /> : <View style={styles.captureInner} />}
+            {busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /> : <View style={styles.captureInner} />}
           </Pressable>
         </View>
       ) : null}
