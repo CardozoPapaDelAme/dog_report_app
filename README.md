@@ -149,8 +149,8 @@ Follow in order; stop and ask the human when a step needs a value you do not hav
    must pass; see [`docs/TESTING.md`](docs/TESTING.md).
 
 Staging currently has a **TEST ONLY** geofence covering the INEGI Creel candidate
-plus the Chihuahua municipality, so the team can submit reports from Chihuahua
-city. It is not approved and never goes to production; see
+plus the Chihuahua, Delicias and Meoqui municipalities, so the team can submit
+reports from those cities. It is not approved and never goes to production; see
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md#current-staging-test-geofence).
 
 Suggested walkthrough:
