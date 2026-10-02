@@ -6,6 +6,7 @@ import '../../i18n/index.js';
 import DuplicateManagementScreen from '../../screens/DuplicateManagementScreen.js';
 import ZoneSetScreen from '../../screens/ZoneSetScreen.js';
 import ConfigurationScreen from '../../screens/ConfigurationScreen.js';
+import PublicMapScreen from '../../screens/PublicMapScreen.js';
 import ReportFormScreen from '../../screens/ReportFormScreen.js';
 import AssociationDashboardScreen from '../../screens/associationDashboardScreen.js';
 import { buildReportPayload } from '../../models/reportPayload.js';
@@ -141,6 +142,9 @@ function ReportFixture() {
 
 function Fixture() {
   const params = new URLSearchParams(location.search);
+  if (params.has('map')) return <div style={{height:'100dvh'}}>
+    <SafeAreaProvider><PublicMapScreen onBack={() => {}} /></SafeAreaProvider>
+  </div>;
   if (params.has('association-preview')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><AssociationDashboardScreen accessToken="preview-session" displayName="Vista de demostración"
       onLogout={() => { window.location.href = 'http://localhost:8081/'; }} getPage={previewAssociationPage} /></SafeAreaProvider>

@@ -58,6 +58,7 @@
     "helper": "Toma una foto clara del perro",
     "admin": "Revisión",
     "staffLogin": "Acceso de personal",
+    "openMap": "Ver mapa",
     "retryTitle": "Vuelve a tomar la foto",
     "model": {
       "loading": "Cargando modelo",
@@ -508,5 +509,36 @@
       "preflight_mismatch": "El entorno del servicio no está listo para esta operación."
     },
     "selectionWarning": "Selección inválida: revisa las conexiones antes de confirmar."
+  },
+  "map": {
+    "title": "Mapa de reportes",
+    "back": "Volver a la cámara",
+    "loading": "Cargando el mapa",
+    "empty": "No hay reportes en esta zona",
+    "error": "No pudimos cargar el mapa.",
+    "retry": "Reintentar",
+    "offline": "El mapa no está disponible sin conexión",
+    "offlineReporting": "Puedes seguir creando reportes; se enviarán cuando haya conexión.",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoomLevel": "Zoom {{zoom}}",
+    "close": "Cerrar",
+    "clusterItem": "{{count}} reportes, gravedad {{severity}}",
+    "pinItem": "Reporte: {{type}}",
+    "severity": {
+      "high": "alta",
+      "medium": "media",
+      "low": "baja"
+    },
+    "cluster": {
+      "title": "{{count}} reportes en esta zona",
+      "highest": "Mayor gravedad: {{type}}"
+    },
+    "pin": {
+      "color": "Color",
+      "occurredAt": "Fecha y hora",
+      "flagged": "La comunidad marcó este reporte",
+      "photo": "Foto del reporte"
+    }
   }
 }

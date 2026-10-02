@@ -96,6 +96,9 @@ schema policies.
    `INTERNAL_RETENTION_SECRET` and set the same value on both the Function and
    the scheduler together.
 7. Configure/restrict the MapTiler public key and verify attribution/quota.
+   Until that plan is approved the app uses the interim OpenFreeMap style by
+   default (no key; see the ADR-008 amendment); set `EXPO_PUBLIC_MAP_STYLE_URL`
+   in the client build to switch providers.
 8. For a demo/test project, import the INEGI geometry only as a clearly labeled
    candidate/test fixture. An approved live project must fail closed until the
    Asociación de Hoteles de Chihuahua approves the exact checksum/version.
