@@ -528,13 +528,50 @@
     },
     "cluster": {
       "title": "{{count}} reports in this area",
-      "highest": "Highest severity: {{type}}"
+      "highest": "Highest severity: {{type}}",
+      "viewReports": "View area reports"
     },
     "pin": {
       "color": "Color",
       "occurredAt": "Date and time",
       "flagged": "The community flagged this report",
       "photo": "Report photo"
+    }
+  },
+  "zone": {
+    "title": "Area reports",
+    "loading": "Loading reports",
+    "empty": "No visible reports in this area",
+    "error": "We could not load the area reports.",
+    "offline": "No connection. Try again.",
+    "approximate": "Locations are approximate."
+  },
+  "flag": {
+    "open": "Report",
+    "title": "Report this post",
+    "reasonLabel": "Reason",
+    "detailLabel": "Details (optional)",
+    "counter": "{{count}}/{{max}}",
+    "tooLong": "Details cannot exceed {{max}} characters.",
+    "submit": "Send report",
+    "sending": "Sending...",
+    "cancel": "Cancel",
+    "reasons": {
+      "foto_falsa": "Fake photo",
+      "contenido_inapropiado": "Inappropriate content",
+      "burla": "Mockery or insult",
+      "no_es_callejero": "Not a stray dog",
+      "incidental_pii": "Contains personal data",
+      "otro": "Other"
+    },
+    "outcome": {
+      "submitted": "Thank you. We will review the report.",
+      "already_flagged": "You already flagged this report.",
+      "not_flaggable": "This report can no longer be flagged.",
+      "rate_limited": "You sent many flags. Try again in {{minutes}} min.",
+      "offline": "No connection. Try again.",
+      "invalid": "We could not send the flag. Try again later.",
+      "unavailable": "We could not send the flag. Try again later."
     }
   }
 }

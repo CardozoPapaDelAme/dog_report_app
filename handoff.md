@@ -4,8 +4,8 @@
 > Administrador y Asociación reales se ejecutó en staging (2026-10-01); existe la
 > pantalla de mapa público (ERI-9, PR #39, requiere development build con
 > `expo-dev-client`; Expo Go ya no ejecuta la app completa); `GET /public/clusters`
-> fue corregido (PR #38). Sigue sin pantalla para reportar flags (ERI-10) ni
-> validación TFLite en el dispositivo. Estado actual: `README.md`.
+> fue corregido (PR #38). La pantalla para denunciar reportes (ERI-10) está en la
+> app; sigue sin validación TFLite en el dispositivo. Estado actual: `README.md`.
 
 Actualizado: 2026-09-30. TD-107 / FAB-6, entrega local.
 

@@ -687,3 +687,25 @@ viewport bounds, tile and style loading from OpenFreeMap/MapTiler, attribution
 placement on the map surface, location permission prompts, and photo loading.
 These need a device or Expo development build (`npx expo run:ios` or
 `npx expo run:android`) and a manual pass against the staging API.
+
+## ERI-10 zone detail and flag
+
+The cluster modal offers **Ver reportes de la zona**: the app loads
+`GET /public/reports?limit=1000`, keeps the reports within the zoom-band radius of
+the cluster centre (approximate locations only; there is no member endpoint) and
+lists them; a row opens the pin sheet, which has **Denunciar**. The flag form sends
+`POST /reports/:report_id/flags` anonymously with `reason`, optional `detail` and
+`device_fingerprint` in the body. Unit tests:
+
+```bash
+npx -y deno test --no-lock --config supabase/functions/api/deno.json services/flagApi.test.js models/reportFlag.test.js models/publicMap.test.js hooks/zoneReports.test.js hooks/reportFlagSubmit.test.js
+```
+
+`npx playwright test publicMap.spec.js` adds: zone list with only in-area reports,
+empty and error-then-retry states; flag 201 (neutral thanks, body has `reason` and
+a fingerprint of 16+ characters, no `detail` when blank, trimmed `detail`, no
+`Authorization`); 409, 404 and 429 (`Retry-After: 120` shows 2 min) messages;
+aborted request keeps the form and retries; submit disabled without a reason and
+above 1000 characters. The stub proves the UI states and the HTTP contract; it does
+not prove the server limits, auto-hide, native sheet gestures or the SQLite device
+fingerprint (the web fixture uses `localStorage`).

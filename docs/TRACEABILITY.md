@@ -17,7 +17,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF05 | Camera quick action | Offline draft without photo | Report completes photo-free |
 | RF06 | Dynamic form | `incident_type`; validated `details` | Every category accepted/rejected correctly |
 | RF07 | Root navigation | Camera-first anonymous route | Cold-start route test |
-| RF08 | Public report detail | `POST /reports/:report_id/flags`; FlagService; `report_flags` | One effective flag per fingerprint/report; durable limit |
+| RF08 | Public report detail | `POST /reports/:report_id/flags`; FlagService; `report_flags` | One effective flag per fingerprint/report; durable limit; client: `components/ZoneReportsSheet.js`, `components/ReportFlagSheet.js`, `hooks/reportFlagSubmit.js`, `services/flagApi.js`, `models/reportFlag.js` (`tests/ui/publicMap.spec.js`, Deno `hooks/reportFlagSubmit.test.js`, `services/flagApi.test.js`, `models/reportFlag.test.js`) |
 | RF09 | On-device vision | Bundled TFLite model | Dog/quality failures and retry offline |
 | RF10 | Online public map | `GET /public/reports`; presenter/repository | Approximate recent visible canonical pins |
 | RF11 | Map clustering | `GET /public/clusters`; PostGIS repository query | Metric grouping at supported zooms; documented viewport/limit |
@@ -111,7 +111,7 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 | HU-05 | RF05, RF07 | Camera quick action | Offline draft | Visible no-photo path |
 | HU-06 | RF06, RF13, RF24 | Incident form | `incident_type`, `details` | Categories and severity |
 | HU-07 | RF07 | Navigation | N/A | Camera is initial route |
-| HU-08 | RF08, RF21, RNF29 | Public detail/flagging | Hono flag route | Warning, durable limit, auto-hide behavior |
+| HU-08 | RF08, RF21, RNF29 | Public detail/flagging | Hono flag route | Warning, durable limit, auto-hide behavior; client zone list and flag form: `components/ZoneReportsSheet.js`, `components/ReportFlagSheet.js`, `hooks/zoneReports.js` (`tests/ui/publicMap.spec.js`, `hooks/zoneReports.test.js`) |
 | HU-09 | RF09, RNF08, RNF10 | On-device vision | Bundled TFLite model | Offline retake reasons |
 | HU-10 | RF10, RNF13 | Online map | Public reports route/view | Approximate visible pins/offline UX |
 | HU-11 | RF11, RF14 | Map clusters | Public clusters route/view | Geographic grouping |

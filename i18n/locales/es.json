@@ -532,13 +532,50 @@
     },
     "cluster": {
       "title": "{{count}} reportes en esta zona",
-      "highest": "Mayor gravedad: {{type}}"
+      "highest": "Mayor gravedad: {{type}}",
+      "viewReports": "Ver reportes de la zona"
     },
     "pin": {
       "color": "Color",
       "occurredAt": "Fecha y hora",
       "flagged": "La comunidad marcó este reporte",
       "photo": "Foto del reporte"
+    }
+  },
+  "zone": {
+    "title": "Reportes de la zona",
+    "loading": "Cargando reportes",
+    "empty": "No hay reportes visibles en esta zona",
+    "error": "No pudimos cargar los reportes de la zona.",
+    "offline": "Sin conexión. Intenta de nuevo.",
+    "approximate": "Las ubicaciones son aproximadas."
+  },
+  "flag": {
+    "open": "Denunciar",
+    "title": "Denunciar reporte",
+    "reasonLabel": "Motivo",
+    "detailLabel": "Detalle (opcional)",
+    "counter": "{{count}}/{{max}}",
+    "tooLong": "El detalle no puede superar {{max}} caracteres.",
+    "submit": "Enviar denuncia",
+    "sending": "Enviando...",
+    "cancel": "Cancelar",
+    "reasons": {
+      "foto_falsa": "Foto falsa",
+      "contenido_inapropiado": "Contenido inapropiado",
+      "burla": "Burla u ofensa",
+      "no_es_callejero": "No es un perro callejero",
+      "incidental_pii": "Contiene datos personales",
+      "otro": "Otro"
+    },
+    "outcome": {
+      "submitted": "Gracias. Revisaremos el reporte.",
+      "already_flagged": "Ya denunciaste este reporte.",
+      "not_flaggable": "Este reporte ya no se puede denunciar.",
+      "rate_limited": "Enviaste muchas denuncias. Intenta de nuevo en {{minutes}} min.",
+      "offline": "Sin conexión. Intenta de nuevo.",
+      "invalid": "No pudimos enviar la denuncia. Intenta más tarde.",
+      "unavailable": "No pudimos enviar la denuncia. Intenta más tarde."
     }
   }
 }

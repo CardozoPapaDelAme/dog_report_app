@@ -47,6 +47,7 @@ export function queryModeForZoom(zoom) {
 
 export function clusterRadiusMetersForZoom(zoom) {
   const level = normalizeZoom(zoom);
+  if (level === null) return null;
   const band = ZOOM_RADIUS_BANDS.find((candidate) => level >= candidate.min && level <= candidate.max);
   return band ? band.radiusMeters : null;
 }
@@ -185,3 +186,28 @@ function readPublicReport(item) {
 }
 
 export function readPublicReports(data) { return readList(data, readPublicReport, 'report_id'); }
+
+const EARTH_RADIUS_METERS = 6371008.8;
+
+function haversineMeters(a, b) {
+  const rad = Math.PI / 180;
+  const dLat = (b.latitude - a.latitude) * rad;
+  const dLon = (b.longitude - a.longitude) * rad;
+  const h = Math.sin(dLat / 2) ** 2
+    + Math.cos(a.latitude * rad) * Math.cos(b.latitude * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * EARTH_RADIUS_METERS * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+// Zone detail (ERI-10): no server endpoint lists cluster members, so filter the public reports locally by
+// distance from the cluster centroid (approximate locations only) within the zoom band radius. Newest first.
+export function reportsInCluster(reports, cluster, zoom) {
+  const radius = clusterRadiusMetersForZoom(zoom);
+  const center = readLocation(cluster?.approximate_location);
+  if (!Array.isArray(reports) || radius === null || !center) return [];
+  return reports
+    .filter((item) => {
+      const location = readLocation(item?.approximate_location);
+      return location !== null && haversineMeters(center, location) <= radius;
+    })
+    .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at));
+}
