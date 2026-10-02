@@ -675,7 +675,17 @@ pins; pin details with and without the flag notice; empty state; 500 then 200
 retry; offline (`network_unavailable`) message; no `Authorization` header on public
 requests; viewport query parameters sent all-or-none.
 
-The fixture bundle aliases `expo-location` to `tests/ui/expo-location-stub.js`
+Expo Go fallback: `/?map&expo-go` makes the fixture pass `mapAvailable={false}` to
+`PublicMapScreen` (test-only override; production reads `expo-constants`). Two cases
+in `publicMap.spec.js` cover the notice, the recent list built from the mocked
+`GET /public/reports?limit=100`, row to pin sheet to **Denunciar** to flag sheet, an
+error that recovers on retry, and that no `/public/clusters` request is made. Run
+them with `npx playwright test publicMap.spec.js -g "Expo Go"`. The pure detection
+helper has Deno tests in `services/mapAvailability.test.js`. Real Expo Go behavior
+(that MapLibre is never loaded) is proven by a manual pass in Expo Go.
+
+The fixture bundle aliases `expo-constants` to `tests/ui/expo-constants-stub.js`
+(always a development build) and `expo-location` to `tests/ui/expo-location-stub.js`
 (permission denied, so the map centres on Creel) and resolves
 `PublicMapView.js` to the web stub.
 

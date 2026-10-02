@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import PublicMapView from '../components/PublicMapView';
+import RecentReportsList from '../components/RecentReportsList';
 import ReportFlagSheet from '../components/ReportFlagSheet';
 import ZoneReportsSheet from '../components/ZoneReportsSheet';
 import { usePublicMap } from '../hooks/usePublicMap.js';
 import { INCIDENT_TYPES, MAX_ZOOM, isInViewport, severityColor } from '../models/publicMap.js';
 import { getApiBaseUrl } from '../services/apiClient.js';
 import { CREEL_CENTER, INITIAL_ZOOM, MAP_ATTRIBUTION_TEXT } from '../services/mapConfig.js';
+import { isNativeMapAvailableAtRuntime } from '../services/mapRuntime.js';
 
 const colors = {
   ink: '#191d17', primary: '#00450d', surface: '#f7fbf1', muted: '#5d6859', line: '#e0e0e0',
@@ -19,6 +20,14 @@ const colors = {
 const LOCATION_TIMEOUT_MS = 3000;
 const CLUSTER_ZOOM_STEP = 2;
 const DETAIL_KEYS = ['descripcion', 'cantidad_aprox', 'hubo_mordida', 'tipo_animal', 'resulto_herido', 'cantidad_afectada', 'situacion'];
+
+// Lazy on purpose: Expo Go must never evaluate the MapLibre native module.
+// Keep the extensionless path so Metro/esbuild still pick PublicMapView.web.js on web.
+let cachedMapView = null;
+function getPublicMapView() {
+  if (!cachedMapView) cachedMapView = require('../components/PublicMapView').default;
+  return cachedMapView;
+}
 
 // Foreground location is optional: never block the map when it is denied or slow.
 async function resolveInitialCenter() {
@@ -135,7 +144,43 @@ function PinSheet({ report, onClose, onFlag, t }) {
   );
 }
 
-export default function PublicMapScreen({ onBack }) {
+// `mapAvailable` is an override for tests; production reads the runtime (Expo Go has no native map).
+export default function PublicMapScreen({ onBack, mapAvailable }) {
+  const available = mapAvailable ?? isNativeMapAvailableAtRuntime();
+  return available ? <NativeMapScreen onBack={onBack} /> : <ExpoGoFallbackScreen onBack={onBack} />;
+}
+
+function ExpoGoFallbackScreen({ onBack }) {
+  const { t } = useTranslation();
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [flagReport, setFlagReport] = useState(null);
+  return (
+    <SafeAreaView style={styles.root}>
+      <View style={styles.header}>
+        <Pressable accessibilityRole="button" onPress={onBack} style={styles.backButton}>
+          <Text style={styles.backText}>{t('map.back')}</Text>
+        </Pressable>
+        <Text accessibilityRole="header" style={styles.headerTitle}>{t('map.title')}</Text>
+      </View>
+      <View style={styles.mapArea}>
+        <ScrollView contentContainerStyle={styles.fallbackContent}>
+          <View accessibilityRole="alert" style={styles.noticeCard} testID="expo-go-notice">
+            <Text style={styles.bannerText}>{t('map.expoGo.notice')}</Text>
+            <Text style={styles.bannerHint}>{t('map.expoGo.hint')}</Text>
+          </View>
+          <RecentReportsList onSelect={setSelectedReport} t={t} />
+        </ScrollView>
+        {selectedReport ? (
+          <PinSheet key={selectedReport.report_id} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
+        ) : null}
+        {flagReport ? <ReportFlagSheet key={flagReport.report_id} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function NativeMapScreen({ onBack }) {
+  const PublicMapView = getPublicMapView();
   const { t } = useTranslation();
   const map = usePublicMap();
   const initialCenter = useInitialCenter();
@@ -238,6 +283,8 @@ const styles = StyleSheet.create({
   mapArea: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loading: { position: 'absolute', top: 12, alignSelf: 'center', borderRadius: 999, backgroundColor: '#ffffff', padding: 8 },
+  fallbackContent: { padding: 16, gap: 16 },
+  noticeCard: { borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14, gap: 8 },
   banner: { position: 'absolute', top: 12, left: 16, right: 16, borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14, gap: 8 },
   bannerDanger: { borderColor: colors.danger, backgroundColor: colors.dangerSoft },
   bannerText: { color: colors.ink, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 14 },

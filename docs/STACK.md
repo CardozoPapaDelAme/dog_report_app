@@ -12,6 +12,8 @@ define deployment steps or external-service operating contracts; see
 | Offline images | App-private local files | Durable media without storing image blobs in SQLite |
 | Map renderer | `@maplibre/maplibre-react-native` | Native vector-map rendering and interaction |
 | Map provider | MapTiler Cloud (target); OpenFreeMap (interim) | Hosted online styles and vector tiles. OpenFreeMap liberty is the interim default (no key); `EXPO_PUBLIC_MAP_STYLE_URL` switches to MapTiler without code changes |
+| Runtime detection | `expo-constants` | `executionEnvironment === 'storeClient'` means Expo Go; `services/mapAvailability.js` then hides the native map and the screen lazily requires MapLibre only when available |
+| Build service | EAS Build (`eas.json`) | Profiles `development` (dev client, internal, Android APK), `preview` (internal APK) and `production`; app identifier `com.wildogscanner.app` for iOS `bundleIdentifier` and Android `package` (changeable before any store release). EAS `projectId`/`owner` are written by the first `eas init` |
 | On-device vision | `react-native-fast-tflite` with MobileNetV3-Small INT8 | Offline dog/quality assistance with a bundled model |
 | Managed platform | Supabase Cloud Free | Prototype Auth, Edge hosting, Storage, and PostgreSQL boundary |
 | Domain HTTP | Hono on Deno Edge runtime, plain JavaScript | One modular Function `api` with portable Web APIs |
@@ -25,6 +27,8 @@ define deployment steps or external-service operating contracts; see
 ## Selection boundaries
 
 - Native map and TFLite modules require Expo development/release builds, not Expo Go.
+  Expo Go still runs the rest of the app; the map screen there shows a recent public
+  reports list instead of the map (see the README run modes).
 - The local Supabase stack is optional; selected deployment procedures remain in
   [`DEPLOYMENT.md`](DEPLOYMENT.md).
 - Version, license, quota, and benchmark evidence are release work owned by

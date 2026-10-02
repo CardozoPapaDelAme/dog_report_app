@@ -62,6 +62,7 @@ schema/data contract, ADRs, traceability, and tests together.
 - Update `db/schema.sql` through migrations when implementation starts; do not
   apply the monolithic target blindly to an existing database.
 - Native modules mean Expo development builds, not Expo Go.
+- To set up the app locally, follow the README "Setup checklist for coding agents".
 - Every admin/configuration mutation must remain validated, versioned where
   applicable, and audited.
 - Storage schemas are Supabase-owned. Verify the installed version before writing

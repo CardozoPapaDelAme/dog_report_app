@@ -143,7 +143,7 @@ function ReportFixture() {
 function Fixture() {
   const params = new URLSearchParams(location.search);
   if (params.has('map')) return <div style={{height:'100dvh'}}>
-    <SafeAreaProvider><PublicMapScreen onBack={() => {}} /></SafeAreaProvider>
+    <SafeAreaProvider><PublicMapScreen onBack={() => {}} mapAvailable={params.has('expo-go') ? false : undefined} /></SafeAreaProvider>
   </div>;
   if (params.has('association-preview')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><AssociationDashboardScreen accessToken="preview-session" displayName="Vista de demostración"
