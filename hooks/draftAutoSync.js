@@ -21,11 +21,17 @@ export function createDraftAutoSync({
   let timer = null;
   let running = false;
   let disposed = false;
+  let pending = false;
 
   async function runPass() {
     timer = null;
+    if (disposed) return;
     // Single-flight: an in-flight auto pass or a manual sync owns the drafts.
-    if (disposed || running || isBusy()) return;
+    // A trigger that arrives meanwhile is remembered and replayed once (still
+    // debounced) when that work finishes, instead of being dropped.
+    if (running) { pending = true; return; }
+    if (isBusy()) { trigger(); return; }
+    pending = false;
     running = true;
     try {
       await syncDueDrafts();
@@ -33,6 +39,7 @@ export function createDraftAutoSync({
       try { onError(error); } catch { /* never throw */ }
     } finally {
       running = false;
+      if (pending) trigger();
     }
   }
 
@@ -45,6 +52,7 @@ export function createDraftAutoSync({
 
   function dispose() {
     disposed = true;
+    pending = false;
     if (timer !== null) cancel(timer);
     timer = null;
   }
@@ -64,5 +72,61 @@ export function createNetworkTrigger(onReconnect) {
     const reconnected = next && !online;
     online = next;
     if (reconnected) onReconnect();
+  };
+}
+
+export const RETRY_WAKEUP_MIN_MS = 1000;
+const MAX_TIMER_MS = 2 ** 31 - 1;
+const RETRY_WAIT_STATES = Object.freeze([
+  'queued', 'submitting', 'uploading', 'awaiting_processing', 'retry_wait',
+]);
+
+// Milliseconds until the earliest FUTURE `next_retry_at` among syncable drafts,
+// clamped to [minMs, MAX_TIMER_MS]; null when nothing is due later.
+export function nextRetryDelayMs(drafts, now = new Date(), minMs = RETRY_WAKEUP_MIN_MS) {
+  const current = new Date(now).getTime();
+  let earliest = null;
+  for (const draft of drafts ?? []) {
+    if (!RETRY_WAIT_STATES.includes(draft?.local_state) || !draft.next_retry_at) continue;
+    const at = new Date(draft.next_retry_at).getTime();
+    if (!Number.isFinite(at) || at <= current) continue;
+    if (earliest === null || at < earliest) earliest = at;
+  }
+  if (earliest === null) return null;
+  return Math.min(Math.max(earliest - current, minMs), MAX_TIMER_MS);
+}
+
+// Re-arms one timer for the earliest backoff expiry while online and active, and
+// calls `trigger` when it elapses. Call `setDrafts` after every pass/reload.
+export function createRetryWakeup({
+  trigger,
+  now = () => new Date(),
+  schedule = setTimeout,
+  cancel = clearTimeout,
+  minMs = RETRY_WAKEUP_MIN_MS,
+} = {}) {
+  if (typeof trigger !== 'function') throw new Error('trigger_required');
+  let drafts = [];
+  let active = false;
+  let disposed = false;
+  let timer = null;
+
+  function clear() {
+    if (timer !== null) cancel(timer);
+    timer = null;
+  }
+
+  function arm() {
+    clear();
+    if (disposed || !active) return;
+    const delay = nextRetryDelayMs(drafts, now(), minMs);
+    if (delay === null) return;
+    timer = schedule(() => { timer = null; trigger(); }, delay);
+  }
+
+  return {
+    setDrafts(next) { drafts = Array.isArray(next) ? next : []; arm(); },
+    setActive(next) { active = Boolean(next); arm(); },
+    dispose() { disposed = true; clear(); },
   };
 }

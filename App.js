@@ -34,6 +34,7 @@ export default function App() {
     ready: reportDraftFlow.queueReady,
     syncDueDrafts: reportDraftFlow.syncDueDrafts,
     isSyncBusy: reportDraftFlow.isSyncBusy,
+    drafts: reportDraftFlow.drafts,
   });
   const login = useLogin(loginController);
   const [fontsLoaded, fontError] = useFonts({

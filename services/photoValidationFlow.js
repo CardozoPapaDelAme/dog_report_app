@@ -18,19 +18,25 @@ export async function runPhotoValidationFlow({
   if (!availability.available) {
     return { status: 'skipped', reason: availability.skipped };
   }
-  let modelLoaded = false;
+  // Track the load outcome separately from pixel decoding: only a failed or
+  // still-pending load may drop the cached model.
+  let loadState = 'pending';
   try {
     return await withTimeout((async () => {
       const modelPromise = Promise.resolve(loadModel()).then((loaded) => {
-        modelLoaded = true;
+        loadState = 'loaded';
         return loaded;
+      }, (loadError) => {
+        loadState = 'failed';
+        throw loadError;
       });
+      modelPromise.catch(() => {});
       const [pixels, model] = await Promise.all([getPixels(uri), modelPromise]);
       return classify({ model, pixels });
     })(), timeoutMs);
   } catch (error) {
     onError(error);
-    if (!modelLoaded) {
+    if (loadState === 'failed' || (loadState === 'pending' && error?.code === 'timeout')) {
       try { onModelFailure(error); } catch { /* reset must never break the flow */ }
     }
     // A slow or hung model must never trap the user on the validating screen.

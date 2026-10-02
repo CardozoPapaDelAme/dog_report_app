@@ -71,3 +71,30 @@ Deno.test('onModelFailure throwing never breaks the flow', async () => {
   });
   assert(result.reason === 'timeout');
 });
+
+Deno.test('a pixel failure while the load is still pending does not reset the cache', async () => {
+  let resets = 0;
+  const result = await run({ load: () => new Promise(() => {}) }, {
+    getPixels: async () => { throw new Error('pixels'); },
+    onModelFailure: () => { resets += 1; },
+    timeoutMs: 1000,
+  });
+  assert(result.reason === 'model_error');
+  assert(resets === 0, 'a healthy pending load must be kept');
+});
+
+Deno.test('a load that fails resets even if pixels failed first', async () => {
+  let resets = 0;
+  let rejectLoad;
+  const result = await run({ load: () => new Promise((_, rej) => { rejectLoad = rej; }) }, {
+    getPixels: async () => { throw new Error('pixels'); },
+    onModelFailure: () => { resets += 1; },
+    timeoutMs: 1000,
+  });
+  assert(result.reason === 'model_error' && resets === 0);
+  const result2 = await run({ load: async () => { throw new Error('boom'); } }, {
+    onModelFailure: () => { resets += 1; },
+  });
+  assert(result2.reason === 'model_error' && resets === 1);
+  void rejectLoad;
+});

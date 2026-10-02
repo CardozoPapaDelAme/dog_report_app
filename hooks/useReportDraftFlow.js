@@ -45,6 +45,7 @@ export function useReportDraftFlow({ onOpenReportForm, detectColor = detectDogCo
     syncDueDrafts,
     isSyncBusy,
     queueReady: ready,
+    drafts,
     openReportDraft,
   };
 }
