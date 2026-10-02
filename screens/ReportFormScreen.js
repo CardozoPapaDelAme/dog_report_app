@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useSubmitReport } from '../hooks/useSubmitReport.js';
+import { DOG_COLORS, detectedDogColorFromDraft } from '../models/dogColor.js';
 import { REPORT_DRAFT_STATE } from '../models/reportDraft.js';
 import {
   photoStatusIsTerminal,
@@ -261,6 +262,7 @@ export default function ReportFormScreen({
   const canEdit = draft?.local_state === REPORT_DRAFT_STATE.DRAFT && !submit.submitting;
   const frozen = draft?.local_state && draft.local_state !== REPORT_DRAFT_STATE.DRAFT;
   const validation = draft?.photo_validation;
+  const detectedColor = detectedDogColorFromDraft(draft);
   const photoUri = draft?.photo_file_uri;
   const submittedDraft = submit.submittedDraft ?? draft;
   const photoRejection = photoRejectedInfo(submittedDraft);
@@ -276,7 +278,7 @@ export default function ReportFormScreen({
   );
 
   useEffect(() => {
-    setForm(createEmptyReportFormDraft());
+    setForm({ ...createEmptyReportFormDraft(), dog_color: detectedDogColorFromDraft(draft) });
   }, [draft?.id]);
 
   useEffect(() => {
@@ -310,6 +312,13 @@ export default function ReportFormScreen({
         value,
         label: t(`reportForm.dogSize.${value}`),
       })),
+    [t],
+  );
+  const colorOptions = useMemo(
+    () => DOG_COLORS.map((value) => ({
+      value,
+      label: t(`reportForm.dogColor.${value}`),
+    })),
     [t],
   );
   const collarOptions = useMemo(
@@ -518,6 +527,22 @@ export default function ReportFormScreen({
                   allowDeselect
                 />
                 <ChoiceGroup
+                  label={t('reportForm.fields.dog_color')}
+                  field="dog_color"
+                  value={form.dog_color}
+                  options={colorOptions}
+                  disabled={!canEdit}
+                  error={submit.fieldErrors.dog_color}
+                  t={t}
+                  onChange={(value) => updateField('dog_color', value)}
+                  allowDeselect
+                />
+                {detectedColor ? (
+                  <Text testID="report-dog_color-detected" style={styles.colorHint}>
+                    {t('reportForm.dogColorDetected', { color: t(`reportForm.dogColor.${detectedColor}`) })}
+                  </Text>
+                ) : null}
+                <ChoiceGroup
                   label={t('reportForm.fields.has_collar')}
                   field="has_collar"
                   value={form.has_collar}
@@ -663,6 +688,7 @@ const styles = StyleSheet.create({
   textArea: { minHeight: 104 },
   inputError: { borderColor: colors.danger, borderWidth: 2, backgroundColor: '#fffaf9' },
   inputDisabled: { opacity: 0.65 },
+  colorHint: { color: colors.muted, fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
   fieldError: { color: colors.danger, fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
   caption: { color: colors.muted, fontFamily: bodyFont, fontSize: 12, lineHeight: 18 },
   errorBanner: { backgroundColor: colors.dangerSoft, borderColor: '#f3b3ad', borderWidth: 1, borderRadius: 12, padding: 14, gap: 5 },

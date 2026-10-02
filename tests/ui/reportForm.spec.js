@@ -163,3 +163,44 @@ test('sets honeypot signal when a hidden field is filled and surfaces pending ph
   expect(posts[0].photo.expected).toBe(true);
   expect(posts[0].anti_abuse.honeypot_filled).toBe(true);
 });
+
+test('shows the detected dog colour, lets the user change it, and sends the manual choice', async ({ page }) => {
+  const posts = [];
+  await openReport(page, async (route) => {
+    const payload = route.request().postDataJSON();
+    posts.push(payload);
+    await route.fulfill({
+      status: 201,
+      json: { data: { report_id: payload.id, moderation_status: 'pending_review', photo_expected: true, photo_status_url: `/reports/${payload.id}/photo-status` } },
+    });
+  }, '?report&photo&color');
+
+  await expect(page.getByTestId('report-dog_color-detected')).toContainText('Negro');
+  await page.getByTestId('report-dog_color-dorado').click();
+  await page.getByTestId('report-submit').click();
+
+  await expect(page.getByTestId('report-photo-pending')).toBeVisible();
+  expect(posts[0].dog.predominant_color).toBe('dorado');
+});
+
+test('sends the detected colour untouched and null once the user clears it', async ({ page }) => {
+  const posts = [];
+  const handler = async (route) => {
+    const payload = route.request().postDataJSON();
+    posts.push(payload);
+    await route.fulfill({
+      status: 201,
+      json: { data: { report_id: payload.id, moderation_status: 'pending_review', photo_expected: true, photo_status_url: `/reports/${payload.id}/photo-status` } },
+    });
+  };
+  await openReport(page, handler, '?report&photo&color');
+  await page.getByTestId('report-submit').click();
+  await expect(page.getByTestId('report-photo-pending')).toBeVisible();
+  expect(posts[0].dog.predominant_color).toBe('negro');
+
+  await page.goto('/?report&photo&color');
+  await page.getByTestId('report-dog_color-negro').click();
+  await page.getByTestId('report-submit').click();
+  await expect(page.getByTestId('report-photo-pending')).toBeVisible();
+  expect(posts[1].dog.predominant_color).toBeNull();
+});

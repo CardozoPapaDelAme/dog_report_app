@@ -141,6 +141,19 @@ not assumptions. On-device success does not replace server image sanitization.
 
 Reference: <https://github.com/mrousavy/react-native-fast-tflite>.
 
+**Amendment (2026-10-02) — model precision.** Inspecting the bundled file showed
+it is a **float32** model, not INT8: input `[1,224,224,3]` float32, output
+`[1,1001]` float32 logits, and the graph itself maps `[0,1]` inputs to `[-1,1]`.
+The pipeline therefore feeds channel/255 floats and applies softmax. The
+`mobilenet_v3_small_100_224_int8.tflite` file name, manifest name and earlier
+"INT8" wording are historical and were kept to avoid churn (sha256 unchanged); the
+manifest carries a `precision_note`. The ~10 MB bundle size, CPU-first plan and
+all other constraints stand. The SRS (RNF08) still says "INT8" and is left
+untouched by policy; this amendment governs. Related shipped behaviour: validation
+runs only in development/standalone builds, is skipped in Expo Go/web, and
+fails open on model error. Predominant dog colour is derived separately in pure JS
+(`models/dogColor.js`) from the same 224×224 pixels.
+
 ## ADR-010 — Metric server clustering and stable public approximation
 
 **Decision.** Transform exact report locations to EPSG:32613 for fixed zoom-band

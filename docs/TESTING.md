@@ -200,7 +200,7 @@ which defines `app_private.requested_report_id()`) when adding a migration.
 
 - Build development and release clients for supported iOS/Android targets; Expo Go
   is not an acceptance environment.
-- Test the bundled MobileNetV3-Small INT8 TFLite model offline on representative
+- Test the bundled MobileNetV3-Small (float32) TFLite model offline on representative
   devices, recording model checksum, ImageNet dog-label set, 224×224 preprocessing,
   thresholds, confusion matrix/sample set, peak memory, and latency. Test
   dog/no-dog and blur/quality retry copy separately.
@@ -719,3 +719,28 @@ aborted request keeps the form and retries; submit disabled without a reason and
 above 1000 characters. The stub proves the UI states and the HTTP contract; it does
 not prove the server limits, auto-hide, native sheet gestures or the SQLite device
 fingerprint (the web fixture uses `localStorage`).
+
+## On-device photo validation and dog colour (RF09, RF22)
+
+```bash
+npx -y deno test --no-lock --config supabase/functions/api/deno.json services hooks models
+npx playwright test reportForm.spec.js
+npx expo export --platform android --output-dir /tmp/out-a   # bundles the .tflite
+npx expo export --platform web --output-dir /tmp/out-w       # must exclude it
+```
+
+Unit-proven (Deno, synthetic data): softmax/dog aggregation/blur maths
+(`models/photoValidation.test.js`), base64 and JPEG decode (`services/photoPixels.test.js`),
+inference wiring and output types (`services/photoInference.test.js`), predominant
+colour for synthetic black/white/brown/grey/golden/mixed/unclear images
+(`models/dogColor.test.js`), the fail-open colour step
+(`services/photoColorFlow.test.js`) and that `predominant_color` follows the form
+(auto value, manual override, cleared = null) in `models/reportPayload.test.js`.
+Playwright (`tests/ui/reportForm.spec.js`) shows the detected colour, changes and
+clears it, and checks the POST body. Colour is a signal: the server only compares
+`lower(color)` equality for duplicates.
+
+Device-only (not proven here): TFLite model load, inference latency and memory,
+real-photo accuracy of the dog/blur thresholds (dog probability 0.3, Laplacian
+variance 120 on 224 px are provisional), and colour accuracy on real photos
+(lighting, backgrounds). Expo Go and web skip the model by design.

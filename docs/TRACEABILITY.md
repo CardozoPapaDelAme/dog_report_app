@@ -18,7 +18,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF06 | Dynamic form | `incident_type`; validated `details` | Every category accepted/rejected correctly |
 | RF07 | Root navigation | Camera-first anonymous route | Cold-start route test |
 | RF08 | Public report detail | `POST /reports/:report_id/flags`; FlagService; `report_flags` | One effective flag per fingerprint/report; durable limit; client: `components/ZoneReportsSheet.js`, `components/ReportFlagSheet.js`, `hooks/reportFlagSubmit.js`, `services/flagApi.js`, `models/reportFlag.js` (`tests/ui/publicMap.spec.js`, Deno `hooks/reportFlagSubmit.test.js`, `services/flagApi.test.js`, `models/reportFlag.test.js`) |
-| RF09 | On-device vision | Bundled TFLite model | Dog/quality failures and retry offline |
+| RF09 | On-device vision | Bundled MobileNetV3-Small classifier (float32; see ADR-009 amendment) via `react-native-fast-tflite`; `services/photoValidationRuntime.js`, `services/photoPixels.js`, `services/photoInference.js`, `models/photoValidation.js`, `hooks/useCameraCapture.js` | Dev/standalone builds validate dog/no-dog and blur offline and ask for a retake with a reason. Skipped explicitly in Expo Go and web (`validationSkipped`); fail-open (`model_error`) if the model cannot load or run. Thresholds provisional; model load, latency and accuracy are device-only (Deno `services/photoInference.test.js`, `services/photoPixels.test.js`, `models/photoValidation.test.js`) |
 | RF10 | Online public map | `GET /public/reports`; presenter/repository | Approximate recent visible canonical pins |
 | RF11 | Map clustering | `GET /public/clusters`; PostGIS repository query | Metric grouping at supported zooms; documented viewport/limit |
 | RF12 | Cluster renderer | `report_count` | Circle size follows count |
@@ -31,7 +31,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF19 | Administrator Command Center and moderation queue | `GET /admin/moderation-queue`; `CommandCenterScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; page-scoped responsive ES/EN summary; no aggregate/BI endpoint |
 | RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/hide/restore/delete update the queue projection; hide, restore and delete require a written reason; no direct mobile database update; audited reversible deletion |
 | RF21 | Flag review/state machine | FlagService + restore/approve routes | Threshold, audit, restore semantics |
-| RF22 | On-device attributes | Structured report columns | Color automatic; size/collar manual |
+| RF22 | On-device attributes | Structured report columns (`dog.predominant_color`, `size`, `has_collar`); `models/dogColor.js`, `services/dogColorRuntime.js`, `services/photoColorFlow.js`, `hooks/useReportDraftFlow.js`, `screens/ReportFormScreen.js` | Colour is extracted automatically on-device (pure JS, also in Expo Go/web; fixed vocabulary negro/blanco/café/gris/dorado/mixto; `null` when unclear), shown as a changeable/clearable hint and overridden by the user's choice; size and collar are manual (Deno `models/dogColor.test.js`, `services/photoColorFlow.test.js`, `models/reportPayload.test.js`; Playwright `tests/ui/reportForm.spec.js`) |
 | RF23 | Duplicate review | Administrator duplicate routes; candidates/groups/memberships | Human-only, pending connected set, canonical, reversible, audited |
 | RF24 | Dynamic form | `details` JSONB validator | Allowed keys/types per incident |
 
@@ -70,10 +70,10 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 | RNF05 | Mobile app | Expo development builds, iOS/Android | Supported-device smoke tests |
 | RNF06 | Localization | `react-i18next`; all role flows | ES/EN coverage and layout |
 | RNF07 | Auth/navigation | Two sibling roles; profile checks | No public signup or role inheritance |
-| RNF08 | On-device vision | `react-native-fast-tflite`; MobileNetV3-Small INT8 | Runs offline in development/release build |
+| RNF08 | On-device vision | `react-native-fast-tflite`; bundled MobileNetV3-Small (float32 despite the `int8` file name) | Runs offline in development/standalone builds; not in Expo Go/web. Load/latency device-only |
 | RNF09 | Location validation | Versioned zones; ReportService + PostGIS repository | New points outside rejected; identical replay still accepted; mock/imprecise reviewed |
-| RNF10 | Photo validation | On-device model; transient EXIF signals | Offline inference; no raw EXIF persistence |
-| RNF11 | Dog attributes | Structured columns and duplicate signals | Offline color extraction; no identity claim |
+| RNF10 | Photo validation | On-device model; shared 224×224 pixel pipeline; transient EXIF signals | Offline inference with no network call; fail-open to skipped on model error; no raw EXIF persistence |
+| RNF11 | Dog attributes | Structured columns and duplicate signals (server compares `lower(color)` equality) | Offline colour extraction from the same pixels; colour is a signal the user can change or clear, never an identity claim (`models/dogColor.test.js`) |
 | RNF12 | Offline sync | Expo SQLite + local file + Hono receipts/status | Crash-safe idempotent sync; purge states stop upload retry |
 | RNF13 | Privacy | Minimized projections and retention | No solicited public identity; PII moderation |
 | RNF14 | Database recovery | Roles/schema/data dumps plus private-object manifest/export; production backup gate | Isolated `psql`/object restore rehearsal; do not claim Free meets required RPO/RTO |
@@ -112,7 +112,7 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 | HU-06 | RF06, RF13, RF24 | Incident form | `incident_type`, `details` | Categories and severity |
 | HU-07 | RF07 | Navigation | N/A | Camera is initial route |
 | HU-08 | RF08, RF21, RNF29 | Public detail/flagging | Hono flag route | Warning, durable limit, auto-hide behavior; client zone list and flag form: `components/ZoneReportsSheet.js`, `components/ReportFlagSheet.js`, `hooks/zoneReports.js` (`tests/ui/publicMap.spec.js`, `hooks/zoneReports.test.js`) |
-| HU-09 | RF09, RNF08, RNF10 | On-device vision | Bundled TFLite model | Offline retake reasons |
+| HU-09 | RF09, RNF08, RNF10 | On-device vision | Bundled MobileNetV3-Small classifier, dev/standalone builds only | Offline retake reasons; skipped in Expo Go/web; fail-open on model error |
 | HU-10 | RF10, RNF13 | Online map | Public reports route/view | Approximate visible pins/offline UX |
 | HU-11 | RF11, RF14 | Map clusters | Public clusters route/view | Geographic grouping |
 | HU-12 | RF12 | Cluster renderer | `report_count` | Proportional size |
@@ -125,7 +125,7 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 | HU-19 | RF19, RF08 | Command Center moderation queue | Administrator route/presenter + responsive Expo screen | Flag/trust context, explicitly page-scoped summary, pagination, refresh, empty/error/session states |
 | HU-20 | RF20, RNF33 | Moderation | Hono approve/hide/restore/delete routes + generic Expo command client | Audited logical deletion; buttons follow `allowed_commands`; successful commands update the local queue projection |
 | HU-21 | RF21, RNF29 | Flag review | FlagService + restore/approve routes | Configured threshold workflow |
-| HU-22 | RF22, RNF11 | Attributes | Structured columns | Color/size/collar semantics |
+| HU-22 | RF22, RNF11 | Attributes | Structured columns; `models/dogColor.js` | Automatic colour (changeable) plus manual size/collar semantics |
 | HU-23 | RF23, RNF30 | Duplicate review | Administrator duplicate routes | Canonical/reverse/audit |
 | HU-24 | RF24, RNF36 | Dynamic form | JSON contract | Conditional required fields |
 
