@@ -29,7 +29,8 @@
           "locationWhenInUsePermission": "Permite que Creel Stray-Dog Reporting use tu ubicación para guardar dónde ocurrió el reporte."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "@maplibre/maplibre-react-native"
     ]
   }
 }

@@ -54,6 +54,7 @@
     "helper": "Take a clear photo of the dog",
     "admin": "Review",
     "staffLogin": "Staff login",
+    "openMap": "View map",
     "retryTitle": "Retake the photo",
     "model": {
       "loading": "Loading model",
@@ -504,5 +505,36 @@
       "preflight_mismatch": "The service environment is not ready for this operation."
     },
     "selectionWarning": "Invalid selection: review its connections before confirming."
+  },
+  "map": {
+    "title": "Reports map",
+    "back": "Back to camera",
+    "loading": "Loading the map",
+    "empty": "No reports in this area",
+    "error": "We could not load the map.",
+    "retry": "Retry",
+    "offline": "The map is not available offline",
+    "offlineReporting": "You can still create reports; they will be sent when you are back online.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomLevel": "Zoom {{zoom}}",
+    "close": "Close",
+    "clusterItem": "{{count}} reports, {{severity}} severity",
+    "pinItem": "Report: {{type}}",
+    "severity": {
+      "high": "high",
+      "medium": "medium",
+      "low": "low"
+    },
+    "cluster": {
+      "title": "{{count}} reports in this area",
+      "highest": "Highest severity: {{type}}"
+    },
+    "pin": {
+      "color": "Color",
+      "occurredAt": "Date and time",
+      "flagged": "The community flagged this report",
+      "photo": "Report photo"
+    }
   }
 }

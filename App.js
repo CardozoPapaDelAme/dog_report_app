@@ -17,6 +17,7 @@ import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
 import DuplicateManagementScreen from './screens/DuplicateManagementScreen.js';
 import LoginScreen from './screens/loginScreen.js';
+import PublicMapScreen from './screens/PublicMapScreen.js';
 import ReportFormScreen from './screens/ReportFormScreen.js';
 import ZoneSetScreen from './screens/ZoneSetScreen.js';
 import { createAuthService } from './services/authService.js';
@@ -90,6 +91,8 @@ export default function App() {
         logoutPending={login.pending}
       />
     );
+  } else if (screen === 'map') {
+    content = <PublicMapScreen onBack={() => setScreen('camera')} />;
   } else if (screen === 'reportDraft') {
     content = (
       <ReportFormScreen
@@ -105,6 +108,7 @@ export default function App() {
     content = (
       <CameraScreen
         onOpenLogin={() => setScreen('login')}
+        onOpenMap={() => setScreen('map')}
         onReportWithoutPhoto={() => {
           void reportDraftFlow.openReportDraft(null);
         }}

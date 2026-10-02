@@ -35,6 +35,7 @@ export default function CameraScreen({
   onReportWithoutPhoto,
   onOpenModeration,
   onOpenLogin,
+  onOpenMap,
   showModerationShortcut = false,
 }) {
   const { t } = useTranslation();
@@ -61,8 +62,13 @@ export default function CameraScreen({
       )}
       <View pointerEvents="none" style={styles.vignette} />
 
-      {(onOpenLogin || (showModerationShortcut && hasPermission)) ? (
+      {(onOpenLogin || onOpenMap || (showModerationShortcut && hasPermission)) ? (
         <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+          {onOpenMap ? (
+            <Pressable accessibilityRole="button" onPress={onOpenMap} style={styles.adminButton}>
+              <Text style={styles.adminText}>{t('camera.openMap')}</Text>
+            </Pressable>
+          ) : null}
           <View style={styles.topBarSpacer} />
           {onOpenLogin ? (
             <Pressable accessibilityRole="button" onPress={onOpenLogin} style={styles.adminButton}>
@@ -89,6 +95,11 @@ export default function CameraScreen({
                 <Pressable accessibilityRole="button" onPress={requestPermission} style={styles.permissionButton}>
                   <Text style={styles.permissionButtonText}>{t('camera.permissionButton')}</Text>
                 </Pressable>
+                {onOpenMap ? (
+                  <Pressable accessibilityRole="button" onPress={onOpenMap} style={styles.staffLoginPermission}>
+                    <Text style={styles.staffLoginPermissionText}>{t('camera.openMap')}</Text>
+                  </Pressable>
+                ) : null}
                 {onOpenLogin ? (
                   <Pressable accessibilityRole="button" onPress={onOpenLogin} style={styles.staffLoginPermission}>
                     <Text style={styles.staffLoginPermissionText}>{t('camera.staffLogin')}</Text>
