@@ -2,7 +2,8 @@
 
 The simplest way for the team (and non-developers) to try the app against the
 staging backend. Developers who change code follow the README "Choose how to run"
-section instead.
+section instead (option C: `npm run setup`, then `npm run app:android` or
+`npm run app:ios`; `npm run doctor` diagnoses missing tools).
 
 ## Pick your path
 

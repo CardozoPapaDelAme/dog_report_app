@@ -31,18 +31,19 @@ until the Asociación de Hoteles de Chihuahua approves a geofence version.
 ```bash
 git clone https://github.com/CardozoPapaDelAme/dog_report_app.git
 cd dog_report_app
-npm install
-cp .env.example .env
+npm run setup
 ```
 
-Fill `.env` with publishable client configuration only (never a service key, never
-commit it):
+`npm run setup` checks Node, creates `.env` with the publishable staging values
+(only when `.env` does not exist; it never overwrites it) and runs `npm install`
+when needed. `.env` holds publishable client configuration only (never a service
+key, never commit it). Variables:
 
 | Variable | Value |
 |---|---|
 | `EXPO_PUBLIC_API_BASE_URL` | `https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api` |
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://dcvihomkxkutkckmjvmp.supabase.co` |
-| `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key from Supabase → Project Settings → API Keys |
+| `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (written by `npm run setup`; also in Supabase → Project Settings → API Keys) |
 | `EXPO_PUBLIC_MAP_STYLE_URL` | Optional. MapLibre style URL for the public map; defaults to OpenFreeMap liberty (`https://tiles.openfreemap.org/styles/liberty`, no key). Attribution "© OpenMapTiles © OpenStreetMap contributors" must stay visible. Set a MapTiler style URL to switch providers without code changes |
 
 For EAS cloud builds, `.env` is not uploaded (it is git-ignored): define the same
@@ -115,17 +116,30 @@ Profiles live in `eas.json`: `development`, `preview` (internal APK) and
 **C. Local development build (full app on your own phone).** Compile and install
 once; after that, code changes reload live with no reinstall.
 
-*One-time setup*
+*Manual steps (once, cannot be scripted)*
 
-| | Android | iPhone |
-|---|---|---|
-| Computer | Windows, macOS or Linux | **macOS only** |
-| Install | [Android Studio](https://developer.android.com/studio) (includes the SDK) and JDK 17; set `ANDROID_HOME` | Xcode (App Store) and CocoaPods (`sudo gem install cocoapods` or `brew install cocoapods`) |
-| Phone | Settings → About phone → tap *Build number* 7 times; then Developer options → **USB debugging** on. Connect by USB and accept the prompt (`adb devices` must list it) | Connect by USB, tap *Trust*. iOS 16+: Settings → Privacy & Security → **Developer Mode** on. In Xcode → Settings → Accounts add your Apple ID |
-| Build and install | `npx expo run:android` | `npx expo run:ios --device` (pick your iPhone) |
+- **Android (Windows, macOS or Linux):** install
+  [Android Studio](https://developer.android.com/studio) (it includes the SDK; open
+  it once so it downloads the SDK) and JDK 17. On the phone: Settings → About phone
+  → tap *Build number* 7 times; then Developer options → **USB debugging** on.
+  Connect by USB and accept the prompt on the phone.
+- **iPhone (macOS only):** install Xcode (App Store) and CocoaPods
+  (`brew install cocoapods`). Connect by USB and tap *Trust*. iOS 16+: Settings →
+  Privacy & Security → **Developer Mode** on. In Xcode → Settings → Accounts add
+  your Apple ID.
 
-The first build takes about 10–20 minutes; it installs the app on the phone.
-Make sure `.env` is filled first (see the table above).
+*Then, one command each*
+
+```bash
+git clone https://github.com/CardozoPapaDelAme/dog_report_app.git && cd dog_report_app && npm run setup && npm run app:android
+# iPhone (Mac): replace the last command with  npm run app:ios
+```
+
+`npm run app:android` / `npm run app:ios` first run the doctor, which prints what is
+missing with a fix hint in Spanish, and only then run `npx expo run:android` /
+`npx expo run:ios --device`. Run `npm run doctor` (or `npm run doctor -- ios`) at
+any time to diagnose your machine. The first build takes about 10–20 minutes; it
+installs the app on the phone.
 
 *Every day*
 
@@ -138,14 +152,14 @@ npx expo start --dev-client    # add --tunnel if the phone is on another network
 Open the installed app; it loads the latest code from your computer and reloads
 on save. Nothing is reinstalled.
 
-*Rebuild only when native code changes*: run `npx expo run:android` /
-`npx expo run:ios --device` again after a pull that adds or updates a native
+*Rebuild only when native code changes*: run `npm run app:android` /
+`npm run app:ios` again after a pull that adds or updates a native
 library or changes `app.json` plugins (for example `package.json` gains an
 `expo-*`, `react-native-*` or `@maplibre/*` dependency). PRs that do this should
 say "requires rebuild".
 
 *iPhone signing note*: with a free Apple ID the installed app expires after
-**7 days**; run `npx expo run:ios --device` again to renew. A paid Apple
+**7 days**; run `npm run app:ios` again to renew. A paid Apple
 Developer account (99 USD/year) lasts one year.
 
 *No Mac for iPhone or no Android Studio?* Use option A (Expo Go) for everything
@@ -171,10 +185,12 @@ auto-publishing.
 Follow in order; stop and ask the human when a step needs a value you do not have.
 
 1. `node --version` must be 20 or newer; `git --version` must work.
-2. `npm install` in the repository root.
-3. `cp .env.example .env` if `.env` is missing. Ask the human for the Supabase
-   publishable key (and test credentials); take the URL values from the table above.
+2. `npm run setup` in the repository root: it runs `npm install` and creates `.env`
+   with the publishable staging values when `.env` is missing (it never overwrites
+   an existing one and reports missing keys). Ask the human for test credentials.
    Never invent keys, never use a service key, never commit `.env`.
+   `npm run doctor` diagnoses the machine for option C (Java, Android SDK, adb,
+   device; Xcode on macOS).
 4. Verify the backend: `curl -s https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api/health`.
 5. Decide the run mode: the human only wants to check forms/flagging, or has no
    native tooling, then A; the full map is needed and an Expo account exists, then B
@@ -182,7 +198,8 @@ Follow in order; stop and ask the human when a step needs a value you do not hav
    Xcode/Android Studio is already installed, then C.
 6. Run the chosen command from the section above (`npx expo start`,
    `eas build --profile development --platform android` then
-   `npx expo start --dev-client`, or `npx expo run:ios|android`). Never use
+   `npx expo start --dev-client`, or `npm run app:android|ios`; the human must
+   connect the phone and enable USB debugging / Developer Mode). Never use
    `--dev-client` before a development build is installed on the device.
 7. Verify: `npm run test:admin-ui` (Playwright, all UI suites) and
    `npx -y deno test --no-lock --config supabase/functions/api/deno.json services hooks models`
