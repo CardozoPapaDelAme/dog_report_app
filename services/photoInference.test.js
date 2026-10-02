@@ -131,3 +131,15 @@ Deno.test('PV-1 flow skips without touching the model when unavailable, and fail
   const ok = await runPhotoValidationFlow({ ...deps, availability: { available: true, skipped: null } });
   assert(ok.status === 'accepted');
 });
+
+Deno.test('runPhotoValidationFlow fails open with reason timeout when the model hangs', async () => {
+  const result = await runPhotoValidationFlow({
+    uri: 'file:///photo.jpg',
+    availability: { available: true },
+    getPixels: async () => ({ width: 224, height: 224, rgb: new Uint8Array(224 * 224 * 3) }),
+    loadModel: () => new Promise(() => {}),
+    classify: async () => ({ status: 'accepted' }),
+    timeoutMs: 20,
+  });
+  if (result.status !== 'skipped' || result.reason !== 'timeout') throw new Error(JSON.stringify(result));
+});

@@ -26,3 +26,9 @@ Deno.test('RF22 attachDetectedColor fails open on null, unknown colour, throw or
   assert(await attachDetectedColor(null, async () => ({ color: 'negro' })) === null);
   assert(await attachDetectedColor({ photoUri: null }, async () => ({ color: 'negro' })).then((r) => r.photoUri === null));
 });
+
+Deno.test('attachDetectedColor leaves the photo unchanged when detection hangs', async () => {
+  const photo = { photoUri: 'file:///photo.jpg', validation: { status: 'accepted' } };
+  const result = await attachDetectedColor(photo, () => new Promise(() => {}), 20);
+  if (result !== photo) throw new Error('expected the original photo');
+});
