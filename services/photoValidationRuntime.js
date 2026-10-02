@@ -36,6 +36,7 @@ export function validateCapturedPhoto(uri) {
     getPixels: (photoUri) => readPhotoPixels(photoUri, require('expo-image-manipulator')),
     loadModel: modelLoader.load,
     onModelFailure: modelLoader.reset,
+    loadPendingMs: modelLoader.pendingSinceMs,
     classify: ({ model, pixels }) => {
       const { MOBILENET_V3_LABELS, MOBILENET_V3_MODEL_METADATA } = require('../models/mobileNetV3Model.js');
       return classifyPhotoPixels({

@@ -219,3 +219,35 @@ Deno.test('retry wakeup fires at expiry, re-arms per update, and stops offline/b
   wake.setActive(true);
   assert(fns.size === 0, 'disposed stays dead');
 });
+
+Deno.test('a failing pass still re-arms the wake-up for the earliest future retry', async () => {
+  const clock = fakeClock();
+  const now = new Date('2026-10-02T12:00:00Z');
+  const delays = [];
+  const wake = createRetryWakeup({
+    trigger: () => {},
+    now: () => now,
+    schedule: (fn, ms) => { delays.push(ms); return clock.schedule(fn); },
+    cancel: clock.cancel,
+  });
+  wake.setActive(true);
+  wake.setDrafts([
+    { local_state: 'retry_wait', next_retry_at: '2026-10-02T12:05:00Z' },
+    { local_state: 'retry_wait', next_retry_at: '2026-10-02T12:00:30Z' },
+    { local_state: 'retry_wait', next_retry_at: '2026-10-02T11:59:00Z' },
+  ]);
+  // The wake-up timer fired and was consumed; nothing is armed now.
+  await clock.flush();
+  delays.length = 0;
+  assert(clock.pending() === 0);
+  const sync = createDraftAutoSync({
+    syncDueDrafts: async () => { throw new Error('boom'); },
+    onError: () => {},
+    onPassSettled: () => wake.rearm(),
+    ...clock,
+  });
+  sync.trigger();
+  await clock.flush();
+  assert(delays.length === 1 && delays[0] === 30000, 'earliest future next_retry_at re-armed');
+  assert(clock.pending() === 1);
+});

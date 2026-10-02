@@ -28,6 +28,7 @@ export function useDraftAutoSync({ ready, syncDueDrafts, isSyncBusy, drafts }) {
     const scheduler = createDraftAutoSync({
       syncDueDrafts: () => syncRef.current(),
       isBusy: () => Boolean(busyRef.current?.()),
+      onPassSettled: () => wakeup.rearm(),
       onError: (error) => console.warn('Draft auto-sync failed:', error?.message ?? error),
     });
     const onReconnect = createNetworkTrigger(scheduler.trigger);

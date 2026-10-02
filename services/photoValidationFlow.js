@@ -1,6 +1,9 @@
 import { withTimeout } from './withTimeout.js';
 
 export const PHOTO_VALIDATION_TIMEOUT_MS = 8000;
+// A slow device may need longer than the validation timeout to load the model;
+// only a load pending longer than this is treated as hung and dropped.
+export const MODEL_LOAD_HUNG_MS = 60000;
 
 // Orchestrates one validation; never throws. Failures fail open as `model_error`.
 export async function runPhotoValidationFlow({
@@ -10,9 +13,12 @@ export async function runPhotoValidationFlow({
   loadModel,
   classify,
   onError = () => {},
-  // Called when a failure happened while the model was not yet loaded, so the
-  // caller can drop a cached (possibly hung) load and retry on the next photo.
+  // Called when the model load failed, or has been pending longer than
+  // `hungMs`, so the caller can drop the cached load and retry on the next photo.
   onModelFailure = () => {},
+  // Milliseconds the current load has been pending (null when unknown/idle).
+  loadPendingMs = () => null,
+  hungMs = MODEL_LOAD_HUNG_MS,
   timeoutMs = PHOTO_VALIDATION_TIMEOUT_MS,
 }) {
   if (!availability.available) {
@@ -36,10 +42,20 @@ export async function runPhotoValidationFlow({
     })(), timeoutMs);
   } catch (error) {
     onError(error);
-    if (loadState === 'failed' || (loadState === 'pending' && error?.code === 'timeout')) {
+    // A merely slow load is kept so a later photo can reuse it once it resolves.
+    if (loadState === 'failed' || (loadState === 'pending' && error?.code === 'timeout' && loadIsHung(loadPendingMs, hungMs))) {
       try { onModelFailure(error); } catch { /* reset must never break the flow */ }
     }
     // A slow or hung model must never trap the user on the validating screen.
     return { status: 'skipped', reason: error?.code === 'timeout' ? 'timeout' : 'model_error' };
+  }
+}
+
+function loadIsHung(loadPendingMs, hungMs) {
+  try {
+    const pending = loadPendingMs();
+    return Number.isFinite(pending) && pending > hungMs;
+  } catch {
+    return false;
   }
 }

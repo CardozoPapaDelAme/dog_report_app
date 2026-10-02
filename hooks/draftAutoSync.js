@@ -16,6 +16,9 @@ export function createDraftAutoSync({
   schedule = setTimeout,
   cancel = clearTimeout,
   onError = () => {},
+  // Called after every pass settles (success, failure or no change) so the
+  // caller can re-arm the retry wake-up.
+  onPassSettled = () => {},
 } = {}) {
   if (typeof syncDueDrafts !== 'function') throw new Error('sync_due_drafts_required');
   let timer = null;
@@ -39,6 +42,7 @@ export function createDraftAutoSync({
       try { onError(error); } catch { /* never throw */ }
     } finally {
       running = false;
+      try { onPassSettled(); } catch { /* never throw */ }
       if (pending) trigger();
     }
   }
@@ -127,6 +131,7 @@ export function createRetryWakeup({
   return {
     setDrafts(next) { drafts = Array.isArray(next) ? next : []; arm(); },
     setActive(next) { active = Boolean(next); arm(); },
+    rearm: arm,
     dispose() { disposed = true; clear(); },
   };
 }
