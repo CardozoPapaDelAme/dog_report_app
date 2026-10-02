@@ -38,9 +38,10 @@ function useInitialCenter() {
   const [center, setCenter] = useState(null);
   useEffect(() => {
     let active = true;
-    const timeout = new Promise((resolve) => { setTimeout(() => resolve(CREEL_CENTER), LOCATION_TIMEOUT_MS); });
+    let timer = null;
+    const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve(CREEL_CENTER), LOCATION_TIMEOUT_MS); });
     Promise.race([resolveInitialCenter(), timeout]).then((value) => { if (active) setCenter(value); });
-    return () => { active = false; };
+    return () => { active = false; clearTimeout(timer); };
   }, []);
   return center;
 }
@@ -194,7 +195,7 @@ export default function PublicMapScreen({ onBack }) {
         {selectedCluster ? (
           <ClusterModal cluster={selectedCluster} onClose={() => setSelectedCluster(null)} onZoomIn={zoomIntoCluster} t={t} />
         ) : null}
-        {selectedReport ? <PinSheet report={selectedReport} onClose={() => setSelectedReport(null)} t={t} /> : null}
+        {selectedReport ? <PinSheet key={selectedReport.report_id} report={selectedReport} onClose={() => setSelectedReport(null)} t={t} /> : null}
       </View>
     </SafeAreaView>
   );
