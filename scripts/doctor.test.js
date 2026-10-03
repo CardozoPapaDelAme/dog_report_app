@@ -8,6 +8,7 @@ import {
   parseJavaVersion,
   resolveAndroidSdk,
   runDoctor,
+  withDirOnPath,
 } from './doctor.mjs';
 
 function eq(actual, expected, message = '') {
@@ -144,4 +145,19 @@ Deno.test('runDoctor android reports everything missing without throwing', async
   });
   eq(r.ok, false);
   eq(r.results.filter((x) => !x.ok).map((x) => x.id), ['node', 'deps', 'env', 'java', 'sdk', 'adb']);
+});
+
+Deno.test('withDirOnPath keeps the Windows "Path" key and prepends the tools dir', () => {
+  const env = withDirOnPath({ Path: 'C:\\Windows;C:\\nodejs', OTHER: '1' }, 'C:\\sdk\\platform-tools', ';');
+  const pathKeys = Object.keys(env).filter((k) => k.toUpperCase() === 'PATH');
+  if (pathKeys.length !== 1 || pathKeys[0] !== 'Path') throw new Error(JSON.stringify(pathKeys));
+  if (env.Path !== 'C:\\sdk\\platform-tools;C:\\Windows;C:\\nodejs') throw new Error(env.Path);
+  if (env.OTHER !== '1') throw new Error('lost other keys');
+});
+
+Deno.test('withDirOnPath works with a POSIX PATH and with no path at all', () => {
+  const posix = withDirOnPath({ PATH: '/usr/bin' }, '/sdk/platform-tools', ':');
+  if (posix.PATH !== '/sdk/platform-tools:/usr/bin') throw new Error(posix.PATH);
+  const empty = withDirOnPath({}, '/sdk/platform-tools', ':');
+  if (empty.PATH !== '/sdk/platform-tools') throw new Error(empty.PATH);
 });

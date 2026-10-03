@@ -135,6 +135,19 @@ export function resolveAndroidSdk(env, platform, homedir) {
   return { path: `${homedir}/Android/Sdk`, fromEnv: false };
 }
 
+// Returns a copy of env with `dir` prepended to the search path. Windows stores it
+// as "Path" (case-insensitive in process.env but not in a plain copy), so reuse the
+// existing key whatever its casing and never create a second one.
+export function withDirOnPath(env, dir, separator = ";") {
+  const next = { ...env };
+  const keys = Object.keys(next).filter((key) => key.toUpperCase() === "PATH");
+  const key = keys[0] ?? "PATH";
+  const current = keys.map((k) => next[k]).find((value) => value) ?? "";
+  for (const k of keys) delete next[k];
+  next[key] = current ? `${dir}${separator}${current}` : dir;
+  return next;
+}
+
 export function platformToolsDir(sdkPath, platform) {
   return platform === "win32" ? `${sdkPath}\\platform-tools` : `${sdkPath}/platform-tools`;
 }

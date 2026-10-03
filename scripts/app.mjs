@@ -1,7 +1,7 @@
 // One-command local development build: doctor, then `expo run:<platform>`.
 import { spawn } from "node:child_process";
 import { delimiter } from "node:path";
-import { printResults, runDoctorWithDefaults } from "./doctor.mjs";
+import { printResults, runDoctorWithDefaults, withDirOnPath } from "./doctor.mjs";
 
 const target = process.argv[2];
 if (target !== "android" && target !== "ios") {
@@ -17,11 +17,11 @@ if (!ok) {
   process.exit(1);
 }
 
-const env = { ...process.env };
+let env = { ...process.env };
 if (target === "android" && sdk && !sdk.fromEnv) {
-  env.ANDROID_HOME = sdk.path;
   const tools = adbDir ?? (process.platform === "win32" ? `${sdk.path}\\platform-tools` : `${sdk.path}/platform-tools`);
-  env.PATH = `${tools}${delimiter}${env.PATH ?? ""}`;
+  env = withDirOnPath(env, tools, delimiter);
+  env.ANDROID_HOME = sdk.path;
 }
 
 const args = target === "ios" ? ["expo", "run:ios", "--device"] : ["expo", "run:android"];
