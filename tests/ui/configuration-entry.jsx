@@ -1,14 +1,16 @@
 // Isolated UI test entry. This file is never imported by index.js or App.js.
-import React, { StrictMode, useRef, useState } from 'react';
+import React, { StrictMode, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../../i18n/index.js';
+import DraftQueueBanner from '../../components/DraftQueueBanner.js';
 import DuplicateManagementScreen from '../../screens/DuplicateManagementScreen.js';
 import ZoneSetScreen from '../../screens/ZoneSetScreen.js';
 import ConfigurationScreen from '../../screens/ConfigurationScreen.js';
 import PublicMapScreen from '../../screens/PublicMapScreen.js';
 import ReportFormScreen from '../../screens/ReportFormScreen.js';
 import AssociationDashboardScreen from '../../screens/associationDashboardScreen.js';
+import { summarizeReportDraftQueue } from '../../models/reportDraft.js';
 import { buildReportPayload } from '../../models/reportPayload.js';
 import regular from '@expo-google-fonts/plus-jakarta-sans/400Regular/PlusJakartaSans_400Regular.ttf';
 import bold from '@expo-google-fonts/plus-jakarta-sans/700Bold/PlusJakartaSans_700Bold.ttf';
@@ -144,8 +146,128 @@ function ReportFixture() {
   />;
 }
 
+function OfflineQueueFixture() {
+  const params = new URLSearchParams(location.search);
+  const initialDraft = params.has('terminal')
+    ? {
+      ...reportDraft,
+      local_state: 'terminal_error',
+      last_error: { code: 'invalid_coordinates', status: 400, message: 'outside geofence' },
+    }
+    : reportDraft;
+  const [screen, setScreen] = useState(params.has('terminal') ? 'camera' : 'form');
+  const [draft, setDraft] = useState(initialDraft);
+  const [syncing, setSyncing] = useState(false);
+  const [syncedNotice, setSyncedNotice] = useState(false);
+  const draftRef = useRef(initialDraft);
+  const syncingRef = useRef(false);
+  const now = new Date('2026-09-28T20:05:00.000Z');
+  const summary = useMemo(
+    () => summarizeReportDraftQueue([draft], { now, isSyncing: syncing }),
+    [draft, syncing],
+  );
+
+  function commit(next) {
+    draftRef.current = next;
+    setDraft(next);
+    return next;
+  }
+
+  async function queueDraft(id, options) {
+    const current = draftRef.current;
+    const payload = buildReportPayload({
+      draft: current,
+      reportFields: options.reportFields,
+      deviceFingerprint: options.deviceFingerprint,
+      honeypotFilled: options.honeypotFilled,
+    });
+    setSyncedNotice(false);
+    return commit({
+      ...current,
+      local_state: 'queued',
+      updated_at: '2026-09-28T20:02:00.000Z',
+      queued_at: '2026-09-28T20:02:00.000Z',
+      payload_json: JSON.stringify(payload),
+      next_retry_at: null,
+      last_error: null,
+    });
+  }
+
+  async function syncDraft() {
+    const current = draftRef.current;
+    if (current.local_state === 'synced' || current.local_state === 'terminal_error') return current;
+    const payload = JSON.parse(current.payload_json);
+    const response = await fetch('/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) {
+      return commit({
+        ...current,
+        local_state: response.status >= 500 || response.status === 429 ? 'retry_wait' : 'terminal_error',
+        next_retry_at: null,
+        last_error: {
+          code: body?.error?.code ?? 'request_failed',
+          message: body?.error?.message ?? 'Request failed',
+          status: response.status,
+          request_id: body?.error?.request_id ?? null,
+        },
+      });
+    }
+    const accepted = commit({
+      ...current,
+      local_state: 'synced',
+      updated_at: '2026-09-28T20:03:00.000Z',
+      receipt: body.data,
+      next_retry_at: null,
+      last_error: null,
+      photo_status: null,
+    });
+    setSyncedNotice(true);
+    return accepted;
+  }
+
+  async function syncDueDrafts() {
+    if (syncingRef.current) return [];
+    if (!summarizeReportDraftQueue([draftRef.current], { now }).canRetryNow) return [];
+    syncingRef.current = true;
+    setSyncing(true);
+    try {
+      return [await syncDraft()];
+    } finally {
+      syncingRef.current = false;
+      setSyncing(false);
+    }
+  }
+
+  if (screen === 'camera') {
+    return <div style={{ minHeight: '100%', background: '#101510', padding: 16, paddingTop: 80 }}>
+      <DraftQueueBanner
+        summary={summary}
+        synced={syncedNotice}
+        onRetry={() => { void syncDueDrafts(); }}
+      />
+    </div>;
+  }
+
+  return <ReportFormScreen
+    draft={draft}
+    loading={false}
+    error={null}
+    queueDraft={queueDraft}
+    syncDraft={syncDraft}
+    onBackToCamera={() => setScreen('camera')}
+    submitDependencies={{getDeviceFingerprint: async () => '  raw-device-fingerprint-001  '}}
+  />;
+}
+
 function Fixture() {
   const params = new URLSearchParams(location.search);
+  if (params.has('offline-queue')) return <div style={{height:'100dvh'}}>
+    <SafeAreaProvider><OfflineQueueFixture /></SafeAreaProvider>
+  </div>;
   if (params.has('map')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><PublicMapScreen onBack={() => {}} mapAvailable={params.has('expo-go') ? false : undefined} /></SafeAreaProvider>
   </div>;

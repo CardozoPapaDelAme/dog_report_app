@@ -120,7 +120,7 @@ test('submits one frozen payload with raw fingerprint and no duplicate POST on d
 test('shows distinct catalogued error messages', async ({ page }) => {
   let code = 'invalid_details';
   await openReport(page, (route) => route.fulfill({
-    status: code === 'invalid_details' ? 400 : 503,
+    status: 400,
     json: { error: { code, message: code, request_id: 'request-1' } },
   }));
 
@@ -131,10 +131,61 @@ test('shows distinct catalogued error messages', async ({ page }) => {
   await expect(page.getByTestId('report-error-back')).toBeVisible();
   await expect(page.getByTestId('report-error-retry')).toBeVisible();
 
-  code = 'geofence_not_configured';
+  code = 'invalid_coordinates';
   await page.goto('/?report');
   await page.getByTestId('report-submit').click();
-  await expect(page.getByText('Código: geofence_not_configured')).toBeVisible();
+  await expect(page.getByText('Código: invalid_coordinates')).toBeVisible();
+});
+
+test('network failure saves the report for sync, camera shows the queue, and manual retry converges', async ({ page }) => {
+  let posts = 0;
+  await page.route('**/reports', async (route) => {
+    posts += 1;
+    const payload = route.request().postDataJSON();
+    if (posts === 1) {
+      await route.fulfill({
+        status: 503,
+        json: { error: { code: 'network_unavailable', message: 'offline' } },
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 201,
+      json: {
+        data: {
+          report_id: payload.id,
+          moderation_status: 'pending_review',
+          photo_expected: false,
+          photo_status_url: `/reports/${payload.id}/photo-status`,
+        },
+      },
+    });
+  });
+
+  await page.goto('/?offline-queue');
+  await page.getByTestId('report-submit').click();
+  await expect(page.getByTestId('report-queued')).toBeVisible();
+  await expect(page.getByText('Reporte guardado para sincronizar')).toBeVisible();
+  await page.getByTestId('report-queued-back').click();
+
+  await expect(page.getByTestId('draft-queue-banner')).toBeVisible();
+  await expect(page.getByText('Reportes guardados para sincronizar')).toBeVisible();
+  await page.getByTestId('draft-queue-retry').evaluate((button) => {
+    button.click();
+    button.click();
+  });
+
+  await expect(page.getByText('Reportes sincronizados')).toBeVisible();
+  await expect(page.getByText('Reportes guardados para sincronizar')).toHaveCount(0);
+  expect(posts).toBe(2);
+});
+
+test('terminal local queue state is visible as attention and cannot be retried', async ({ page }) => {
+  await page.goto('/?offline-queue&terminal');
+
+  await expect(page.getByTestId('draft-queue-banner')).toBeVisible();
+  await expect(page.getByText('Un reporte no pudo sincronizarse')).toBeVisible();
+  await expect(page.getByTestId('draft-queue-retry')).toHaveCount(0);
 });
 
 test('sets honeypot signal when a hidden field is filled and surfaces pending photo state', async ({ page }) => {
