@@ -4,12 +4,13 @@ import { readFile } from 'node:fs/promises';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+const port = Number(process.env.PORT ?? 4174);
 const output = await mkdtemp(join(tmpdir(), 'admin-ui-'));
 await build({
   entryPoints: ['tests/ui/configuration-entry.jsx'], bundle: true, outfile: join(output,'bundle.js'),
   resolveExtensions: ['.web.js', '.js', '.jsx', '.json'],
   loader: {'.js':'jsx','.ttf':'file'}, alias: {'react-native':'react-native-web','expo-location':resolve('tests/ui/expo-location-stub.js'),'expo-constants':resolve('tests/ui/expo-constants-stub.js')}, jsx:'automatic',
-  define: {'process.env.NODE_ENV':'"development"','process.env.EXPO_PUBLIC_API_BASE_URL':'"http://127.0.0.1:4174"','__DEV__':'true'},
+  define: {'process.env.NODE_ENV':'"development"','process.env.EXPO_PUBLIC_API_BASE_URL':JSON.stringify(`http://127.0.0.1:${port}`),'__DEV__':'true'},
 });
 const html = '<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>L4 / L5 / L7 isolated test</title><style>html,body,#root{margin:0;height:100%;}*{box-sizing:border-box}</style><div id="root"></div><script src="/bundle.js"></script></html>';
 // Demo-only in-memory configuration for manual previews. Fictional data; resets
@@ -64,8 +65,8 @@ function shutdown() {
   setTimeout(() => process.exit(0), 500).unref();
 }
 
-server.listen(4174, '127.0.0.1', () => {
-  console.log('L4 / L5 / L7 test fixture: http://127.0.0.1:4174');
+server.listen(port, '127.0.0.1', () => {
+  console.log(`L4 / L5 / L7 test fixture: http://127.0.0.1:${port}`);
 });
 
 for (const signal of ['SIGINT', 'SIGTERM']) {

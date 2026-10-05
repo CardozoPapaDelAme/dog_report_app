@@ -11,3 +11,17 @@ export async function saveAssociationCsv({ filename, content }) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 }
+
+export async function saveAssociationXlsx({ filename, content }) {
+  const url = URL.createObjectURL(new Blob([content], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  try {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+}

@@ -2,6 +2,20 @@
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+export function associationDateText(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+export function getAssociationQuickRange(preset, today = new Date()) {
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const start = new Date(end);
+  if (preset === 'last7Days') start.setDate(start.getDate() - 6);
+  else if (preset === 'last30Days') start.setDate(start.getDate() - 29);
+  else if (preset === 'thisMonth') start.setDate(1);
+  else throw new RangeError('Unknown association date preset');
+  return { fromDay: associationDateText(start), toDay: associationDateText(end) };
+}
+
 function invalidResponse() {
   throw Object.assign(new Error('Invalid association reports response'), { code: 'invalid_response' });
 }
