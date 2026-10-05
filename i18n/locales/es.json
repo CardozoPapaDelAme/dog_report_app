@@ -33,6 +33,14 @@
     "to": "Hasta",
     "search": "Consultar",
     "dateHint": "Consulta hasta 5 años de reportes. El rango incluye días completos según la fecha de aceptación.",
+    "summary": {
+      "total": "Total de reportes",
+      "byDate": "Reportes por fecha de aceptación",
+      "day": "Por día",
+      "month": "Por mes",
+      "bucketCount_one": "{{count}} reporte aceptado",
+      "bucketCount_other": "{{count}} reportes aceptados"
+    },
     "results": "Reportes aceptados",
     "count_one": "{{count}} reporte en este rango",
     "count_other": "{{count}} reportes en este rango",

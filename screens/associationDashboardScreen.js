@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,6 +6,8 @@ import { ASSOCIATION_REPORT_COLUMNS, associationReportValues, createAssociationC
 import { useAssociationReports } from '../hooks/useAssociationReports.js';
 import { saveAssociationCsv } from '../services/associationExport';
 import AssociationDatePicker from '../components/associationDatePicker.js';
+import AssociationSummaryCard from '../components/associationSummaryCard.js';
+import { buildAssociationSummary } from '../models/associationSummary.js';
 
 const WIDTHS = [210, 190, 190, 175, 130, 290, 150, 100, 105, 120, 120, 105];
 const TABLE_WIDTH = WIDTHS.reduce((sum, width) => sum + width, 0);
@@ -30,6 +32,8 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   const applied = reports.dates?.fromDay === fromDay && reports.dates?.toDay === toDay;
   const dateErrors = applied ? reports.errors : {};
   const canExport = reports.phase === 'ready' && applied && !exporting && !pending;
+  const summary = useMemo(() => applied && (reports.phase === 'ready' || reports.phase === 'empty')
+    ? buildAssociationSummary(rows, fromDay, toDay) : null, [applied, reports.phase, rows, fromDay, toDay]);
 
   function applyPreset(preset) {
     const range = getAssociationQuickRange(preset);
@@ -124,6 +128,8 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
         title={t(calendarField === 'to' ? 'associationDashboard.selectTo' : 'associationDashboard.selectFrom')}
         locale={i18n.language} previousMonthLabel={t('associationDashboard.previousMonth')} nextMonthLabel={t('associationDashboard.nextMonth')}
         cancelLabel={t('common.cancel')} onSelect={selectCustomDate} onClose={() => setCalendarField(null)} />
+
+      {summary ? <AssociationSummaryCard key={`${fromDay}:${toDay}`} summary={summary} /> : null}
 
       <View style={styles.resultsBar}>
         <View>

@@ -31,6 +31,14 @@
     "nextMonth": "Next month",
     "from": "From", "to": "To", "search": "Search",
     "dateHint": "Search up to 5 years of reports. The range includes full days based on the acceptance date.",
+    "summary": {
+      "total": "Total reports",
+      "byDate": "Reports by acceptance date",
+      "day": "By day",
+      "month": "By month",
+      "bucketCount_one": "{{count}} accepted report",
+      "bucketCount_other": "{{count}} accepted reports"
+    },
     "results": "Accepted reports",
     "count_one": "{{count}} report in this range", "count_other": "{{count}} reports in this range",
     "export": "Export CSV", "exporting": "Preparing file…",
