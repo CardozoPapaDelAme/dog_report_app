@@ -3,6 +3,8 @@
 This document is the exact domain HTTP contract. All routes are owned by one
 plain-JavaScript Hono app deployed as Supabase Edge Function `api`. The managed
 invocation prefix is `/functions/v1/api`; paths below are relative to it.
+The API implements no CORS handling (browser preflight `OPTIONS` returns 404),
+so browser/Expo web clients cannot call it; only native clients are supported.
 [`../db/schema.sql`](../db/schema.sql) is the peer persistence contract and
 [`DATA-MODEL.md`](DATA-MODEL.md) owns state semantics. A discrepancy is a release
 blocker; neither contract silently overrides the other.
@@ -83,6 +85,11 @@ Body:
 `dog` fields are nullable; `details` follows the incident contract in
 [`DATA-MODEL.md`](DATA-MODEL.md). A new row requires `client_created_at` in
 `[server now - 30 days, server now + 1 hour]` and an active environment geofence.
+For non-production photo-upload verification before a zone fixture exists, the
+backend may be explicitly configured with
+`ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE=true`; this only bypasses the
+missing-active-geofence failure. If an active geofence exists, outside points
+still fail, and production must leave the flag unset.
 Mock/imprecise/honeypot input enters review. The server hashes origin material.
 
 The Service first checks an existing `id` and canonical submission hash. Identical
@@ -90,8 +97,10 @@ replay returns `200` and the original result without consuming rate quota, even 
 the geofence changed. Changed content returns `409 report_id_payload_conflict`.
 Only a new identity atomically consumes the durable `report` hourly bucket; an
 exhausted bucket returns `429 report_rate_limit_exceeded` with `Retry-After` and no
-mutation. A photo-free report is immediately evaluated by TrustService with
-nullable photo signals and the active policy version.
+mutation. Known report storage connection failures return
+`503 database_unavailable`; permission, schema, or migration mismatches return
+`503 preflight_mismatch`. A photo-free report is immediately evaluated by
+TrustService with nullable photo signals and the active policy version.
 
 Response `ReportReceiptView`:
 
@@ -445,7 +454,7 @@ does no work. Scheduler retries use bounded backoff and converge.
 | 415 | `unsupported_photo_type` |
 | 422 | `photo_decode_failed` |
 | 429 | `report_rate_limit_exceeded`, `flag_rate_limit_exceeded`, `photo_rate_limit_exceeded` |
-| 503 | `geofence_not_configured`, `configuration_unavailable`, `dependency_unavailable`, `preflight_mismatch` |
+| 503 | `geofence_not_configured`, `configuration_unavailable`, `database_unavailable`, `dependency_unavailable`, `preflight_mismatch` |
 
 Transient 5xx responses preserve local queue/photo state for bounded retry.
 Controllers map known persistence codes explicitly; unknown errors become

@@ -88,10 +88,54 @@ schema policies.
    `EXPECTED_SUPABASE_PROJECT_REF`, `EXPECTED_DEPLOYMENT_ENVIRONMENT`, and
    `APPROVED_PHOTOS_BUCKET`; `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` remain
    provider-managed server configuration.
+   Admin configuration, zone-set and duplicate routes return
+   `503 preflight_mismatch` unless `EXPECTED_DEPLOYMENT_ENVIRONMENT` is set to
+   `staging` or `production` and equals `public.deployment_metadata.environment`.
+   Supabase never shows secret values back; `supabase secrets list` shows names
+   and digests only. When retention scheduling is configured, regenerate
+   `INTERNAL_RETENTION_SECRET` and set the same value on both the Function and
+   the scheduler together.
 7. Configure/restrict the MapTiler public key and verify attribution/quota.
+   Until that plan is approved the app uses the interim OpenFreeMap style by
+   default (no key; see the ADR-008 amendment); set `EXPO_PUBLIC_MAP_STYLE_URL`
+   in the client build to switch providers.
 8. For a demo/test project, import the INEGI geometry only as a clearly labeled
    candidate/test fixture. An approved live project must fail closed until the
    Asociación de Hoteles de Chihuahua approves the exact checksum/version.
+   While photo upload is being verified before that fixture exists, a temporary
+   non-production Function secret `ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE=true`
+   may be set. It only bypasses the missing-active-zone failure; once an active
+   zone exists, outside points still fail and production must leave this unset.
+
+### Current staging test geofence
+
+As of 2026-10-02 the staging project has one active zone set labeled
+`TEST ONLY - Creel INEGI candidate + Chihuahua, Delicias, Meoqui (team testing, not approved)`
+(`source_version` `test-creel-inegi-2025-v0.1+mun-08019-08021-08045-union`). It is a
+single `MultiPolygon` with three parts:
+
+- the INEGI Creel locality candidate (`080090034`, same raw response checksum as
+  [`product/GEOFENCE-CANDIDATE.md`](product/GEOFENCE-CANDIDATE.md));
+- the INEGI Chihuahua municipality boundary (`08019`); and
+- the union of the INEGI Delicias (`08021`) and Meoqui (`08045`) municipality
+  boundaries, added so the team can submit reports from Chihuahua city, Delicias
+  and Meoqui without being in Creel.
+
+Adjacent municipalities must be merged (polygon union) before upload: PostGIS
+rejects a `MultiPolygon` whose parts share edges (`ST_IsValid`), which the API
+reports as `400 invalid_request` "Zone set violates a storage constraint". The
+previous test set (Creel + Chihuahua only, 2026-10-01) is retired.
+
+Its activation reference is `TEST-ONLY: staging team testing (Creel + Chihuahua,
+Delicias, Meoqui), NOT approved by the Asociacion`. It was created and activated through `POST /admin/zone-sets` and
+`/activate`, so it is audited like any other zone set. Coordinates live only in
+the database, never in Git.
+
+This zone set must never be activated in production. To drop the test municipalities,
+create a new zone set with only the Creel geometry (compute `source_sha256` with
+`canonicalZoneGeometry` and `sha256Hex` from
+`supabase/functions/api/domain/zoneSet.js`) and activate it; activation replaces
+the test set atomically, so staging never runs without a geofence.
 
 ## Required preflight and promotion
 
@@ -107,6 +151,23 @@ multipart/body/memory and JPEG/PNG codec behavior; iOS/Android HEIC→JPEG outpu
 orientation and metadata; postgres.js with Supavisor pool mode/concurrency; project
 JWT/JWKS versus supported legacy verification; and managed-Free scheduling. An
 unproven spike blocks the affected capability and fails closed.
+
+## Post-deploy smoke check
+
+After deploying `api` or changing its secrets, verify against the target project:
+
+- `GET /functions/v1/api/health` returns 200.
+- With an Administrator access token, `GET /functions/v1/api/me` and
+  `GET /functions/v1/api/admin/configuration` return 200. A `503 preflight_mismatch`
+  on the latter means the environment secret is missing or does not match
+  `deployment_metadata.environment`.
+- `POST /auth/v1/signup` with the publishable key returns `422 signup_disabled`.
+
+Run the Supabase security and performance advisors after each migration. The
+current performance advisor still reports informational unindexed foreign keys
+and unused indexes; they are intentionally left unchanged at the prototype's low
+data volume. Leaked-password protection is a Pro-plan feature and stays disabled
+on Free (see [`SECURITY.md`](SECURITY.md)).
 
 ## Promotion and verification
 

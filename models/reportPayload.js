@@ -1,3 +1,5 @@
+import { isDogColor } from './dogColor.js';
+
 export const INCIDENT_TYPES = Object.freeze([
   'avistamiento_simple',
   'ataque_mascota',
@@ -171,6 +173,7 @@ export function createEmptyReportFormDraft() {
     cantidad_afectada: '',
     situacion: '',
     dog_size: '',
+    dog_color: '',
     has_collar: 'no_se',
     honeypot_website: '',
     honeypot_contact: '',
@@ -249,6 +252,11 @@ export function validateReportFormDraft(form) {
     errors.has_collar = { key: 'requiredChoice' };
   }
 
+  // '' = none/cleared. The form starts from the automatic detection; the user's
+  // choice (including clearing it) always wins.
+  const dogColor = textOrEmpty(value.dog_color);
+  if (dogColor && !isDogColor(dogColor)) errors.dog_color = { key: 'requiredChoice' };
+
   if (Object.keys(errors).length) {
     return { reportFields: null, errors };
   }
@@ -259,7 +267,7 @@ export function validateReportFormDraft(form) {
       sighting_type: sightingType,
       details,
       dog: {
-        predominant_color: null,
+        predominant_color: dogColor || null,
         size: dogSize,
         has_collar: collar,
       },
@@ -304,6 +312,13 @@ function normalizeDog(dog = {}) {
   };
 }
 
+// True only when on-device validation actually accepted the photo; null when it
+// was skipped (Expo Go, web, model error) or there is no photo.
+export function clientCheckPassedForPayload(draft) {
+  if (!draft.photo_file_uri) return null;
+  return draft.photo_validation?.status === 'accepted' ? true : null;
+}
+
 export function buildReportPayload({
   draft,
   reportFields,
@@ -336,7 +351,7 @@ export function buildReportPayload({
     }),
     photo: {
       expected: Boolean(draft.photo_file_uri),
-      client_check_passed: draft.photo_file_uri ? true : null,
+      client_check_passed: clientCheckPassedForPayload(draft),
     },
     anti_abuse: {
       device_fingerprint: deviceFingerprint,

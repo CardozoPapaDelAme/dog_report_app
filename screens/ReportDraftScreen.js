@@ -37,7 +37,7 @@ export default function ReportDraftScreen({ draft, loading = false, error = null
         <Text style={styles.subtitle}>{t('reportDraft.subtitle')}</Text>
 
         {photoUri ? (
-          <Image source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
+          <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
         ) : (
           <View style={styles.noPhoto}>
             <Text style={styles.noPhotoText}>{t('reportDraft.noPhoto')}</Text>
@@ -46,7 +46,7 @@ export default function ReportDraftScreen({ draft, loading = false, error = null
 
         {loading ? (
           <View style={styles.card}>
-            <ActivityIndicator color={colors.primary} />
+            <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
             <Text style={styles.metric}>{t('reportDraft.savingDraft')}</Text>
           </View>
         ) : null}

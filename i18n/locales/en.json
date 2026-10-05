@@ -77,9 +77,11 @@
   "common": {
     "yes": "Yes",
     "no": "No",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "loading": "Loading…"
   },
   "camera": {
+    "capture": "Take photo",
     "permissionTitle": "Allow camera access",
     "permissionBody": "The app opens directly to the camera to capture report evidence. The photo is validated on the phone before continuing.",
     "permissionButton": "Allow camera",
@@ -87,16 +89,32 @@
     "helper": "Take a clear photo of the dog",
     "admin": "Review",
     "staffLogin": "Staff login",
+    "openMap": "View map",
     "retryTitle": "Retake the photo",
+    "validating": "Validating photo…",
+    "retake": "Take another",
     "model": {
       "loading": "Loading model",
       "ready": "Offline validation ready",
       "missing": "Model pending",
       "error": "Model unavailable"
     },
+    "queue": {
+      "pendingTitle": "Reports saved for sync",
+      "pendingBody": "{{count}} report(s) are in the local queue. They will be sent when connectivity is available.",
+      "scheduledTitle": "Retry scheduled",
+      "scheduledBody": "{{count}} report(s) remain saved. The app will respect the waiting period before retrying.",
+      "syncingTitle": "Syncing reports",
+      "syncingBody": "Sending the local queue.",
+      "terminalTitle": "A report could not sync",
+      "terminalBody": "{{count}} report(s) need a new report if they are still necessary.",
+      "syncedTitle": "Reports synced",
+      "syncedBody": "The local queue is up to date.",
+      "retryNow": "Retry now"
+    },
     "rejections": {
-      "no_dog": "We did not detect a dog with enough confidence.",
-      "blurry": "The photo is blurry or lacks detail.",
+      "no_dog": "We did not detect a dog in the photo.",
+      "blurry": "The photo is blurry.",
       "model_missing": "The TFLite file must be versioned before photos can be accepted.",
       "model_unavailable": "The model is not ready yet. Try again in a few seconds."
     },
@@ -124,7 +142,7 @@
     "dogProbability": "Dog probability: {{value}}%",
     "blurVariance": "Laplacian variance: {{value}}",
     "back": "Back to camera",
-    "formPending": "Form in next delivery",
+    "formPending": "Form available",
     "errors": {
       "location_permission_denied": "Location permission is required to save where the report happened.",
       "default": "Try again from the camera."
@@ -142,6 +160,7 @@
     "retrySubmit": "Retry sync",
     "submitting": "Submitting…",
     "noPhoto": "No photo",
+    "photoPreview": "Preview of the report photo",
     "photoAttached": "Photo attached",
     "selectPlaceholder": "Select an option",
     "summaryTitle": "Report",
@@ -150,13 +169,18 @@
     "coordinates": "Coordinates: {{value}}",
     "accuracy": "Accuracy: {{value}}",
     "dogProbability": "Dog probability: {{value}}%",
-    "frozenTitle": "Payload frozen",
-    "frozenBody": "This report already has queued content. Retry uses the same UUID and same payload.",
     "successTitle": "Report submitted",
     "successBody": "The server accepted this report. It will not be sent again as a new report.",
+    "queuedTitle": "Report saved for sync",
+    "queuedBody": "The report stayed in the local queue. You can return to the camera; the app will retry when appropriate.",
     "photoPendingTitle": "Photo pending",
     "photoPendingBody": "The report was accepted and the photo is still processing or uploading. This screen keeps the state for the next stage.",
-    "errorTitle": "We could not complete the submission",
+    "photoRejectedTitle": "Photo rejected",
+    "photoRejectedBody": "The report was accepted, but the photo was not stored. Code: {{code}}.",
+    "errorTitle": "Error",
+    "errorCode": "Code: {{code}}",
+    "resultBack": "Back",
+    "resultRetry": "Try again",
     "onlyDescription": "This category has no additional questions.",
     "sections": {
       "incident": "Base details",
@@ -174,6 +198,7 @@
       "cantidad_afectada": "Number affected",
       "situacion": "Dog situation",
       "dog_size": "Approximate size",
+      "dog_color": "Approximate colour",
       "has_collar": "Wearing a collar?"
     },
     "incidents": {
@@ -187,6 +212,15 @@
     "sighting": {
       "solitario": "Solitary",
       "manada": "Pack"
+    },
+    "dogColorDetected": "Detected colour: {{color}}. It is only a hint; you can change or clear it.",
+    "dogColor": {
+      "negro": "Black",
+      "blanco": "White",
+      "café": "Brown",
+      "gris": "Grey",
+      "dorado": "Golden",
+      "mixto": "Spotted / mixed"
     },
     "dogSize": {
       "chico": "Small",
@@ -230,14 +264,26 @@
       "configuration_unavailable": "The server's active configuration is not available right now.",
       "dependency_unavailable": "The service is unavailable right now. The report stays in the local queue.",
       "preflight_mismatch": "The server environment needs technical review before accepting reports.",
+      "storage_unavailable": "Private photo storage is not configured or is unavailable. The report stays queued for retry.",
+      "database_unavailable": "The database is not available right now. The report stays queued for retry.",
       "photo_too_large": "The photo exceeds the server size limit.",
+      "image_too_large": "The photo dimensions exceed the server limit.",
       "unsupported_photo_type": "The server only accepts sanitized JPEG or PNG photos.",
+      "unsupported_media_type": "The server only accepts sanitized JPEG or PNG photos.",
       "photo_decode_failed": "The server could not read the uploaded image.",
+      "invalid_image_content": "The server could not read the uploaded image.",
       "photo_rate_limit_exceeded": "Photo upload reached a temporary limit and will retry later.",
       "photo_content_conflict": "This report already has a different photo attached.",
+      "photo_not_expected": "The server recorded this report as submitted without a photo.",
+      "photo_processing_conflict": "The photo processing state changed during upload. Retry synchronization.",
       "photo_not_available": "The photo is not available for this report.",
+      "report_required_before_photo_upload": "The photo will not upload until the server confirms the report. Retry synchronization.",
+      "photo_uri_required": "The local photo file could not be found for upload.",
+      "photo_upload_directory_unavailable": "The app could not prepare local space to reduce the photo before upload.",
       "invalid_response": "The server response could not confirm the report state.",
       "network_unavailable": "There is not enough connectivity. The report stays saved for sync.",
+      "request_timeout": "The server took too long to respond. The report stays saved for retry.",
+      "api_base_url_missing": "The app does not have an API URL configured. Check EXPO_PUBLIC_API_BASE_URL.",
       "request_failed": "The request could not be completed. Check your connection and try again."
     }
   },
@@ -522,5 +568,82 @@
       "preflight_mismatch": "The service environment is not ready for this operation."
     },
     "selectionWarning": "Invalid selection: review its connections before confirming."
+  },
+  "map": {
+    "title": "Reports map",
+    "back": "Back to camera",
+    "loading": "Loading the map",
+    "empty": "No reports in this area",
+    "error": "We could not load the map.",
+    "retry": "Retry",
+    "offline": "The map is not available offline",
+    "offlineReporting": "You can still create reports; they will be sent when you are back online.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomLevel": "Zoom {{zoom}}",
+    "close": "Close",
+    "clusterItem": "{{count}} reports, {{severity}} severity",
+    "pinItem": "Report: {{type}}",
+    "severity": {
+      "high": "high",
+      "medium": "medium",
+      "low": "low"
+    },
+    "cluster": {
+      "title": "{{count}} reports in this area",
+      "highest": "Highest severity: {{type}}",
+      "viewReports": "View area reports"
+    },
+    "pin": {
+      "color": "Color",
+      "occurredAt": "Date and time",
+      "flagged": "The community flagged this report",
+      "photo": "Report photo"
+    },
+    "expoGo": {
+      "notice": "The interactive map requires the development build. Meanwhile you can browse the recent public reports.",
+      "hint": "See the README to install the development build.",
+      "title": "Recent public reports",
+      "empty": "There are no public reports yet.",
+      "error": "We could not load the reports.",
+      "offline": "Offline. Try again.",
+      "approximate": "Locations are approximate."
+    }
+  },
+  "zone": {
+    "title": "Area reports",
+    "loading": "Loading reports",
+    "empty": "No visible reports in this area",
+    "error": "We could not load the area reports.",
+    "offline": "No connection. Try again.",
+    "approximate": "Locations are approximate."
+  },
+  "flag": {
+    "open": "Report",
+    "title": "Report this post",
+    "reasonLabel": "Reason",
+    "detailLabel": "Details (optional)",
+    "counter": "{{count}}/{{max}}",
+    "tooLong": "Details cannot exceed {{max}} characters.",
+    "submit": "Send report",
+    "sending": "Sending...",
+    "cancel": "Cancel",
+    "reasons": {
+      "foto_falsa": "Fake photo",
+      "contenido_inapropiado": "Inappropriate content",
+      "burla": "Mockery or insult",
+      "no_es_callejero": "Not a stray dog",
+      "incidental_pii": "Contains personal data",
+      "otro": "Other"
+    },
+    "outcome": {
+      "submitted": "Thank you. We will review the report.",
+      "already_flagged": "You already flagged this report.",
+      "not_flaggable": "This report can no longer be flagged.",
+      "rate_limited": "You sent many flags. Try again in {{minutes}} min.",
+      "offline": "No connection. Try again.",
+      "invalid": "We could not send the flag. Try again later.",
+      "unavailable": "We could not send the flag. Try again later."
+    }
   }
 }

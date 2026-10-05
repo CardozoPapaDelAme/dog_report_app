@@ -82,8 +82,9 @@ or retry state through spies/fakes before any live-project exercise.
 - Report UUID replay with identical payload is idempotent even after the active
   geofence no longer covers the original point; changed payload fails.
 - New submissions outside the current geofence still reject; missing geofence
-  fails closed; boundary point behavior is explicit; imprecise/mock inputs remain
-  pending.
+  fails closed unless the explicit non-production
+  `ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE=true` photo-verification flag is set;
+  boundary point behavior is explicit; imprecise/mock inputs remain pending.
 - `client_created_at` 31 days in the past or more than 1 hour in the future rejects
   new rows and does not block identical replay.
 - Details contract receives one boundary/unknown-key/type test per incident,
@@ -166,11 +167,40 @@ PUBLIC_MAP_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:5543
   supabase/functions/api/tests/publicMapPostgres.test.js
 ```
 
+## Database suites: how they run and known issues
+
+Each PostgreSQL suite is opt-in and requires a **fresh disposable loopback
+PostGIS database** with a fixed name, supplied through its own URL variable:
+
+| Suite file | Database name | Variable |
+|---|---|---|
+| `tests/configurationPostgres.test.js` | `fab1_configuration_test` | `CONFIGURATION_TEST_DATABASE_URL` |
+| `tests/zonePostgres.test.js` | `fab2_zone_test` | `ZONE_TEST_DATABASE_URL` |
+| `tests/duplicatePostgres.test.js` | `fab3_duplicate_test` | `DUPLICATE_TEST_DATABASE_URL` |
+| `tests/flag-postgres.test.js` | `fab4_flag_test` | `FLAG_TEST_DATABASE_URL` |
+| `tests/publicMapPostgres.test.js` | `fab_public_map_test` | `PUBLIC_MAP_TEST_DATABASE_URL` |
+
+Suites refuse non-loopback URLs, other database names and nonempty schemas. The
+flag and public map suites create cluster-level roles, so each needs a fresh
+cluster (container) per run.
+
+Policy regression: a step in `tests/zonePostgres.test.js` reads `pg_policies` and
+asserts the exact set of permissive `app_backend` policies on `config_versions`,
+`zone_sets` and `zones`: one per table and granted command, no `FOR ALL`, no
+`zones` UPDATE and no DELETE policies. This guards against the Supabase
+advisor `multiple_permissive_policies`; the migration is
+`20261001120000_split_backend_mutate_policies.sql`.
+
+The flag and public map suites load their migrations from hardcoded lists; keep
+those lists complete (including `20260914183000_report_replay_lookup_rls.sql`,
+which defines `app_private.requested_report_id()`) when adding a migration.
+
+
 ## Mobile/native tests
 
 - Build development and release clients for supported iOS/Android targets; Expo Go
   is not an acceptance environment.
-- Test the bundled MobileNetV3-Small INT8 TFLite model offline on representative
+- Test the bundled MobileNetV3-Small (float32) TFLite model offline on representative
   devices, recording model checksum, ImageNet dog-label set, 224×224 preprocessing,
   thresholds, confusion matrix/sample set, peak memory, and latency. Test
   dog/no-dog and blur/quality retry copy separately.
@@ -229,7 +259,7 @@ this disposable cluster; never run it against Wildogscanner or a shared cluster.
 CONFIGURATION_TEST_DATABASE_URL='postgres://LOCAL_TEST_OWNER:LOCAL_TEST_PASSWORD@127.0.0.1:55432/fab1_configuration_test' \
   deno test --no-lock --allow-env --allow-net=127.0.0.1:55432 --allow-read=db/schema.sql \
   --config supabase/functions/api/deno.json \
-  supabase/functions/api/tests/configuration-postgres.test.js
+  supabase/functions/api/tests/configurationPostgres.test.js
 ```
 
 Replace the local-only credentials and port with those of that disposable
@@ -304,7 +334,7 @@ separate Asociación approval and Administrator note, protected canonical `/api`
 routes, Service profile/environment rechecks, draft-only creation, and transaction
 rollback for missing/corrupt targets or a one-active-zone violation.
 
-The opt-in `tests/zone-postgres.test.js` applies the complete ordered migration
+The opt-in `tests/zonePostgres.test.js` applies the complete ordered migration
 chain to a fresh disposable **PostgreSQL with PostGIS** database. It proves real
 PostGIS rejection of self-intersecting and empty geometry, narrow `retired_at`
 privilege for `app_backend`, RLS/grant denial of direct mutations, atomic
@@ -329,7 +359,7 @@ ZONE_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:55433/fab2
   deno test --no-lock --allow-env --allow-net=127.0.0.1:55433 \
   --allow-read=supabase/migrations \
   --config supabase/functions/api/deno.json \
-  supabase/functions/api/tests/zone-postgres.test.js
+  supabase/functions/api/tests/zonePostgres.test.js
 docker stop fab2-postgis-test
 ```
 
@@ -361,7 +391,7 @@ docker exec fab3-postgis-test psql -U postgres -d postgres \
 DUPLICATE_TEST_DATABASE_URL='postgres://postgres:local-test-only@127.0.0.1:55434/fab3_duplicate_test' \
   deno test --no-lock --allow-env --allow-net=127.0.0.1:55434 \
   --allow-read=supabase/migrations --config supabase/functions/api/deno.json \
-  supabase/functions/api/tests/duplicate-postgres.test.js
+  supabase/functions/api/tests/duplicatePostgres.test.js
 docker stop fab3-postgis-test
 ```
 
@@ -479,6 +509,10 @@ correct it and enter a reason, publish once, then verify the new version and aud
 in staging. Confirm the old configuration remains in history. No live publication,
 account creation, migration or deployment was performed for L4.
 
+> Update 2026-10-01: the server flow was later exercised on staging with real
+> Administrator and Asociación sessions (see `README.md`). Native-device checks
+> listed here remain pending.
+
 ## RF15 / RF18 / RNF07 Expo login (L3)
 
 Run the focused login and secure-storage checks with:
@@ -539,7 +573,8 @@ Reference APIs: [DocumentPicker SDK 57](https://docs.expo.dev/versions/v57.0.0/s
 These exports are not a physical-device/emulator run: native picker cancellation,
 keyboard/focus, screen-reader feedback and hardware back remain manual checks.
 
-The postponed real Administrator check remains pending. In an agreed staging
+The postponed real Administrator check was pending at delivery time (see the
+2026-10-01 staging update under L4). In an agreed staging
 project, with the canonical FAB-2 routes deployed, enter **Gestionar zonas** from
 moderation. Select an explicitly labeled reviewed test geometry, verify its
 checksum, enter source metadata and save. Verify that the old zone remains active
@@ -599,7 +634,8 @@ or a live authenticated session. In the app, use Administrator login → moderat
 main base; it is not a new login implementation in L6.
 
 Web, Android and iOS exports pass. These are compilation checks, not device runs.
-The postponed real Administrator/JWT check remains pending, along with native
+The postponed real Administrator/JWT check was pending at delivery time (see the
+2026-10-01 staging update under L4), along with native
 screen-reader, keyboard and Android hardware-back verification. Deploy the single
 API with the new candidate GET and restored FAB-3 URLs before checking the screen
 against managed staging. Without that backend version, L6 fails visibly rather
@@ -617,3 +653,107 @@ moderation are intentionally distinct.
 ## RIC-4 / RIC-5 Asociación dashboard, filters and CSV export
 
 Run `deno test --no-lock --config supabase/functions/api/deno.json models/associationReport.test.js models/associationSummary.test.js services/associationReportApi.test.js hooks/associationReportLoader.test.js` for quick date presets, custom date validation, daily/monthly acceptance-date summaries, projection, pagination and CSV model checks. Run `npx playwright test associationDashboard.spec.js` for quick-filter query bounds, custom calendar selection, total and selectable daily/monthly bars after complete pagination, mobile cards/desktop table, filtered export row parity, loading through the last cursor page, and the explicit empty-range state. The browser fixture mocks RIC-2; it does not prove a live managed-project session or native share-sheet behavior. Native CSV sharing uses `expo-sharing` and requires an Expo development build.
+
+## ERI-9 public map
+
+The app consumes `GET /public/clusters` and `GET /public/reports` (RF10–RF14,
+HU-10–HU-14). Run the client unit tests (zoom bands, viewport, severity, response
+validation, request building, debounced loader with stale-response protection, map
+style configuration):
+
+```bash
+npx -y deno test --no-lock --config supabase/functions/api/deno.json models/publicMap.test.js services/publicMapApi.test.js hooks/publicMapLoader.test.js services/mapConfig.test.js
+```
+
+Run the browser tests with `npx playwright test publicMap.spec.js` (or
+`npm run test:public-map-ui`). The `?map` fixture entry renders the real
+`PublicMapScreen` with the web stub `components/PublicMapView.web.js`; the spec
+intercepts `**/public/clusters**` and `**/public/reports**`, and `/public/*` is
+never served by the fixture server. Cases: clusters with counts and severity;
+six-type breakdown on cluster tap; zoom 13 to 17 switching to `/public/reports`
+pins; pin details with and without the flag notice; empty state; 500 then 200
+retry; offline (`network_unavailable`) message; no `Authorization` header on public
+requests; viewport query parameters sent all-or-none.
+
+Expo Go fallback: `/?map&expo-go` makes the fixture pass `mapAvailable={false}` to
+`PublicMapScreen` (test-only override; production reads `expo-constants`). Two cases
+in `publicMap.spec.js` cover the notice, the recent list built from the mocked
+`GET /public/reports?limit=100`, row to pin sheet to **Denunciar** to flag sheet, an
+error that recovers on retry, and that no `/public/clusters` request is made. Run
+them with `npx playwright test publicMap.spec.js -g "Expo Go"`. The pure detection
+helper has Deno tests in `services/mapAvailability.test.js`. Real Expo Go behavior
+(that MapLibre is never loaded) is proven by a manual pass in Expo Go.
+
+The fixture bundle aliases `expo-constants` to `tests/ui/expo-constants-stub.js`
+(always a development build) and `expo-location` to `tests/ui/expo-location-stub.js`
+(permission denied, so the map centres on Creel) and resolves
+`PublicMapView.js` to the web stub.
+
+What the web stub proves: the screen's states, the zoom-to-endpoint switch, the
+data shown for clusters and pins, the modal and sheet content, and the HTTP
+contract used by the client. What it does **not** prove: native MapLibre
+rendering (cluster circle size and colour, pins), pan/pinch gestures and real
+viewport bounds, tile and style loading from OpenFreeMap/MapTiler, attribution
+placement on the map surface, location permission prompts, and photo loading.
+These need a device or Expo development build (`npx expo run:ios` or
+`npx expo run:android`) and a manual pass against the staging API.
+
+## ERI-10 zone detail and flag
+
+The cluster modal offers **Ver reportes de la zona**: the app loads
+`GET /public/reports?limit=1000`, keeps the reports within the zoom-band radius of
+the cluster centre (approximate locations only; there is no member endpoint) and
+lists them; a row opens the pin sheet, which has **Denunciar**. The flag form sends
+`POST /reports/:report_id/flags` anonymously with `reason`, optional `detail` and
+`device_fingerprint` in the body. Unit tests:
+
+```bash
+npx -y deno test --no-lock --config supabase/functions/api/deno.json services/flagApi.test.js models/reportFlag.test.js models/publicMap.test.js hooks/zoneReports.test.js hooks/reportFlagSubmit.test.js
+```
+
+`npx playwright test publicMap.spec.js` adds: zone list with only in-area reports,
+empty and error-then-retry states; flag 201 (neutral thanks, body has `reason` and
+a fingerprint of 16+ characters, no `detail` when blank, trimmed `detail`, no
+`Authorization`); 409, 404 and 429 (`Retry-After: 120` shows 2 min) messages;
+aborted request keeps the form and retries; submit disabled without a reason and
+above 1000 characters. The stub proves the UI states and the HTTP contract; it does
+not prove the server limits, auto-hide, native sheet gestures or the SQLite device
+fingerprint (the web fixture uses `localStorage`).
+
+## On-device photo validation and dog colour (RF09, RF22)
+
+```bash
+npx -y deno test --no-lock --config supabase/functions/api/deno.json services hooks models
+npx playwright test reportForm.spec.js
+npx expo export --platform android --output-dir /tmp/out-a   # bundles the .tflite
+npx expo export --platform web --output-dir /tmp/out-w       # must exclude it
+```
+
+Unit-proven (Deno, synthetic data): softmax/dog aggregation/blur maths
+(`models/photoValidation.test.js`), base64 and JPEG decode (`services/photoPixels.test.js`),
+inference wiring and output types (`services/photoInference.test.js`), predominant
+colour for synthetic black/white/brown/grey/golden/mixed/unclear images
+(`models/dogColor.test.js`), the fail-open colour step
+(`services/photoColorFlow.test.js`) and that `predominant_color` follows the form
+(auto value, manual override, cleared = null) in `models/reportPayload.test.js`.
+Playwright (`tests/ui/reportForm.spec.js`) shows the detected colour, changes and
+clears it, and checks the POST body. Colour is a signal: the server only compares
+`lower(color)` equality for duplicates.
+
+Device-only (not proven here): TFLite model load, inference latency and memory,
+real-photo accuracy of the dog/blur thresholds (dog probability 0.3, Laplacian
+variance 120 on 224 px are provisional), and colour accuracy on real photos
+(lighting, backgrounds). Expo Go and web skip the model by design.
+
+## RNF12 offline auto-sync and model cache reset
+
+- Unit-proven (Deno, `hooks/draftAutoSync.test.js`): an offline-to-online transition schedules one pass; bursts inside the 2 s debounce coalesce; a trigger during an in-flight pass (or a manual sync) does not start another; failures are swallowed and the next trigger retries; eligibility (`draft`, `terminal_error`, `synced` and drafts inside backoff/Retry-After are skipped) via `draftSyncIsDue`.
+- Unit-proven (`services/photoValidationFlow.test.js`): a hung model load times out, the cached promise is dropped, and the next photo starts a new load; successful loads stay cached.
+- Device-only (not proven by unit tests): toggling airplane mode on a development build and watching a queued draft sync after reconnect; `expo-network` events and `AppState` foreground behaviour on real Android/iOS; web `online`/`offline` window events in a browser.
+
+# RNF06 i18n and accessibility
+
+- Unit-proven (Deno, `i18n/locales.test.js`): `es.json` and `en.json` have identical deep key sets, no empty or non-string values, and identical `{{placeholder}}` names per key. `i18n/deviceLanguage.test.js` proves language selection: Spanish by default, English when the device/browser language is English.
+- UI-proven (Playwright): the suite pins `locale: 'es-MX'`; `tests/ui/language.spec.js` checks the Asociación dashboard in English with labelled date-filter controls.
+- Static convention: every `Pressable`/`TextInput` in `screens/` and `components/` has `accessibilityRole` and a label (text child or `accessibilityLabel`); radios/checkboxes/selects expose `accessibilityState`; photo previews are labelled; standalone spinners carry a loading label; modals set `accessibilityViewIsModal`.
+- Manual (not proven): a TalkBack/VoiceOver pass on a development build, and layout with longer English strings. Run it before release.

@@ -1,6 +1,6 @@
 import { apiRequest } from "./apiClient.js";
 
-const PROFILE_PATH = "/api/me";
+const PROFILE_PATH = "/me";
 
 export class AuthServiceError extends Error {
   constructor(message, { code = "auth_request_failed", status = null } = {}) {

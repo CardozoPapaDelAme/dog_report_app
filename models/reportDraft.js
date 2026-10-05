@@ -22,6 +22,14 @@ export const REPORT_DRAFT_STATE = Object.freeze({
   TERMINAL_ERROR: 'terminal_error',
 });
 
+export const REPORT_DRAFT_PENDING_STATES = Object.freeze([
+  REPORT_DRAFT_STATE.QUEUED,
+  REPORT_DRAFT_STATE.SUBMITTING,
+  REPORT_DRAFT_STATE.UPLOADING,
+  REPORT_DRAFT_STATE.AWAITING_PROCESSING,
+  REPORT_DRAFT_STATE.RETRY_WAIT,
+]);
+
 export const SERVER_MODERATION_STATES = Object.freeze([
   'pending_review',
   'visible',
@@ -37,6 +45,11 @@ const DEFAULT_RETRY_BASE_MS = 30_000;
 const DEFAULT_RETRY_MAX_MS = 15 * 60_000;
 
 export { buildReportPayload } from './reportPayload.js';
+export {
+  photoStatusAllowsLocalCompletion,
+  photoStatusIsPending,
+  photoStatusIsTerminal,
+} from './photoState.js';
 
 function iso(value) {
   if (value instanceof Date) return value.toISOString();
@@ -273,14 +286,6 @@ export function applySyncErrorToDraft(draft, error, options = {}) {
     : markDraftTerminalError(draft, error, options);
 }
 
-export function photoStatusIsPending(status) {
-  return Boolean(status?.photo_expected && !status?.processing_complete);
-}
-
-export function photoStatusAllowsLocalCompletion(status) {
-  return Boolean(status?.local_cleanup_allowed);
-}
-
 export function draftSyncIsDue(draft, now = new Date()) {
   if (!draft || draft.local_state === REPORT_DRAFT_STATE.DRAFT) return false;
   if (
@@ -291,4 +296,46 @@ export function draftSyncIsDue(draft, now = new Date()) {
   }
   if (!draft.next_retry_at) return true;
   return new Date(draft.next_retry_at).getTime() <= new Date(now).getTime();
+}
+
+export function summarizeReportDraftQueue(drafts = [], {
+  now = new Date(),
+  isSyncing = false,
+} = {}) {
+  const currentTime = new Date(now).getTime();
+  let pendingCount = 0;
+  let dueCount = 0;
+  let terminalCount = 0;
+  let nextRetryAt = null;
+
+  for (const draft of drafts ?? []) {
+    if (!draft) continue;
+    if (draft.local_state === REPORT_DRAFT_STATE.TERMINAL_ERROR) {
+      terminalCount += 1;
+      continue;
+    }
+    if (!REPORT_DRAFT_PENDING_STATES.includes(draft.local_state)) continue;
+
+    pendingCount += 1;
+    if (draftSyncIsDue(draft, now)) dueCount += 1;
+
+    if (draft.next_retry_at) {
+      const retryTime = new Date(draft.next_retry_at).getTime();
+      if (Number.isFinite(retryTime) && retryTime > currentTime) {
+        if (!nextRetryAt || retryTime < new Date(nextRetryAt).getTime()) {
+          nextRetryAt = new Date(retryTime).toISOString();
+        }
+      }
+    }
+  }
+
+  const syncing = Boolean(isSyncing);
+  return {
+    pendingCount,
+    dueCount,
+    terminalCount,
+    nextRetryAt,
+    isSyncing: syncing,
+    canRetryNow: pendingCount > 0 && dueCount > 0 && !syncing,
+  };
 }

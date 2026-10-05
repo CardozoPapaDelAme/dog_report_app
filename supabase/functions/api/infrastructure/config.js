@@ -10,5 +10,7 @@ export function getConfig() {
     expectedProjectRef: Deno.env.get('EXPECTED_SUPABASE_PROJECT_REF') ?? '',
     expectedEnvironment: Deno.env.get('EXPECTED_DEPLOYMENT_ENVIRONMENT') ?? '',
     approvedPhotosBucket: Deno.env.get('APPROVED_PHOTOS_BUCKET') ?? '',
+    allowReportsWithoutActiveGeofence:
+      Deno.env.get('ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE') === 'true',
   };
 }

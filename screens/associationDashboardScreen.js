@@ -148,7 +148,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
       {exportError ? <Text accessibilityRole="alert" style={styles.error}>{t('associationDashboard.exportError')}</Text> : null}
 
       {status ? <View style={styles.status}>
-        {reports.phase === 'loading' ? <ActivityIndicator color="#005a25" /> : null}
+        {reports.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('common.loading')} color="#005a25" /> : null}
         <Text style={styles.statusText}>{status}</Text>
         {reports.phase === 'error' ? <Pressable accessibilityRole="button" onPress={reports.reload} style={styles.retry}>
           <Text style={styles.retryText}>{t('associationDashboard.retry')}</Text>

@@ -17,7 +17,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useSubmitReport } from '../hooks/useSubmitReport.js';
+import { DOG_COLORS, detectedDogColorFromDraft } from '../models/dogColor.js';
 import { REPORT_DRAFT_STATE } from '../models/reportDraft.js';
+import {
+  photoStatusIsTerminal,
+  photoStatusSucceeded,
+} from '../models/photoState.js';
 import {
   createEmptyReportFormDraft,
   INCIDENT_TYPES,
@@ -118,6 +123,27 @@ function reportErrorText(error, t) {
   });
 }
 
+function reportErrorCode(error) {
+  return error?.code ?? 'request_failed';
+}
+
+function photoRejectedInfo(draft) {
+  const status = draft?.photo_status;
+  if (!status || !photoStatusIsTerminal(status) || photoStatusSucceeded(status)) {
+    return null;
+  }
+  return {
+    code: status.rejection_code ?? status.state ?? 'photo_not_uploaded',
+  };
+}
+
+function textInputIdentity(id, name) {
+  if (Platform.OS !== 'web') {
+    return { nativeID: id };
+  }
+  return { id, name, nativeID: id };
+}
+
 function Button({ title, onPress, disabled, busy, secondary, testID }) {
   return (
     <Pressable
@@ -186,11 +212,13 @@ function TextField({
   multiline = false,
 }) {
   const message = fieldErrorText(error, t);
+  const inputId = `report-${field}`;
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        testID={`report-${field}`}
+        testID={inputId}
+        {...textInputIdentity(inputId, field)}
         accessibilityLabel={label}
         accessibilityHint={message}
         aria-invalid={Boolean(error)}
@@ -234,12 +262,25 @@ export default function ReportFormScreen({
   const canEdit = draft?.local_state === REPORT_DRAFT_STATE.DRAFT && !submit.submitting;
   const frozen = draft?.local_state && draft.local_state !== REPORT_DRAFT_STATE.DRAFT;
   const validation = draft?.photo_validation;
+  const detectedColor = detectedDogColorFromDraft(draft);
   const photoUri = draft?.photo_file_uri;
+  const submittedDraft = submit.submittedDraft ?? draft;
+  const photoRejection = photoRejectedInfo(submittedDraft);
   const statusError = submit.error ?? draft?.last_error ?? error;
   const generalError = reportErrorText(statusError, t);
+  const showSuccessDialog = submit.phase === 'success' || submit.phase === 'photo_rejected';
+  const showQueuedDialog = submit.phase === 'retry_wait';
+  const showErrorDialog = Boolean(
+    draft &&
+      generalError &&
+      !showSuccessDialog &&
+      !showQueuedDialog &&
+      submit.phase !== 'photo_pending' &&
+      !submit.submitting,
+  );
 
   useEffect(() => {
-    setForm(createEmptyReportFormDraft());
+    setForm({ ...createEmptyReportFormDraft(), dog_color: detectedDogColorFromDraft(draft) });
   }, [draft?.id]);
 
   useEffect(() => {
@@ -275,6 +316,13 @@ export default function ReportFormScreen({
       })),
     [t],
   );
+  const colorOptions = useMemo(
+    () => DOG_COLORS.map((value) => ({
+      value,
+      label: t(`reportForm.dogColor.${value}`),
+    })),
+    [t],
+  );
   const collarOptions = useMemo(
     () => ['no_se', 'si', 'no'].map((value) => ({
       value,
@@ -298,6 +346,10 @@ export default function ReportFormScreen({
   );
 
   function submitForm() {
+    void submit.submit(form);
+  }
+
+  function retrySubmit() {
     void submit.submit(form);
   }
 
@@ -337,25 +389,11 @@ export default function ReportFormScreen({
             <>
               <View style={styles.photoCard}>
                 {photoUri ? (
-                  <Image source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
+                  <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
                 ) : (
                   <View style={styles.noPhoto} />
                 )}
               </View>
-
-              {frozen ? (
-                <View style={styles.notice}>
-                  <Text style={styles.noticeTitle}>{t('reportForm.frozenTitle')}</Text>
-                  <Text style={styles.noticeText}>{t('reportForm.frozenBody')}</Text>
-                </View>
-              ) : null}
-
-              {submit.phase === 'success' ? (
-                <View testID="report-success" style={styles.success} accessibilityRole="alert">
-                  <Text style={styles.successTitle}>{t('reportForm.successTitle')}</Text>
-                  <Text style={styles.successText}>{t('reportForm.successBody')}</Text>
-                </View>
-              ) : null}
 
               {submit.phase === 'photo_pending' ? (
                 <View testID="report-photo-pending" style={styles.notice} accessibilityRole="alert">
@@ -364,10 +402,12 @@ export default function ReportFormScreen({
                 </View>
               ) : null}
 
-              {generalError ? (
-                <View style={styles.errorBanner} accessibilityRole="alert">
-                  <Text style={styles.errorTitle}>{t('reportForm.errorTitle')}</Text>
-                  <Text style={styles.errorBody}>{generalError}</Text>
+              {submit.phase === 'photo_rejected' || photoRejection ? (
+                <View testID="report-photo-rejected" style={styles.notice} accessibilityRole="alert">
+                  <Text style={styles.noticeTitle}>{t('reportForm.photoRejectedTitle')}</Text>
+                  <Text style={styles.noticeText}>
+                    {t('reportForm.photoRejectedBody', { code: photoRejection?.code ?? 'photo_not_uploaded' })}
+                  </Text>
                 </View>
               ) : null}
 
@@ -489,6 +529,22 @@ export default function ReportFormScreen({
                   allowDeselect
                 />
                 <ChoiceGroup
+                  label={t('reportForm.fields.dog_color')}
+                  field="dog_color"
+                  value={form.dog_color}
+                  options={colorOptions}
+                  disabled={!canEdit}
+                  error={submit.fieldErrors.dog_color}
+                  t={t}
+                  onChange={(value) => updateField('dog_color', value)}
+                  allowDeselect
+                />
+                {detectedColor ? (
+                  <Text testID="report-dog_color-detected" style={styles.colorHint}>
+                    {t('reportForm.dogColorDetected', { color: t(`reportForm.dogColor.${detectedColor}`) })}
+                  </Text>
+                ) : null}
+                <ChoiceGroup
                   label={t('reportForm.fields.has_collar')}
                   field="has_collar"
                   value={form.has_collar}
@@ -516,6 +572,7 @@ export default function ReportFormScreen({
               <View style={styles.honeypot} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
                 <TextInput
                   testID="report-honeypot-website"
+                  {...textInputIdentity('report-honeypot-website', 'honeypot_website')}
                   value={form.honeypot_website}
                   onChangeText={(value) => updateField('honeypot_website', value)}
                   editable={canEdit}
@@ -523,6 +580,7 @@ export default function ReportFormScreen({
                 />
                 <TextInput
                   testID="report-honeypot-contact"
+                  {...textInputIdentity('report-honeypot-contact', 'honeypot_contact')}
                   value={form.honeypot_contact}
                   onChangeText={(value) => updateField('honeypot_contact', value)}
                   editable={canEdit}
@@ -547,6 +605,54 @@ export default function ReportFormScreen({
           </View>
         ) : null}
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showSuccessDialog || showQueuedDialog || showErrorDialog}
+        transparent
+        animationType="fade"
+        onRequestClose={onBackToCamera}
+      >
+        <View style={styles.resultBackdrop}>
+          <View
+            testID={showSuccessDialog ? 'report-success' : showQueuedDialog ? 'report-queued' : 'report-error'}
+            style={styles.resultDialog}
+            accessibilityViewIsModal
+            accessibilityRole="alert"
+          >
+            <Text style={[styles.resultTitle, showErrorDialog && styles.resultTitleError]}>
+              {showSuccessDialog
+                ? t('reportForm.successTitle')
+                : showQueuedDialog
+                  ? t('reportForm.queuedTitle')
+                  : t('reportForm.errorTitle')}
+            </Text>
+            <Text style={styles.resultBody}>
+              {showSuccessDialog
+                ? t('reportForm.successBody')
+                : showQueuedDialog
+                  ? t('reportForm.queuedBody')
+                  : t('reportForm.errorCode', { code: reportErrorCode(statusError) })}
+            </Text>
+            <View style={styles.resultActions}>
+              <Button
+                testID={showSuccessDialog ? 'report-success-back' : showQueuedDialog ? 'report-queued-back' : 'report-error-back'}
+                title={t('reportForm.resultBack')}
+                secondary={showErrorDialog}
+                onPress={onBackToCamera}
+              />
+              {showErrorDialog ? (
+                <Button
+                  testID="report-error-retry"
+                  title={t('reportForm.resultRetry')}
+                  busy={submit.submitting}
+                  disabled={submit.submitting}
+                  onPress={retrySubmit}
+                />
+              ) : null}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -591,6 +697,7 @@ const styles = StyleSheet.create({
   textArea: { minHeight: 104 },
   inputError: { borderColor: colors.danger, borderWidth: 2, backgroundColor: '#fffaf9' },
   inputDisabled: { opacity: 0.65 },
+  colorHint: { color: colors.muted, fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
   fieldError: { color: colors.danger, fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
   caption: { color: colors.muted, fontFamily: bodyFont, fontSize: 12, lineHeight: 18 },
   errorBanner: { backgroundColor: colors.dangerSoft, borderColor: '#f3b3ad', borderWidth: 1, borderRadius: 12, padding: 14, gap: 5 },
@@ -611,4 +718,10 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
   honeypot: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, left: -9999, top: -9999 },
+  resultBackdrop: { flex: 1, backgroundColor: 'rgba(25,29,23,0.28)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  resultDialog: { width: '100%', maxWidth: 420, borderRadius: 14, backgroundColor: '#fff', padding: 20, gap: 14, borderWidth: 1, borderColor: '#e1e6dc', shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  resultTitle: { color: colors.primary, fontFamily: boldFont, fontSize: 22, lineHeight: 28, textAlign: 'center' },
+  resultTitleError: { color: colors.danger },
+  resultBody: { color: colors.ink, fontFamily: bodyFont, fontSize: 15, lineHeight: 22, textAlign: 'center' },
+  resultActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
 });

@@ -10,9 +10,28 @@ function createRequestId() {
 export function getApiBaseUrl() {
   const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
   if (!baseUrl || !baseUrl.trim()) {
-    throw new Error('EXPO_PUBLIC_API_BASE_URL is not set');
+    throw Object.assign(new Error('EXPO_PUBLIC_API_BASE_URL is not set'), {
+      code: 'api_base_url_missing',
+    });
   }
   return baseUrl.replace(/\/+$/, '');
+}
+
+function transportError(error, { requestId, url }) {
+  const timeout =
+    error?.name === 'AbortError' ||
+    error?.message === 'Aborted' ||
+    error?.message === 'The operation was aborted.';
+  return Object.assign(
+    new Error(timeout ? 'Request timed out' : error?.message ?? 'Network request failed'),
+    {
+      code: timeout ? 'request_timeout' : 'network_unavailable',
+      status: null,
+      requestId,
+      url,
+      cause: error,
+    },
+  );
 }
 
 export async function apiRequest(path, options = {}) {
@@ -49,6 +68,8 @@ export async function apiRequest(path, options = {}) {
       body,
     });
     return response;
+  } catch (error) {
+    throw transportError(error, { requestId, url });
   } finally {
     clearTimeout(timeout);
   }

@@ -5,11 +5,13 @@ import * as Location from 'expo-location';
 import JailMonkey from 'jail-monkey';
 
 import { createReportDraftQueueController } from './reportDraftQueueController.js';
+import { createReportPhotoUploadClient } from './useReportPhotoUpload.js';
 import { createReportDraftDao } from '../dao/reportDraftDao.js';
 import { createLocalReportDraft } from '../models/reportDraft.js';
 import {
   getReportPhotoStatus,
   submitReport,
+  uploadReportPhotoFile,
   uploadReportPhoto,
 } from '../services/reportApi.js';
 
@@ -52,16 +54,30 @@ export async function getCurrentLocationSnapshot({
 }
 
 function createDefaultController(repository, dependencies = {}) {
+  const photoUploadClient = dependencies.photoUploadClient ?? createReportPhotoUploadClient({
+    preparePhoto: dependencies.preparePhoto,
+    uploadPreparedFile: dependencies.uploadPreparedFile ??
+      ((input) => uploadReportPhotoFile({ ...input, fileSystem: FileSystem })),
+    uploadPhoto: dependencies.uploadReportPhoto ?? uploadReportPhoto,
+    getPhotoStatus: dependencies.getPhotoStatus ?? getReportPhotoStatus,
+    deletePreparedPhoto: dependencies.deletePreparedPhoto,
+    wait: dependencies.photoPollWait,
+    pollIntervalMs: dependencies.photoPollIntervalMs,
+    maxPollAttempts: dependencies.photoPollMaxAttempts,
+  });
+
   return createReportDraftQueueController({
     repository,
     createDraftRecord: createLocalReportDraft,
     createId: dependencies.createId ?? (() => Crypto.randomUUID()),
     getLocationSnapshot: dependencies.getLocationSnapshot ?? (() => getCurrentLocationSnapshot()),
     submitReport: dependencies.submitReport ?? submitReport,
-    uploadPhoto: dependencies.uploadPhoto ?? uploadReportPhoto,
+    uploadPhoto: dependencies.uploadPhoto ?? photoUploadClient.uploadPhoto,
     getPhotoStatus: dependencies.getPhotoStatus ?? getReportPhotoStatus,
+    pollPhotoStatus: dependencies.pollPhotoStatus ?? photoUploadClient.pollPhotoStatus,
     deleteLocalPhoto: dependencies.deleteLocalPhoto ?? ((uri) =>
       FileSystem.deleteAsync(uri, { idempotent: true })),
+    deletePreparedPhoto: dependencies.deletePreparedPhoto ?? photoUploadClient.deletePreparedPhoto,
     now: dependencies.now,
   });
 }
@@ -73,6 +89,7 @@ export function useReportDraftQueue({
   const controllerRef = useRef(null);
   const repositoryRef = useRef(null);
   const dependenciesRef = useRef(dependencies);
+  const inFlightRef = useRef(0);
   const [state, setState] = useState({
     ready: false,
     loading: true,
@@ -130,18 +147,30 @@ export function useReportDraftQueue({
   const syncDraft = useCallback(async (id) => {
     const controller = controllerRef.current;
     if (!controller) throw new Error('report_draft_queue_not_ready');
-    const draft = await controller.syncDraft(id);
-    await reload();
-    return draft;
+    inFlightRef.current += 1;
+    try {
+      const draft = await controller.syncDraft(id);
+      await reload();
+      return draft;
+    } finally {
+      inFlightRef.current -= 1;
+    }
   }, [reload]);
 
   const syncDueDrafts = useCallback(async () => {
     const controller = controllerRef.current;
     if (!controller) throw new Error('report_draft_queue_not_ready');
-    const drafts = await controller.syncDueDrafts();
-    await reload();
-    return drafts;
+    inFlightRef.current += 1;
+    try {
+      const drafts = await controller.syncDueDrafts();
+      await reload();
+      return drafts;
+    } finally {
+      inFlightRef.current -= 1;
+    }
   }, [reload]);
+
+  const isSyncBusy = useCallback(() => inFlightRef.current > 0, []);
 
   return {
     ...state,
@@ -149,6 +178,7 @@ export function useReportDraftQueue({
     queueDraft,
     syncDraft,
     syncDueDrafts,
+    isSyncBusy,
     reload,
   };
 }

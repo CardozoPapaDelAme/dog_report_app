@@ -53,6 +53,9 @@ sequenceDiagram
   end
 ```
 
+> Nota de implementación (supuesto): el cliente filtra por el radio de la banda de
+> zoom actual alrededor del centroide del cluster; es aproximado.
+
 ## Rutas y brecha contractual
 
 | Ruta | Uso |

@@ -135,3 +135,31 @@ Deno.test('L7 buildReportPayload preserves raw fingerprint byte-for-byte and rej
   }
   assert(failed, 'server-owned fields must be rejected locally');
 });
+
+Deno.test('PV-1 client_check_passed is true only when validation actually accepted the photo', () => {
+  const build = (extra) => buildReportPayload({
+    draft: { ...draft, ...extra },
+    reportFields: validateReportFormDraft(createEmptyReportFormDraft()).reportFields,
+    deviceFingerprint: 'device-fingerprint-1234',
+  }).photo;
+  const withPhoto = { photo_file_uri: 'file:///p.jpg' };
+  assert(build({ photo_file_uri: null }).client_check_passed === null);
+  assert(build({ ...withPhoto, photo_validation: { status: 'accepted' } }).client_check_passed === true);
+  assert(build({ ...withPhoto, photo_validation: { status: 'skipped', reason: 'expo_go' } }).client_check_passed === null);
+  assert(build({ ...withPhoto, photo_validation: null }).client_check_passed === null);
+  assert(build(withPhoto).expected === true);
+});
+
+Deno.test('RF22 predominant_color is filled from the form (auto-detected) and manual choice overrides it', () => {
+  const build = (dog_color) => buildReportPayload({
+    draft,
+    reportFields: validateReportFormDraft({ ...createEmptyReportFormDraft(), dog_color }).reportFields,
+    deviceFingerprint: 'device-fingerprint-1234',
+  }).dog.predominant_color;
+  assert(build('negro') === 'negro');
+  assert(build('café') === 'café');
+  assert(build('') === null, 'clearing the colour sends null');
+
+  const invalid = validateReportFormDraft({ ...createEmptyReportFormDraft(), dog_color: 'verde' });
+  assert(invalid.reportFields === null && invalid.errors.dog_color, 'unknown colour is rejected');
+});

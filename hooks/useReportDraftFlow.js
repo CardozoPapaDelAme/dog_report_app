@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { detectDogColorFromPhoto } from '../services/dogColorRuntime.js';
+import { attachDetectedColor } from '../services/photoColorFlow.js';
 import { useReportDraftQueue } from './useReportDraftQueue.js';
 
-export function useReportDraftFlow({ onOpenReportForm } = {}) {
+export function useReportDraftFlow({ onOpenReportForm, detectColor = detectDogColorFromPhoto } = {}) {
   const [draftId, setDraftId] = useState(null);
   const [draftError, setDraftError] = useState(null);
   const {
@@ -12,6 +14,9 @@ export function useReportDraftFlow({ onOpenReportForm } = {}) {
     createDraft,
     queueDraft,
     syncDraft,
+    syncDueDrafts,
+    isSyncBusy,
+    ready,
   } = useReportDraftQueue();
 
   const activeDraft = useMemo(
@@ -24,12 +29,12 @@ export function useReportDraftFlow({ onOpenReportForm } = {}) {
     setDraftId(null);
     setDraftError(null);
     try {
-      const created = await createDraft({ photo });
+      const created = await createDraft({ photo: await attachDetectedColor(photo, detectColor) });
       setDraftId(created.id);
     } catch (error) {
       setDraftError(error);
     }
-  }, [createDraft, onOpenReportForm]);
+  }, [createDraft, detectColor, onOpenReportForm]);
 
   return {
     activeDraft,
@@ -37,6 +42,10 @@ export function useReportDraftFlow({ onOpenReportForm } = {}) {
     error: draftError ?? queueError,
     queueDraft,
     syncDraft,
+    syncDueDrafts,
+    isSyncBusy,
+    queueReady: ready,
+    drafts,
     openReportDraft,
   };
 }

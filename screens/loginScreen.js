@@ -92,7 +92,7 @@ export default function LoginScreen({ onLogin, error, pending, loading }) {
               onPress={submit}
               style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, ((!email.trim() || !password || pending) && styles.buttonDisabled)]}
             >
-              {pending ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("login.submit")}</Text>}
+              {pending ? <ActivityIndicator accessibilityLabel={t("common.loading")} color="#fff" /> : <Text style={styles.buttonText}>{t("login.submit")}</Text>}
             </Pressable>
             <Text style={styles.footer}>{t("login.footer")}</Text>
           </View>

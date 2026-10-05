@@ -1,11 +1,12 @@
 import labels from './mobilenet_v3_small_100_224_labels.json';
+import { MOBILENET_V3_MODEL_ASSET } from './mobileNetV3Asset';
 
-export const MOBILENET_V3_MODEL_ASSET = null;
+export { MOBILENET_V3_MODEL_ASSET };
 
 export const MOBILENET_V3_LABELS = labels;
 
 export const MOBILENET_V3_MODEL_METADATA = Object.freeze({
-  name: 'MobileNetV3-Small 100 224 classification INT8',
+  name: 'MobileNetV3-Small 100 224 classification (float32 weights)',
   expectedLocalFile: 'models/mobilenet_v3_small_100_224_int8.tflite',
   expectedLabelsFile: 'models/mobilenet_v3_small_100_224_labels.txt',
   kaggleUrl: 'https://www.kaggle.com/models/google/mobilenet-v3/TfLite/small-100-224-classification-metadata/1',

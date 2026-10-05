@@ -49,6 +49,7 @@ relationships.
 - [`DATA-MODEL.md`](DATA-MODEL.md) — entity, state, and retention semantics
 - [`SECURITY.md`](SECURITY.md) — security, privacy, and threat controls
 - [`DEPLOYMENT.md`](DEPLOYMENT.md) — deployment and operations runbook
+- [`REVIEWING.md`](REVIEWING.md) — simplest way for the team to install and review the app
 - [`TESTING.md`](TESTING.md) — verification strategy and scenario ownership
 - [`TRACEABILITY.md`](TRACEABILITY.md) — complete RF/RNF/HU mapping
 - [`DIAGRAM-READINESS.md`](DIAGRAM-READINESS.md) — diagram handoff and review checklist

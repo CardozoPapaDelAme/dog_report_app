@@ -102,6 +102,7 @@ export async function insertReport(
   tx,
   { command, submissionHash, originHash, config, trust },
 ) {
+  const details = tx.json(command.details ?? {});
   const rows = await tx`
     INSERT INTO public.reports (
       id,
@@ -143,7 +144,7 @@ export async function insertReport(
       ${command.location.mockSuspected},
       ${command.incidentType}::public.incident_type,
       ${command.sightingType}::public.sighting_type,
-      ${JSON.stringify(command.details)}::jsonb,
+      ${details},
       ${command.dog.predominantColor},
       ${command.dog.size}::public.dog_size,
       ${command.dog.hasCollar},

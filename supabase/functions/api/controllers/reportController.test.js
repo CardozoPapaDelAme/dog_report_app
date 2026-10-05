@@ -1,4 +1,7 @@
-import { parseCreateReportBody } from "./reportController.js";
+import {
+  createReportErrorResponse,
+  parseCreateReportBody,
+} from "./reportController.js";
 
 function assert(condition, message) {
   if (!condition) {
@@ -74,5 +77,41 @@ Deno.test("report parser rejects non-UTC client timestamps", () => {
   assert(
     parsed.code === "invalid_request",
     "timestamp syntax failures map to invalid_request",
+  );
+});
+
+Deno.test("report controller maps operational report failures before generic 500", () => {
+  const database = createReportErrorResponse({ code: "database_unavailable" });
+  assert(database.status === 503, "database failures should be retryable 503s");
+  assert(database.code === "database_unavailable");
+
+  const preflight = createReportErrorResponse({
+    code: "preflight_mismatch",
+    details: { category: "schema_or_privilege_mismatch", sql_code: "42883" },
+  });
+  assert(preflight.status === 503, "deploy mismatches should be retryable 503s");
+  assert(preflight.code === "preflight_mismatch");
+  assert(preflight.details.sql_code === "42883");
+
+  const rateLimit = createReportErrorResponse({
+    code: "report_rate_limit_exceeded",
+    retryAfterSeconds: 42,
+  });
+  assert(rateLimit.status === 429);
+  assert(rateLimit.retryAfterSeconds === 42);
+
+  const invalidDetails = createReportErrorResponse({
+    code: "invalid_details",
+    details: {
+      category: "report_details_trigger",
+      reason: "unexpected_details_key",
+    },
+  });
+  assert(invalidDetails.status === 400);
+  assert(invalidDetails.details.reason === "unexpected_details_key");
+
+  assert(
+    createReportErrorResponse({ code: "unexpected_failure" }) === null,
+    "unknown programming errors must still reach the generic handler",
   );
 });

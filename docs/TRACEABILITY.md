@@ -17,8 +17,8 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF05 | Camera quick action | Offline draft without photo | Report completes photo-free |
 | RF06 | Dynamic form | `incident_type`; validated `details` | Every category accepted/rejected correctly |
 | RF07 | Root navigation | Camera-first anonymous route | Cold-start route test |
-| RF08 | Public report detail | `POST /reports/:report_id/flags`; FlagService; `report_flags` | One effective flag per fingerprint/report; durable limit |
-| RF09 | On-device vision | Bundled TFLite model | Dog/quality failures and retry offline |
+| RF08 | Public report detail | `POST /reports/:report_id/flags`; FlagService; `report_flags` | One effective flag per fingerprint/report; durable limit; client: `components/ZoneReportsSheet.js`, `components/ReportFlagSheet.js`, `hooks/reportFlagSubmit.js`, `services/flagApi.js`, `models/reportFlag.js` (`tests/ui/publicMap.spec.js`, Deno `hooks/reportFlagSubmit.test.js`, `services/flagApi.test.js`, `models/reportFlag.test.js`) |
+| RF09 | On-device vision | Bundled MobileNetV3-Small classifier (float32; see ADR-009 amendment) via `react-native-fast-tflite`; `services/photoValidationRuntime.js`, `services/photoPixels.js`, `services/photoInference.js`, `models/photoValidation.js`, `hooks/useCameraCapture.js` | Dev/standalone builds validate dog/no-dog and blur offline and ask for a retake with a reason. Skipped explicitly in Expo Go and web (`validationSkipped`); fail-open (`model_error`) if the model cannot load or run. Thresholds provisional; model load, latency and accuracy are device-only (Deno `services/photoInference.test.js`, `services/photoPixels.test.js`, `models/photoValidation.test.js`) |
 | RF10 | Online public map | `GET /public/reports`; presenter/repository | Approximate recent visible canonical pins |
 | RF11 | Map clustering | `GET /public/clusters`; PostGIS repository query | Metric grouping at supported zooms; documented viewport/limit |
 | RF12 | Cluster renderer | `report_count` | Circle size follows count |
@@ -31,7 +31,7 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF19 | Administrator Command Center and moderation queue | `GET /admin/moderation-queue`; `CommandCenterScreen`; `useModerationQueue` | Original fields, GPS/mock, photo expectation, component trust; page-scoped responsive ES/EN summary; no aggregate/BI endpoint |
 | RF20 | Administrator moderation commands | Report command routes; generic mobile command client | Approve/hide/restore/delete update the queue projection; hide, restore and delete require a written reason; no direct mobile database update; audited reversible deletion |
 | RF21 | Flag review/state machine | FlagService + restore/approve routes | Threshold, audit, restore semantics |
-| RF22 | On-device attributes | Structured report columns | Color automatic; size/collar manual |
+| RF22 | On-device attributes | Structured report columns (`dog.predominant_color`, `size`, `has_collar`); `models/dogColor.js`, `services/dogColorRuntime.js`, `services/photoColorFlow.js`, `hooks/useReportDraftFlow.js`, `screens/ReportFormScreen.js` | Colour is extracted automatically on-device (pure JS, also in Expo Go/web; fixed vocabulary negro/blanco/café/gris/dorado/mixto; `null` when unclear), shown as a changeable/clearable hint and overridden by the user's choice; size and collar are manual (Deno `models/dogColor.test.js`, `services/photoColorFlow.test.js`, `models/reportPayload.test.js`; Playwright `tests/ui/reportForm.spec.js`) |
 | RF23 | Duplicate review | Administrator duplicate routes; candidates/groups/memberships | Human-only, pending connected set, canonical, reversible, audited |
 | RF24 | Dynamic form | `details` JSONB validator | Allowed keys/types per incident |
 
@@ -43,6 +43,22 @@ stable read-time 50 m public approximation, bounded public report and cluster
 queries, server-side metric clustering, highest severity and complete six-key
 type counts.
 
+## ERI-9 public map screen
+
+| Requirements / stories | Implemented boundary | Executable evidence |
+|---|---|---|
+| RF10; HU-10 | `screens/PublicMapScreen.js` → `hooks/usePublicMap.js` → `services/publicMapApi.js` (`GET /public/reports` at zoom 17 or more); pin sheet with public fields, photo when `has_sanitized_photo`, flag notice when `has_flags`; "map not available offline" state | `models/publicMap.test.js`; `services/publicMapApi.test.js`; `hooks/publicMapLoader.test.js`; `tests/ui/publicMap.spec.js` (pins, flag notice, offline) |
+| RF11, RF14; HU-11, HU-14 | Zoom below 17 requests `GET /public/clusters` with zoom and full viewport; zooming in re-queries until pins (`models/publicMap.js` zoom bands mirror the server) | `models/publicMap.test.js` (band parity); `hooks/publicMapLoader.test.js`; `tests/ui/publicMap.spec.js` (zoom 13 to 17, all-or-none viewport) |
+| RF12; HU-12 | Cluster size from `report_count` (`clusterRadiusPx`) | `models/publicMap.test.js`; native rendering needs a development build |
+| RF13; HU-13 | Colour from `highest_severity` (`severityColor`); cluster modal with all six `type_counts` keys | `models/publicMap.test.js`; `tests/ui/publicMap.spec.js` (severity, six counts) |
+| RNF02 | Debounced loads, stale-response protection, bounded queries from the server | `hooks/publicMapLoader.test.js`; <5 s load target still needs a device measurement |
+| RNF13 | Anonymous requests (no `Authorization`), approximate coordinates only, no client re-clustering | `tests/ui/publicMap.spec.js` (no Authorization header) |
+
+Provider: OpenFreeMap interim style via `services/mapConfig.js`
+(`EXPO_PUBLIC_MAP_STYLE_URL`; ADR-008 amendment). The native map component
+`components/PublicMapView.js` is verified manually on a development build; the web
+stub `components/PublicMapView.web.js` backs the Playwright spec.
+
 ## Non-functional requirements
 
 | ID | Flow/component | Data/API/operations boundary | Verification focus |
@@ -52,13 +68,13 @@ type counts.
 | RNF03 | API/database | Bounded Hono queries, spatial/time indexes | Load test growth profile |
 | RNF04 | Report UX | Camera-first dynamic form | Usability session under 5 min |
 | RNF05 | Mobile app | Expo development builds, iOS/Android | Supported-device smoke tests |
-| RNF06 | Localization | `react-i18next`; all role flows | ES/EN coverage and layout |
+| RNF06 | Localization | `react-i18next`; device-locale selection (`i18n/deviceLanguage.js`, es default); all role flows | ES/EN key parity (`i18n/locales.test.js`), language selection test, English Playwright spec; TalkBack/VoiceOver and layout manual |
 | RNF07 | Auth/navigation | Two sibling roles; profile checks | No public signup or role inheritance |
-| RNF08 | On-device vision | `react-native-fast-tflite`; MobileNetV3-Small INT8 | Runs offline in development/release build |
+| RNF08 | On-device vision | `react-native-fast-tflite`; bundled MobileNetV3-Small (float32 despite the `int8` file name) | Runs offline in development/standalone builds; not in Expo Go/web. Load/latency device-only |
 | RNF09 | Location validation | Versioned zones; ReportService + PostGIS repository | New points outside rejected; identical replay still accepted; mock/imprecise reviewed |
-| RNF10 | Photo validation | On-device model; transient EXIF signals | Offline inference; no raw EXIF persistence |
-| RNF11 | Dog attributes | Structured columns and duplicate signals | Offline color extraction; no identity claim |
-| RNF12 | Offline sync | Expo SQLite + local file + Hono receipts/status | Crash-safe idempotent sync; purge states stop upload retry |
+| RNF10 | Photo validation | On-device model; shared 224×224 pixel pipeline; transient EXIF signals | Offline inference with no network call; fail-open to skipped on model error; no raw EXIF persistence |
+| RNF11 | Dog attributes | Structured columns and duplicate signals (server compares `lower(color)` equality) | Offline colour extraction from the same pixels; colour is a signal the user can change or clear, never an identity claim (`models/dogColor.test.js`) |
+| RNF12 | Offline sync | Expo SQLite + local file + Hono receipts/status; `hooks/draftAutoSync.js` + `hooks/useDraftAutoSync.js` (expo-network listener + AppState `active`, 2 s debounce, single-flight) calling `syncDueDrafts` | Crash-safe idempotent sync (final report UUID replay); backoff/Retry-After respected; `draft`/`terminal_error` never auto-synced; purge states stop upload retry. Tests: `hooks/draftAutoSync.test.js`; airplane-mode toggle is device-only |
 | RNF13 | Privacy | Minimized projections and retention | No solicited public identity; PII moderation |
 | RNF14 | Database recovery | Roles/schema/data dumps plus private-object manifest/export; production backup gate | Isolated `psql`/object restore rehearsal; do not claim Free meets required RPO/RTO |
 | RNF15 | Hosting | Supabase managed Free amendment | Managed project readiness and quota evidence; historical OVH wording superseded |
@@ -95,8 +111,8 @@ type counts.
 | HU-05 | RF05, RF07 | Camera quick action | Offline draft | Visible no-photo path |
 | HU-06 | RF06, RF13, RF24 | Incident form | `incident_type`, `details` | Categories and severity |
 | HU-07 | RF07 | Navigation | N/A | Camera is initial route |
-| HU-08 | RF08, RF21, RNF29 | Public detail/flagging | Hono flag route | Warning, durable limit, auto-hide behavior |
-| HU-09 | RF09, RNF08, RNF10 | On-device vision | Bundled TFLite model | Offline retake reasons |
+| HU-08 | RF08, RF21, RNF29 | Public detail/flagging | Hono flag route | Warning, durable limit, auto-hide behavior; client zone list and flag form: `components/ZoneReportsSheet.js`, `components/ReportFlagSheet.js`, `hooks/zoneReports.js` (`tests/ui/publicMap.spec.js`, `hooks/zoneReports.test.js`) |
+| HU-09 | RF09, RNF08, RNF10 | On-device vision | Bundled MobileNetV3-Small classifier, dev/standalone builds only | Offline retake reasons; skipped in Expo Go/web; fail-open on model error |
 | HU-10 | RF10, RNF13 | Online map | Public reports route/view | Approximate visible pins/offline UX |
 | HU-11 | RF11, RF14 | Map clusters | Public clusters route/view | Geographic grouping |
 | HU-12 | RF12 | Cluster renderer | `report_count` | Proportional size |
@@ -109,7 +125,7 @@ type counts.
 | HU-19 | RF19, RF08 | Command Center moderation queue | Administrator route/presenter + responsive Expo screen | Flag/trust context, explicitly page-scoped summary, pagination, refresh, empty/error/session states |
 | HU-20 | RF20, RNF33 | Moderation | Hono approve/hide/restore/delete routes + generic Expo command client | Audited logical deletion; buttons follow `allowed_commands`; successful commands update the local queue projection |
 | HU-21 | RF21, RNF29 | Flag review | FlagService + restore/approve routes | Configured threshold workflow |
-| HU-22 | RF22, RNF11 | Attributes | Structured columns | Color/size/collar semantics |
+| HU-22 | RF22, RNF11 | Attributes | Structured columns; `models/dogColor.js` | Automatic colour (changeable) plus manual size/collar semantics |
 | HU-23 | RF23, RNF30 | Duplicate review | Administrator duplicate routes | Canonical/reverse/audit |
 | HU-24 | RF24, RNF36 | Dynamic form | JSON contract | Conditional required fields |
 
@@ -130,7 +146,7 @@ All paths below are relative to `supabase/functions/api/`.
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
 | RF21; HU-21; RNF29 | `GET/POST /admin/configuration`; flag threshold/rate validation | `domain/configuration.test.js` (`FAB-1 VALIDATION`); `controllers/configuration-controller.test.js` (`FAB-1 HTTP`) |
-| RF23; HU-23; RNF30 | Versioned duplicate radius/time thresholds, without resolving duplicates | `domain/configuration.test.js`; `tests/configuration-postgres.test.js` (`FAB-1 SQL`) |
+| RF23; HU-23; RNF30 | Versioned duplicate radius/time thresholds, without resolving duplicates | `domain/configuration.test.js`; `tests/configurationPostgres.test.js` (`FAB-1 SQL`) |
 | RNF09, RNF26, RNF28, RNF31 | GPS, trust-band and hourly rate constraints; active-zone metadata projection | `domain/configuration.test.js`; `services/configuration-service.test.js` (`FAB-1 SERVICE`); zone/environment steps in `FAB-1 SQL` |
 | RNF20, RNF21 | Administrator middleware, Service profile recheck, local actor context, SQL/RLS and environment separation | `controllers/configuration-controller.test.js`; `services/configuration-service.test.js`; privilege/context steps in `FAB-1 SQL` |
 | RNF33 | Immutable history, sequential versions, atomic activation and JSON audit evidence | `repositories/configuration-repository.js`; rollback, concurrent-reader and six-writer steps in `FAB-1 SQL` |
@@ -174,9 +190,19 @@ remain release checks after local public client configuration is supplied.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`); `tests/zone-postgres.test.js` (`FAB-2 SQL`) |
-| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js`; `tests/zone-postgres.test.js` |
-| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; real rollback/concurrency/column-grant coverage in `tests/zone-postgres.test.js` |
+| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`); `tests/zonePostgres.test.js` (`FAB-2 SQL`) |
+| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js`; `tests/zonePostgres.test.js` |
+| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; real rollback/concurrency/column-grant coverage in `tests/zonePostgres.test.js` |
+
+Migration `20261001120000_split_backend_mutate_policies.sql` replaces the
+`FOR ALL` `config_backend_mutate`, `zones_backend_mutate` and
+`zone_geometry_backend_mutate` policies with per-command
+`config_backend_insert/update`, `zones_backend_insert/update` and
+`zone_geometry_backend_insert` policies (same predicate; no DELETE policies and
+no `zones` UPDATE, matching the grants). It supports RNF20, RNF21 and RNF33; the
+`pg_policies` step in `tests/zonePostgres.test.js` (`FAB-2 SQL`) asserts the exact
+set of permissive `app_backend` policies (one per granted command), and `tests/configurationPostgres.test.js`
+extracts the split policies from `db/schema.sql`.
 
 The PostgreSQL/PostGIS migrations preserve retirement evidence, canonical source
 GeoJSON, and the narrow `retired_at` update grant required for replacement. Their
@@ -192,14 +218,15 @@ fields back through the external-input validator; it does not verify a real JWT.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RF23; HU-23; RNF30 | Human canonical selection over a connected induced pending-candidate graph; no arbitrary grouping | `domain/duplicate-group.test.js` (`FAB-3 DOMAIN`); `services/duplicate-service.test.js` (`FAB-3 SERVICE`); `tests/duplicate-postgres.test.js` (`FAB-3 SQL`) |
+| RF23; HU-23; RNF30 | Human canonical selection over a connected induced pending-candidate graph; no arbitrary grouping | `domain/duplicate-group.test.js` (`FAB-3 DOMAIN`); `services/duplicate-service.test.js` (`FAB-3 SERVICE`); `tests/duplicatePostgres.test.js` (`FAB-3 SQL`) |
 | RF19; HU-19; RNF20, RNF21 | Administrator-only active-group listing, creation and reversal; profile/environment/context checks | `controllers/duplicate-controller.test.js` (`FAB-3 HTTP`); `FAB-3 SERVICE`; real RLS and grants in `FAB-3 SQL` |
 | RF13, RF23; RNF30, RNF33 | Single active membership; canonical filtering; reversible candidate review with unchanged reports/photos; atomic audit | `repositories/duplicate-repository.js`; `FAB-3 SQL` rollback, concurrency, anonymous/Association visibility and original-evidence assertions |
 
 HTTP tests exercise the real Controller and Service together. SQL tests extend
 that path through the real Repository and PostgreSQL/PostGIS under `app_backend`.
 Authentication is injected only in tests; a real Administrator JWT and managed
-Supabase deployment remain pending. L3 adds no UI (the duplicate screen is L6).
+Supabase deployment remained pending at L3 time (the server flow was later exercised
+on staging with real sessions on 2026-10-01). L3 adds no UI (the duplicate screen is L6).
 
 ## FAB-4 / L4 threshold configuration screen
 
@@ -222,6 +249,12 @@ Current report-intake coverage maps as follows:
 | `supabase/functions/api/controllers/report-controller.test.js` | RF01, RF06, RF24, RNF12, RNF36, HU-01, HU-06, HU-24 | Public command parsing, raw fingerprint handoff, unknown-field rejection, dynamic details validation |
 | `supabase/functions/api/services/report-service.test.js` | RF01, RNF09, RNF12, RNF26, HU-01 | Canonical idempotency hash, fingerprint-independent replay, replay short-circuit before geofence/rate/trust, server-time `client_created_at` window, hourly retry calculation |
 | `supabase/functions/api/services/trust-service.test.js` | RNF27, RNF28 | High-trust publication path and mandatory review for mock/imprecise location signals |
+
+Temporary demo-only missing-geofence bypass coverage lives in
+`supabase/functions/api/services/report-service.test.js`: default behavior still
+fails closed before quota/trust/insert, the explicit non-production flag permits
+photo-flow verification without an active zone, and an existing active geofence
+still rejects outside points.
 
 ## FAB-5 / L5 zone-set screen
 

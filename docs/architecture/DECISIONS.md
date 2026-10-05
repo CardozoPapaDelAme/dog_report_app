@@ -112,6 +112,17 @@ Reference: <https://maplibre.org/maplibre-react-native/docs/setup/expo/> and
 <https://maplibre.org/maplibre-react-native/docs/components/sources/geo-json-source/>.
 Provider integration reference: <https://docs.maptiler.com/react-native/>.
 
+**Amendment (2026-10-02, user decision) — interim OpenFreeMap.** MapTiler Cloud
+remains the target provider, but the first public map (ERI-9) ships with
+OpenFreeMap's `liberty` style (`https://tiles.openfreemap.org/styles/liberty`).
+It needs no account or key, so the team can build and demo the map before the
+MapTiler plan, key restrictions and cost are approved. The style URL is read from
+the optional `EXPO_PUBLIC_MAP_STYLE_URL` (`services/mapConfig.js`), so moving to
+MapTiler is a configuration change with no code change. The attribution
+"© OpenMapTiles © OpenStreetMap contributors" is always rendered. The MapLibre
+renderer, development-build constraint and server-authoritative clustering are
+unchanged. Reassess the provider before any public production launch.
+
 ## ADR-009 — Custom bundled TFLite via react-native-fast-tflite
 
 **Decision.** Bundle one versioned MobileNetV3-Small INT8 TFLite ImageNet
@@ -129,6 +140,19 @@ threshold calibration, and supported-device latency remain implementation eviden
 not assumptions. On-device success does not replace server image sanitization.
 
 Reference: <https://github.com/mrousavy/react-native-fast-tflite>.
+
+**Amendment (2026-10-02) — model precision.** Inspecting the bundled file showed
+it is a **float32** model, not INT8: input `[1,224,224,3]` float32, output
+`[1,1001]` float32 logits, and the graph itself maps `[0,1]` inputs to `[-1,1]`.
+The pipeline therefore feeds channel/255 floats and applies softmax. The
+`mobilenet_v3_small_100_224_int8.tflite` file name, manifest name and earlier
+"INT8" wording are historical and were kept to avoid churn (sha256 unchanged); the
+manifest carries a `precision_note`. The ~10 MB bundle size, CPU-first plan and
+all other constraints stand. The SRS (RNF08) still says "INT8" and is left
+untouched by policy; this amendment governs. Related shipped behaviour: validation
+runs only in development/standalone builds, is skipped in Expo Go/web, and
+fails open on model error. Predominant dog colour is derived separately in pure JS
+(`models/dogColor.js`) from the same 224×224 pixels.
 
 ## ADR-010 — Metric server clustering and stable public approximation
 
@@ -313,3 +337,15 @@ group list. A future scale change must paginate complete components or introduce
 a snapshot protocol, not silently truncate edges. No new persistence, roles,
 grants or moderation semantics are introduced. Resolution/reversal remain
 separate audited commands; reversal changes candidate review, not report data.
+
+## ADR-022 — Accept disabled leaked-password protection on Free
+
+**Decision.** Leave Supabase Auth leaked-password protection disabled while
+Phase 1 runs on managed Free.
+
+**Why.** The feature requires the Pro plan, and ADR-016 selects Free. Accounts are
+manually provisioned with no public signup, which limits exposure to chosen
+operators.
+
+**Constraint.** Reassess on any move to a paid plan or before a public production
+launch. The Supabase security advisor will keep reporting this finding.

@@ -7,7 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wildogscanner.app"
+    },
+    "android": {
+      "package": "com.wildogscanner.app"
     },
     "web": {
       "bundler": "metro",
@@ -29,7 +33,8 @@
           "locationWhenInUsePermission": "Permite que Creel Stray-Dog Reporting use tu ubicación para guardar dónde ocurrió el reporte."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "@maplibre/maplibre-react-native"
     ]
   }
 }

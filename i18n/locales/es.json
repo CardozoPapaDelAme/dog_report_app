@@ -81,9 +81,11 @@
   "common": {
     "yes": "Sí",
     "no": "No",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "loading": "Cargando…"
   },
   "camera": {
+    "capture": "Tomar foto",
     "permissionTitle": "Permite el acceso a la cámara",
     "permissionBody": "La app abre directo en cámara para capturar evidencia del reporte. La foto se valida en el teléfono antes de continuar.",
     "permissionButton": "Permitir cámara",
@@ -91,16 +93,32 @@
     "helper": "Toma una foto clara del perro",
     "admin": "Revisión",
     "staffLogin": "Acceso de personal",
+    "openMap": "Ver mapa",
     "retryTitle": "Vuelve a tomar la foto",
+    "validating": "Validando foto…",
+    "retake": "Tomar otra",
     "model": {
       "loading": "Cargando modelo",
       "ready": "Validación offline lista",
       "missing": "Modelo pendiente",
       "error": "Modelo no disponible"
     },
+    "queue": {
+      "pendingTitle": "Reportes guardados para sincronizar",
+      "pendingBody": "{{count}} reporte(s) en la cola local. Se enviarán cuando haya conexión.",
+      "scheduledTitle": "Reintento programado",
+      "scheduledBody": "{{count}} reporte(s) siguen guardados. La app respetará el tiempo de espera antes de reintentar.",
+      "syncingTitle": "Sincronizando reportes",
+      "syncingBody": "Estamos enviando la cola local.",
+      "terminalTitle": "Un reporte no pudo sincronizarse",
+      "terminalBody": "{{count}} reporte(s) requieren crear un reporte nuevo si todavía hacen falta.",
+      "syncedTitle": "Reportes sincronizados",
+      "syncedBody": "La cola local quedó al día.",
+      "retryNow": "Reintentar ahora"
+    },
     "rejections": {
-      "no_dog": "No detectamos un perro con suficiente confianza.",
-      "blurry": "La foto está borrosa o tiene poca definición.",
+      "no_dog": "No detectamos un perro en la foto.",
+      "blurry": "La foto está borrosa.",
       "model_missing": "Falta versionar el archivo TFLite antes de aceptar fotos.",
       "model_unavailable": "El modelo todavía no está listo. Intenta de nuevo en unos segundos."
     },
@@ -128,7 +146,7 @@
     "dogProbability": "Probabilidad perro: {{value}}%",
     "blurVariance": "Varianza Laplaciana: {{value}}",
     "back": "Volver a cámara",
-    "formPending": "Formulario en siguiente entrega",
+    "formPending": "Formulario disponible",
     "errors": {
       "location_permission_denied": "Necesitamos permiso de ubicación para guardar dónde ocurrió el reporte.",
       "default": "Intenta nuevamente desde la cámara."
@@ -146,6 +164,7 @@
     "retrySubmit": "Reintentar sincronización",
     "submitting": "Enviando…",
     "noPhoto": "Sin foto",
+    "photoPreview": "Vista previa de la foto del reporte",
     "photoAttached": "Foto adjunta",
     "selectPlaceholder": "Selecciona una opción",
     "summaryTitle": "Reporte",
@@ -154,13 +173,18 @@
     "coordinates": "Coordenadas: {{value}}",
     "accuracy": "Precisión: {{value}}",
     "dogProbability": "Probabilidad perro: {{value}}%",
-    "frozenTitle": "Payload congelado",
-    "frozenBody": "Este reporte ya tiene contenido encolado. Reintentar usa el mismo UUID y el mismo payload.",
     "successTitle": "Reporte enviado",
     "successBody": "El servidor aceptó este reporte. No se volverá a enviar como reporte nuevo.",
+    "queuedTitle": "Reporte guardado para sincronizar",
+    "queuedBody": "El reporte quedó en la cola local. Puedes volver a la cámara; la app reintentará cuando corresponda.",
     "photoPendingTitle": "Foto pendiente",
     "photoPendingBody": "El reporte fue aceptado y la foto sigue en procesamiento o carga. Esta pantalla conserva el estado para la siguiente etapa.",
-    "errorTitle": "No pudimos completar el envío",
+    "photoRejectedTitle": "Foto rechazada",
+    "photoRejectedBody": "El reporte fue aceptado, pero la foto no se guardó. Código: {{code}}.",
+    "errorTitle": "Error",
+    "errorCode": "Código: {{code}}",
+    "resultBack": "Regresar",
+    "resultRetry": "Volver a intentar",
     "onlyDescription": "Para esta categoría no hay preguntas adicionales.",
     "sections": {
       "incident": "Datos base",
@@ -178,6 +202,7 @@
       "cantidad_afectada": "Cantidad afectada",
       "situacion": "Situación del perro",
       "dog_size": "Tamaño aproximado",
+      "dog_color": "Color aproximado",
       "has_collar": "¿Trae collar?"
     },
     "incidents": {
@@ -191,6 +216,15 @@
     "sighting": {
       "solitario": "Solitario",
       "manada": "Manada"
+    },
+    "dogColorDetected": "Color detectado: {{color}}. Es solo una señal; puedes cambiarlo o quitarlo.",
+    "dogColor": {
+      "negro": "Negro",
+      "blanco": "Blanco",
+      "café": "Café",
+      "gris": "Gris",
+      "dorado": "Dorado",
+      "mixto": "Manchado / mixto"
     },
     "dogSize": {
       "chico": "Chico",
@@ -234,14 +268,26 @@
       "configuration_unavailable": "La configuración activa del servidor no está disponible en este momento.",
       "dependency_unavailable": "El servicio no está disponible ahora. El reporte queda en la cola local.",
       "preflight_mismatch": "El entorno del servidor requiere revisión técnica antes de aceptar reportes.",
+      "storage_unavailable": "El almacenamiento privado de fotos no está configurado o no está disponible. El reporte queda guardado para reintentar.",
+      "database_unavailable": "La base de datos no está disponible en este momento. El reporte queda guardado para reintentar.",
       "photo_too_large": "La foto supera el tamaño permitido por el servidor.",
+      "image_too_large": "Las dimensiones de la foto superan el límite permitido por el servidor.",
       "unsupported_photo_type": "El servidor solo acepta fotos JPEG o PNG saneadas.",
+      "unsupported_media_type": "El servidor solo acepta fotos JPEG o PNG saneadas.",
       "photo_decode_failed": "El servidor no pudo leer la imagen enviada.",
+      "invalid_image_content": "El servidor no pudo leer la imagen enviada.",
       "photo_rate_limit_exceeded": "La carga de foto alcanzó el límite temporal; se reintentará después.",
       "photo_content_conflict": "Este reporte ya tiene una foto distinta asociada.",
+      "photo_not_expected": "El servidor registró este reporte como enviado sin foto.",
+      "photo_processing_conflict": "El estado de procesamiento de la foto cambió durante el envío. Reintenta la sincronización.",
       "photo_not_available": "La foto no está disponible para este reporte.",
+      "report_required_before_photo_upload": "La foto no se subirá hasta que el servidor confirme el reporte. Reintenta la sincronización.",
+      "photo_uri_required": "No encontramos el archivo local de la foto para subirlo.",
+      "photo_upload_directory_unavailable": "No pudimos preparar el espacio local para reducir la foto antes de subirla.",
       "invalid_response": "La respuesta del servidor no permitió confirmar el estado del reporte.",
       "network_unavailable": "No hay conexión suficiente. El reporte queda guardado para sincronizar.",
+      "request_timeout": "El servidor tardó demasiado en responder. El reporte queda guardado para reintentar.",
+      "api_base_url_missing": "La app no tiene configurada la URL del API. Revisa EXPO_PUBLIC_API_BASE_URL.",
       "request_failed": "No pudimos completar la solicitud. Revisa la conexión e inténtalo de nuevo."
     }
   },
@@ -526,5 +572,82 @@
       "preflight_mismatch": "El entorno del servicio no está listo para esta operación."
     },
     "selectionWarning": "Selección inválida: revisa las conexiones antes de confirmar."
+  },
+  "map": {
+    "title": "Mapa de reportes",
+    "back": "Volver a la cámara",
+    "loading": "Cargando el mapa",
+    "empty": "No hay reportes en esta zona",
+    "error": "No pudimos cargar el mapa.",
+    "retry": "Reintentar",
+    "offline": "El mapa no está disponible sin conexión",
+    "offlineReporting": "Puedes seguir creando reportes; se enviarán cuando haya conexión.",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoomLevel": "Zoom {{zoom}}",
+    "close": "Cerrar",
+    "clusterItem": "{{count}} reportes, gravedad {{severity}}",
+    "pinItem": "Reporte: {{type}}",
+    "severity": {
+      "high": "alta",
+      "medium": "media",
+      "low": "baja"
+    },
+    "cluster": {
+      "title": "{{count}} reportes en esta zona",
+      "highest": "Mayor gravedad: {{type}}",
+      "viewReports": "Ver reportes de la zona"
+    },
+    "pin": {
+      "color": "Color",
+      "occurredAt": "Fecha y hora",
+      "flagged": "La comunidad marcó este reporte",
+      "photo": "Foto del reporte"
+    },
+    "expoGo": {
+      "notice": "El mapa interactivo requiere la development build. Mientras tanto puedes ver los reportes públicos recientes.",
+      "hint": "Consulta el README para instalar la development build.",
+      "title": "Reportes públicos recientes",
+      "empty": "Aún no hay reportes públicos.",
+      "error": "No pudimos cargar los reportes.",
+      "offline": "Sin conexión. Intenta de nuevo.",
+      "approximate": "Las ubicaciones son aproximadas."
+    }
+  },
+  "zone": {
+    "title": "Reportes de la zona",
+    "loading": "Cargando reportes",
+    "empty": "No hay reportes visibles en esta zona",
+    "error": "No pudimos cargar los reportes de la zona.",
+    "offline": "Sin conexión. Intenta de nuevo.",
+    "approximate": "Las ubicaciones son aproximadas."
+  },
+  "flag": {
+    "open": "Denunciar",
+    "title": "Denunciar reporte",
+    "reasonLabel": "Motivo",
+    "detailLabel": "Detalle (opcional)",
+    "counter": "{{count}}/{{max}}",
+    "tooLong": "El detalle no puede superar {{max}} caracteres.",
+    "submit": "Enviar denuncia",
+    "sending": "Enviando...",
+    "cancel": "Cancelar",
+    "reasons": {
+      "foto_falsa": "Foto falsa",
+      "contenido_inapropiado": "Contenido inapropiado",
+      "burla": "Burla u ofensa",
+      "no_es_callejero": "No es un perro callejero",
+      "incidental_pii": "Contiene datos personales",
+      "otro": "Otro"
+    },
+    "outcome": {
+      "submitted": "Gracias. Revisaremos el reporte.",
+      "already_flagged": "Ya denunciaste este reporte.",
+      "not_flaggable": "Este reporte ya no se puede denunciar.",
+      "rate_limited": "Enviaste muchas denuncias. Intenta de nuevo en {{minutes}} min.",
+      "offline": "Sin conexión. Intenta de nuevo.",
+      "invalid": "No pudimos enviar la denuncia. Intenta más tarde.",
+      "unavailable": "No pudimos enviar la denuncia. Intenta más tarde."
+    }
   }
 }

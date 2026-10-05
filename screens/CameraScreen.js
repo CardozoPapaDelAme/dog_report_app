@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import DraftQueueBanner from '../components/DraftQueueBanner.js';
 import { useCameraCapture } from '../hooks/useCameraCapture.js';
 
 const colors = {
@@ -26,8 +27,8 @@ const colors = {
 
 function reasonText(t, state) {
   if (state.error) return t('camera.errors.capture');
-  if (!state.rejection) return null;
-  return t(`camera.rejections.${state.rejection}`);
+  if (!state.reasons?.length) return null;
+  return state.reasons.map((reason) => t(`camera.rejections.${reason}`)).join(' ');
 }
 
 export default function CameraScreen({
@@ -35,7 +36,11 @@ export default function CameraScreen({
   onReportWithoutPhoto,
   onOpenModeration,
   onOpenLogin,
+  onOpenMap,
   showModerationShortcut = false,
+  draftQueueSummary = null,
+  draftQueueSynced = false,
+  onRetryDraftQueue,
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -43,7 +48,8 @@ export default function CameraScreen({
   const capture = useCameraCapture({ onPhotoAccepted });
   const feedback = reasonText(t, capture.captureState);
   const hasPermission = Boolean(permission?.granted);
-  const busy = capture.captureState.phase === 'capturing';
+  const validating = capture.captureState.phase === 'validating';
+  const busy = capture.captureState.phase === 'capturing' || validating;
   const captureDisabled = busy || !capture.cameraReady || !hasPermission;
 
   return (
@@ -61,8 +67,13 @@ export default function CameraScreen({
       )}
       <View pointerEvents="none" style={styles.vignette} />
 
-      {(onOpenLogin || (showModerationShortcut && hasPermission)) ? (
+      {(onOpenLogin || onOpenMap || (showModerationShortcut && hasPermission)) ? (
         <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+          {onOpenMap ? (
+            <Pressable accessibilityRole="button" onPress={onOpenMap} style={styles.adminButton}>
+              <Text style={styles.adminText}>{t('camera.openMap')}</Text>
+            </Pressable>
+          ) : null}
           <View style={styles.topBarSpacer} />
           {onOpenLogin ? (
             <Pressable accessibilityRole="button" onPress={onOpenLogin} style={styles.adminButton}>
@@ -77,11 +88,18 @@ export default function CameraScreen({
         </View>
       ) : null}
 
+      <DraftQueueBanner
+        summary={draftQueueSummary}
+        synced={draftQueueSynced}
+        onRetry={onRetryDraftQueue}
+        style={[styles.queueBannerPosition, { top: insets.top + 66 }]}
+      />
+
       {!hasPermission ? (
         <SafeAreaView pointerEvents="box-none" style={styles.permissionOverlay}>
           <View style={styles.permissionCard}>
             {!permission ? (
-              <ActivityIndicator color={colors.primary} />
+              <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} />
             ) : (
               <>
                 <Text style={styles.permissionTitle}>{t('camera.permissionTitle')}</Text>
@@ -89,6 +107,11 @@ export default function CameraScreen({
                 <Pressable accessibilityRole="button" onPress={requestPermission} style={styles.permissionButton}>
                   <Text style={styles.permissionButtonText}>{t('camera.permissionButton')}</Text>
                 </Pressable>
+                {onOpenMap ? (
+                  <Pressable accessibilityRole="button" onPress={onOpenMap} style={styles.staffLoginPermission}>
+                    <Text style={styles.staffLoginPermissionText}>{t('camera.openMap')}</Text>
+                  </Pressable>
+                ) : null}
                 {onOpenLogin ? (
                   <Pressable accessibilityRole="button" onPress={onOpenLogin} style={styles.staffLoginPermission}>
                     <Text style={styles.staffLoginPermissionText}>{t('camera.staffLogin')}</Text>
@@ -104,7 +127,17 @@ export default function CameraScreen({
         <Pressable accessibilityRole="button" onPress={capture.clearFeedback} style={styles.toast}>
           <Text style={styles.toastTitle}>{t('camera.retryTitle')}</Text>
           <Text style={styles.toastBody}>{feedback}</Text>
+          {capture.captureState.phase === 'rejected' ? (
+            <Text style={styles.toastAction}>{t('camera.retake')}</Text>
+          ) : null}
         </Pressable>
+      ) : null}
+
+      {validating ? (
+        <View pointerEvents="none" style={styles.validating}>
+          <ActivityIndicator accessibilityLabel={t('camera.validating')} color={colors.inverse} />
+          <Text style={styles.validatingText}>{t('camera.validating')}</Text>
+        </View>
       ) : null}
 
       {hasPermission ? (
@@ -120,6 +153,7 @@ export default function CameraScreen({
 
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('camera.capture')}
             accessibilityState={{ busy, disabled: captureDisabled }}
             disabled={captureDisabled}
             onPress={capture.capture}
@@ -129,7 +163,7 @@ export default function CameraScreen({
               captureDisabled && styles.captureDisabled,
             ]}
           >
-            {busy ? <ActivityIndicator color={colors.primary} /> : <View style={styles.captureInner} />}
+            {busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /> : <View style={styles.captureInner} />}
           </Pressable>
         </View>
       ) : null}
@@ -156,11 +190,15 @@ const styles = StyleSheet.create({
   toast: { position: 'absolute', top: '18%', left: 20, right: 20, borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14 },
   toastTitle: { color: colors.warning, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   toastBody: { color: '#4a3510', fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13, lineHeight: 19, marginTop: 3 },
+  toastAction: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13, marginTop: 10 },
+  validating: { position: 'absolute', top: '18%', left: 20, right: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 14, backgroundColor: colors.glass, padding: 14 },
+  validatingText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
   bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingTop: 16 },
   noPhotoButton: { minHeight: 46, minWidth: 178, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.glass, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 18 },
   noPhotoText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12, textAlign: 'center' },
   captureButton: { width: 82, height: 82, borderRadius: 999, borderWidth: 5, borderColor: colors.primary, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
   captureInner: { width: 57, height: 57, borderRadius: 999, backgroundColor: '#ffffff', borderColor: '#d8dbd2', borderWidth: 1 },
+  queueBannerPosition: { position: 'absolute', left: 16, right: 16 },
   captureDisabled: { opacity: 0.62 },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.5 },

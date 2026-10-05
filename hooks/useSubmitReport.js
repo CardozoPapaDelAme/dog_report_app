@@ -5,11 +5,15 @@ import {
   honeypotFilledFromForm,
   validateReportFormDraft,
 } from '../models/reportPayload.js';
+import {
+  photoStatusIsTerminal,
+  photoStatusSucceeded,
+} from '../models/photoState.js';
 import { getOrCreateDeviceFingerprint } from './deviceFingerprint';
 
 function serializedError(error) {
   return {
-    code: error?.code ?? error?.message ?? 'request_failed',
+    code: error?.code ?? 'request_failed',
     message: error?.message ?? 'Request failed',
     status: Number.isInteger(error?.status) ? error.status : null,
     request_id: error?.requestId ?? error?.request_id ?? null,
@@ -25,9 +29,27 @@ function draftHasPhotoPending(draft) {
   return payload?.photo?.expected === true;
 }
 
+function draftExpectedPhoto(draft) {
+  if (!draft?.receipt) return false;
+  if (draft.photo_status?.photo_expected === true) return true;
+  const payload = draft.payload_json ? thawReportPayload(draft.payload_json) : null;
+  return payload?.photo?.expected === true;
+}
+
+function draftHasRejectedPhoto(draft) {
+  return (
+    draftExpectedPhoto(draft) &&
+    photoStatusIsTerminal(draft.photo_status) &&
+    !photoStatusSucceeded(draft.photo_status)
+  );
+}
+
 function outcomeForDraft(draft) {
   if (!draft) return { phase: 'idle', error: null };
   if (draft.local_state === REPORT_DRAFT_STATE.SYNCED) {
+    if (draftHasRejectedPhoto(draft)) {
+      return { phase: 'photo_rejected', error: null };
+    }
     return { phase: 'success', error: null };
   }
   if (draft.local_state === REPORT_DRAFT_STATE.TERMINAL_ERROR) {

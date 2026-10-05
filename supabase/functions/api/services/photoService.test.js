@@ -148,6 +148,56 @@ Deno.test("same source hash upload returns existing state without processing or 
   );
 });
 
+Deno.test("same source hash in processing state is retried through storage and approval", async () => {
+  const { calls, dependencies } = baseDependencies({
+    repository: {
+      ...baseDependencies().dependencies.repository,
+      lockPhotoForReport: () => {
+        calls.push("lock-photo-existing-processing");
+        return {
+          report_id: REPORT_ID,
+          state: "processing",
+          source_sha256: SOURCE_HASH,
+          rejection_code: null,
+        };
+      },
+      insertProcessingPhoto: () => {
+        throw new Error("processing retry must reuse the existing row");
+      },
+      approvePhoto: (_tx, values) => {
+        calls.push(`approve:${values.objectPath}`);
+        return {
+          report_id: REPORT_ID,
+          photo_expected: true,
+          state: "approved",
+          rejection_code: null,
+        };
+      },
+    },
+  });
+  const service = createPhotoService(dependencies);
+
+  const result = await service.upload({
+    reportId: REPORT_ID,
+    deviceFingerprint: "raw-device-fingerprint",
+    photo: { bytes: new Uint8Array([1, 2, 3]), declaredMimeType: "image/png" },
+  });
+
+  assert(result.responseStatus === 201, "retry should complete processing");
+  assert(result.status.state === "approved", "retry should approve the photo");
+  assert(calls.includes("upload"), "retry should upload sanitized bytes");
+  assert(
+    calls.some((call) =>
+      call.startsWith(`approve:reports/${REPORT_ID}/${SOURCE_HASH}.png`)
+    ),
+    "retry should approve the existing processing row",
+  );
+  assert(
+    !calls.includes("insert-processing"),
+    "retry should not insert another processing row",
+  );
+});
+
 Deno.test("different source hash for the same report conflicts", async () => {
   const { dependencies } = baseDependencies({
     repository: {
