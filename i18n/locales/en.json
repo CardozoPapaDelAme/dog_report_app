@@ -67,6 +67,19 @@
       "missing": "Model pending",
       "error": "Model unavailable"
     },
+    "queue": {
+      "pendingTitle": "Reports saved for sync",
+      "pendingBody": "{{count}} report(s) are in the local queue. They will be sent when connectivity is available.",
+      "scheduledTitle": "Retry scheduled",
+      "scheduledBody": "{{count}} report(s) remain saved. The app will respect the waiting period before retrying.",
+      "syncingTitle": "Syncing reports",
+      "syncingBody": "Sending the local queue.",
+      "terminalTitle": "A report could not sync",
+      "terminalBody": "{{count}} report(s) need a new report if they are still necessary.",
+      "syncedTitle": "Reports synced",
+      "syncedBody": "The local queue is up to date.",
+      "retryNow": "Retry now"
+    },
     "rejections": {
       "no_dog": "We did not detect a dog in the photo.",
       "blurry": "The photo is blurry.",
@@ -97,7 +110,7 @@
     "dogProbability": "Dog probability: {{value}}%",
     "blurVariance": "Laplacian variance: {{value}}",
     "back": "Back to camera",
-    "formPending": "Form in next delivery",
+    "formPending": "Form available",
     "errors": {
       "location_permission_denied": "Location permission is required to save where the report happened.",
       "default": "Try again from the camera."
@@ -126,6 +139,8 @@
     "dogProbability": "Dog probability: {{value}}%",
     "successTitle": "Report submitted",
     "successBody": "The server accepted this report. It will not be sent again as a new report.",
+    "queuedTitle": "Report saved for sync",
+    "queuedBody": "The report stayed in the local queue. You can return to the camera; the app will retry when appropriate.",
     "photoPendingTitle": "Photo pending",
     "photoPendingBody": "The report was accepted and the photo is still processing or uploading. This screen keeps the state for the next stage.",
     "photoRejectedTitle": "Photo rejected",

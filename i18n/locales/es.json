@@ -71,6 +71,19 @@
       "missing": "Modelo pendiente",
       "error": "Modelo no disponible"
     },
+    "queue": {
+      "pendingTitle": "Reportes guardados para sincronizar",
+      "pendingBody": "{{count}} reporte(s) en la cola local. Se enviarán cuando haya conexión.",
+      "scheduledTitle": "Reintento programado",
+      "scheduledBody": "{{count}} reporte(s) siguen guardados. La app respetará el tiempo de espera antes de reintentar.",
+      "syncingTitle": "Sincronizando reportes",
+      "syncingBody": "Estamos enviando la cola local.",
+      "terminalTitle": "Un reporte no pudo sincronizarse",
+      "terminalBody": "{{count}} reporte(s) requieren crear un reporte nuevo si todavía hacen falta.",
+      "syncedTitle": "Reportes sincronizados",
+      "syncedBody": "La cola local quedó al día.",
+      "retryNow": "Reintentar ahora"
+    },
     "rejections": {
       "no_dog": "No detectamos un perro en la foto.",
       "blurry": "La foto está borrosa.",
@@ -101,7 +114,7 @@
     "dogProbability": "Probabilidad perro: {{value}}%",
     "blurVariance": "Varianza Laplaciana: {{value}}",
     "back": "Volver a cámara",
-    "formPending": "Formulario en siguiente entrega",
+    "formPending": "Formulario disponible",
     "errors": {
       "location_permission_denied": "Necesitamos permiso de ubicación para guardar dónde ocurrió el reporte.",
       "default": "Intenta nuevamente desde la cámara."
@@ -130,6 +143,8 @@
     "dogProbability": "Probabilidad perro: {{value}}%",
     "successTitle": "Reporte enviado",
     "successBody": "El servidor aceptó este reporte. No se volverá a enviar como reporte nuevo.",
+    "queuedTitle": "Reporte guardado para sincronizar",
+    "queuedBody": "El reporte quedó en la cola local. Puedes volver a la cámara; la app reintentará cuando corresponda.",
     "photoPendingTitle": "Foto pendiente",
     "photoPendingBody": "El reporte fue aceptado y la foto sigue en procesamiento o carga. Esta pantalla conserva el estado para la siguiente etapa.",
     "photoRejectedTitle": "Foto rechazada",

@@ -269,10 +269,12 @@ export default function ReportFormScreen({
   const statusError = submit.error ?? draft?.last_error ?? error;
   const generalError = reportErrorText(statusError, t);
   const showSuccessDialog = submit.phase === 'success' || submit.phase === 'photo_rejected';
+  const showQueuedDialog = submit.phase === 'retry_wait';
   const showErrorDialog = Boolean(
     draft &&
       generalError &&
       !showSuccessDialog &&
+      !showQueuedDialog &&
       submit.phase !== 'photo_pending' &&
       !submit.submitting,
   );
@@ -605,29 +607,35 @@ export default function ReportFormScreen({
       </KeyboardAvoidingView>
 
       <Modal
-        visible={showSuccessDialog || showErrorDialog}
+        visible={showSuccessDialog || showQueuedDialog || showErrorDialog}
         transparent
         animationType="fade"
         onRequestClose={onBackToCamera}
       >
         <View style={styles.resultBackdrop}>
           <View
-            testID={showSuccessDialog ? 'report-success' : 'report-error'}
+            testID={showSuccessDialog ? 'report-success' : showQueuedDialog ? 'report-queued' : 'report-error'}
             style={styles.resultDialog}
             accessibilityViewIsModal
             accessibilityRole="alert"
           >
             <Text style={[styles.resultTitle, showErrorDialog && styles.resultTitleError]}>
-              {showSuccessDialog ? t('reportForm.successTitle') : t('reportForm.errorTitle')}
+              {showSuccessDialog
+                ? t('reportForm.successTitle')
+                : showQueuedDialog
+                  ? t('reportForm.queuedTitle')
+                  : t('reportForm.errorTitle')}
             </Text>
             <Text style={styles.resultBody}>
               {showSuccessDialog
                 ? t('reportForm.successBody')
-                : t('reportForm.errorCode', { code: reportErrorCode(statusError) })}
+                : showQueuedDialog
+                  ? t('reportForm.queuedBody')
+                  : t('reportForm.errorCode', { code: reportErrorCode(statusError) })}
             </Text>
             <View style={styles.resultActions}>
               <Button
-                testID={showSuccessDialog ? 'report-success-back' : 'report-error-back'}
+                testID={showSuccessDialog ? 'report-success-back' : showQueuedDialog ? 'report-queued-back' : 'report-error-back'}
                 title={t('reportForm.resultBack')}
                 secondary={showErrorDialog}
                 onPress={onBackToCamera}

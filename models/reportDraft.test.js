@@ -5,6 +5,7 @@ import {
   applySyncErrorToDraft,
   createLocalReportDraft,
   queueReportDraft,
+  summarizeReportDraftQueue,
   thawReportPayload,
 } from './reportDraft.js';
 
@@ -140,4 +141,42 @@ Deno.test('L6 draft model schedules retry without changing frozen UUID or payloa
     { now: '2026-09-28T20:04:00.000Z' },
   );
   assert(terminal.local_state === REPORT_DRAFT_STATE.TERMINAL_ERROR);
+});
+
+Deno.test('RNF12 queue summary separates pending, terminal and completed local states', () => {
+  const now = new Date('2026-10-02T12:00:00.000Z');
+  const summary = summarizeReportDraftQueue([
+    { local_state: REPORT_DRAFT_STATE.DRAFT },
+    { local_state: REPORT_DRAFT_STATE.QUEUED },
+    { local_state: REPORT_DRAFT_STATE.RETRY_WAIT, next_retry_at: '2026-10-02T12:05:00.000Z' },
+    { local_state: REPORT_DRAFT_STATE.TERMINAL_ERROR },
+    { local_state: REPORT_DRAFT_STATE.SYNCED },
+  ], { now });
+
+  assert(summary.pendingCount === 2);
+  assert(summary.dueCount === 1);
+  assert(summary.terminalCount === 1);
+  assert(summary.nextRetryAt === '2026-10-02T12:05:00.000Z');
+  assert(summary.canRetryNow === true);
+});
+
+Deno.test('RNF12 queue summary respects Retry-After/backoff and manual sync busy state', () => {
+  const now = new Date('2026-10-02T12:00:00.000Z');
+  const drafts = [
+    { local_state: REPORT_DRAFT_STATE.RETRY_WAIT, next_retry_at: '2026-10-02T12:05:00.000Z' },
+    { local_state: REPORT_DRAFT_STATE.RETRY_WAIT, next_retry_at: '2026-10-02T12:10:00.000Z' },
+  ];
+  const waiting = summarizeReportDraftQueue(drafts, { now });
+  assert(waiting.pendingCount === 2);
+  assert(waiting.dueCount === 0);
+  assert(waiting.nextRetryAt === '2026-10-02T12:05:00.000Z');
+  assert(waiting.canRetryNow === false);
+
+  const dueButBusy = summarizeReportDraftQueue([
+    { local_state: REPORT_DRAFT_STATE.AWAITING_PROCESSING },
+  ], { now, isSyncing: true });
+  assert(dueButBusy.pendingCount === 1);
+  assert(dueButBusy.dueCount === 1);
+  assert(dueButBusy.canRetryNow === false);
+  assert(dueButBusy.isSyncing === true);
 });

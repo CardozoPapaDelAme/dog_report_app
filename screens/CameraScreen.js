@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import DraftQueueBanner from '../components/DraftQueueBanner.js';
 import { useCameraCapture } from '../hooks/useCameraCapture.js';
 
 const colors = {
@@ -37,6 +38,9 @@ export default function CameraScreen({
   onOpenLogin,
   onOpenMap,
   showModerationShortcut = false,
+  draftQueueSummary = null,
+  draftQueueSynced = false,
+  onRetryDraftQueue,
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -83,6 +87,13 @@ export default function CameraScreen({
           ) : null}
         </View>
       ) : null}
+
+      <DraftQueueBanner
+        summary={draftQueueSummary}
+        synced={draftQueueSynced}
+        onRetry={onRetryDraftQueue}
+        style={[styles.queueBannerPosition, { top: insets.top + 66 }]}
+      />
 
       {!hasPermission ? (
         <SafeAreaView pointerEvents="box-none" style={styles.permissionOverlay}>
@@ -187,6 +198,7 @@ const styles = StyleSheet.create({
   noPhotoText: { color: colors.inverse, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12, textAlign: 'center' },
   captureButton: { width: 82, height: 82, borderRadius: 999, borderWidth: 5, borderColor: colors.primary, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
   captureInner: { width: 57, height: 57, borderRadius: 999, backgroundColor: '#ffffff', borderColor: '#d8dbd2', borderWidth: 1 },
+  queueBannerPosition: { position: 'absolute', left: 16, right: 16 },
   captureDisabled: { opacity: 0.62 },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.5 },
