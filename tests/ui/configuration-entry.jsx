@@ -2,7 +2,7 @@
 import React, { StrictMode, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import '../../i18n/index.js';
+import i18n from '../../i18n/index.js';
 import DraftQueueBanner from '../../components/DraftQueueBanner.js';
 import DuplicateManagementScreen from '../../screens/DuplicateManagementScreen.js';
 import ZoneSetScreen from '../../screens/ZoneSetScreen.js';
@@ -14,6 +14,8 @@ import { summarizeReportDraftQueue } from '../../models/reportDraft.js';
 import { buildReportPayload } from '../../models/reportPayload.js';
 import regular from '@expo-google-fonts/plus-jakarta-sans/400Regular/PlusJakartaSans_400Regular.ttf';
 import bold from '@expo-google-fonts/plus-jakarta-sans/700Bold/PlusJakartaSans_700Bold.ttf';
+
+if (new URLSearchParams(location.search).has('association-preview')) i18n.changeLanguage('es');
 
 const fonts = document.createElement('style');
 fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})}`;

@@ -35,10 +35,11 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
 
   const rows = reports.rows;
   const applied = reports.dates?.fromDay === fromDay && reports.dates?.toDay === toDay;
+  const resolvedRange = applied && (reports.phase === 'ready' || reports.phase === 'empty');
   const dateErrors = applied ? reports.errors : {};
   const canExport = reports.phase === 'ready' && applied && !exportingFormat && !pending;
-  const summary = useMemo(() => applied && (reports.phase === 'ready' || reports.phase === 'empty')
-    ? buildAssociationSummary(rows, fromDay, toDay) : null, [applied, reports.phase, rows, fromDay, toDay]);
+  const summary = useMemo(() => resolvedRange
+    ? buildAssociationSummary(rows, fromDay, toDay) : null, [resolvedRange, rows, fromDay, toDay]);
 
   function applyPreset(preset) {
     const range = getAssociationQuickRange(preset);
@@ -74,7 +75,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   }
 
   const status = reports.phase === 'loading' ? t('associationDashboard.loading')
-    : reports.phase === 'ready' && !applied ? t('associationDashboard.applyFilters')
+    : (reports.phase === 'ready' || reports.phase === 'empty') && !applied ? t('associationDashboard.applyFilters')
     : reports.phase === 'empty' ? t('associationDashboard.empty')
     : reports.phase === 'invalid' ? t('associationDashboard.invalid')
     : reports.phase === 'session' ? t('associationDashboard.session')
@@ -138,10 +139,14 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
       <View style={styles.resultsBar}>
         <View>
           <Text style={styles.resultsTitle}>{t('associationDashboard.results')}</Text>
-          {reports.phase === 'ready' && applied ? <Text style={styles.count}>{t('associationDashboard.count', { count: rows.length })}</Text> : null}
+          {resolvedRange ? <>
+            <Text style={styles.count}>{t('associationDashboard.count', { count: rows.length })}</Text>
+            <Text style={styles.appliedPeriod}>{t('associationDashboard.appliedPeriod', { from: displayDay(fromDay), to: displayDay(toDay) })}</Text>
+          </> : null}
         </View>
         <View style={styles.exportActions}>
           {['csv', 'xlsx'].map((format) => <Pressable key={format} accessibilityRole="button" disabled={!canExport}
+            accessibilityHint={t('associationDashboard.exportHint')}
             onPress={() => exportReports(format)} style={[styles.exportButton, !canExport && styles.disabled]}>
             <Text style={styles.exportText}>{exportingFormat === format ? t('associationDashboard.exporting') : t(`associationDashboard.export${format.toUpperCase()}`)}</Text>
           </Pressable>)}
@@ -149,7 +154,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
       </View>
       {exportError ? <Text accessibilityRole="alert" style={styles.error}>{t('associationDashboard.exportError')}</Text> : null}
 
-      {status ? <View style={styles.status}>
+      {status ? <View accessibilityLiveRegion="polite" style={styles.status}>
         {reports.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('common.loading')} color="#005a25" /> : null}
         <Text style={styles.statusText}>{status}</Text>
         {reports.phase === 'error' ? <Pressable accessibilityRole="button" onPress={reports.reload} style={styles.retry}>
@@ -206,6 +211,7 @@ const styles = StyleSheet.create({
   filterHint: { color: '#61705e', fontSize: 12 },
   resultsBar: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 26, marginBottom: 12 },
   resultsTitle: { color: '#172117', fontSize: 19, fontWeight: '700' }, count: { color: '#61705e', marginTop: 3 },
+  appliedPeriod: { color: '#61705e', fontSize: 12, marginTop: 3 },
   exportActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   exportButton: { borderWidth: 1, borderColor: '#005a25', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 11 },
   exportText: { color: '#005a25', fontWeight: '700' }, disabled: { opacity: 0.45 },
