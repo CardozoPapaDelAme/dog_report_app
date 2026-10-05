@@ -22,7 +22,7 @@ async function freezeToday(page) {
   });
 }
 
-test('complete filtered table and downloaded CSV contain exactly the same reports', async ({ page }, info) => {
+test('mobile cards and downloaded CSV contain the same complete filtered reports', async ({ page }, info) => {
   const cursors = [];
   await freezeToday(page);
   await page.route('**/association/reports?**', async (route) => {
@@ -34,11 +34,15 @@ test('complete filtered table and downloaded CSV contain exactly the same report
   });
   await page.goto('/?association');
   await expect(page.getByText('2 reportes en este rango')).toBeVisible();
+  await expect(page.getByTestId('association-report-card')).toHaveCount(2);
+  await expect(page.getByTestId('association-report-table')).toHaveCount(0);
   await expect(page.getByTestId('association-total')).toHaveText('2');
   await expect(page.getByText('Por día')).toBeVisible();
   await expect(page.getByRole('button', { name: '28 de septiembre de 2026: 1 reporte aceptado' })).toBeInViewport();
   await expect(page.getByRole('button', { name: '29 de septiembre de 2026: 1 reporte aceptado' })).toBeInViewport();
   await page.screenshot({ path: info.outputPath('association-summary-mobile.png'), fullPage: true });
+  await page.getByTestId('association-report-card').first().scrollIntoViewIfNeeded();
+  await page.screenshot({ path: info.outputPath('association-cards-mobile.png') });
   await page.getByRole('button', { name: '28 de septiembre de 2026: 1 reporte aceptado' }).click();
   await expect(page.getByText('28 de septiembre de 2026 · 1 reporte aceptado')).toBeVisible();
   await page.getByRole('button', { name: 'Personalizado' }).click();
@@ -56,6 +60,7 @@ test('complete filtered table and downloaded CSV contain exactly the same report
   expect(cursors).toContain('next');
   const ids = [row(1).id, row(2).id];
   for (const id of ids) await expect(page.getByText(id)).toBeAttached();
+  await expect(page.getByText('Cantidad aproximada de perros').first()).toBeAttached();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exportar CSV' }).click();
   const download = await downloadPromise;
@@ -64,6 +69,18 @@ test('complete filtered table and downloaded CSV contain exactly the same report
   const csv = await fs.readFile(await download.path(), 'utf8');
   expect(csv.trim().split('\r\n')).toHaveLength(ids.length + 1);
   for (const id of ids) expect(csv).toContain(id);
+});
+
+test('wide screens keep the report table instead of mobile cards', async ({ page }, info) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.route('**/association/reports?**', (route) => route.fulfill({ json: { data: { items: [row(1)], next_cursor: null } } }));
+  await page.goto('/?association');
+  await expect(page.getByTestId('association-report-table')).toBeVisible();
+  await expect(page.getByTestId('association-report-card')).toHaveCount(0);
+  await expect(page.getByText(row(1).id)).toBeAttached();
+  await expect(page.getByText('Cantidad aproximada de perros: 1')).toBeVisible();
+  await expect(page.getByText('{"cantidad_aprox":1}')).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath('association-table-desktop.png') });
 });
 
 test('long date ranges show monthly bars from the accepted reports', async ({ page }) => {

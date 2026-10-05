@@ -41,6 +41,19 @@
       "bucketCount_one": "{{count}} reporte aceptado",
       "bucketCount_other": "{{count}} reportes aceptados"
     },
+    "card": {
+      "accepted": "Aceptado",
+      "observed": "Observado",
+      "location": "Coordenadas",
+      "dog": "Características del perro",
+      "size": "Tamaño",
+      "color": "Color",
+      "collar": "Collar",
+      "photo": "Foto disponible",
+      "details": "Detalles del reporte",
+      "reportId": "ID del reporte",
+      "unknown": "No indicado"
+    },
     "results": "Reportes aceptados",
     "count_one": "{{count}} reporte en este rango",
     "count_other": "{{count}} reportes en este rango",

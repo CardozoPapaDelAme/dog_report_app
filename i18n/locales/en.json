@@ -39,6 +39,19 @@
       "bucketCount_one": "{{count}} accepted report",
       "bucketCount_other": "{{count}} accepted reports"
     },
+    "card": {
+      "accepted": "Accepted",
+      "observed": "Observed",
+      "location": "Coordinates",
+      "dog": "Dog characteristics",
+      "size": "Size",
+      "color": "Color",
+      "collar": "Collar",
+      "photo": "Photo available",
+      "details": "Report details",
+      "reportId": "Report ID",
+      "unknown": "Not specified"
+    },
     "results": "Accepted reports",
     "count_one": "{{count}} report in this range", "count_other": "{{count}} reports in this range",
     "export": "Export CSV", "exporting": "Preparing file…",

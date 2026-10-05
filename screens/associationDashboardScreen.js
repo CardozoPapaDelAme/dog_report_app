@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ASSOCIATION_REPORT_COLUMNS, associationReportValues, createAssociationCsv, getAssociationQuickRange } from '../models/associationReport.js';
+import { ASSOCIATION_REPORT_COLUMNS, createAssociationCsv, getAssociationQuickRange } from '../models/associationReport.js';
 import { useAssociationReports } from '../hooks/useAssociationReports.js';
 import { saveAssociationCsv } from '../services/associationExport';
 import AssociationDatePicker from '../components/associationDatePicker.js';
 import AssociationSummaryCard from '../components/associationSummaryCard.js';
+import AssociationReportCard from '../components/associationReportCard.js';
 import { buildAssociationSummary } from '../models/associationSummary.js';
+import { associationDisplayValues, presentAssociationReport } from '../presenters/associationDisplay.js';
 
 const WIDTHS = [210, 190, 190, 175, 130, 290, 150, 100, 105, 120, 120, 105];
 const TABLE_WIDTH = WIDTHS.reduce((sum, width) => sum + width, 0);
@@ -17,6 +19,8 @@ function Cell({ value, width, header = false }) {
 
 export default function AssociationDashboardScreen({ accessToken, displayName, onLogout, pending, getPage, saveCsv = saveAssociationCsv }) {
   const { t, i18n } = useTranslation();
+  const { width } = useWindowDimensions();
+  const wide = width >= 900;
   const initialRange = getAssociationQuickRange('last30Days');
   const [fromDay, setFromDay] = useState(initialRange.fromDay);
   const [toDay, setToDay] = useState(initialRange.toDay);
@@ -78,8 +82,8 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
     : reports.phase === 'error' ? t('associationDashboard.error')
     : reports.phase === 'idle' ? t('associationDashboard.idle') : null;
 
-  return <SafeAreaView style={styles.safeArea}>
-    <View style={styles.page}>
+  const showReports = reports.phase === 'ready' && applied;
+  const dashboardContent = <>
       <View style={styles.topBar}>
         <View style={styles.heading}>
           <Text style={styles.eyebrow}>{t('associationDashboard.eyebrow')}</Text>
@@ -150,27 +154,34 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
           <Text style={styles.retryText}>{t('associationDashboard.retry')}</Text>
         </Pressable> : null}
       </View> : null}
+    </>;
 
-      {reports.phase === 'ready' && applied ? <ScrollView horizontal style={styles.tableScroll} contentContainerStyle={styles.tableScrollContent}>
-        <View style={[styles.table, { width: TABLE_WIDTH }]}>
-          <View style={styles.headerRow}>{ASSOCIATION_REPORT_COLUMNS.map((key, index) =>
-            <Cell key={key} header value={t(`associationDashboard.columns.${key}`)} width={WIDTHS[index]} />)}</View>
-          <FlatList data={rows} keyExtractor={(item) => item.id} style={styles.list}
-            renderItem={({ item, index }) => <View style={[styles.row, index % 2 && styles.alternateRow]}>
-              {associationReportValues(item).map((value, cellIndex) =>
-                <Cell key={ASSOCIATION_REPORT_COLUMNS[cellIndex]} value={
-                  typeof value === 'boolean' ? t(value ? 'common.yes' : 'common.no') : value
-                } width={WIDTHS[cellIndex]} />)}
-            </View>} />
-        </View>
-      </ScrollView> : null}
+  const table = showReports ? <ScrollView testID="association-report-table" horizontal style={styles.tableScroll} contentContainerStyle={styles.tableScrollContent}>
+    <View style={[styles.table, { width: TABLE_WIDTH }]}>
+      <View style={styles.headerRow}>{ASSOCIATION_REPORT_COLUMNS.map((key, index) =>
+        <Cell key={key} header value={t(`associationDashboard.columns.${key}`)} width={WIDTHS[index]} />)}</View>
+      <FlatList data={rows} keyExtractor={(item) => item.id} style={styles.list}
+        renderItem={({ item, index }) => <View style={[styles.row, index % 2 && styles.alternateRow]}>
+          {associationDisplayValues(presentAssociationReport(item, t, i18n.language)).map((value, cellIndex) =>
+            <Cell key={ASSOCIATION_REPORT_COLUMNS[cellIndex]} value={value} width={WIDTHS[cellIndex]} />)}
+        </View>} />
     </View>
+  </ScrollView> : null;
+
+  return <SafeAreaView style={styles.safeArea}>
+    {wide ? <View style={styles.page}>{dashboardContent}{table}</View>
+      : <FlatList style={styles.mobileList} contentContainerStyle={styles.mobileContent}
+        data={showReports ? rows : []} keyExtractor={(item) => item.id}
+        ListHeaderComponent={<View>{dashboardContent}</View>}
+        renderItem={({ item }) => <AssociationReportCard report={item} />} />}
   </SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7fbf1' },
   page: { flex: 1, width: '100%', maxWidth: 1440, alignSelf: 'center', padding: 20 },
+  mobileList: { flex: 1 },
+  mobileContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 20, paddingBottom: 36 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 },
   heading: { flexShrink: 1 }, eyebrow: { color: '#005a25', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
   title: { color: '#172117', fontSize: 27, fontWeight: '700', marginTop: 6 },
