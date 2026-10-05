@@ -4,7 +4,8 @@ import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, u
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ASSOCIATION_REPORT_COLUMNS, createAssociationCsv, getAssociationQuickRange } from '../models/associationReport.js';
 import { useAssociationReports } from '../hooks/useAssociationReports.js';
-import { saveAssociationCsv } from '../services/associationExport';
+import { saveAssociationCsv, saveAssociationXlsx } from '../services/associationExport';
+import { createAssociationXlsx } from '../models/associationWorkbook.js';
 import AssociationDatePicker from '../components/associationDatePicker.js';
 import AssociationSummaryCard from '../components/associationSummaryCard.js';
 import AssociationReportCard from '../components/associationReportCard.js';
@@ -17,7 +18,7 @@ function Cell({ value, width, header = false }) {
   return <Text numberOfLines={header ? 2 : 3} selectable={!header} style={[styles.cell, { width }, header && styles.headerCell]}>{value == null ? '—' : String(value)}</Text>;
 }
 
-export default function AssociationDashboardScreen({ accessToken, displayName, onLogout, pending, getPage, saveCsv = saveAssociationCsv }) {
+export default function AssociationDashboardScreen({ accessToken, displayName, onLogout, pending, getPage, saveCsv = saveAssociationCsv, saveXlsx = saveAssociationXlsx }) {
   const { t, i18n } = useTranslation();
   const { width } = useWindowDimensions();
   const wide = width >= 900;
@@ -26,7 +27,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   const [toDay, setToDay] = useState(initialRange.toDay);
   const [activePreset, setActivePreset] = useState('last30Days');
   const [calendarField, setCalendarField] = useState(null);
-  const [exporting, setExporting] = useState(false);
+  const [exportingFormat, setExportingFormat] = useState(null);
   const [exportError, setExportError] = useState(null);
   const reports = useAssociationReports(accessToken, getPage);
   const { loadRange } = reports;
@@ -35,7 +36,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   const rows = reports.rows;
   const applied = reports.dates?.fromDay === fromDay && reports.dates?.toDay === toDay;
   const dateErrors = applied ? reports.errors : {};
-  const canExport = reports.phase === 'ready' && applied && !exporting && !pending;
+  const canExport = reports.phase === 'ready' && applied && !exportingFormat && !pending;
   const summary = useMemo(() => applied && (reports.phase === 'ready' || reports.phase === 'empty')
     ? buildAssociationSummary(rows, fromDay, toDay) : null, [applied, reports.phase, rows, fromDay, toDay]);
 
@@ -60,17 +61,16 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
     return new Date(`${day}T12:00:00`).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  async function exportCsv() {
+  async function exportReports(format) {
     if (!canExport) return;
-    setExporting(true);
+    setExportingFormat(format);
     setExportError(null);
     try {
-      await saveCsv({
-        filename: `reportes-asociacion_${reports.dates.fromDay}_${reports.dates.toDay}.csv`,
-        content: createAssociationCsv(rows),
-      });
+      const filename = `reportes-asociacion_${reports.dates.fromDay}_${reports.dates.toDay}.${format}`;
+      if (format === 'xlsx') await saveXlsx({ filename, content: createAssociationXlsx(rows) });
+      else await saveCsv({ filename, content: createAssociationCsv(rows) });
     } catch (error) { setExportError(error); }
-    finally { setExporting(false); }
+    finally { setExportingFormat(null); }
   }
 
   const status = reports.phase === 'loading' ? t('associationDashboard.loading')
@@ -140,10 +140,12 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
           <Text style={styles.resultsTitle}>{t('associationDashboard.results')}</Text>
           {reports.phase === 'ready' && applied ? <Text style={styles.count}>{t('associationDashboard.count', { count: rows.length })}</Text> : null}
         </View>
-        <Pressable accessibilityRole="button" disabled={!canExport} onPress={exportCsv}
-          style={[styles.exportButton, !canExport && styles.disabled]}>
-          <Text style={styles.exportText}>{exporting ? t('associationDashboard.exporting') : t('associationDashboard.export')}</Text>
-        </Pressable>
+        <View style={styles.exportActions}>
+          {['csv', 'xlsx'].map((format) => <Pressable key={format} accessibilityRole="button" disabled={!canExport}
+            onPress={() => exportReports(format)} style={[styles.exportButton, !canExport && styles.disabled]}>
+            <Text style={styles.exportText}>{exportingFormat === format ? t('associationDashboard.exporting') : t(`associationDashboard.export${format.toUpperCase()}`)}</Text>
+          </Pressable>)}
+        </View>
       </View>
       {exportError ? <Text accessibilityRole="alert" style={styles.error}>{t('associationDashboard.exportError')}</Text> : null}
 
@@ -202,8 +204,9 @@ const styles = StyleSheet.create({
   primaryButton: { backgroundColor: '#005a25', borderRadius: 8, paddingHorizontal: 18, paddingVertical: 12 },
   primaryText: { color: '#fff', fontWeight: '700' },
   filterHint: { color: '#61705e', fontSize: 12 },
-  resultsBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 26, marginBottom: 12 },
+  resultsBar: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 26, marginBottom: 12 },
   resultsTitle: { color: '#172117', fontSize: 19, fontWeight: '700' }, count: { color: '#61705e', marginTop: 3 },
+  exportActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   exportButton: { borderWidth: 1, borderColor: '#005a25', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 11 },
   exportText: { color: '#005a25', fontWeight: '700' }, disabled: { opacity: 0.45 },
   status: { flex: 1, minHeight: 150, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20, backgroundColor: '#fff', borderRadius: 10 },

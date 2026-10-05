@@ -49,7 +49,8 @@ test('mobile cards and downloaded CSV contain the same complete filtered reports
   await page.getByRole('button', { name: '28 de septiembre de 2026', exact: true }).click();
   await expect(page.getByText('Consulta este periodo para actualizar los resultados.')).toBeVisible();
   await expect(page.getByTestId('association-total')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'CSV', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'XLSX', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: /Hasta:/ }).click();
   await page.getByRole('button', { name: 'Mes anterior' }).click();
   await page.getByRole('button', { name: '29 de septiembre de 2026', exact: true }).click();
@@ -62,13 +63,23 @@ test('mobile cards and downloaded CSV contain the same complete filtered reports
   for (const id of ids) await expect(page.getByText(id)).toBeAttached();
   await expect(page.getByText('Cantidad aproximada de perros').first()).toBeAttached();
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Exportar CSV' }).click();
+  await page.getByRole('button', { name: 'CSV', exact: true }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe('reportes-asociacion_2026-09-28_2026-09-29.csv');
   const fs = await import('node:fs/promises');
   const csv = await fs.readFile(await download.path(), 'utf8');
   expect(csv.trim().split('\r\n')).toHaveLength(ids.length + 1);
   for (const id of ids) expect(csv).toContain(id);
+  const xlsxDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'XLSX', exact: true }).click();
+  const xlsxDownload = await xlsxDownloadPromise;
+  expect(xlsxDownload.suggestedFilename()).toBe('reportes-asociacion_2026-09-28_2026-09-29.xlsx');
+  const XLSX = await import('xlsx');
+  const workbook = XLSX.read(await fs.readFile(await xlsxDownload.path()), { type: 'buffer' });
+  const exportedRows = XLSX.utils.sheet_to_json(workbook.Sheets.Reportes, { header: 1 });
+  expect(exportedRows).toHaveLength(ids.length + 1);
+  expect(exportedRows.slice(1).map((values) => values[0])).toEqual(ids);
+  expect(exportedRows[0][0]).toBe('id');
 });
 
 test('wide screens keep the report table instead of mobile cards', async ({ page }, info) => {
@@ -122,7 +133,8 @@ test('empty range explains the result and keeps export disabled', async ({ page 
   await page.goto('/?association');
   await expect(page.getByText('No hay resultados en este rango.')).toBeVisible();
   await expect(page.getByTestId('association-total')).toHaveText('0');
-  await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'CSV', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'XLSX', exact: true })).toBeDisabled();
 });
 
 test('loading remains visible until the final cursor page completes', async ({ page }) => {
@@ -138,7 +150,8 @@ test('loading remains visible until the final cursor page completes', async ({ p
   await page.goto('/?association');
   await expect(page.getByText('Cargando todos los reportes del rango…')).toBeVisible();
   await expect(page.getByTestId('association-total')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'CSV', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'XLSX', exact: true })).toBeDisabled();
   release();
   await expect(page.getByText('2 reportes en este rango')).toBeVisible();
   await expect(page.getByTestId('association-total')).toHaveText('2');

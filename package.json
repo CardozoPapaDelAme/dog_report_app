@@ -56,7 +56,8 @@
     "react-native-fast-tflite": "^3.0.1",
     "react-native-nitro-modules": "^0.37.1",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-web": "^0.21.2"
+    "react-native-web": "^0.21.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

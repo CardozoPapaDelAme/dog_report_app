@@ -54,7 +54,7 @@
     },
     "results": "Accepted reports",
     "count_one": "{{count}} report in this range", "count_other": "{{count}} reports in this range",
-    "export": "Export CSV", "exporting": "Preparing file…",
+    "exportCSV": "CSV", "exportXLSX": "XLSX", "exporting": "Preparing file…",
     "exportError": "Could not save the file. Please try again.",
     "loading": "Loading all reports in this range…",
     "applyFilters": "Search this period to update the results.",
