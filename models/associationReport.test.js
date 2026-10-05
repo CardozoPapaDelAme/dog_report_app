@@ -1,4 +1,4 @@
-import { ASSOCIATION_REPORT_COLUMNS, associationReportValues, createAssociationCsv, readAssociationReportPage, validateAssociationDateRange } from './associationReport.js';
+import { ASSOCIATION_REPORT_COLUMNS, associationDateText, associationReportValues, createAssociationCsv, getAssociationQuickRange, readAssociationReportPage, validateAssociationDateRange } from './associationReport.js';
 
 function assert(value, message = 'Assertion failed') { if (!value) throw new Error(message); }
 const report = {
@@ -20,6 +20,14 @@ Deno.test('RIC-2 model: valid local dates become an inclusive RFC 3339 range', (
   assert(validateAssociationDateRange('2026-09-02', '2026-09-01').errors.to === 'before_from');
   assert(validateAssociationDateRange('2026-02-30', '2026-03-01').errors.from === 'invalid_date');
   assert(validateAssociationDateRange('', '2026-03-01').range === null);
+});
+
+Deno.test('RIC-5 dashboard filters: quick ranges use inclusive local calendar dates', () => {
+  const today = new Date(2026, 9, 4, 15, 30);
+  assert(JSON.stringify(getAssociationQuickRange('last7Days', today)) === JSON.stringify({ fromDay: '2026-09-28', toDay: '2026-10-04' }));
+  assert(JSON.stringify(getAssociationQuickRange('last30Days', today)) === JSON.stringify({ fromDay: '2026-09-05', toDay: '2026-10-04' }));
+  assert(JSON.stringify(getAssociationQuickRange('thisMonth', today)) === JSON.stringify({ fromDay: '2026-10-01', toDay: '2026-10-04' }));
+  assert(associationDateText(new Date(2026, 0, 2)) === '2026-01-02');
 });
 
 Deno.test('RIC-2 model: reads the exact authorized projection and opaque cursor', () => {

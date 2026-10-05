@@ -1,23 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ASSOCIATION_REPORT_COLUMNS, associationReportValues, createAssociationCsv } from '../models/associationReport.js';
+import { ASSOCIATION_REPORT_COLUMNS, associationReportValues, createAssociationCsv, getAssociationQuickRange } from '../models/associationReport.js';
 import { useAssociationReports } from '../hooks/useAssociationReports.js';
 import { saveAssociationCsv } from '../services/associationExport';
+import AssociationDatePicker from '../components/associationDatePicker.js';
 
 const WIDTHS = [210, 190, 190, 175, 130, 290, 150, 100, 105, 120, 120, 105];
 const TABLE_WIDTH = WIDTHS.reduce((sum, width) => sum + width, 0);
-const dateText = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
 function Cell({ value, width, header = false }) {
   return <Text numberOfLines={header ? 2 : 3} selectable={!header} style={[styles.cell, { width }, header && styles.headerCell]}>{value == null ? '—' : String(value)}</Text>;
 }
 
 export default function AssociationDashboardScreen({ accessToken, displayName, onLogout, pending, getPage, saveCsv = saveAssociationCsv }) {
-  const { t } = useTranslation();
-  const [fromDay, setFromDay] = useState(() => { const day = new Date(); day.setDate(day.getDate() - 29); return dateText(day); });
-  const [toDay, setToDay] = useState(() => dateText(new Date()));
+  const { t, i18n } = useTranslation();
+  const initialRange = getAssociationQuickRange('last30Days');
+  const [fromDay, setFromDay] = useState(initialRange.fromDay);
+  const [toDay, setToDay] = useState(initialRange.toDay);
+  const [activePreset, setActivePreset] = useState('last30Days');
+  const [calendarField, setCalendarField] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(null);
   const reports = useAssociationReports(accessToken, getPage);
@@ -26,7 +28,29 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
 
   const rows = reports.rows;
   const applied = reports.dates?.fromDay === fromDay && reports.dates?.toDay === toDay;
+  const dateErrors = applied ? reports.errors : {};
   const canExport = reports.phase === 'ready' && applied && !exporting && !pending;
+
+  function applyPreset(preset) {
+    const range = getAssociationQuickRange(preset);
+    setFromDay(range.fromDay);
+    setToDay(range.toDay);
+    setActivePreset(preset);
+    setExportError(null);
+    loadRange(range.fromDay, range.toDay);
+  }
+
+  function selectCustomDate(day) {
+    if (calendarField === 'from') setFromDay(day);
+    else if (calendarField === 'to') setToDay(day);
+    setActivePreset('custom');
+    setExportError(null);
+    setCalendarField(null);
+  }
+
+  function displayDay(day) {
+    return new Date(`${day}T12:00:00`).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
 
   async function exportCsv() {
     if (!canExport) return;
@@ -42,6 +66,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   }
 
   const status = reports.phase === 'loading' ? t('associationDashboard.loading')
+    : reports.phase === 'ready' && !applied ? t('associationDashboard.applyFilters')
     : reports.phase === 'empty' ? t('associationDashboard.empty')
     : reports.phase === 'invalid' ? t('associationDashboard.invalid')
     : reports.phase === 'session' ? t('associationDashboard.session')
@@ -62,30 +87,48 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
         </Pressable>
       </View>
 
-      <View style={styles.filters}>
-        <View style={styles.field}>
-          <Text style={styles.label}>{t('associationDashboard.from')}</Text>
-          <TextInput accessibilityLabel={t('associationDashboard.from')} value={fromDay} onChangeText={setFromDay}
-            placeholder="AAAA-MM-DD" autoCapitalize="none" style={styles.input} />
-          {reports.errors.from ? <Text style={styles.fieldError}>{t('associationDashboard.invalidDate')}</Text> : null}
+      <View style={styles.filterCard}>
+        <Text style={styles.filterTitle}>{t('associationDashboard.filterTitle')}</Text>
+        <View style={styles.presets}>
+          {['last7Days', 'last30Days', 'thisMonth'].map((preset) => <Pressable key={preset} accessibilityRole="button"
+            accessibilityState={{ selected: activePreset === preset }} disabled={reports.phase === 'loading'} onPress={() => applyPreset(preset)}
+            style={[styles.presetButton, activePreset === preset && styles.presetActive, reports.phase === 'loading' && styles.disabled]}>
+            <Text style={[styles.presetText, activePreset === preset && styles.presetActiveText]}>{t(`associationDashboard.presets.${preset}`)}</Text>
+          </Pressable>)}
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: activePreset === 'custom' }} disabled={reports.phase === 'loading'}
+            onPress={() => { setActivePreset('custom'); setCalendarField('from'); }}
+            style={[styles.presetButton, activePreset === 'custom' && styles.presetActive, reports.phase === 'loading' && styles.disabled]}>
+            <Text style={[styles.presetText, activePreset === 'custom' && styles.presetActiveText]}>{t('associationDashboard.presets.custom')}</Text>
+          </Pressable>
         </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>{t('associationDashboard.to')}</Text>
-          <TextInput accessibilityLabel={t('associationDashboard.to')} value={toDay} onChangeText={setToDay}
-            placeholder="AAAA-MM-DD" autoCapitalize="none" style={styles.input} />
-          {reports.errors.to ? <Text style={styles.fieldError}>{t(reports.errors.to === 'before_from' ? 'associationDashboard.reversedDate' : 'associationDashboard.invalidDate')}</Text> : null}
-        </View>
-        <Pressable accessibilityRole="button" disabled={reports.phase === 'loading'} onPress={() => { setExportError(null); loadRange(fromDay, toDay); }}
-          style={[styles.primaryButton, reports.phase === 'loading' && styles.disabled]}>
-          <Text style={styles.primaryText}>{t('associationDashboard.search')}</Text>
-        </Pressable>
+        {activePreset === 'custom' ? <View style={styles.customRange}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${t('associationDashboard.from')}: ${displayDay(fromDay)}`}
+            onPress={() => setCalendarField('from')} style={styles.dateField}>
+            <Text style={styles.dateLabel}>{t('associationDashboard.from')}</Text><Text style={styles.dateValue}>{displayDay(fromDay)}</Text>
+          </Pressable>
+          <Text style={styles.rangeSeparator}>—</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${t('associationDashboard.to')}: ${displayDay(toDay)}`}
+            onPress={() => setCalendarField('to')} style={styles.dateField}>
+            <Text style={styles.dateLabel}>{t('associationDashboard.to')}</Text><Text style={styles.dateValue}>{displayDay(toDay)}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" disabled={reports.phase === 'loading'} onPress={() => { setExportError(null); loadRange(fromDay, toDay); }}
+            style={[styles.primaryButton, reports.phase === 'loading' && styles.disabled]}>
+            <Text style={styles.primaryText}>{t('associationDashboard.search')}</Text>
+          </Pressable>
+          {dateErrors.from || dateErrors.to ? <Text style={styles.fieldError}>{t((dateErrors.to === 'before_from') ? 'associationDashboard.reversedDate' : 'associationDashboard.invalidDate')}</Text> : null}
+        </View> : null}
+        <Text style={styles.filterHint}>{t('associationDashboard.dateHint')}</Text>
       </View>
-      <Text style={styles.filterHint}>{t('associationDashboard.dateHint')}</Text>
+
+      <AssociationDatePicker visible={Boolean(calendarField)} value={calendarField === 'to' ? toDay : fromDay}
+        title={t(calendarField === 'to' ? 'associationDashboard.selectTo' : 'associationDashboard.selectFrom')}
+        locale={i18n.language} previousMonthLabel={t('associationDashboard.previousMonth')} nextMonthLabel={t('associationDashboard.nextMonth')}
+        cancelLabel={t('common.cancel')} onSelect={selectCustomDate} onClose={() => setCalendarField(null)} />
 
       <View style={styles.resultsBar}>
         <View>
           <Text style={styles.resultsTitle}>{t('associationDashboard.results')}</Text>
-          {reports.phase === 'ready' ? <Text style={styles.count}>{t('associationDashboard.count', { count: rows.length })}</Text> : null}
+          {reports.phase === 'ready' && applied ? <Text style={styles.count}>{t('associationDashboard.count', { count: rows.length })}</Text> : null}
         </View>
         <Pressable accessibilityRole="button" disabled={!canExport} onPress={exportCsv}
           style={[styles.exportButton, !canExport && styles.disabled]}>
@@ -102,7 +145,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
         </Pressable> : null}
       </View> : null}
 
-      {reports.phase === 'ready' ? <ScrollView horizontal style={styles.tableScroll} contentContainerStyle={styles.tableScrollContent}>
+      {reports.phase === 'ready' && applied ? <ScrollView horizontal style={styles.tableScroll} contentContainerStyle={styles.tableScrollContent}>
         <View style={[styles.table, { width: TABLE_WIDTH }]}>
           <View style={styles.headerRow}>{ASSOCIATION_REPORT_COLUMNS.map((key, index) =>
             <Cell key={key} header value={t(`associationDashboard.columns.${key}`)} width={WIDTHS[index]} />)}</View>
@@ -128,13 +171,20 @@ const styles = StyleSheet.create({
   name: { color: '#5d6859', marginTop: 4 },
   logout: { padding: 10, borderWidth: 1, borderColor: '#b9c9b9', borderRadius: 8 },
   logoutText: { color: '#005a25', fontWeight: '600' },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', gap: 12, marginTop: 24 },
-  field: { width: 180 }, label: { color: '#334433', fontWeight: '600', marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: '#aebead', borderRadius: 8, backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 10, color: '#172117' },
+  filterCard: { marginTop: 24, padding: 16, gap: 12, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2eae0' },
+  filterTitle: { color: '#172117', fontSize: 16, fontWeight: '700' },
+  presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  presetButton: { borderWidth: 1, borderColor: '#b9c9b9', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff' },
+  presetActive: { backgroundColor: '#005a25', borderColor: '#005a25' },
+  presetText: { color: '#334433', fontSize: 13, fontWeight: '600' }, presetActiveText: { color: '#fff' },
+  customRange: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', gap: 10 },
+  dateField: { minWidth: 132, borderWidth: 1, borderColor: '#aebead', borderRadius: 9, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#fff' },
+  dateLabel: { color: '#61705e', fontSize: 11, marginBottom: 3 }, dateValue: { color: '#172117', fontWeight: '600' },
+  rangeSeparator: { color: '#61705e', paddingBottom: 12 },
   fieldError: { color: '#ad2d20', fontSize: 12, marginTop: 4 },
   primaryButton: { backgroundColor: '#005a25', borderRadius: 8, paddingHorizontal: 18, paddingVertical: 12 },
   primaryText: { color: '#fff', fontWeight: '700' },
-  filterHint: { color: '#61705e', fontSize: 12, marginTop: 8 },
+  filterHint: { color: '#61705e', fontSize: 12 },
   resultsBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 26, marginBottom: 12 },
   resultsTitle: { color: '#172117', fontSize: 19, fontWeight: '700' }, count: { color: '#61705e', marginTop: 3 },
   exportButton: { borderWidth: 1, borderColor: '#005a25', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 11 },

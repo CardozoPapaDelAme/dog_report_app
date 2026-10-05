@@ -12,6 +12,14 @@ const row = (number) => ({
 
 test('complete filtered table and downloaded CSV contain exactly the same reports', async ({ page }) => {
   const cursors = [];
+  await page.addInitScript(() => {
+    const RealDate = Date;
+    class FixedDate extends RealDate {
+      constructor(...args) { super(...(args.length ? args : ['2026-10-04T12:00:00'])); }
+      static now() { return new RealDate('2026-10-04T12:00:00').valueOf(); }
+    }
+    window.Date = FixedDate;
+  });
   await page.route('**/association/reports?**', async (route) => {
     const url = new URL(route.request().url());
     expect(route.request().headers().authorization).toBe('Bearer test-session-a');
@@ -21,8 +29,13 @@ test('complete filtered table and downloaded CSV contain exactly the same report
   });
   await page.goto('/?association');
   await expect(page.getByText('2 reportes en este rango')).toBeVisible();
-  await page.getByRole('textbox', { name: 'Desde' }).fill('2026-09-01');
-  await page.getByRole('textbox', { name: 'Hasta' }).fill('2026-09-03');
+  await page.getByRole('button', { name: 'Personalizado' }).click();
+  await page.getByRole('button', { name: '1 de septiembre de 2026', exact: true }).click();
+  await expect(page.getByText('Consulta este periodo para actualizar los resultados.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeDisabled();
+  await page.getByRole('button', { name: /Hasta:/ }).click();
+  await page.getByRole('button', { name: 'Mes anterior' }).click();
+  await page.getByRole('button', { name: '3 de septiembre de 2026', exact: true }).click();
   await page.getByRole('button', { name: 'Consultar' }).click();
   await expect(page.getByText('2 reportes en este rango')).toBeVisible();
   expect(cursors).toContain(null);
@@ -37,6 +50,26 @@ test('complete filtered table and downloaded CSV contain exactly the same report
   const csv = await fs.readFile(await download.path(), 'utf8');
   expect(csv.trim().split('\r\n')).toHaveLength(ids.length + 1);
   for (const id of ids) expect(csv).toContain(id);
+});
+
+test('quick date presets request only the selected period', async ({ page }) => {
+  await page.route('**/association/reports?**', (route) => route.fulfill({ json: { data: { items: [], next_cursor: null } } }));
+  await page.goto('/?association');
+  await expect(page.getByText('No hay resultados en este rango.')).toBeVisible();
+  const expected = await page.evaluate(() => {
+    const today = new Date();
+    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    return { from: new Date(start.getFullYear(), start.getMonth(), start.getDate()).toISOString(),
+      to: new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1).getTime() - 1 };
+  });
+  const requestPromise = page.waitForRequest('**/association/reports?**');
+  await page.getByRole('button', { name: 'Últimos 7 días' }).click();
+  const request = await requestPromise;
+  const query = new URL(request.url()).searchParams;
+  expect(query.get('from')).toBe(expected.from);
+  expect(new Date(query.get('to')).getTime()).toBe(expected.to);
 });
 
 test('empty range explains the result and keeps export disabled', async ({ page }) => {

@@ -614,6 +614,6 @@ content and moderation before/after. A component containing deleted reports may
 not reappear until it has eligible endpoints; candidate review state and report
 moderation are intentionally distinct.
 
-## RIC-4 / L4 Asociación dashboard and CSV export
+## RIC-4 / RIC-5 Asociación dashboard, filters and CSV export
 
-Run `deno test --no-lock --config supabase/functions/api/deno.json models/associationReport.test.js services/associationReportApi.test.js hooks/associationReportLoader.test.js` for date, projection, pagination and CSV model checks. Run `npx playwright test associationDashboard.spec.js` for the filtered table, downloaded CSV row parity, loading through the last cursor page, and the explicit empty-range state. The browser fixture mocks RIC-2; it does not prove a live managed-project session or native share-sheet behavior. Native CSV sharing uses `expo-sharing` and requires an Expo development build.
+Run `deno test --no-lock --config supabase/functions/api/deno.json models/associationReport.test.js services/associationReportApi.test.js hooks/associationReportLoader.test.js` for quick date presets, custom date validation, projection, pagination and CSV model checks. Run `npx playwright test associationDashboard.spec.js` for quick-filter query bounds, custom calendar selection, filtered-table/export row parity, loading through the last cursor page, and the explicit empty-range state. The browser fixture mocks RIC-2; it does not prove a live managed-project session or native share-sheet behavior. Native CSV sharing uses `expo-sharing` and requires an Expo development build.
