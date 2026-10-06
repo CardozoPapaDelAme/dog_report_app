@@ -265,9 +265,16 @@ function OfflineQueueFixture() {
 }
 
 function LoginFixture() {
+  const params = new URLSearchParams(location.search);
   const [screen, setScreen] = useState('login');
   if (screen === 'camera') return <p>Cámara de prueba</p>;
-  return <LoginScreen loading={false} pending={false} error={null} onLogin={async () => {}} onBack={() => setScreen('camera')} />;
+  return <LoginScreen
+    loading={params.has('loading')}
+    pending={params.has('pending')}
+    error={null}
+    onLogin={async () => {}}
+    onBack={params.has('no-back') ? undefined : () => setScreen('camera')}
+  />;
 }
 
 function Fixture() {
