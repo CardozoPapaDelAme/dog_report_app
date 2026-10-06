@@ -11,6 +11,7 @@
     "showPassword": "Mostrar",
     "hidePassword": "Ocultar",
     "submit": "Entrar",
+    "back": "Volver a cámara",
     "logout": "Cerrar sesión",
     "footer": "El acceso está limitado a cuentas autorizadas.",
     "error": "No pudimos iniciar sesión o validar el acceso. Revisa tus datos e inténtalo de nuevo."

@@ -108,7 +108,7 @@ export default function App() {
   if (login.loading) {
     content = <LoginScreen loading onLogin={login.login} error={login.error} pending={login.pending} />;
   } else if (!login.session && screen === 'login') {
-    content = <LoginScreen onLogin={login.login} error={login.error} pending={login.pending} loading={false} />;
+    content = <LoginScreen onLogin={login.login} onBack={() => setScreen('camera')} error={login.error} pending={login.pending} loading={false} />;
   } else if (login.session?.profile.role === 'association') {
     content = (
       <AssociationDashboardScreen

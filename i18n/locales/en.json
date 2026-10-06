@@ -11,6 +11,7 @@
     "showPassword": "Show",
     "hidePassword": "Hide",
     "submit": "Sign in",
+    "back": "Back to camera",
     "logout": "Sign out",
     "footer": "Access is limited to authorized accounts.",
     "error": "We could not sign in or verify access. Check your details and try again."
