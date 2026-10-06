@@ -22,7 +22,7 @@ const colors = {
   dangerSoft: "#ffdad6",
 };
 
-export default function LoginScreen({ onLogin, error, pending, loading }) {
+export default function LoginScreen({ onLogin, onBack, error, pending, loading }) {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,6 +39,11 @@ export default function LoginScreen({ onLogin, error, pending, loading }) {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}
       >
+        {onBack && !loading ? (
+          <Pressable accessibilityRole="button" disabled={pending} onPress={onBack} hitSlop={8} style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}>
+            <Text style={styles.backText}>{t("login.back")}</Text>
+          </Pressable>
+        ) : null}
         <View style={styles.brandMark}><Text style={styles.brandLetter}>C</Text></View>
         <Text style={styles.eyebrow}>{t("login.eyebrow")}</Text>
         <Text style={styles.title}>{t("login.title")}</Text>
@@ -105,6 +110,8 @@ export default function LoginScreen({ onLogin, error, pending, loading }) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, justifyContent: "center", alignSelf: "center", width: "100%", maxWidth: 480, paddingHorizontal: 26, paddingVertical: 36 },
+  backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", borderRadius: 999, borderColor: colors.outline, borderWidth: 1, backgroundColor: "#fff", paddingHorizontal: 16, marginBottom: 24 },
+  backText: { color: colors.primary, fontSize: 13, fontWeight: "700" },
   brandMark: { width: 48, height: 48, borderRadius: 16, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", marginBottom: 32 },
   brandLetter: { color: "#fff", fontSize: 24, fontWeight: "700" },
   eyebrow: { color: colors.primary, fontSize: 12, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase" },

@@ -10,6 +10,7 @@ import ConfigurationScreen from '../../screens/ConfigurationScreen.js';
 import PublicMapScreen from '../../screens/PublicMapScreen.js';
 import ReportFormScreen from '../../screens/ReportFormScreen.js';
 import AssociationDashboardScreen from '../../screens/associationDashboardScreen.js';
+import LoginScreen from '../../screens/loginScreen.js';
 import { summarizeReportDraftQueue } from '../../models/reportDraft.js';
 import { buildReportPayload } from '../../models/reportPayload.js';
 import regular from '@expo-google-fonts/plus-jakarta-sans/400Regular/PlusJakartaSans_400Regular.ttf';
@@ -265,8 +266,24 @@ function OfflineQueueFixture() {
   />;
 }
 
+function LoginFixture() {
+  const params = new URLSearchParams(location.search);
+  const [screen, setScreen] = useState('login');
+  if (screen === 'camera') return <p>Cámara de prueba</p>;
+  return <LoginScreen
+    loading={params.has('loading')}
+    pending={params.has('pending')}
+    error={null}
+    onLogin={async () => {}}
+    onBack={params.has('no-back') ? undefined : () => setScreen('camera')}
+  />;
+}
+
 function Fixture() {
   const params = new URLSearchParams(location.search);
+  if (params.has('login')) return <div style={{height:'100dvh'}}>
+    <SafeAreaProvider><LoginFixture /></SafeAreaProvider>
+  </div>;
   if (params.has('offline-queue')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><OfflineQueueFixture /></SafeAreaProvider>
   </div>;
