@@ -71,7 +71,7 @@ resultados; reporte de incidentes.
   cita 12 nombres de archivo de test que no existen (ver T4).
 - Requerimientos: RF01–RF24, RNF01–RNF36 y HU-01–HU-24 (cada HU-nn corresponde
   al RF-nn). `docs/product/APPROVED-CLARIFICATIONS.md` no retira ni agrega IDs.
-- Historial: 12 commits `fix(...)` de 197, fuente de incidentes históricos (T11).
+- Historial: 12 commits `fix` de 197, fuente de incidentes históricos (T11).
 
 ### Comandos actuales
 
@@ -169,8 +169,10 @@ resultados; reporte de incidentes.
     moverse; ubicar cada cita por el nombre del archivo.
   - Agregar a la matriz los tests de RF03, RF19 y RF20 que existen pero no están listados.
   - Agregar una comprobación automática (script o test) que falle si
-    `docs/TRACEABILITY.md` o los archivos de `docs/testing/` citan una ruta que no
-    existe, y sumarla a `npm test` (T2) para que corra en la CI.
+    `docs/TRACEABILITY.md`, `docs/testing/PLAN.md` o `docs/testing/cases/` citan una
+    ruta de archivo que no existe, y sumarla a `npm test` (T2) para que corra en la CI.
+    Excluir este `BACKLOG.md`: cita a propósito nombres incorrectos (columna
+    "Citado") y usa la abreviatura `B/`.
 - **Aceptación:** cada RF, RNF y HU tiene caso + test/evidencia, o está marcado
   "sin cubrir" con justificación; la comprobación automática de rutas pasa en la CI.
 
@@ -179,7 +181,8 @@ resultados; reporte de incidentes.
 - **Depende de:** T1 (y T2 para correr en la CI).
 - **Requerimientos:** RF01–RF09, RF22, RF24 (y sus HU); RNF08, RNF09 (solo el
   rechazo de reportes fuera de la zona activa; la administración de zonas es de T6),
-  RNF10, RNF11, RNF12, RNF27, RNF28, RNF29, RNF36.
+  RNF10, RNF11, RNF12, RNF27, RNF28, RNF29, RNF32 (solo la respuesta `415`; el
+  saneamiento es de T9), RNF36.
 - **Objetivo:** cada funcionalidad del reportero probada en mínimo, máximo,
   promedio y excepción.
 - **Alcance:**
@@ -273,8 +276,10 @@ resultados; reporte de incidentes.
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte de incidentes
 - **Depende de:** T7, T8 (y lo registrado en T5, T6, T9).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
-  - Históricos: los 12 commits `fix(...)` y los PRs desde el inicio del proyecto
-    (`git log --oneline | grep -E '^[0-9a-f]+ fix'`).
+  - Históricos: los 12 commits `fix` desde el inicio del proyecto
+    (`git log --oneline | grep -E '^[0-9a-f]+ fix'`; incluye uno sin el formato
+    `fix(...)`, `107f58f`) y los PRs que los incluyen
+    (`gh pr list --state merged --limit 200`).
   - Encontrados en T5–T9.
 - **Aceptación:** cada incidente con severidad, estado y el commit o PR que lo corrigió
   (o "abierto" con responsable).
