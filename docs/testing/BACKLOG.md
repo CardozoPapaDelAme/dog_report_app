@@ -17,6 +17,8 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
 - **Estado:** `pendiente` → `en curso` → `hecho`. Una tarea pasa a `hecho` solo
   con su PR fusionado y sus criterios de aceptación cumplidos; el PR se anota
   como evidencia.
+- **Regla del test log:** una tarea que ejecuta casos (T5–T10, T14) no pasa a
+  `hecho` hasta que sus ejecuciones estén registradas en `docs/testing/TEST_LOG.md`.
 - **Orden:** las fases van en orden. Dentro de una fase, las tareas pueden ir en
   paralelo si sus dependencias están en `hecho`.
 - Abreviatura de rutas: **`B/`** = `supabase/functions/api/`.
@@ -111,13 +113,17 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
     tipo (`mínimo`/`máximo`/`promedio`/`excepción`/`normal`), precondiciones, datos
     de entrada, pasos, resultado esperado, y test automatizado (archivo + nombre del
     test) o evidencia manual. El resultado obtenido de cada ejecución va en el test log.
-    Ejemplo: tamaño de manada (RF04) con entrada `1` → error; `2` → aceptado
+    Ejemplo (límites reales de `cantidad_aprox` para manada: 2–1000, en
+    `models/reportPayload.js`): tamaño de manada (RF04) con entrada `1` → error; `2` → aceptado
     (mínimo); `500` → aceptado (promedio); `1000` → aceptado (máximo); `1001` → error
     (excepción).
   - Plantilla de test log (`TEST_LOG.md`), una fila por ejecución: fecha, ID de caso,
     ejecutado por, entorno (local, CI, dispositivo, staging), resultado
     (pasó/falló/bloqueado), incidente vinculado (`INC-<n>`) y notas. Todas las
     tareas que ejecutan casos agregan sus filas aquí.
+  - Las corridas automáticas de la CI (T2, T10) van en una sección aparte del test
+    log: una fila por suite con fecha, suite, totales (pasaron/fallaron/omitidos) y
+    enlace a la corrida; cada falla también lleva su `INC-<n>`.
   - Regla de rutas: en `cases/`, `PLAN.md` y demás archivos de `docs/testing/`
     (salvo este backlog) escribir siempre la ruta completa desde la raíz del repo
     (`supabase/functions/api/...`), nunca la abreviatura `B/`.
