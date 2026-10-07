@@ -118,8 +118,9 @@ resultados; reporte de incidentes.
     documentar por qué quedan como manuales.
   - El repo es privado: anotar en el PR los minutos de Actions por corrida.
   - Sin secretos en la CI: las pruebas usan datos y servicios simulados.
-- **Aceptación:** un PR muestra la CI en verde con el total de casos ejecutados;
-  `npm test` funciona en local con el mismo resultado.
+- **Aceptación:** un PR muestra la CI en verde con los totales **por suite**
+  (incluidas las de PostgreSQL si corren en la CI); `npm test` en local da el mismo
+  resultado que la CI en las suites que no necesitan base de datos.
 
 ### T3 · Plan de pruebas del sistema completo
 - **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** C1 · **Entregable:** Plan de pruebas
@@ -172,8 +173,8 @@ resultados; reporte de incidentes.
     moverse; ubicar cada cita por el nombre del archivo.
   - Agregar a la matriz los tests de RF03, RF19 y RF20 que existen pero no están listados.
   - Agregar una comprobación automática (script o test) que falle si
-    `docs/TRACEABILITY.md`, `docs/testing/PLAN.md` o `docs/testing/cases/` citan una
-    ruta de archivo que no existe, y sumarla a `npm test` (T2) para que corra en la CI.
+    `docs/TRACEABILITY.md` o cualquier archivo de `docs/testing/` cita una ruta de
+    archivo que no existe, y sumarla a `npm test` (T2) para que corra en la CI.
     Excluir este `BACKLOG.md`: cita a propósito nombres incorrectos (columna
     "Citado") y usa la abreviatura `B/`.
   - Todas las rutas se resuelven **desde la raíz del repositorio**. Al corregir
@@ -187,7 +188,7 @@ resultados; reporte de incidentes.
 ### T5 · Casos funcionales A — Reportero público
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
 - **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI), T7 (evidencia en
-  dispositivo para cerrar RF09, RF22 y RNF08).
+  dispositivo para cerrar RF09, RF22, RNF08 y RNF12).
 - **Requerimientos:** RF01–RF09, RF22, RF24 (y sus HU); RNF08, RNF09 (solo el
   rechazo de reportes fuera de la zona activa; la administración de zonas es de T6),
   RNF10, RNF11, RNF12, RNF27, RNF28, RNF29, RNF32 (solo la respuesta `415`; el
@@ -206,12 +207,13 @@ resultados; reporte de incidentes.
     - RNF10: el EXIF crudo no se persiste.
     - RNF32: respuesta `415 unsupported_photo_type`.
     - RNF36: validación de `details` en PostgreSQL.
-  - RF09, RF22 y RNF08: los tests cubren la lógica con datos sintéticos; el modelo real
-    y la detección de color con fotos reales solo se comprueban en dispositivo. Sus
+  - RF09, RF22, RNF08 y RNF12: los tests cubren la lógica con datos sintéticos o
+    simulados; el modelo real, la detección de color con fotos reales y la cola sin
+    conexión (modo avión y sincronización) solo se comprueban en dispositivo. Sus
     casos enlazan la evidencia que registra T7 (`docs/testing/ALPHA.md`).
 - **Aceptación:** cada requerimiento listado tiene los 4 tipos de caso (o la
   justificación de por qué no aplica uno); los tests nuevos pasan en la CI; los casos
-  de RF09, RF22 y RNF08 enlazan su evidencia en dispositivo de T7.
+  de RF09, RF22, RNF08 y RNF12 enlazan su evidencia en dispositivo de T7.
 
 ### T6 · Casos funcionales B — Mapa y roles autenticados
 - **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
@@ -280,7 +282,8 @@ resultados; reporte de incidentes.
 
 ### T10 · Corrida final de regresión
 - **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2, C3
-- **Depende de:** T2, T4, T5, T6, T9.
+- **Depende de:** T2, T4, T5, T6, T7, T8, T9 (y las correcciones de sus incidentes
+  ya fusionadas, para que la corrida cubra el código que se entrega).
 - **Alcance:** correr la suite completa en la CI sobre `main` con todo integrado.
 - **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `RESULTS.md`.
 
@@ -288,10 +291,12 @@ resultados; reporte de incidentes.
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte de incidentes
 - **Depende de:** T5, T6, T7, T8, T9 (reúne lo que registran).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
-  - Históricos: los 12 commits `fix` desde el inicio del proyecto
-    (`git log --oneline | grep -E '^[0-9a-f]+ fix'`; incluye uno sin el formato
-    `fix(...)`, `107f58f`) y los PRs que los incluyen
+  - Históricos: los 12 commits `fix` desde el inicio del proyecto hasta `49290b0`
+    (`git log --oneline 49290b0 | grep -E '^[0-9a-f]+ fix([(: !]|$)'`; incluye
+    `107f58f`, sin el formato `fix(...)`) y los PRs que los incluyen
     (`gh pr list --state merged --limit 200`).
+  - Los `fix` posteriores a `49290b0` (correcciones de T5–T9) se registran como
+    incidentes de esta etapa, no como históricos.
   - Encontrados en T5–T9.
 - **Aceptación:** cada incidente con severidad, estado y el commit o PR que lo corrigió
   (o "abierto" con responsable).
