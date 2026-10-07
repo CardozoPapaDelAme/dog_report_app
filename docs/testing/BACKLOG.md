@@ -35,11 +35,11 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
 
    | Persona | Integrante | Tareas |
    |---|---|---|
-   | P1 | _por asignar_ | T1, T3, T4, T13 |
-   | P2 | _por asignar_ | T2, T7, T10 |
-   | P3 | _por asignar_ | T5, T11 |
-   | P4 | _por asignar_ | T6, T12, T14 |
-   | P5 | _por asignar_ | T8, T9 |
+   | P1 | Fabián Fuentes | T1, T3, T4, T13 |
+   | P2 | Juan Pablo De León Gómez | T2, T7, T10 |
+   | P3 | Erick Herrera Luna | T5, T11 |
+   | P4 | Alan Ruiz Silva | T6, T12, T14 |
+   | P5 | Ricardo Becerra Bitar | T8, T9 |
 
 2. Se crea **un ticket por tarea** (14 en total), en el orden de las fases:
 
@@ -107,7 +107,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 ## Fase 1 — Arranque
 
 ### T1 · Convenciones y plantillas de pruebas
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** base para todos
+- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-114 · **Criterios:** base para todos
 - **Depende de:** nada. **Bloquea:** T3, T4, T5, T6, T7, T8, T9 (T2 puede arrancar en paralelo).
 - **Objetivo:** que todos documenten casos e incidentes con el mismo formato.
 - **Alcance:**
@@ -143,7 +143,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Aceptación:** plantillas y estructura en el repo, aprobadas en un PR.
 
 ### T2 · Integración continua y comando único de la suite completa
-- **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C3, C2
+- **Persona:** P2 · **Estado:** pendiente · **Jira:** TD-115 · **Criterios:** C3, C2
 - **Depende de:** nada.
 - **Objetivo:** que **todas** las pruebas existentes corran solas en cada PR.
 - **Alcance:**
@@ -159,7 +159,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   resultado que la CI en las suites que no necesitan base de datos.
 
 ### T3 · Plan de pruebas del sistema completo
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** C1 · **Entregable:** Plan de pruebas
+- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-116 · **Criterios:** C1 · **Entregable:** Plan de pruebas
 - **Depende de:** T1.
 - **Objetivo:** el plan formal que pide la entrega.
 - **Alcance (`docs/testing/PLAN.md`):**
@@ -208,7 +208,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 ## Fase 2 — Ejecución
 
 ### T4 · Matriz de trazabilidad completa
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** C1
+- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-117 · **Criterios:** C1
 - **Depende de:** T1, T2 (la comprobación de rutas se suma a `npm test` y corre en la CI).
 - **Objetivo:** demostrar que cada requerimiento se valida, incluyendo la visión
   del cliente y del negocio.
@@ -255,7 +255,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   "sin cubrir" con justificación; la comprobación automática de rutas pasa en la CI.
 
 ### T5 · Casos funcionales A — Reportero público
-- **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
+- **Persona:** P3 · **Estado:** pendiente · **Jira:** TD-118 · **Criterios:** C4, C1 · **Entregable:** Casos y datos
 - **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI), T7 (evidencia en
   dispositivo para cerrar RF09, RF22, RNF08 y RNF12).
 - **Requerimientos:** RF01–RF09, RF22, RF24 (y sus HU); RNF08, RNF09 (solo el
@@ -286,7 +286,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T6 · Casos funcionales B — Mapa y roles autenticados
-- **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
+- **Persona:** P4 · **Estado:** pendiente · **Jira:** TD-119 · **Criterios:** C4, C1 · **Entregable:** Casos y datos
 - **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI).
 - **Requerimientos:** RF10–RF21, RF23 (y sus HU), configuración y zonas
   (aclaración #5 sobre RF21/RF23/RNF09); RNF07, RNF09 (solo la administración de
@@ -305,7 +305,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T7 · Prueba alfa en dispositivo
-- **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2
+- **Persona:** P2 · **Estado:** pendiente · **Jira:** TD-120 · **Criterios:** C2
 - **Depende de:** T1.
 - **Objetivo:** validar la app completa en un Android real antes de usuarios externos.
 - **Alcance (`docs/testing/ALPHA.md`):** checklist del flujo completo: cámara →
@@ -317,7 +317,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   capturas o video; las ejecuciones están en `TEST_LOG.md`.
 
 ### T8 · Pruebas con usuarios reales
-- **Persona:** P5 · **Estado:** pendiente · **Jira:** — · **Criterios:** C5 · **Requerimientos:** RNF04
+- **Persona:** P5 · **Estado:** pendiente · **Jira:** TD-121 · **Criterios:** C5 · **Requerimientos:** RNF04
 - **Depende de:** T1. Conviene hacerlo después de T7, pero no lo bloquea.
 - **Objetivo:** incluir a usuarios generales en el proceso de prueba.
 - **Alcance (`docs/testing/UAT.md`):** 3–5 participantes fuera del equipo;
@@ -328,7 +328,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   las ejecuciones están en `TEST_LOG.md`.
 
 ### T9 · Pruebas no funcionales
-- **Persona:** P5 · **Estado:** pendiente · **Jira:** — · **Criterios:** C6
+- **Persona:** P5 · **Estado:** pendiente · **Jira:** TD-122 · **Criterios:** C6
 - **Depende de:** T1.
 - **Requerimientos:** RNF01–RNF03, RNF05, RNF06, RNF13–RNF26, RNF31, RNF32
   (saneamiento), RNF34, RNF35.
@@ -361,7 +361,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 ## Fase 3 — Cierre
 
 ### T14 · Pruebas de aceptación con el socio formador
-- **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Criterios:** C1 (visión del cliente)
+- **Persona:** P4 · **Estado:** pendiente · **Jira:** TD-127 · **Criterios:** C1 (visión del cliente)
 - **Depende de:** T5, T6, T7 (el sistema ya probado por el equipo).
 - **Objetivo:** que el cliente pruebe la app y confirme que cumple lo que pidió.
 - **Alcance (`docs/testing/ACCEPTANCE.md`):**
@@ -375,14 +375,14 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   resultado y conformidad registrados; sus ejecuciones están en `TEST_LOG.md`.
 
 ### T10 · Corrida final de regresión
-- **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2, C3
+- **Persona:** P2 · **Estado:** pendiente · **Jira:** TD-123 · **Criterios:** C2, C3
 - **Depende de:** T2, T4, T5, T6, T7, T8, T9, T14 (y las correcciones de sus incidentes
   ya fusionadas, para que la corrida cubra el código que se entrega).
 - **Alcance:** correr la suite completa en la CI sobre `main` con todo integrado.
 - **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `TEST_LOG.md`.
 
 ### T11 · Reporte de incidentes de todo el repo
-- **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte de incidentes
+- **Persona:** P3 · **Estado:** pendiente · **Jira:** TD-124 · **Entregable:** Reporte de incidentes
 - **Depende de:** T5, T6, T7, T8, T9, T10, T14 (reúne lo que registran, incluida la
   corrida final).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
@@ -401,7 +401,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   "abierto" con responsable).
 
 ### T12 · Test log con resumen y resultados
-- **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte con resumen y resultados
+- **Persona:** P4 · **Estado:** pendiente · **Jira:** TD-125 · **Entregable:** Reporte con resumen y resultados
 - **Depende de:** T4, T7, T8, T9, T10, T14 (resume sus resultados).
 - **Alcance (`docs/testing/TEST_LOG.md`):**
   - Revisar que el registro de ejecuciones esté completo (cada caso ejecutado tiene
@@ -414,7 +414,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Aceptación:** los números del resumen coinciden con el registro y con la corrida de T10.
 
 ### T13 · Google Docs del entregable
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** todos
+- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-126 · **Criterios:** todos
 - **Depende de:** T3, T11, T12.
 - **Alcance:** sintetizar los 4 entregables (plan, casos y datos, resultados,
   incidentes) con enlaces a `docs/testing/`, PRs y corridas de la CI.
