@@ -17,8 +17,10 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
 - **Estado:** `pendiente` → `en curso` → `hecho`. Una tarea pasa a `hecho` solo
   con su PR fusionado y sus criterios de aceptación cumplidos; el PR se anota
   como evidencia.
-- **Regla del test log:** una tarea que ejecuta casos (T5–T10, T14) no pasa a
+- **Regla del test log:** una tarea que ejecuta casos (T5–T9, T14) no pasa a
   `hecho` hasta que sus ejecuciones estén registradas en `docs/testing/TEST_LOG.md`.
+  T10 la cumple con sus filas en la sección de la CI del test log (una por suite),
+  no con filas por caso.
 - **Regla de incidentes:** en cuanto un caso falla, la tarea que lo ejecutó abre el
   incidente (`INC-<n>`) en `docs/testing/INCIDENTS.md` y su ticket de bug en Jira,
   sin esperar a T11. Así las correcciones pueden fusionarse antes de la regresión
@@ -117,8 +119,9 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
     tipo (`mínimo`/`máximo`/`promedio`/`excepción`/`normal`), precondiciones, datos
     de entrada, pasos, resultado esperado, y test automatizado (archivo + nombre del
     test) o evidencia manual. El resultado obtenido de cada ejecución va en el test log.
-    Ejemplo (límites reales de `cantidad_aprox` para manada: 2–1000, en
-    `models/reportPayload.js`): tamaño de manada (RF04) con entrada `1` → error; `2` → aceptado
+    Ejemplo (límites reales de `cantidad_aprox` para manada: 2–1000, verificados el
+    2026-10-07 en `models/reportPayload.js`, función que valida `cantidad_aprox`; si
+    el código cambia, actualizar el ejemplo): tamaño de manada (RF04) con entrada `1` → error; `2` → aceptado
     (mínimo); `500` → aceptado (promedio); `1000` → aceptado (máximo); `1001` → error
     (excepción).
   - Plantilla de test log (`TEST_LOG.md`), una fila por ejecución: fecha, ID de caso,
@@ -160,23 +163,40 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Depende de:** T1.
 - **Objetivo:** el plan formal que pide la entrega.
 - **Alcance (`docs/testing/PLAN.md`):**
-  - **Tabla del plan** (formato del profesor, adaptado a lo que ya usamos). El
-    equipo llena "Cuándo" con sus fechas:
+  - **Tabla del plan** (formato del profesor, adaptado a lo que ya usamos). Las
+    fechas de "Cuándo" son las del plan del profesor (2026); las filas que él no
+    incluyó quedan para que el equipo las defina:
 
     | Qué | Dónde | Cómo | Quién | Cuándo | Herramienta |
     |---|---|---|---|---|---|
-    | Pruebas unitarias | FE: modelos, servicios y hooks · BE: dominio y servicios | Automatizada | Developers | _por definir_ | Deno test, `node:test` |
-    | Pruebas de integración | BE: endpoints (controladores Hono vía HTTP) y base de datos (suites PostgreSQL/PostGIS) | Automatizada | Developers | _por definir_ | Deno test (equivalente a SuperTest), PostGIS |
-    | Pruebas de sistema | FE: UI | Automatizada + manual con casos de prueba (alfa en dispositivo) | QA | _por definir_ | Playwright, casos de prueba |
+    | Pruebas unitarias | FE: modelos, servicios y hooks · BE: dominio y servicios | Automatizada | Developers | 10 sep – 9 oct | Deno test, `node:test` |
+    | Pruebas de integración | BE: endpoints (controladores Hono vía HTTP) y base de datos (suites PostgreSQL/PostGIS) | Automatizada | Developers | 10 sep – 9 oct | Deno test (equivalente a SuperTest), PostGIS |
+    | Pruebas de sistema | FE: UI | Automatizada + manual con casos de prueba (alfa en dispositivo) | QA | 6 oct – 10 oct | Playwright, casos de prueba |
     | Pruebas de regresión | Todo el repo | Automatizada en cada PR | CI | Continua | GitHub Actions (`npm test`) |
-    | Pruebas de carga | BE: endpoints públicos | Automatizada | QA | _por definir_ | k6 |
+    | Pruebas de carga | BE: endpoints públicos | Automatizada | QA | 6 oct – 10 oct | k6 |
     | Otras no funcionales | FE y BE: rendimiento, compatibilidad, accesibilidad, seguridad | Mixta | QA | _por definir_ | Cronómetro en dispositivo, TalkBack, tests existentes |
     | Pruebas con usuarios | FE: UI | Manual | Usuarios generales | _por definir_ | Guion de tareas, encuesta |
-    | Pruebas de aceptación | FE: UI | Manual | Socio formador | _por definir_ | Casos de prueba |
+    | Pruebas de aceptación | FE: UI | Manual | Socio formador | 15 oct | Casos de prueba |
 
   - Indicar qué personas (P1–P5) cumplen los roles Developers y QA.
-  - **Diagrama de Gantt** con las fases y niveles (por ejemplo, un bloque
-    `mermaid` de tipo `gantt`, que GitHub dibuja).
+  - **Diagrama de Gantt** con las fases y niveles, como bloque `mermaid` de tipo
+    `gantt` (GitHub lo dibuja). Punto de partida con las fechas del profesor; agregar
+    las filas que el equipo defina:
+
+    ```mermaid
+    gantt
+      title Plan de pruebas
+      dateFormat YYYY-MM-DD
+      axisFormat %d %b
+      section Developers
+      Pruebas unitarias      :2026-09-10, 2026-10-09
+      Pruebas de integración :2026-09-10, 2026-10-09
+      section QA
+      Pruebas de sistema     :2026-10-06, 2026-10-10
+      Pruebas de carga       :2026-10-06, 2026-10-10
+      section Socio formador
+      Pruebas de aceptación  :2026-10-15, 1d
+    ```
   - Breve: alcance y fuera de alcance, entornos (local, CI, staging, dispositivo),
     criterios de entrada y salida, y riesgos. Tomar como base `docs/TESTING.md`
     sin duplicarlo.
