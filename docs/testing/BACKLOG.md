@@ -338,7 +338,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 
 ### T10 · Corrida final de regresión
 - **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2, C3
-- **Depende de:** T2, T4, T5, T6, T7, T8, T9 (y las correcciones de sus incidentes
+- **Depende de:** T2, T4, T5, T6, T7, T8, T9, T14 (y las correcciones de sus incidentes
   ya fusionadas, para que la corrida cubra el código que se entrega).
 - **Alcance:** correr la suite completa en la CI sobre `main` con todo integrado.
 - **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `TEST_LOG.md`.
