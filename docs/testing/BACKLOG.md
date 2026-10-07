@@ -19,6 +19,10 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
   como evidencia.
 - **Regla del test log:** una tarea que ejecuta casos (T5–T10, T14) no pasa a
   `hecho` hasta que sus ejecuciones estén registradas en `docs/testing/TEST_LOG.md`.
+- **Regla de incidentes:** en cuanto un caso falla, la tarea que lo ejecutó abre el
+  incidente (`INC-<n>`) en `docs/testing/INCIDENTS.md` y su ticket de bug en Jira,
+  sin esperar a T11. Así las correcciones pueden fusionarse antes de la regresión
+  final (T10).
 - **Orden:** las fases van en orden. Dentro de una fase, las tareas pueden ir en
   paralelo si sus dependencias están en `hecho`.
 - Abreviatura de rutas: **`B/`** = `supabase/functions/api/`.
@@ -355,9 +359,10 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Depende de:** T5, T6, T7, T8, T9, T10, T14 (reúne lo que registran, incluida la
   corrida final).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
-  - **Principal:** cada fila del test log con resultado "falló" se convierte en un
-    incidente y se abre un **ticket de bug en Jira** para arreglarlo; la clave del
-    ticket queda en el incidente.
+  - **Principal:** consolidar los incidentes que ya abrieron T5–T10 y T14 (regla de
+    incidentes): revisar que cada fila del test log con resultado "falló" tenga su
+    incidente y su **ticket de bug en Jira**, completar los que falten y dejar el
+    reporte ordenado por severidad y estado.
   - **Anexo, históricos:** los 12 commits `fix` desde el inicio del proyecto hasta `49290b0`
     (`git log --oneline 49290b0 | grep -E '^[0-9a-f]+ fix([(: !]|$)'`; incluye
     `107f58f`, sin el formato `fix(...)`) y los PRs que los incluyen
