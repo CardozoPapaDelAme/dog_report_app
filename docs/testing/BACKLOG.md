@@ -181,7 +181,8 @@ resultados; reporte de incidentes.
 
 ### T5 · Casos funcionales A — Reportero público
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
-- **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI).
+- **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI), T7 (evidencia en
+  dispositivo para cerrar RF09, RF22 y RNF08).
 - **Requerimientos:** RF01–RF09, RF22, RF24 (y sus HU); RNF08, RNF09 (solo el
   rechazo de reportes fuera de la zona activa; la administración de zonas es de T6),
   RNF10, RNF11, RNF12, RNF27, RNF28, RNF29, RNF32 (solo la respuesta `415`; el
@@ -200,9 +201,12 @@ resultados; reporte de incidentes.
     - RNF10: el EXIF crudo no se persiste.
     - RNF32: respuesta `415 unsupported_photo_type`.
     - RNF36: validación de `details` en PostgreSQL.
-  - RF09/RNF08: el modelo real solo corre en dispositivo; registrar esa evidencia en T7.
+  - RF09, RF22 y RNF08: los tests cubren la lógica con datos sintéticos; el modelo real
+    y la detección de color con fotos reales solo se comprueban en dispositivo. Sus
+    casos enlazan la evidencia que registra T7 (`docs/testing/ALPHA.md`).
 - **Aceptación:** cada requerimiento listado tiene los 4 tipos de caso (o la
-  justificación de por qué no aplica uno); los tests nuevos pasan en la CI.
+  justificación de por qué no aplica uno); los tests nuevos pasan en la CI; los casos
+  de RF09, RF22 y RNF08 enlazan su evidencia en dispositivo de T7.
 
 ### T6 · Casos funcionales B — Mapa y roles autenticados
 - **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
