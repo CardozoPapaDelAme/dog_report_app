@@ -21,6 +21,31 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
   paralelo si sus dependencias están en `hecho`.
 - Abreviatura de rutas: **`B/`** = `supabase/functions/api/`.
 
+## Asignación y creación de tickets en Jira
+
+1. El equipo decide quién es cada persona y lo anota aquí (en un PR):
+
+   | Persona | Integrante | Tareas |
+   |---|---|---|
+   | P1 | _por asignar_ | T1, T3, T4, T13 |
+   | P2 | _por asignar_ | T2, T7, T10 |
+   | P3 | _por asignar_ | T5, T11 |
+   | P4 | _por asignar_ | T6, T12 |
+   | P5 | _por asignar_ | T8, T9 |
+
+2. Se crea **un ticket por tarea** (13 en total), en el orden de las fases:
+
+   | Campo de Jira | Se llena con |
+   |---|---|
+   | Resumen | `T<n> · <título de la tarea>` (ej. `T5 · Casos funcionales A — Reportero público`) |
+   | Descripción | Objetivo + Alcance de la tarea, más el enlace a este archivo |
+   | Criterios de aceptación | La línea **Aceptación** de la tarea |
+   | Responsable | El integrante asignado a su persona (P1–P5) |
+   | Dependencias | Cada tarea de **Depende de** como enlace "bloqueado por" |
+
+3. Se anota la clave de cada ticket en el campo `Jira:` de su tarea (en un PR),
+   y las ramas se crean con esa clave (`TD-120-...`).
+
 ## Qué pide la entrega
 
 Entregables: plan de pruebas; casos y datos de prueba; reporte con resumen y
@@ -140,14 +165,20 @@ resultados; reporte de incidentes.
     `zoneRepository.js`, `duplicateRepository.js`) y línea 195
     (`domain/zone-set.js` → `B/domain/zoneSet.js`). Los archivos `flag-*` sí
     llevan guion en disco y no se cambian.
+  - Los números de línea de la tabla son de referencia (2026-10-07) y pueden
+    moverse; ubicar cada cita por el nombre del archivo.
   - Agregar a la matriz los tests de RF03, RF19 y RF20 que existen pero no están listados.
+  - Agregar una comprobación automática (script o test) que falle si
+    `docs/TRACEABILITY.md` o los archivos de `docs/testing/` citan una ruta que no
+    existe, y sumarla a `npm test` (T2) para que corra en la CI.
 - **Aceptación:** cada RF, RNF y HU tiene caso + test/evidencia, o está marcado
-  "sin cubrir" con justificación; ningún archivo citado deja de existir.
+  "sin cubrir" con justificación; la comprobación automática de rutas pasa en la CI.
 
 ### T5 · Casos funcionales A — Reportero público
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
 - **Depende de:** T1 (y T2 para correr en la CI).
-- **Requerimientos:** RF01–RF09, RF22, RF24 (y sus HU); RNF08, RNF09 (parte de reportes),
+- **Requerimientos:** RF01–RF09, RF22, RF24 (y sus HU); RNF08, RNF09 (solo el
+  rechazo de reportes fuera de la zona activa; la administración de zonas es de T6),
   RNF10, RNF11, RNF12, RNF27, RNF28, RNF29, RNF36.
 - **Objetivo:** cada funcionalidad del reportero probada en mínimo, máximo,
   promedio y excepción.
@@ -171,7 +202,9 @@ resultados; reporte de incidentes.
 - **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
 - **Depende de:** T1 (y T2 para correr en la CI).
 - **Requerimientos:** RF10–RF21, RF23 (y sus HU), configuración y zonas
-  (aclaración #5 sobre RF21/RF23/RNF09); RNF07, RNF30, RNF33.
+  (aclaración #5 sobre RF21/RF23/RNF09); RNF07, RNF09 (solo la administración de
+  zonas: crear, aprobar y activar; el rechazo de reportes fuera de zona es de T5),
+  RNF30, RNF33.
 - **Objetivo:** igual que T5, para el mapa, la Asociación y el Administrator.
 - **Alcance:**
   - Documentar como casos (`docs/testing/cases/mapa-y-roles.md`) los tests existentes
@@ -220,7 +253,10 @@ resultados; reporte de incidentes.
   - **Verificación por inspección** (no son tests de código): RNF01, RNF14–RNF18,
     RNF22, RNF23, RNF25 (el monitor de disponibilidad está planeado aparte; si se implementa, enlazarlo aquí).
     Escaneo de que ningún secreto llega al bundle móvil (RNF24).
-  - RNF35 (embeddings futuros): fuera de alcance de la Fase 1; justificarlo.
+  - RNF35 (embeddings futuros): fuera de alcance de la Fase 1. Evidencia por
+    inspección: confirmar que `db/schema.sql` y `supabase/migrations/` no usan
+    `pgvector` ni columnas de embeddings, y citar el requerimiento o decisión que
+    lo pospone.
 - **Aceptación:** cada RNF listado tiene caso, medición o inspección, y resultado.
 
 ---
@@ -324,17 +360,9 @@ T4 traza **todos** los IDs; esta tabla dice qué tarea los **prueba**.
 | RNF06 Bilingüe | T9 | RNF18 Restauración aislada | T9 | RNF30 Duplicados sugeridos | T6 |
 | RNF07 Roles hermanos | T6 | RNF19 PostgreSQL/PostGIS | T9 | RNF31 Límites de tasa | T9 |
 | RNF08 Modelo on-device | T5 | RNF20 RLS y privilegios | T9 | RNF32 Saneamiento, 415 | T9 (415 en T5) |
-| RNF09 Geofence obligatorio | T5 (zonas en T6) | RNF21 API Hono, SQL parametrizado | T9 | RNF33 Auditoría append-only | T6 |
+| RNF09 Geofence obligatorio | T5 (rechazo fuera de zona) · T6 (administración de zonas) | RNF21 API Hono, SQL parametrizado | T9 | RNF33 Auditoría append-only | T6 |
 | RNF10 Sin EXIF crudo | T5 | RNF22 Sin gateway propio | T9 | RNF34 JWT corto | T9 |
 | RNF11 Atributos estructurados | T5 | RNF23 Frontera Supabase | T9 | RNF35 Embeddings futuros | T9 |
 | RNF12 Cola local idempotente | T5 | RNF24 Secretos fuera del móvil | T9 | RNF36 Validación JSON en PG | T5 |
 
-### Carga por persona
-
-| Persona | Tareas |
-|---|---|
-| P1 | T1, T3, T4, T13 |
-| P2 | T2, T7, T10 |
-| P3 | T5, T11 |
-| P4 | T6, T12 |
-| P5 | T8, T9 |
+La asignación de personas a tareas está en [Asignación y creación de tickets en Jira](#asignación-y-creación-de-tickets-en-jira).
