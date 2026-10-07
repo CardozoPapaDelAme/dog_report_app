@@ -125,9 +125,12 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
     ejecutado por, entorno (local, CI, dispositivo, staging), resultado
     (pasó/falló/bloqueado), incidente vinculado (`INC-<n>`) y notas. Todas las
     tareas que ejecutan casos agregan sus filas aquí.
-  - Las corridas automáticas de la CI (T2, T10) van en una sección aparte del test
-    log: una fila por suite con fecha, suite, totales (pasaron/fallaron/omitidos) y
-    enlace a la corrida; cada falla también lleva su `INC-<n>`.
+  - Las corridas automáticas de la CI van en una sección aparte del test log, una
+    fila por suite con fecha, suite, totales (pasaron/fallaron/omitidos) y enlace a
+    la corrida. Solo se registran las corridas sobre `main` y la corrida final de
+    T10; una corrida en rojo dentro de un PR en curso se corrige en ese mismo PR y
+    no es incidente. Las fallas en `main` llevan su `INC-<n>`, que abre P2 (dueño
+    de T2 y T10).
   - Regla de rutas: en `cases/`, `PLAN.md` y demás archivos de `docs/testing/`
     (salvo este backlog) escribir siempre la ruta completa desde la raíz del repo
     (`supabase/functions/api/...`), nunca la abreviatura `B/`.
@@ -277,7 +280,9 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   - **Tests nuevos obligatorios:**
     - RF19: servicio de la cola de moderación en backend y una prueba de UI del Command Center.
     - RF12: tamaño de cluster en la UI (hoy solo se prueba el modelo).
-- **Aceptación:** igual que T5.
+- **Aceptación:** igual que T5: cada requerimiento listado tiene los 4 tipos de caso
+  (o la justificación de por qué no aplica uno); los tests nuevos pasan en la CI; la
+  ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T7 · Prueba alfa en dispositivo
 - **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2
@@ -289,7 +294,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   panel/exportación → login de Administrator y moderación/duplicados/configuración/zonas.
   Lo ejecuta el equipo; cada falla se registra en `INCIDENTS.md`.
 - **Aceptación:** fecha, dispositivo y versión de Android, resultado por paso y
-  capturas o video.
+  capturas o video; las ejecuciones están en `TEST_LOG.md`.
 
 ### T8 · Pruebas con usuarios reales
 - **Persona:** P5 · **Estado:** pendiente · **Jira:** — · **Criterios:** C5 · **Requerimientos:** RNF04
@@ -299,7 +304,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   consentimiento; guion de tareas (hacer un reporte, consultar el mapa, denunciar
   un reporte); cronómetro por tarea (RNF04: reporte en menos de 5 min); encuesta
   corta; observaciones. Hallazgos a `INCIDENTS.md`.
-- **Aceptación:** participantes anónimos, tiempos, resultados y hallazgos registrados.
+- **Aceptación:** participantes anónimos, tiempos, resultados y hallazgos registrados;
+  las ejecuciones están en `TEST_LOG.md`.
 
 ### T9 · Pruebas no funcionales
 - **Persona:** P5 · **Estado:** pendiente · **Jira:** — · **Criterios:** C6
@@ -327,7 +333,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
     inspección: confirmar que `db/schema.sql` y `supabase/migrations/` no usan
     `pgvector` ni columnas de embeddings, y citar el requerimiento o decisión que
     lo pospone.
-- **Aceptación:** cada RNF listado tiene caso, medición o inspección, y resultado.
+- **Aceptación:** cada RNF listado tiene caso, medición o inspección, y resultado;
+  las ejecuciones están en `TEST_LOG.md`.
 
 ---
 
