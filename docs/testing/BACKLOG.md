@@ -176,6 +176,11 @@ resultados; reporte de incidentes.
     ruta de archivo que no existe, y sumarla a `npm test` (T2) para que corra en la CI.
     Excluir este `BACKLOG.md`: cita a propósito nombres incorrectos (columna
     "Citado") y usa la abreviatura `B/`.
+  - Todas las rutas se resuelven **desde la raíz del repositorio**. Al corregir
+    `docs/TRACEABILITY.md`, escribir la ruta completa
+    (`supabase/functions/api/controllers/reportController.test.js`), no la forma
+    abreviada de la columna "Real" (`B/` es solo una abreviatura de este backlog)
+    ni rutas relativas al backend sin prefijo.
 - **Aceptación:** cada RF, RNF y HU tiene caso + test/evidencia, o está marcado
   "sin cubrir" con justificación; la comprobación automática de rutas pasa en la CI.
 
