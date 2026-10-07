@@ -90,7 +90,7 @@ resultados; reporte de incidentes.
 
 ### T1 · Convenciones y plantillas de pruebas
 - **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** base para todos
-- **Depende de:** nada. **Bloquea:** todas las demás tareas.
+- **Depende de:** nada. **Bloquea:** T3, T4, T5, T6, T7, T8, T9 (T2 puede arrancar en paralelo).
 - **Objetivo:** que todos documenten casos e incidentes con el mismo formato.
 - **Alcance:**
   - Crear la estructura de `docs/testing/`: `PLAN.md`, `cases/`, `data/`,
