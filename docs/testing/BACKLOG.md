@@ -266,7 +266,7 @@ resultados; reporte de incidentes.
     (RNF13), PostGIS (RNF19), fingerprint (RNF26), saneamiento (RNF32).
   - **Mediciones nuevas:** rendimiento en teléfono (RNF02: mapa en menos de 5 s;
     envío de reporte), tiempo de respuesta de la API, carga ligera sobre el mapa
-    público (RNF03), compatibilidad Android 8+ (RNF05), accesibilidad con TalkBack.
+    público (RNF03), compatibilidad Android 8+ e iOS 13+ (RNF05; si no hay un iPhone disponible, registrar iOS como "sin cubrir" con justificación), accesibilidad con TalkBack.
   - **Verificación por inspección** (no son tests de código): RNF01, RNF14–RNF18,
     RNF22, RNF23, RNF25 (el monitor de disponibilidad está planeado aparte; si se implementa, enlazarlo aquí).
     Escaneo de que ningún secreto llega al bundle móvil (RNF24).
