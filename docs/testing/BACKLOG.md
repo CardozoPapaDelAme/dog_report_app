@@ -99,6 +99,9 @@ resultados; reporte de incidentes.
   - Plantilla de caso: ID, requerimiento(s), tipo (`mínimo`/`máximo`/`promedio`/`excepción`/`normal`),
     precondiciones, datos, pasos, resultado esperado, resultado obtenido,
     test automatizado (archivo + nombre del test) o evidencia manual.
+  - Regla de rutas: en `cases/`, `PLAN.md` y demás archivos de `docs/testing/`
+    (salvo este backlog) escribir siempre la ruta completa desde la raíz del repo
+    (`supabase/functions/api/...`), nunca la abreviatura `B/`.
   - Plantilla de incidente: ID `INC-<n>`, fecha, severidad (crítica/alta/media/baja),
     módulo, pasos para reproducir, esperado vs. obtenido, estado, solución, commit o PR.
 - **Aceptación:** plantillas y estructura en el repo, aprobadas en un PR.
