@@ -88,5 +88,5 @@ schema/data contract, ADRs, traceability, and tests together.
 | Security/auth/privacy | `docs/SECURITY.md` |
 | Deployment/operations | `docs/DEPLOYMENT.md` |
 | Tests and traceability | `docs/TESTING.md`, `docs/TRACEABILITY.md` |
-| Stage 4 testing backlog (tasks T1–T13, Jira keys) | `docs/testing/BACKLOG.md` |
+| Stage 4 testing backlog (tasks T1–T14, Jira keys) | `docs/testing/BACKLOG.md` |
 | Diagram inputs | `docs/DIAGRAM-READINESS.md` |
