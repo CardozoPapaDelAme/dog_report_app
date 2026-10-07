@@ -341,7 +341,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   - Registrar cada ejecución en `TEST_LOG.md`, sus comentarios y su conformidad
     (aceptado / aceptado con observaciones / rechazado). Fallas a `INCIDENTS.md`.
 - **Aceptación:** casos de aceptación ejecutados por el socio formador, con su
-  resultado y conformidad registrados.
+  resultado y conformidad registrados; sus ejecuciones están en `TEST_LOG.md`.
 
 ### T10 · Corrida final de regresión
 - **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2, C3
@@ -374,8 +374,9 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Alcance (`docs/testing/TEST_LOG.md`):**
   - Revisar que el registro de ejecuciones esté completo (cada caso ejecutado tiene
     su fila con fecha, quién, entorno y resultado) y que cada falla tenga su `INC-<n>`.
-  - Arriba del registro, el **resumen**: totales por suite y por módulo
-    (pasaron/fallaron/bloqueados), cobertura por requerimiento (de T4), resultados
+  - Arriba del registro, el **resumen**: totales de casos por módulo
+    (pasaron/fallaron/bloqueados, como en las filas por caso) y totales por suite de
+    la CI (pasaron/fallaron/omitidos, como en la sección de la CI), cobertura por requerimiento (de T4), resultados
     de alfa (T7), usuarios (T8), no funcionales y carga (T9) y aceptación (T14);
     conclusiones y pendientes.
 - **Aceptación:** los números del resumen coinciden con el registro y con la corrida de T10.
