@@ -136,7 +136,7 @@ resultados; reporte de incidentes.
 
 ### T4 · Matriz de trazabilidad completa
 - **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** C1
-- **Depende de:** T1.
+- **Depende de:** T1, T2 (la comprobación de rutas se suma a `npm test` y corre en la CI).
 - **Objetivo:** demostrar que cada requerimiento se valida, incluyendo la visión
   del cliente y del negocio.
 - **Alcance:**
@@ -178,7 +178,7 @@ resultados; reporte de incidentes.
 
 ### T5 · Casos funcionales A — Reportero público
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
-- **Depende de:** T1 (y T2 para correr en la CI).
+- **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI).
 - **Requerimientos:** RF01–RF09, RF22, RF24 (y sus HU); RNF08, RNF09 (solo el
   rechazo de reportes fuera de la zona activa; la administración de zonas es de T6),
   RNF10, RNF11, RNF12, RNF27, RNF28, RNF29, RNF32 (solo la respuesta `415`; el
@@ -203,7 +203,7 @@ resultados; reporte de incidentes.
 
 ### T6 · Casos funcionales B — Mapa y roles autenticados
 - **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
-- **Depende de:** T1 (y T2 para correr en la CI).
+- **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI).
 - **Requerimientos:** RF10–RF21, RF23 (y sus HU), configuración y zonas
   (aclaración #5 sobre RF21/RF23/RNF09); RNF07, RNF09 (solo la administración de
   zonas: crear, aprobar y activar; el rechazo de reportes fuera de zona es de T5),
@@ -232,7 +232,7 @@ resultados; reporte de incidentes.
 
 ### T8 · Pruebas con usuarios reales
 - **Persona:** P5 · **Estado:** pendiente · **Jira:** — · **Criterios:** C5 · **Requerimientos:** RNF04
-- **Depende de:** T1 y, de preferencia, T7.
+- **Depende de:** T1. Conviene hacerlo después de T7, pero no lo bloquea.
 - **Objetivo:** incluir a usuarios generales en el proceso de prueba.
 - **Alcance (`docs/testing/UAT.md`):** 3–5 participantes fuera del equipo;
   consentimiento; guion de tareas (hacer un reporte, consultar el mapa, denunciar
@@ -268,13 +268,13 @@ resultados; reporte de incidentes.
 
 ### T10 · Corrida final de regresión
 - **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2, C3
-- **Depende de:** T2, T5, T6, T9.
+- **Depende de:** T2, T4, T5, T6, T9.
 - **Alcance:** correr la suite completa en la CI sobre `main` con todo integrado.
 - **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `RESULTS.md`.
 
 ### T11 · Reporte de incidentes de todo el repo
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte de incidentes
-- **Depende de:** T7, T8 (y lo registrado en T5, T6, T9).
+- **Depende de:** T5, T6, T7, T8, T9 (reúne lo que registran).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
   - Históricos: los 12 commits `fix` desde el inicio del proyecto
     (`git log --oneline | grep -E '^[0-9a-f]+ fix'`; incluye uno sin el formato
@@ -286,7 +286,7 @@ resultados; reporte de incidentes.
 
 ### T12 · Reporte de resultados de todo el repo
 - **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte con resumen y resultados
-- **Depende de:** T4, T10.
+- **Depende de:** T4, T7, T8, T9, T10 (resume sus resultados).
 - **Alcance (`docs/testing/RESULTS.md`):** resumen general; totales por suite y por
   módulo (pasaron/fallaron/omitidos); cobertura por requerimiento (de T4);
   resultados de alfa (T7), usuarios (T8) y no funcionales (T9); conclusiones y pendientes.
