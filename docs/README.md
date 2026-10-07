@@ -52,7 +52,7 @@ relationships.
 - [`REVIEWING.md`](REVIEWING.md) — simplest way for the team to install and review the app
 - [`TESTING.md`](TESTING.md) — verification strategy and scenario ownership
 - [`TRACEABILITY.md`](TRACEABILITY.md) — complete RF/RNF/HU mapping
-- [`testing/BACKLOG.md`](testing/BACKLOG.md) — Stage 4 testing backlog: tasks T1–T13, owners P1–P5, Jira keys
+- [`testing/BACKLOG.md`](testing/BACKLOG.md) — Stage 4 testing backlog: tasks T1–T14, owners P1–P5, Jira keys
 - [`DIAGRAM-READINESS.md`](DIAGRAM-READINESS.md) — diagram handoff and review checklist
 - [`diagrams/README.md`](diagrams/README.md) — versioned diagram sources; add a file only when that diagram is requested
 - [`GLOSSARY.md`](GLOSSARY.md) — vocabulary

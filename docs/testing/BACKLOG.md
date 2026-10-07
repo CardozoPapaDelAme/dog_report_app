@@ -8,7 +8,7 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
 ## Cómo usar este backlog
 
 - **Personas:** P1–P5. El equipo decide quién es quién; el backlog no lleva nombres.
-- **Jira:** cada tarea tiene un ID fijo (`T1`…`T13`) y un campo `Jira:` que se
+- **Jira:** cada tarea tiene un ID fijo (`T1`…`T14`) y un campo `Jira:` que se
   llena al crear el ticket (ej. `TD-120`). El ticket copia el título, objetivo,
   alcance y criterios de aceptación de la tarea.
 - **Ramas:** se nombran con la clave de Jira (`TD-120-...`), como el resto del
@@ -17,6 +17,14 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
 - **Estado:** `pendiente` → `en curso` → `hecho`. Una tarea pasa a `hecho` solo
   con su PR fusionado y sus criterios de aceptación cumplidos; el PR se anota
   como evidencia.
+- **Regla del test log:** una tarea que ejecuta casos (T5–T9, T14) no pasa a
+  `hecho` hasta que sus ejecuciones estén registradas en `docs/testing/TEST_LOG.md`.
+  T10 la cumple con sus filas en la sección de la CI del test log (una por suite),
+  no con filas por caso.
+- **Regla de incidentes:** en cuanto un caso falla, la tarea que lo ejecutó abre el
+  incidente (`INC-<n>`) en `docs/testing/INCIDENTS.md` y su ticket de bug en Jira,
+  sin esperar a T11. Así las correcciones pueden fusionarse antes de la regresión
+  final (T10).
 - **Orden:** las fases van en orden. Dentro de una fase, las tareas pueden ir en
   paralelo si sus dependencias están en `hecho`.
 - Abreviatura de rutas: **`B/`** = `supabase/functions/api/`.
@@ -30,10 +38,10 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
    | P1 | _por asignar_ | T1, T3, T4, T13 |
    | P2 | _por asignar_ | T2, T7, T10 |
    | P3 | _por asignar_ | T5, T11 |
-   | P4 | _por asignar_ | T6, T12 |
+   | P4 | _por asignar_ | T6, T12, T14 |
    | P5 | _por asignar_ | T8, T9 |
 
-2. Se crea **un ticket por tarea** (13 en total), en el orden de las fases:
+2. Se crea **un ticket por tarea** (14 en total), en el orden de las fases:
 
    | Campo de Jira | Se llena con |
    |---|---|
@@ -50,6 +58,16 @@ que falta. El Google Docs del entregable solo resume y enlaza a los archivos de
 
 Entregables: plan de pruebas; casos y datos de prueba; reporte con resumen y
 resultados; reporte de incidentes.
+
+Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
+
+| Entregable | Forma esperada | Archivo | Tarea |
+|---|---|---|---|
+| Plan de pruebas | Tabla Qué / Dónde / Cómo / Quién / Cuándo / Herramienta, una fila por nivel de prueba, más un diagrama de Gantt | `docs/testing/PLAN.md` | T3 |
+| Casos de prueba | Tabla de entrada → resultado esperado (como "piedra, papel o tijera": cada combinación de entradas tiene su salida esperada) | `docs/testing/cases/` | T5, T6 (más T7–T9, T14) |
+| Datos de prueba | Los inputs de los casos | `docs/testing/data/` | T5, T6 |
+| Reporte con resumen y resultados | **Test log**: registro de cada ejecución de casos, más un resumen | `docs/testing/TEST_LOG.md` | T12 |
+| Reporte de incidentes | Cada falla del test log se documenta y se abre un ticket de bug en Jira para arreglarla | `docs/testing/INCIDENTS.md` | T11 |
 
 | Criterio de la rúbrica | Puntos |
 |---|---|
@@ -94,16 +112,34 @@ resultados; reporte de incidentes.
 - **Objetivo:** que todos documenten casos e incidentes con el mismo formato.
 - **Alcance:**
   - Crear la estructura de `docs/testing/`: `PLAN.md`, `cases/`, `data/`,
-    `ALPHA.md`, `UAT.md`, `NON-FUNCTIONAL.md`, `RESULTS.md`, `INCIDENTS.md`.
+    `ALPHA.md`, `UAT.md`, `ACCEPTANCE.md`, `NON-FUNCTIONAL.md`, `TEST_LOG.md`,
+    `INCIDENTS.md`.
   - Formato de ID de caso: `TC-<módulo>-<n>` (ej. `TC-MAPA-03`).
-  - Plantilla de caso: ID, requerimiento(s), tipo (`mínimo`/`máximo`/`promedio`/`excepción`/`normal`),
-    precondiciones, datos, pasos, resultado esperado, resultado obtenido,
-    test automatizado (archivo + nombre del test) o evidencia manual.
+  - Plantilla de caso (tabla de entrada → resultado esperado): ID, requerimiento(s),
+    tipo (`mínimo`/`máximo`/`promedio`/`excepción`/`normal`), precondiciones, datos
+    de entrada, pasos, resultado esperado, y test automatizado (archivo + nombre del
+    test) o evidencia manual. El resultado obtenido de cada ejecución va en el test log.
+    Ejemplo (límites reales de `cantidad_aprox` para manada: 2–1000, verificados el
+    2026-10-07 en `models/reportPayload.js`, función que valida `cantidad_aprox`; si
+    el código cambia, actualizar el ejemplo): tamaño de manada (RF04) con entrada `1` → error; `2` → aceptado
+    (mínimo); `500` → aceptado (promedio); `1000` → aceptado (máximo); `1001` → error
+    (excepción).
+  - Plantilla de test log (`TEST_LOG.md`), una fila por ejecución: fecha, ID de caso,
+    ejecutado por, entorno (local, CI, dispositivo, staging), resultado
+    (pasó/falló/bloqueado), incidente vinculado (`INC-<n>`) y notas. Todas las
+    tareas que ejecutan casos agregan sus filas aquí.
+  - Las corridas automáticas de la CI van en una sección aparte del test log, una
+    fila por suite con fecha, suite, totales (pasaron/fallaron/omitidos) y enlace a
+    la corrida. Solo se registran las corridas sobre `main` y la corrida final de
+    T10; una corrida en rojo dentro de un PR en curso se corrige en ese mismo PR y
+    no es incidente. Las fallas en `main` llevan su `INC-<n>`, que abre P2 (dueño
+    de T2 y T10).
   - Regla de rutas: en `cases/`, `PLAN.md` y demás archivos de `docs/testing/`
     (salvo este backlog) escribir siempre la ruta completa desde la raíz del repo
     (`supabase/functions/api/...`), nunca la abreviatura `B/`.
-  - Plantilla de incidente: ID `INC-<n>`, fecha, severidad (crítica/alta/media/baja),
-    módulo, pasos para reproducir, esperado vs. obtenido, estado, solución, commit o PR.
+  - Plantilla de incidente: ID `INC-<n>`, fecha, caso y fila del test log que lo
+    originó, severidad (crítica/alta/media/baja), módulo, pasos para reproducir,
+    esperado vs. obtenido, ticket de bug en Jira, estado, solución, commit o PR.
 - **Aceptación:** plantillas y estructura en el repo, aprobadas en un PR.
 
 ### T2 · Integración continua y comando único de la suite completa
@@ -126,13 +162,46 @@ resultados; reporte de incidentes.
 - **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** C1 · **Entregable:** Plan de pruebas
 - **Depende de:** T1.
 - **Objetivo:** el plan formal que pide la entrega.
-- **Alcance (`docs/testing/PLAN.md`):** objetivo; alcance de toda la app (móvil,
-  backend, base de datos); fuera de alcance; niveles de prueba (unitarias, UI,
-  backend, base de datos, dispositivo, alfa, usuarios, no funcionales) con sus
-  herramientas; entornos (local, CI, staging, dispositivo); criterios de entrada
-  y salida; roles P1–P5; orden de fases; riesgos. Tomar como base `docs/TESTING.md`
-  sin duplicarlo.
-- **Aceptación:** plan aprobado en un PR y enlazado desde `docs/TESTING.md`.
+- **Alcance (`docs/testing/PLAN.md`):**
+  - **Tabla del plan** (formato del profesor, adaptado a lo que ya usamos). Las
+    fechas de "Cuándo" son las del plan del profesor (2026); las filas que él no
+    incluyó quedan para que el equipo las defina:
+
+    | Qué | Dónde | Cómo | Quién | Cuándo | Herramienta |
+    |---|---|---|---|---|---|
+    | Pruebas unitarias | FE: modelos, servicios y hooks · BE: dominio y servicios | Automatizada | Developers | 10 sep – 9 oct | Deno test, `node:test` |
+    | Pruebas de integración | BE: endpoints (controladores Hono vía HTTP) y base de datos (suites PostgreSQL/PostGIS) | Automatizada | Developers | 10 sep – 9 oct | Deno test (equivalente a SuperTest), PostGIS |
+    | Pruebas de sistema | FE: UI | Automatizada + manual con casos de prueba (alfa en dispositivo) | QA | 6 oct – 10 oct | Playwright, casos de prueba |
+    | Pruebas de regresión | Todo el repo | Automatizada en cada PR | CI | Continua | GitHub Actions (`npm test`) |
+    | Pruebas de carga | BE: endpoints públicos | Automatizada | QA | 6 oct – 10 oct | k6 |
+    | Otras no funcionales | FE y BE: rendimiento, compatibilidad, accesibilidad, seguridad | Mixta | QA | _por definir_ | Cronómetro en dispositivo, TalkBack, tests existentes |
+    | Pruebas con usuarios | FE: UI | Manual | Usuarios generales | _por definir_ | Guion de tareas, encuesta |
+    | Pruebas de aceptación | FE: UI | Manual | Socio formador | 15 oct | Casos de prueba |
+
+  - Indicar qué personas (P1–P5) cumplen los roles Developers y QA.
+  - **Diagrama de Gantt** con las fases y niveles, como bloque `mermaid` de tipo
+    `gantt` (GitHub lo dibuja). Punto de partida con las fechas del profesor; agregar
+    las filas que el equipo defina:
+
+    ```mermaid
+    gantt
+      title Plan de pruebas
+      dateFormat YYYY-MM-DD
+      axisFormat %d %b
+      section Developers
+      Pruebas unitarias      :2026-09-10, 2026-10-09
+      Pruebas de integración :2026-09-10, 2026-10-09
+      section QA
+      Pruebas de sistema     :2026-10-06, 2026-10-10
+      Pruebas de carga       :2026-10-06, 2026-10-10
+      section Socio formador
+      Pruebas de aceptación  :2026-10-15, 1d
+    ```
+  - Breve: alcance y fuera de alcance, entornos (local, CI, staging, dispositivo),
+    criterios de entrada y salida, y riesgos. Tomar como base `docs/TESTING.md`
+    sin duplicarlo.
+- **Aceptación:** la tabla tiene todas las filas con su "Cuándo" lleno, el Gantt
+  está incluido, y el plan está aprobado en un PR y enlazado desde `docs/TESTING.md`.
 
 ---
 
@@ -213,7 +282,8 @@ resultados; reporte de incidentes.
     casos enlazan la evidencia que registra T7 (`docs/testing/ALPHA.md`).
 - **Aceptación:** cada requerimiento listado tiene los 4 tipos de caso (o la
   justificación de por qué no aplica uno); los tests nuevos pasan en la CI; los casos
-  de RF09, RF22, RNF08 y RNF12 enlazan su evidencia en dispositivo de T7.
+  de RF09, RF22, RNF08 y RNF12 enlazan su evidencia en dispositivo de T7; la
+  ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T6 · Casos funcionales B — Mapa y roles autenticados
 - **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Criterios:** C4, C1 · **Entregable:** Casos y datos
@@ -230,7 +300,9 @@ resultados; reporte de incidentes.
   - **Tests nuevos obligatorios:**
     - RF19: servicio de la cola de moderación en backend y una prueba de UI del Command Center.
     - RF12: tamaño de cluster en la UI (hoy solo se prueba el modelo).
-- **Aceptación:** igual que T5.
+- **Aceptación:** igual que T5: cada requerimiento listado tiene los 4 tipos de caso
+  (o la justificación de por qué no aplica uno); los tests nuevos pasan en la CI; la
+  ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T7 · Prueba alfa en dispositivo
 - **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2
@@ -242,7 +314,7 @@ resultados; reporte de incidentes.
   panel/exportación → login de Administrator y moderación/duplicados/configuración/zonas.
   Lo ejecuta el equipo; cada falla se registra en `INCIDENTS.md`.
 - **Aceptación:** fecha, dispositivo y versión de Android, resultado por paso y
-  capturas o video.
+  capturas o video; las ejecuciones están en `TEST_LOG.md`.
 
 ### T8 · Pruebas con usuarios reales
 - **Persona:** P5 · **Estado:** pendiente · **Jira:** — · **Criterios:** C5 · **Requerimientos:** RNF04
@@ -252,7 +324,8 @@ resultados; reporte de incidentes.
   consentimiento; guion de tareas (hacer un reporte, consultar el mapa, denunciar
   un reporte); cronómetro por tarea (RNF04: reporte en menos de 5 min); encuesta
   corta; observaciones. Hallazgos a `INCIDENTS.md`.
-- **Aceptación:** participantes anónimos, tiempos, resultados y hallazgos registrados.
+- **Aceptación:** participantes anónimos, tiempos, resultados y hallazgos registrados;
+  las ejecuciones están en `TEST_LOG.md`.
 
 ### T9 · Pruebas no funcionales
 - **Persona:** P5 · **Estado:** pendiente · **Jira:** — · **Criterios:** C6
@@ -265,8 +338,14 @@ resultados; reporte de incidentes.
     (RNF20, RNF21, RNF24, RNF31, RNF34), idiomas (RNF06), minimización de datos
     (RNF13), PostGIS (RNF19), fingerprint (RNF26), saneamiento (RNF32).
   - **Mediciones nuevas:** rendimiento en teléfono (RNF02: mapa en menos de 5 s;
-    envío de reporte), tiempo de respuesta de la API, carga ligera sobre el mapa
-    público (RNF03), compatibilidad Android 8+ e iOS 13+ (RNF05; si no hay un iPhone disponible, registrar iOS como "sin cubrir" con justificación), accesibilidad con TalkBack.
+    envío de reporte), tiempo de respuesta de la API, prueba de carga con **k6**
+    sobre los endpoints públicos de lectura (RNF03), compatibilidad Android 8+ e iOS 13+ (RNF05; si no hay un iPhone disponible, registrar iOS como "sin cubrir" con justificación), accesibilidad con TalkBack.
+  - **Prueba de carga con k6:** scripts en `tests/load/`. Solo endpoints públicos de
+    lectura (`/health`, `/public/clusters`, `/public/reports`), nunca crear reportes
+    ni denuncias. El proyecto de Supabase es el único que hay (staging, plan Free),
+    así que la carga es ligera y corta (pocos usuarios virtuales, pocos minutos)
+    para no agotar la cuota de 500k invocaciones; anotar la cantidad de peticiones.
+    Registrar latencias (p95) y tasa de error.
   - **Verificación por inspección** (no son tests de código): RNF01, RNF14–RNF18,
     RNF22, RNF23, RNF25 (el monitor de disponibilidad está planeado aparte; si se implementa, enlazarlo aquí).
     Escaneo de que ningún secreto llega al bundle móvil (RNF24).
@@ -274,40 +353,65 @@ resultados; reporte de incidentes.
     inspección: confirmar que `db/schema.sql` y `supabase/migrations/` no usan
     `pgvector` ni columnas de embeddings, y citar el requerimiento o decisión que
     lo pospone.
-- **Aceptación:** cada RNF listado tiene caso, medición o inspección, y resultado.
+- **Aceptación:** cada RNF listado tiene caso, medición o inspección, y resultado;
+  las ejecuciones están en `TEST_LOG.md`.
 
 ---
 
 ## Fase 3 — Cierre
 
+### T14 · Pruebas de aceptación con el socio formador
+- **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Criterios:** C1 (visión del cliente)
+- **Depende de:** T5, T6, T7 (el sistema ya probado por el equipo).
+- **Objetivo:** que el cliente pruebe la app y confirme que cumple lo que pidió.
+- **Alcance (`docs/testing/ACCEPTANCE.md`):**
+  - Elegir los casos de aceptación: los flujos de las historias de usuario que le
+    importan al socio formador (reportar, ver el mapa, panel y exportación de la
+    Asociación, moderación).
+  - Sesión con el socio formador en un teléfono con la app; él ejecuta los casos.
+  - Registrar cada ejecución en `TEST_LOG.md`, sus comentarios y su conformidad
+    (aceptado / aceptado con observaciones / rechazado). Fallas a `INCIDENTS.md`.
+- **Aceptación:** casos de aceptación ejecutados por el socio formador, con su
+  resultado y conformidad registrados; sus ejecuciones están en `TEST_LOG.md`.
+
 ### T10 · Corrida final de regresión
 - **Persona:** P2 · **Estado:** pendiente · **Jira:** — · **Criterios:** C2, C3
-- **Depende de:** T2, T4, T5, T6, T7, T8, T9 (y las correcciones de sus incidentes
+- **Depende de:** T2, T4, T5, T6, T7, T8, T9, T14 (y las correcciones de sus incidentes
   ya fusionadas, para que la corrida cubra el código que se entrega).
 - **Alcance:** correr la suite completa en la CI sobre `main` con todo integrado.
-- **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `RESULTS.md`.
+- **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `TEST_LOG.md`.
 
 ### T11 · Reporte de incidentes de todo el repo
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte de incidentes
-- **Depende de:** T5, T6, T7, T8, T9 (reúne lo que registran).
+- **Depende de:** T5, T6, T7, T8, T9, T10, T14 (reúne lo que registran, incluida la
+  corrida final).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
-  - Históricos: los 12 commits `fix` desde el inicio del proyecto hasta `49290b0`
+  - **Principal:** consolidar los incidentes que ya abrieron T5–T10 y T14 (regla de
+    incidentes): revisar que cada fila del test log con resultado "falló" tenga su
+    incidente y su **ticket de bug en Jira**, completar los que falten y dejar el
+    reporte ordenado por severidad y estado.
+  - **Anexo, históricos:** los 12 commits `fix` desde el inicio del proyecto hasta `49290b0`
     (`git log --oneline 49290b0 | grep -E '^[0-9a-f]+ fix([(: !]|$)'`; incluye
     `107f58f`, sin el formato `fix(...)`) y los PRs que los incluyen
     (`gh pr list --state merged --limit 200`).
   - Los `fix` posteriores a `49290b0` (correcciones de T5–T9) se registran como
     incidentes de esta etapa, no como históricos.
-  - Encontrados en T5–T9.
-- **Aceptación:** cada incidente con severidad, estado y el commit o PR que lo corrigió
-  (o "abierto" con responsable).
+- **Aceptación:** toda falla del test log tiene su incidente y su ticket de bug en
+  Jira; cada incidente con severidad, estado y el commit o PR que lo corrigió (o
+  "abierto" con responsable).
 
-### T12 · Reporte de resultados de todo el repo
+### T12 · Test log con resumen y resultados
 - **Persona:** P4 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte con resumen y resultados
-- **Depende de:** T4, T7, T8, T9, T10 (resume sus resultados).
-- **Alcance (`docs/testing/RESULTS.md`):** resumen general; totales por suite y por
-  módulo (pasaron/fallaron/omitidos); cobertura por requerimiento (de T4);
-  resultados de alfa (T7), usuarios (T8) y no funcionales (T9); conclusiones y pendientes.
-- **Aceptación:** los números coinciden con la corrida de T10.
+- **Depende de:** T4, T7, T8, T9, T10, T14 (resume sus resultados).
+- **Alcance (`docs/testing/TEST_LOG.md`):**
+  - Revisar que el registro de ejecuciones esté completo (cada caso ejecutado tiene
+    su fila con fecha, quién, entorno y resultado) y que cada falla tenga su `INC-<n>`.
+  - Arriba del registro, el **resumen**: totales de casos por módulo
+    (pasaron/fallaron/bloqueados, como en las filas por caso) y totales por suite de
+    la CI (pasaron/fallaron/omitidos, como en la sección de la CI), cobertura por requerimiento (de T4), resultados
+    de alfa (T7), usuarios (T8), no funcionales y carga (T9) y aceptación (T14);
+    conclusiones y pendientes.
+- **Aceptación:** los números del resumen coinciden con el registro y con la corrida de T10.
 
 ### T13 · Google Docs del entregable
 - **Persona:** P1 · **Estado:** pendiente · **Jira:** — · **Criterios:** todos
@@ -324,7 +428,7 @@ resultados; reporte de incidentes.
 
 | Criterio | Tareas |
 |---|---|
-| C1 Validación de requerimientos | T3, T4, T5, T6 |
+| C1 Validación de requerimientos | T3, T4, T5, T6, T14 |
 | C2 Alfa y regresión | T2, T7, T10 |
 | C3 Pruebas dinámicas | T2, T10 |
 | C4 Funcionales mín/máx/promedio/excepción | T5, T6 |
@@ -335,10 +439,10 @@ resultados; reporte de incidentes.
 
 | Entregable | Archivo | Tareas |
 |---|---|---|
-| Plan de pruebas | `docs/testing/PLAN.md` | T3 |
-| Casos y datos de prueba | `docs/testing/cases/`, `docs/testing/data/` | T5, T6 (más T7–T9) |
-| Reporte con resumen y resultados | `docs/testing/RESULTS.md` | T12 (con T10) |
-| Reporte de incidentes | `docs/testing/INCIDENTS.md` | T11 |
+| Plan de pruebas (tabla + Gantt) | `docs/testing/PLAN.md` | T3 |
+| Casos y datos de prueba | `docs/testing/cases/`, `docs/testing/data/` | T5, T6 (más T7–T9, T14) |
+| Reporte con resumen y resultados (test log) | `docs/testing/TEST_LOG.md` | T12 (con las filas de T5–T10 y T14) |
+| Reporte de incidentes (con tickets de bug en Jira) | `docs/testing/INCIDENTS.md` | T11 |
 
 ### Requerimientos → tarea responsable
 
