@@ -112,7 +112,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
     de entrada, pasos, resultado esperado, y test automatizado (archivo + nombre del
     test) o evidencia manual. El resultado obtenido de cada ejecución va en el test log.
     Ejemplo: tamaño de manada (RF04) con entrada `1` → error; `2` → aceptado
-    (mínimo); `1000` → aceptado (máximo); `1001` → error (excepción).
+    (mínimo); `500` → aceptado (promedio); `1000` → aceptado (máximo); `1001` → error
+    (excepción).
   - Plantilla de test log (`TEST_LOG.md`), una fila por ejecución: fecha, ID de caso,
     ejecutado por, entorno (local, CI, dispositivo, staging), resultado
     (pasó/falló/bloqueado), incidente vinculado (`INC-<n>`) y notas. Todas las
@@ -345,7 +346,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 
 ### T11 · Reporte de incidentes de todo el repo
 - **Persona:** P3 · **Estado:** pendiente · **Jira:** — · **Entregable:** Reporte de incidentes
-- **Depende de:** T5, T6, T7, T8, T9, T14 (reúne lo que registran).
+- **Depende de:** T5, T6, T7, T8, T9, T10, T14 (reúne lo que registran, incluida la
+  corrida final).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
   - **Principal:** cada fila del test log con resultado "falló" se convierte en un
     incidente y se abre un **ticket de bug en Jira** para arreglarlo; la clave del
