@@ -46,3 +46,22 @@ jobs:
           path: playwright-report/
           if-no-files-found: ignore
           retention-days: 14
+
+  # Real PostgreSQL/PostGIS suites (schema, RLS, atomicity). Runs in parallel with
+  # `tests`; each suite gets its own disposable container (see scripts/test-postgres.mjs).
+  postgres:
+    name: PostgreSQL suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - run: node scripts/test-postgres.mjs
