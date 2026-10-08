@@ -160,7 +160,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   resultado que la CI en las suites que no necesitan base de datos.
 
 ### T3 · Plan de pruebas del sistema completo
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-116 · **Criterios:** C1 · **Entregable:** Plan de pruebas
+- **Persona:** P1 · **Estado:** hecho · **Jira:** TD-116 · **Criterios:** C1 · **Entregable:** Plan de pruebas
+- **PR:** [#55](https://github.com/CardozoPapaDelAme/dog_report_app/pull/55). Cierre efectivo al fusionarse este PR; entrega revisada y merge autorizado por Fabián el 2026-10-07.
 - **Depende de:** T1.
 - **Objetivo:** el plan formal que pide la entrega.
 - **Alcance (`docs/testing/PLAN.md`):**

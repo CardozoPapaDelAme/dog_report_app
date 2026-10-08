@@ -8,7 +8,9 @@ in [`TRACEABILITY.md`](TRACEABILITY.md).
 
 Use `docs/testing/README.md` for shared case IDs, templates, repository-root file
 paths, execution logs and immediate incident reporting. `docs/testing/BACKLOG.md`
-assigns T1–T14; `docs/testing/PLAN.md` is the formal plan scaffold for T3.
+assigns T1–T14. The [formal system test plan](testing/PLAN.md) in
+`docs/testing/PLAN.md` defines the schedule, people, environments, entry/exit
+criteria and risks (T3); execution results and approvals are recorded separately.
 T1 supplies templates only; executed results belong in `docs/testing/TEST_LOG.md`
 and failures in `docs/testing/INCIDENTS.md` with their Jira bug tickets.
 
