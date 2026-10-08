@@ -163,4 +163,5 @@ del PR según el backlog. Aprobar el plan no acredita que se cumplieron los gate
 Autor: Fabián Fuentes. Revisión propuesta: P2 para CI/alfa/regresión, P4 para
 casos/aceptación y P5 para no funcionales/usuarios. No se atribuye aprobación a
 ninguno sin evidencia del PR. Fechas adicionales sujetas a esa revisión.
-PR y conformidad: se enlazan al publicar; aprobación y fusión pendientes.
+PR: [#55](https://github.com/CardozoPapaDelAme/dog_report_app/pull/55).
+Aprobación del plan, fechas adicionales y fusión pendientes.
