@@ -48,7 +48,8 @@ const suites = {
   node: {
     label: 'node:test',
     cmd: process.execPath,
-    args: ['--test', ...nodeTests],
+    // Explicit reporter: Node 22 prints TAP when piped, newer Node prints spec.
+    args: ['--test', '--test-reporter=spec', ...nodeTests],
     parse: (out) => ({
       passed: last(out, /^ℹ pass (\d+)/gm),
       failed: last(out, /^ℹ fail (\d+)/gm),
