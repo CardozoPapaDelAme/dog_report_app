@@ -1,7 +1,8 @@
 # Plan de pruebas del sistema completo
 
 T3 / TD-116 · Responsable: Fabián Fuentes (P1).
-Estado: plan propuesto para revisión en PR; no acredita pruebas ejecutadas.
+Estado: plan revisado para integración; aprobación efectiva al fusionarse el PR.
+No acredita pruebas ejecutadas.
 Base revisada: `52ccef996d669c3b2ea8e894fe7f13cef1e41b39`, 2026-10-07.
 T1 está integrado mediante PR #54. Fechas y horas del plan: America/Chihuahua.
 
@@ -164,4 +165,8 @@ Autor: Fabián Fuentes. Revisión propuesta: P2 para CI/alfa/regresión, P4 para
 casos/aceptación y P5 para no funcionales/usuarios. No se atribuye aprobación a
 ninguno sin evidencia del PR. Fechas adicionales sujetas a esa revisión.
 PR: [#55](https://github.com/CardozoPapaDelAme/dog_report_app/pull/55).
-Aprobación del plan, fechas adicionales y fusión pendientes.
+Entrega revisada y merge autorizado por Fabián el 2026-10-07, condicionado a
+que cumpla T3. Aprobación del plan efectiva al fusionarse el PR. Las fechas
+adicionales son calendario propuesto: confirmar disponibilidad con los responsables
+y reprogramar cuando una dependencia o hallazgo lo requiera. No se atribuye
+conformidad a otros integrantes ni al socio formador.
