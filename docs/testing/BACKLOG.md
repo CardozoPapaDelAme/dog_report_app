@@ -108,6 +108,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 
 ### T1 · Convenciones y plantillas de pruebas
 - **Persona:** P1 · **Estado:** en curso · **Jira:** TD-114 · **Criterios:** base para todos
+- **PR:** [#54](https://github.com/CardozoPapaDelAme/dog_report_app/pull/54), pendiente de aprobación y fusión.
 - **Depende de:** nada. **Bloquea:** T3, T4, T5, T6, T7, T8, T9 (T2 puede arrancar en paralelo).
 - **Objetivo:** que todos documenten casos e incidentes con el mismo formato.
 - **Alcance:**
