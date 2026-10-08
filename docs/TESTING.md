@@ -4,6 +4,14 @@ This document owns test levels, release gates, and scenario coverage. Business
 rules remain in their product/data/API/security owners; RF/RNF/HU mapping remains
 in [`TRACEABILITY.md`](TRACEABILITY.md).
 
+## Stage 4 documentation
+
+Use `docs/testing/README.md` for shared case IDs, templates, repository-root file
+paths, execution logs and immediate incident reporting. `docs/testing/BACKLOG.md`
+assigns T1–T14; `docs/testing/PLAN.md` is the formal plan scaffold for T3.
+T1 supplies templates only; executed results belong in `docs/testing/TEST_LOG.md`
+and failures in `docs/testing/INCIDENTS.md` with their Jira bug tickets.
+
 ## Release gates
 
 | Gate | Required proof |

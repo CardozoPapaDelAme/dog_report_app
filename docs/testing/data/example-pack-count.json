@@ -1,0 +1,73 @@
+{
+  "purpose": "Ejemplo didáctico de validación local de cantidad de manada; sin ejecución acreditada",
+  "origin": "sintético",
+  "contract": "models/reportPayload.js: validateReportFormDraft",
+  "base_commit": "e59348a",
+  "entries": [
+    {
+      "key": "pack-1",
+      "form": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": "1",
+        "descripcion": "Ejemplo sintético de manada"
+      },
+      "expected": {
+        "accepted": false,
+        "cantidad_aprox": null
+      }
+    },
+    {
+      "key": "pack-2",
+      "form": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": "2",
+        "descripcion": "Ejemplo sintético de manada"
+      },
+      "expected": {
+        "accepted": true,
+        "cantidad_aprox": 2
+      }
+    },
+    {
+      "key": "pack-500",
+      "form": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": "500",
+        "descripcion": "Ejemplo sintético de manada"
+      },
+      "expected": {
+        "accepted": true,
+        "cantidad_aprox": 500
+      }
+    },
+    {
+      "key": "pack-1000",
+      "form": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": "1000",
+        "descripcion": "Ejemplo sintético de manada"
+      },
+      "expected": {
+        "accepted": true,
+        "cantidad_aprox": 1000
+      }
+    },
+    {
+      "key": "pack-1001",
+      "form": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": "1001",
+        "descripcion": "Ejemplo sintético de manada"
+      },
+      "expected": {
+        "accepted": false,
+        "cantidad_aprox": null
+      }
+    }
+  ]
+}
