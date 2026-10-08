@@ -19,6 +19,14 @@
     },
     "plugins": [
       "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
+      ],
       "expo-secure-store",
       [
         "expo-camera",

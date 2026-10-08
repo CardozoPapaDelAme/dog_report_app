@@ -141,6 +141,15 @@ missing with a fix hint in Spanish, and only then run `npx expo run:android` /
 any time to diagnose your machine. The first build takes about 10–20 minutes; it
 installs the app on the phone.
 
+For the Xcode **iOS Simulator**, run `npm run doctor -- ios`, then
+`npx expo run:ios` once to build and install the development app. After that,
+`npx expo start --dev-client` serves JavaScript changes. Starting Expo alone
+cannot open a development app that has not yet been installed. Xcode 27 / iOS 27
+also needs the scene lifecycle enabled in `app.json`; this project includes it.
+If Xcode reports “resource fork, Finder information, or similar detritus not
+allowed” while building from a cloud-synced Documents folder, use a local checkout
+outside the synced folder for native builds.
+
 *Every day*
 
 ```bash
