@@ -308,7 +308,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T7 · Prueba alfa en dispositivo
-- **Persona:** P2 · **Estado:** pendiente · **Jira:** TD-120 · **Criterios:** C2
+- **Persona:** P2 · **Estado:** en curso · **Jira:** TD-120 · **Criterios:** C2
 - **Depende de:** T1.
 - **Objetivo:** validar la app completa en un Android real antes de usuarios externos.
 - **Alcance (`docs/testing/ALPHA.md`):** checklist del flujo completo: cámara →
