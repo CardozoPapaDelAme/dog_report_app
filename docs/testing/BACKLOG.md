@@ -144,7 +144,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Aceptación:** plantillas y estructura en el repo, aprobadas en un PR.
 
 ### T2 · Integración continua y comando único de la suite completa
-- **Persona:** P2 · **Estado:** pendiente · **Jira:** TD-115 · **Criterios:** C3, C2
+- **Persona:** P2 · **Estado:** hecho · **Jira:** TD-115 · **Criterios:** C3, C2
+- **PR (evidencia):** [#56](https://github.com/CardozoPapaDelAme/dog_report_app/pull/56) — CI en verde, 4 min facturables por corrida.
 - **Depende de:** nada.
 - **Objetivo:** que **todas** las pruebas existentes corran solas en cada PR.
 - **Alcance:**
