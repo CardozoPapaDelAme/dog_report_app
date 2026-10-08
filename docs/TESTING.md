@@ -18,6 +18,45 @@ in [`TRACEABILITY.md`](TRACEABILITY.md).
 | Retention | Time-controlled 30d/90d/1y/2y/5y tests; NULL `purge_after` cannot block report purge; mark/list/delete/ack retries use server `now()` |
 | Operations | Database dumps and private object-byte export restore successfully; Free backup/SLA gap is explicit; quotas and pause state checked before demo |
 
+## Single command and continuous integration
+
+`npm test` runs every automated suite that needs no database and prints a
+per-suite summary (passed / failed / skipped). It exits non-zero if any suite fails.
+
+| Suite | Command | Runs |
+|---|---|---|
+| Deno (mobile + backend) | `npm run test:deno` | Every `*.test.js` under `models`, `services`, `controllers`, `hooks`, `i18n`, `scripts` and `supabase/functions/api`, except files that import `node:test` |
+| `node:test` | `npm run test:node` | The `*.test.js` files that import `node:test` (they may import npm packages Deno does not resolve, such as `xlsx`) |
+| Playwright (UI) | `npm run test:e2e` | `tests/ui/*.spec.js` against the local preview server (needs `npx playwright install chromium` once) |
+| PostgreSQL/PostGIS | `npm run test:postgres` | The five database suites; needs Docker and is **not** part of `npm test` |
+
+Files are routed by content: a new test that imports `node:test` goes to the
+`node:test` suite automatically, so no list needs maintaining
+(`scripts/test-all.mjs`). Deno runs with `--allow-env` only.
+
+`npm run test:postgres` starts one disposable `postgis/postgis:17-3.5` container
+per suite (the flag and public-map suites create cluster-level roles, so clusters
+cannot be shared), creates the fixed-name database, runs the suite and removes the
+container (`scripts/test-postgres.mjs`). Pass suite names to run a subset:
+`npm run test:postgres -- zone flag` (`configuration`, `zone`, `duplicate`, `flag`,
+`publicMap`). A suite that Deno reports as skipped counts as a failure. On
+Apple-silicon hosts the image runs emulated and is slower.
+
+`.github/workflows/tests.yml` runs on every pull request and on pushes to `main`,
+with no secrets and read-only repository permissions:
+
+- job `npm test`: `npm test`, plus the Playwright HTML report as the
+  `playwright-report` artifact (kept 14 days);
+- job `PostgreSQL suites`: `node scripts/test-postgres.mjs`, in parallel.
+
+Each job writes its per-suite table to the GitHub job summary. A newer push to the
+same pull request cancels the previous run to save Actions minutes.
+
+Baseline recorded on 2026-10-07 (`main` plus this change): Deno 357 passed / 0 failed /
+5 skipped (the five database suites, which skip without their database), `node:test`
+10 / 0 / 0, Playwright 78 / 0 / 0, and each PostgreSQL suite 1 / 0 / 0 (one `Deno.test`
+with several steps).
+
 ## Database and API tests
 
 ### Contract-retarget verification boundary
@@ -183,6 +222,11 @@ PostGIS database** with a fixed name, supplied through its own URL variable:
 Suites refuse non-loopback URLs, other database names and nonempty schemas. The
 flag and public map suites create cluster-level roles, so each needs a fresh
 cluster (container) per run.
+
+`npm run test:postgres` automates all of the above (see "Single command and
+continuous integration"); the manual commands below remain as the reference for
+what it runs. Note the read permission differs: the configuration suite reads
+`db/schema.sql`, the others read `supabase/migrations`.
 
 Policy regression: a step in `tests/zonePostgres.test.js` reads `pg_policies` and
 asserts the exact set of permissive `app_backend` policies on `config_versions`,

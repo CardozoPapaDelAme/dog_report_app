@@ -143,7 +143,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Aceptación:** plantillas y estructura en el repo, aprobadas en un PR.
 
 ### T2 · Integración continua y comando único de la suite completa
-- **Persona:** P2 · **Estado:** pendiente · **Jira:** TD-115 · **Criterios:** C3, C2
+- **Persona:** P2 · **Estado:** en curso · **Jira:** TD-115 · **Criterios:** C3, C2
 - **Depende de:** nada.
 - **Objetivo:** que **todas** las pruebas existentes corran solas en cada PR.
 - **Alcance:**
