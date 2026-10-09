@@ -211,7 +211,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 ## Fase 2 — Ejecución
 
 ### T4 · Matriz de trazabilidad completa
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-117 · **Criterios:** C1
+- **Persona:** P1 · **Estado:** hecho · **Jira:** TD-117 · **Criterios:** C1
+- **PR:** [#57](https://github.com/CardozoPapaDelAme/dog_report_app/pull/57). Cierre efectivo al fusionarse este PR; entrega revisada y merge autorizado por Fabián el 2026-10-08. Comprobación documental y suites validadas en la CI del PR.
 - **Depende de:** T1, T2 (la comprobación de rutas se suma a `npm test` y corre en la CI).
 - **Objetivo:** demostrar que cada requerimiento se valida, incluyendo la visión
   del cliente y del negocio.
