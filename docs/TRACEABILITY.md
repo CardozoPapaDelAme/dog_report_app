@@ -405,6 +405,10 @@ se deduce de un test simulado.
 
 ### Comprobación automática
 
+PR de T4: [#57](https://github.com/CardozoPapaDelAme/dog_report_app/pull/57).
+La corrida de ese PR aporta verificación automática; no sustituye resultados
+de alfa, usuarios, no funcionales ni aceptación.
+
 `scripts/check-doc-paths.mjs` comprueba las citas de archivo de este documento y
 los archivos de texto de `docs/testing/` recursivamente. Solo se excluye
 `docs/testing/BACKLOG.md`, porque conserva citas incorrectas deliberadas. Enlaces

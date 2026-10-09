@@ -212,6 +212,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 
 ### T4 · Matriz de trazabilidad completa
 - **Persona:** P1 · **Estado:** en curso · **Jira:** TD-117 · **Criterios:** C1
+- **PR:** [#57](https://github.com/CardozoPapaDelAme/dog_report_app/pull/57), pendiente de aprobación y fusión; la comprobación se valida en la CI del PR.
 - **Depende de:** T1, T2 (la comprobación de rutas se suma a `npm test` y corre en la CI).
 - **Objetivo:** demostrar que cada requerimiento se valida, incluyendo la visión
   del cliente y del negocio.
