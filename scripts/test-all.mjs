@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Single entry point for the whole automated test suite (backlog T2).
-//   node scripts/test-all.mjs            -> deno, node and e2e
+//   node scripts/test-all.mjs            -> docs, deno, node and e2e
 //   node scripts/test-all.mjs deno node  -> only the named suites
 // PostgreSQL suites are not run here: they skip themselves unless their
 // *_TEST_DATABASE_URL variable is set (see docs/TESTING.md).
@@ -34,6 +34,16 @@ const nodeTests = allTests.filter((file) => NODE_TEST_IMPORT.test(readFileSync(f
 const denoTests = allTests.filter((file) => !nodeTests.includes(file));
 
 const suites = {
+  docs: {
+    label: 'Documentación (rutas)',
+    cmd: process.execPath,
+    args: ['scripts/check-doc-paths.mjs'],
+    parse: (out) => ({
+      passed: /, 0 errores\./.test(out) ? 1 : 0,
+      failed: last(out, /(\d+) errores/g),
+      skipped: 0,
+    }),
+  },
   deno: {
     label: 'Deno (móvil + backend)',
     cmd: 'deno',
