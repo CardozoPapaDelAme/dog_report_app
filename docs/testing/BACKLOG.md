@@ -211,7 +211,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 ## Fase 2 — Ejecución
 
 ### T4 · Matriz de trazabilidad completa
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-117 · **Criterios:** C1
+- **Persona:** P1 · **Estado:** en curso · **Jira:** TD-117 · **Criterios:** C1
 - **Depende de:** T1, T2 (la comprobación de rutas se suma a `npm test` y corre en la CI).
 - **Objetivo:** demostrar que cada requerimiento se valida, incluyendo la visión
   del cliente y del negocio.

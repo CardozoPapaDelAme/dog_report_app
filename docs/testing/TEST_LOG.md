@@ -23,7 +23,7 @@ relevantes en entorno/notas. Resultado obtenido debe explicar qué se observó.
 Formato para copiar (reemplazar todos los marcadores antes de registrar):
 
 ```text
-| RUN-<n> | <fecha, hora, zona> | <TC-módulo-n; docs/testing/cases/modulo.md> | <persona> | <local/CI/dispositivo/staging; versiones; mocks o servicios reales> | <SHA completo> | <pasó/falló/bloqueado> | <observación concreta> | <INC-n; o no aplica> | <ruta desde raíz o URL persistente; motivo/responsable si bloqueado> |
+| RUN-<n> | <fecha, hora, zona> | <TC-módulo-n; docs/testing/cases/<modulo>.md> | <persona> | <local/CI/dispositivo/staging; versiones; mocks o servicios reales> | <SHA completo> | <pasó/falló/bloqueado> | <observación concreta> | <INC-n; o no aplica> | <ruta desde raíz o URL persistente; motivo/responsable si bloqueado> |
 ```
 
 Toda fila `falló` debe tener INC-n en `docs/testing/INCIDENTS.md` y ticket de bug

@@ -14,6 +14,18 @@ criteria and risks (T3); execution results and approvals are recorded separately
 T1 supplies templates only; executed results belong in `docs/testing/TEST_LOG.md`
 and failures in `docs/testing/INCIDENTS.md` with their Jira bug tickets.
 
+## Stage 4 traceability validation (T4)
+
+`docs/TRACEABILITY.md` maps all 24 RF, 36 RNF and 24 HU to named existing
+specifications in `docs/testing/cases/trazabilidad.md`, or records an uncovered
+gap with its responsible task. Automated availability is distinct from executed
+SQL, live JWT, native device or user acceptance evidence.
+
+Run `npm run test:docs` to check file citations in the matrix and Stage 4 docs.
+The `docs` suite in `npm test` runs this check in the T2 workflow. Only
+`docs/testing/BACKLOG.md` is excluded; concrete file citations resolve from the
+repository root. Formal template parameters and external URLs are ignored.
+
 ## Release gates
 
 | Gate | Required proof |

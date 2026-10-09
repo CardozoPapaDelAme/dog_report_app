@@ -2,8 +2,8 @@
 
 This document exclusively owns the complete historical SRS → normative SRS v2 →
 HTTP/data → verification mapping. Every row preserves the same exact identifier
-in [`product/ETAPA1-REQUERIMIENTOS.md`](product/ETAPA1-REQUERIMIENTOS.md) and
-[`product/ETAPA1-REQUERIMIENTOS-V2.md`](product/ETAPA1-REQUERIMIENTOS-V2.md).
+in [`docs/product/ETAPA1-REQUERIMIENTOS.md`](https://github.com/CardozoPapaDelAme/dog_report_app/blob/main/docs/product/ETAPA1-REQUERIMIENTOS.md) and
+[`docs/product/ETAPA1-REQUERIMIENTOS-V2.md`](https://github.com/CardozoPapaDelAme/dog_report_app/blob/main/docs/product/ETAPA1-REQUERIMIENTOS-V2.md).
 Approved amendments govern changed wording. Relationships are many-to-many.
 
 ## Functional requirements
@@ -36,9 +36,9 @@ Approved amendments govern changed wording. Relationships are many-to-many.
 | RF24 | Dynamic form | `details` JSONB validator | Allowed keys/types per incident |
 
 L3 public map executable coverage is split across
-`controllers/publicMapController.test.js`, `services/publicMapService.test.js`,
-`repositories/publicMapRepository.test.js`, and the opt-in
-`tests/publicMapPostgres.test.js`. Together they cover RF10–RF14 and HU-10–HU-14:
+`supabase/functions/api/controllers/publicMapController.test.js`, `supabase/functions/api/services/publicMapService.test.js`,
+`supabase/functions/api/repositories/publicMapRepository.test.js`, and the opt-in
+`supabase/functions/api/tests/publicMapPostgres.test.js`. Together they cover RF10–RF14 and HU-10–HU-14:
 stable read-time 50 m public approximation, bounded public report and cluster
 queries, server-side metric clustering, highest severity and complete six-key
 type counts.
@@ -134,22 +134,22 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 Executable Deno tests cover Hono, domain, repository, service, and mobile
 model/client behavior. Expo Doctor and Android/web exports provide mobile-shell
 and bundling checks; supported-device interaction and accessibility smoke tests
-remain release evidence as described by [`TESTING.md`](TESTING.md).
+remain release evidence as described by [`docs/TESTING.md`](https://github.com/CardozoPapaDelAme/dog_report_app/blob/main/docs/TESTING.md).
 
 ## FAB-1 / L1 configuration implementation
 
 Approved amendment #5 adds Administrator configuration management to the existing
 requirements below. These mappings cover threshold management only; they do not
 claim implementation of flagging, trust assessment, duplicate resolution, or L4 UI.
-All paths below are relative to `supabase/functions/api/`.
+All file paths below are complete from the repository root.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RF21; HU-21; RNF29 | `GET/POST /admin/configuration`; flag threshold/rate validation | `domain/configuration.test.js` (`FAB-1 VALIDATION`); `controllers/configuration-controller.test.js` (`FAB-1 HTTP`) |
-| RF23; HU-23; RNF30 | Versioned duplicate radius/time thresholds, without resolving duplicates | `domain/configuration.test.js`; `tests/configurationPostgres.test.js` (`FAB-1 SQL`) |
-| RNF09, RNF26, RNF28, RNF31 | GPS, trust-band and hourly rate constraints; active-zone metadata projection | `domain/configuration.test.js`; `services/configuration-service.test.js` (`FAB-1 SERVICE`); zone/environment steps in `FAB-1 SQL` |
-| RNF20, RNF21 | Administrator middleware, Service profile recheck, local actor context, SQL/RLS and environment separation | `controllers/configuration-controller.test.js`; `services/configuration-service.test.js`; privilege/context steps in `FAB-1 SQL` |
-| RNF33 | Immutable history, sequential versions, atomic activation and JSON audit evidence | `repositories/configuration-repository.js`; rollback, concurrent-reader and six-writer steps in `FAB-1 SQL` |
+| RF21; HU-21; RNF29 | `GET/POST /admin/configuration`; flag threshold/rate validation | `supabase/functions/api/domain/configuration.test.js` (`FAB-1 VALIDATION`); `supabase/functions/api/controllers/configurationController.test.js` (`FAB-1 HTTP`) |
+| RF23; HU-23; RNF30 | Versioned duplicate radius/time thresholds, without resolving duplicates | `supabase/functions/api/domain/configuration.test.js`; `supabase/functions/api/tests/configurationPostgres.test.js` (`FAB-1 SQL`) |
+| RNF09, RNF26, RNF28, RNF31 | GPS, trust-band and hourly rate constraints; active-zone metadata projection | `supabase/functions/api/domain/configuration.test.js`; `supabase/functions/api/services/configurationService.test.js` (`FAB-1 SERVICE`); zone/environment steps in `FAB-1 SQL` |
+| RNF20, RNF21 | Administrator middleware, Service profile recheck, local actor context, SQL/RLS and environment separation | `supabase/functions/api/controllers/configurationController.test.js`; `supabase/functions/api/services/configurationService.test.js`; privilege/context steps in `FAB-1 SQL` |
+| RNF33 | Immutable history, sequential versions, atomic activation and JSON audit evidence | `supabase/functions/api/repositories/configurationRepository.js`; rollback, concurrent-reader and six-writer steps in `FAB-1 SQL` |
 
 Live Supabase session/JWT/profile integration remains a release check requiring a
 provisioned Administrator. The isolated PostgreSQL suite validates the actual
@@ -157,13 +157,13 @@ configuration-related DDL and policies, not the entire PostGIS/Storage deploymen
 
 
 FAB-1 integration with main `65f2cda` extends RNF20/RNF21 regression coverage in
-`controllers/configuration-controller.test.js`: `/api/admin/configuration` uses
+`supabase/functions/api/controllers/configurationController.test.js`: `/api/admin/configuration` uses
 the shared application prefix, and identity (`/api/me`), moderation queue and JP's
 hide route remain mounted and authenticated. RF18/HU-18 authenticated session
 verification still requires the managed staging smoke test.
 
 
-`tests/identity-configuration.test.js` adds FAB-1 simulated-session coverage for
+`supabase/functions/api/tests/identityConfiguration.test.js` adds FAB-1 simulated-session coverage for
 RF18/HU-18, RNF20/RNF21 and RNF33: the identity view and configuration audit refer
 to the same actor, association access is denied, and profile revocation prevents
 publication. Its session and persistence are simulated; real JWT/Supabase
@@ -190,18 +190,18 @@ remain release checks after local public client configuration is supplied.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `domain/zone-set.test.js` (`FAB-2 DOMAIN`); `services/zone-service.test.js` (`FAB-2 SERVICE`); `tests/zonePostgres.test.js` (`FAB-2 SQL`) |
-| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `controllers/zone-controller.test.js` (`FAB-2 HTTP`); `services/zone-service.test.js`; `tests/zonePostgres.test.js` |
-| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `repositories/zone-repository.js`; `domain/zone-set.js`; real rollback/concurrency/column-grant coverage in `tests/zonePostgres.test.js` |
+| RNF09 | `POST /admin/zone-sets`; canonical GeoJSON/checksum; draft-only creation | `supabase/functions/api/domain/zoneSet.test.js` (`FAB-2 DOMAIN`); `supabase/functions/api/services/zoneService.test.js` (`FAB-2 SERVICE`); `supabase/functions/api/tests/zonePostgres.test.js` (`FAB-2 SQL`) |
+| RNF20, RNF21 | Administrator routes, profile recheck, local actor context, environment isolation | `supabase/functions/api/controllers/zoneController.test.js` (`FAB-2 HTTP`); `supabase/functions/api/services/zoneService.test.js`; `supabase/functions/api/tests/zonePostgres.test.js` |
+| RNF33 | Immutable provenance, one-active-zone rule, atomic retire/activate and audit | `supabase/functions/api/repositories/zoneRepository.js`; `supabase/functions/api/domain/zoneSet.js`; real rollback/concurrency/column-grant coverage in `supabase/functions/api/tests/zonePostgres.test.js` |
 
-Migration `20261001120000_split_backend_mutate_policies.sql` replaces the
+Migration `supabase/migrations/20261001120000_split_backend_mutate_policies.sql` replaces the
 `FOR ALL` `config_backend_mutate`, `zones_backend_mutate` and
 `zone_geometry_backend_mutate` policies with per-command
 `config_backend_insert/update`, `zones_backend_insert/update` and
 `zone_geometry_backend_insert` policies (same predicate; no DELETE policies and
 no `zones` UPDATE, matching the grants). It supports RNF20, RNF21 and RNF33; the
-`pg_policies` step in `tests/zonePostgres.test.js` (`FAB-2 SQL`) asserts the exact
-set of permissive `app_backend` policies (one per granted command), and `tests/configurationPostgres.test.js`
+`pg_policies` step in `supabase/functions/api/tests/zonePostgres.test.js` (`FAB-2 SQL`) asserts the exact
+set of permissive `app_backend` policies (one per granted command), and `supabase/functions/api/tests/configurationPostgres.test.js`
 extracts the split policies from `db/schema.sql`.
 
 The PostgreSQL/PostGIS migrations preserve retirement evidence, canonical source
@@ -218,9 +218,9 @@ fields back through the external-input validator; it does not verify a real JWT.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RF23; HU-23; RNF30 | Human canonical selection over a connected induced pending-candidate graph; no arbitrary grouping | `domain/duplicate-group.test.js` (`FAB-3 DOMAIN`); `services/duplicate-service.test.js` (`FAB-3 SERVICE`); `tests/duplicatePostgres.test.js` (`FAB-3 SQL`) |
-| RF19; HU-19; RNF20, RNF21 | Administrator-only active-group listing, creation and reversal; profile/environment/context checks | `controllers/duplicate-controller.test.js` (`FAB-3 HTTP`); `FAB-3 SERVICE`; real RLS and grants in `FAB-3 SQL` |
-| RF13, RF23; RNF30, RNF33 | Single active membership; canonical filtering; reversible candidate review with unchanged reports/photos; atomic audit | `repositories/duplicate-repository.js`; `FAB-3 SQL` rollback, concurrency, anonymous/Association visibility and original-evidence assertions |
+| RF23; HU-23; RNF30 | Human canonical selection over a connected induced pending-candidate graph; no arbitrary grouping | `supabase/functions/api/domain/duplicateGroup.test.js` (`FAB-3 DOMAIN`); `supabase/functions/api/services/duplicateService.test.js` (`FAB-3 SERVICE`); `supabase/functions/api/tests/duplicatePostgres.test.js` (`FAB-3 SQL`) |
+| RF19; HU-19; RNF20, RNF21 | Administrator-only active-group listing, creation and reversal; profile/environment/context checks | `supabase/functions/api/controllers/duplicateController.test.js` (`FAB-3 HTTP`); `FAB-3 SERVICE`; real RLS and grants in `FAB-3 SQL` |
+| RF13, RF23; RNF30, RNF33 | Single active membership; canonical filtering; reversible candidate review with unchanged reports/photos; atomic audit | `supabase/functions/api/repositories/duplicateRepository.js`; `FAB-3 SQL` rollback, concurrency, anonymous/Association visibility and original-evidence assertions |
 
 HTTP tests exercise the real Controller and Service together. SQL tests extend
 that path through the real Repository and PostgreSQL/PostGIS under `app_backend`.
@@ -246,12 +246,12 @@ Current report-intake coverage maps as follows:
 
 | Test artifact | Covered IDs | Focus |
 |---|---|---|
-| `supabase/functions/api/controllers/report-controller.test.js` | RF01, RF06, RF24, RNF12, RNF36, HU-01, HU-06, HU-24 | Public command parsing, raw fingerprint handoff, unknown-field rejection, dynamic details validation |
-| `supabase/functions/api/services/report-service.test.js` | RF01, RNF09, RNF12, RNF26, HU-01 | Canonical idempotency hash, fingerprint-independent replay, replay short-circuit before geofence/rate/trust, server-time `client_created_at` window, hourly retry calculation |
-| `supabase/functions/api/services/trust-service.test.js` | RNF27, RNF28 | High-trust publication path and mandatory review for mock/imprecise location signals |
+| `supabase/functions/api/controllers/reportController.test.js` | RF01, RF06, RF24, RNF12, RNF36, HU-01, HU-06, HU-24 | Public command parsing, raw fingerprint handoff, unknown-field rejection, dynamic details validation |
+| `supabase/functions/api/services/reportService.test.js` | RF01, RNF09, RNF12, RNF26, HU-01 | Canonical idempotency hash, fingerprint-independent replay, replay short-circuit before geofence/rate/trust, server-time `client_created_at` window, hourly retry calculation |
+| `supabase/functions/api/services/trustService.test.js` | RNF27, RNF28 | High-trust publication path and mandatory review for mock/imprecise location signals |
 
 Temporary demo-only missing-geofence bypass coverage lives in
-`supabase/functions/api/services/report-service.test.js`: default behavior still
+`supabase/functions/api/services/reportService.test.js`: default behavior still
 fails closed before quota/trust/insert, the explicit non-production flag permits
 photo-flow verification without an active zone, and an existing active geofence
 still rejects outside points.
@@ -266,7 +266,7 @@ still rejects outside points.
 
 `ZoneSetScreen`, `useZoneSets`, `models/zoneSet.js`, `services/zoneSetApi.js`
 and the native/web `zoneFile` adapters implement the client boundary. No table,
-RLS, transaction or approval policy changes. `routes/zoneSets.js` restores the
+RLS, transaction or approval policy changes. `supabase/functions/api/routes/zoneSets.js` restores the
 documented `/admin/zone-sets` URLs and retains `/admin/zoneSets` aliases with
 identical guards. FAB-2 HTTP tests now assert the canonical URLs and auth on both
 spellings. Real JWT, managed deployment and physical-device checks remain pending;
@@ -276,8 +276,8 @@ see `docs/TESTING.md` for exact simulated/compiled evidence and recovery limits.
 
 | Requirements / stories | Implemented boundary | Executable evidence |
 |---|---|---|
-| RF23; HU-23; RNF30 | Full eligible pending-candidate projection including visible reports; components and explicit canonical selection | `controllers/duplicateController.test.js` (`FAB-6 HTTP`); `models/duplicateCandidate.test.js`; SQL candidate snapshot assertions in `tests/duplicatePostgres.test.js` |
-| RNF20, RNF21, RNF33 | Active Administrator only, local transaction context, existing RLS/grants, no private metadata | `services/duplicateService.test.js` (`FAB-6 SERVICE`); real SQL projection denied to anonymous/Association actors |
+| RF23; HU-23; RNF30 | Full eligible pending-candidate projection including visible reports; components and explicit canonical selection | `supabase/functions/api/controllers/duplicateController.test.js` (`FAB-6 HTTP`); `models/duplicateCandidate.test.js`; SQL candidate snapshot assertions in `supabase/functions/api/tests/duplicatePostgres.test.js` |
+| RNF20, RNF21, RNF33 | Active Administrator only, local transaction context, existing RLS/grants, no private metadata | `supabase/functions/api/services/duplicateService.test.js` (`FAB-6 SERVICE`); real SQL projection denied to anonymous/Association actors |
 | RF13, RF23; HU-23; RNF30, RNF33 | Connected selected subgraph checked before POST; server rechecks; reversal reopens candidates without touching originals or moderation | Exhaustive subset parity with FAB-3 in model tests; `services/duplicateApi.test.js`; real SQL resolve/reverse evidence and unchanged report/photo assertions |
 | RNF34; L6 acceptance | Clear pre-submit graph warning, optional resolution reason, mandatory reversal reason, session isolation and uncertain-result recovery | `tests/ui/duplicateManagement.spec.js` (16 browser cases), plus L4/L5 regressions |
 
@@ -286,3 +286,139 @@ Implementation: `screens/DuplicateManagementScreen.js` →
 `services/duplicateApi.js` → FAB-3. `App.js` uses the session integration now on
 main and grants navigation through the Administrator moderation screen. No real
 account, production resolution, migration or deployment is performed by tests.
+
+## Matriz de verificación de Etapa 4 (T4 / TD-117)
+
+Base auditada: main con T2 integrado (PR #56), 2026-10-08.
+Esta sección da el estado de trazabilidad actual; las tablas previas conservan
+contratos y contexto histórico, no son constancia de ejecución de esta etapa.
+Los casos TC-TRAZA están definidos en `docs/testing/cases/trazabilidad.md`, con
+entrada, resultado esperado y nombre exacto del test. «Disponible» significa que
+existe el test, no que se haya acreditado el requerimiento completo en todos los
+entornos. «Sin cubrir» identifica una brecha y su responsable por tarea.
+No hay resultados manuales compartidos en las plantillas de T7–T9/T14; no se les
+atribuye aceptación. T5/T6 completan límites y combinaciones; T4 no los cierra.
+
+### RF → casos → tests y brechas
+
+| ID | Caso(s) | Test(s) disponible(s) | Estado, límite de evidencia y tarea responsable |
+|---|---|---|---|
+| RF01 | TC-TRAZA-01, TC-TRAZA-02 | `hooks/reportDraftQueueController.test.js`; `supabase/functions/api/services/reportService.test.js` | Disponible; sin cubrir: durabilidad física/proceso muerto y modo avión en dispositivo (T7) |
+| RF02 | TC-TRAZA-03 | `supabase/functions/api/controllers/reportController.test.js` | Disponible; sin cubrir: aviso de PII en UI y comprobación de no persistencia (T5/T9) |
+| RF03 | TC-TRAZA-04, TC-TRAZA-05, TC-TRAZA-06, TC-TRAZA-07 | `supabase/functions/api/controllers/photoController.test.js`; `models/photoState.test.js`; `hooks/reportDraftQueueController.test.js`; `supabase/functions/api/services/photoService.test.js` | Disponible; sin cubrir: cámara/selección y carga nativa reales (T7) |
+| RF04 | TC-TRAZA-08 | `models/reportPayload.test.js` | Disponible; T5 amplía mínimo/máximo/promedio/excepción; caso inicial valida solo 1 y 2 |
+| RF05 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: acceso rápido visible sin foto no tiene test dedicado (T5) |
+| RF06 | TC-TRAZA-09 | `models/reportPayload.test.js` | Disponible; T5 completa combinaciones y límites por categoría |
+| RF07 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: cold start cámara no tiene test dedicado (T5/T7) |
+| RF08 | TC-TRAZA-10, TC-TRAZA-51 | `supabase/functions/api/services/flag-service.test.js`; `supabase/functions/api/tests/flag-postgres.test.js` | Disponible; T5 añade casos de detalle público y diversidad; no demuestra concurrencia SQL |
+| RF09 | TC-TRAZA-11, TC-TRAZA-12 | `services/photoInference.test.js` | Disponible; sin cubrir: modelo real y calidad offline en dispositivo (T7) |
+| RF10 | TC-TRAZA-13, TC-TRAZA-52 | `supabase/functions/api/repositories/publicMapRepository.test.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; sin cubrir: render nativo y versión staging de entrega (T6/T7); SQL aislado disponible |
+| RF11 | TC-TRAZA-14, TC-TRAZA-52 | `supabase/functions/api/repositories/publicMapRepository.test.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; sin cubrir: mapa nativo en teléfono (T7); SQL aislado disponible |
+| RF12 | TC-TRAZA-15 | `models/publicMap.test.js` | Disponible; sin cubrir: tamaño del cluster en UI; disponible solo modelo (T6) |
+| RF13 | TC-TRAZA-16, TC-TRAZA-52 | `tests/ui/publicMap.spec.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; Caso UI con HTTP simulado; T6 añade SQL/canónicos |
+| RF14 | TC-TRAZA-17, TC-TRAZA-52 | `models/publicMap.test.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; Caso de modelo; T6/T7 verifican interacción y mapa nativo |
+| RF15 | TC-TRAZA-18 | `controllers/loginController.test.js` | Disponible; sin cubrir: múltiples cuentas provisionadas y SecureStore real (T6/T7) |
+| RF16 | TC-TRAZA-19 | `supabase/functions/api/repositories/associationReportRepository.test.js` | Disponible; sin cubrir: proyección SQL ejecutada y aceptación de estadísticas (T6/T14) |
+| RF17 | TC-TRAZA-20, TC-TRAZA-21 | `models/associationReport.test.js`; `models/associationWorkbook.test.js` | Disponible; sin cubrir: compartir nativo y conformidad del socio (T7/T14) |
+| RF18 | TC-TRAZA-22, TC-TRAZA-37 | `controllers/loginController.test.js`; `supabase/functions/api/services/associationService.test.js` | Disponible; sin cubrir: sesión JWT desplegada/rol en la versión de entrega (T6/T7) |
+| RF19 | TC-TRAZA-23, TC-TRAZA-24 | `services/moderationApi.test.js`; `models/moderation.test.js` | Disponible; sin cubrir: Service de cola y Command Center UI sin tests dedicados (T6) |
+| RF20 | TC-TRAZA-25, TC-TRAZA-26, TC-TRAZA-27, TC-TRAZA-28 | `supabase/functions/api/domain/reportModeration.test.js`; `supabase/functions/api/controllers/moderationController.test.js`; `services/moderationApi.test.js`; `models/moderation.test.js` | Disponible; sin cubrir: auditoría/transacción SQL de moderación y UI Command Center (T6) |
+| RF21 | TC-TRAZA-29, TC-TRAZA-51 | `supabase/functions/api/services/flag-service.test.js`; `supabase/functions/api/tests/flag-postgres.test.js` | Disponible; sin cubrir: flujo UI completo de revisión/restore (T6); SQL auto-hide disponible |
+| RF22 | TC-TRAZA-30, TC-TRAZA-31 | `models/dogColor.test.js`; `models/reportPayload.test.js` | Disponible; sin cubrir: color con fotos reales en teléfono (T7) |
+| RF23 | TC-TRAZA-32, TC-TRAZA-33, TC-TRAZA-34, TC-TRAZA-50 | `models/duplicateCandidate.test.js`; `supabase/functions/api/services/duplicateService.test.js`; `tests/ui/duplicateManagement.spec.js`; `supabase/functions/api/tests/duplicatePostgres.test.js` | Disponible; sin cubrir: candidatos SQL reales/actores de staging; T6 amplía límites |
+| RF24 | TC-TRAZA-09, TC-TRAZA-35 | `models/reportPayload.test.js`; `supabase/functions/api/controllers/reportController.test.js` | Disponible; sin cubrir: trigger PostgreSQL ejecutado en estos casos (T5) |
+
+### RNF → casos → tests y brechas
+
+| ID | Caso(s) | Test(s) disponible(s) | Estado, límite de evidencia y tarea responsable |
+|---|---|---|---|
+| RNF01 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: estado/operación Free y evidencia de mejor esfuerzo; 99.9% es meta futura (T9) |
+| RNF02 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: medición mapa <5 s en teléfono con carga objetivo (T9) |
+| RNF03 | TC-TRAZA-14 | `supabase/functions/api/repositories/publicMapRepository.test.js` | Disponible; sin cubrir: carga/p95 y crecimiento; consulta SQL solo inspeccionada por test (T9) |
+| RNF04 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: 3–5 usuarios sin capacitación y duración reporte <300 s (T8) |
+| RNF05 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: Android 8+/iOS 13+ en builds reales; justificar plataforma ausente (T9) |
+| RNF06 | TC-TRAZA-36 | `i18n/locales.test.js` | Disponible; sin cubrir: todas las pantallas y accesibilidad es/en; claves iguales no prueban traducción (T9) |
+| RNF07 | TC-TRAZA-37, TC-TRAZA-18, TC-TRAZA-22 | `supabase/functions/api/services/associationService.test.js`; `controllers/loginController.test.js` | Disponible; Casos de roles simulados; T6 verifica provisión manual y ausencia de signup |
+| RNF08 | TC-TRAZA-11, TC-TRAZA-12 | `services/photoInference.test.js` | Disponible; sin cubrir: modelo real on-device y tipo/versionado contrastado con ADR-009 (T7) |
+| RNF09 | TC-TRAZA-38, TC-TRAZA-02, TC-TRAZA-39, TC-TRAZA-48, TC-TRAZA-49 | `supabase/functions/api/services/reportService.test.js`; `services/zoneSetApi.test.js`; `supabase/functions/api/tests/configurationPostgres.test.js`; `supabase/functions/api/tests/zonePostgres.test.js` | Disponible; sin cubrir: punto exterior/SQL, geometría oficial y aprobación externa no acreditados aquí (T5/T6) |
+| RNF10 | TC-TRAZA-07, TC-TRAZA-11 | `supabase/functions/api/services/photoService.test.js`; `services/photoInference.test.js` | Disponible; sin cubrir: offline físico y ausencia EXIF crudo en DB/Storage reales (T7/T9) |
+| RNF11 | TC-TRAZA-31, TC-TRAZA-30 | `models/reportPayload.test.js`; `models/dogColor.test.js` | Disponible; Caso de modelo; T5 valida persistencia estructurada e integración |
+| RNF12 | TC-TRAZA-01, TC-TRAZA-02, TC-TRAZA-06 | `hooks/reportDraftQueueController.test.js`; `supabase/functions/api/services/reportService.test.js` | Disponible; sin cubrir: reinicio/muerte de proceso, avión y sincronización en dispositivo (T7) |
+| RNF13 | TC-TRAZA-03, TC-TRAZA-19 | `supabase/functions/api/controllers/reportController.test.js`; `supabase/functions/api/repositories/associationReportRepository.test.js` | Disponible; sin cubrir: minimización completa, contenido incidental y revisión de privacidad (T9) |
+| RNF14 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: dumps, manifiesto y restauración; no acreditar RPO/RTO productivos (T9) |
+| RNF15 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: inspección del proyecto administrado/plan vigente (T9) |
+| RNF16 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: smoke HTTPS/TLS del despliegue (T9) |
+| RNF17 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: inspección de accesos técnicos y ausencia SSH/VPS (T9) |
+| RNF18 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: ensayo restauración aislada de DB y bytes privados con checksums (T9) |
+| RNF19 | TC-TRAZA-14, TC-TRAZA-48, TC-TRAZA-49, TC-TRAZA-50, TC-TRAZA-51, TC-TRAZA-52 | `supabase/functions/api/repositories/publicMapRepository.test.js`; `supabase/functions/api/tests/configurationPostgres.test.js`; `supabase/functions/api/tests/zonePostgres.test.js`; `supabase/functions/api/tests/duplicatePostgres.test.js`; `supabase/functions/api/tests/flag-postgres.test.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; SQL local aislado disponible; sin cubrir: catálogos del proyecto Supabase vigente (T9) |
+| RNF20 | TC-TRAZA-37, TC-TRAZA-47, TC-TRAZA-48, TC-TRAZA-49, TC-TRAZA-50, TC-TRAZA-51 | `supabase/functions/api/services/associationService.test.js`; `supabase/functions/api/tests/identityConfiguration.test.js`; `supabase/functions/api/tests/configurationPostgres.test.js`; `supabase/functions/api/tests/zonePostgres.test.js`; `supabase/functions/api/tests/duplicatePostgres.test.js`; `supabase/functions/api/tests/flag-postgres.test.js` | Disponible; SQL RLS/grants local disponible; sin cubrir: firmas JWT y políticas del proyecto desplegado (T9) |
+| RNF21 | TC-TRAZA-23, TC-TRAZA-39, TC-TRAZA-40, TC-TRAZA-48, TC-TRAZA-49 | `services/moderationApi.test.js`; `services/zoneSetApi.test.js`; `supabase/functions/api/services/configurationService.test.js`; `supabase/functions/api/tests/configurationPostgres.test.js`; `supabase/functions/api/tests/zonePostgres.test.js` | Disponible; sin cubrir: inspección de todas las capas y JWT real; casos integran dependencias simuladas (T9) |
+| RNF22 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: inspección gateway/Edge/TLS administrados (T9) |
+| RNF23 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: inspección de frontera y no acceso móvil directo a dominio (T9) |
+| RNF24 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: escaneo bundle/repo/respuestas de secretos con evidencia compartida (T9) |
+| RNF25 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: monitor y readiness de cuotas, scheduler y exportaciones (T9) |
+| RNF26 | TC-TRAZA-43, TC-TRAZA-41 | `supabase/functions/api/services/reportService.test.js`; `supabase/functions/api/services/retentionService.test.js` | Disponible; sin cubrir: hash server/retención 30 días en SQL y entorno real (T9) |
+| RNF27 | TC-TRAZA-31, TC-TRAZA-42 | `models/reportPayload.test.js`; `supabase/functions/api/services/trustService.test.js` | Disponible; sin cubrir: honeypot como motivo específico de confianza/revisión end-to-end (T5) |
+| RNF28 | TC-TRAZA-42 | `supabase/functions/api/services/trustService.test.js` | Disponible; sin cubrir: evaluación versionada completa de reportes con/sin foto (T5) |
+| RNF29 | TC-TRAZA-10, TC-TRAZA-29, TC-TRAZA-51 | `supabase/functions/api/services/flag-service.test.js`; `supabase/functions/api/tests/flag-postgres.test.js` | Disponible; Service y SQL aislado disponibles; sin cubrir: casos completos de concurrencia/cuota de denuncias (T5) |
+| RNF30 | TC-TRAZA-32, TC-TRAZA-34, TC-TRAZA-50 | `models/duplicateCandidate.test.js`; `tests/ui/duplicateManagement.spec.js`; `supabase/functions/api/tests/duplicatePostgres.test.js` | Disponible; Modelo/UI y SQL aislado disponibles; sin cubrir: aceptación staging/dispositivo (T6/T7) |
+| RNF31 | TC-TRAZA-44, TC-TRAZA-02 | `supabase/functions/api/services/flag-service.test.js`; `supabase/functions/api/services/reportService.test.js` | Disponible; sin cubrir: límites SQL concurrentes/reportes/imagen/sesión (T9) |
+| RNF32 | TC-TRAZA-07, TC-TRAZA-45 | `supabase/functions/api/services/photoService.test.js` | Disponible; sin cubrir: HEIC/orientación nativos y metadata real Storage; T5 cubre 415, T9 saneamiento |
+| RNF33 | TC-TRAZA-40, TC-TRAZA-33, TC-TRAZA-48, TC-TRAZA-49, TC-TRAZA-50, TC-TRAZA-51 | `supabase/functions/api/services/configurationService.test.js`; `supabase/functions/api/services/duplicateService.test.js`; `supabase/functions/api/tests/configurationPostgres.test.js`; `supabase/functions/api/tests/zonePostgres.test.js`; `supabase/functions/api/tests/duplicatePostgres.test.js`; `supabase/functions/api/tests/flag-postgres.test.js` | Disponible; SQL configuración/zonas/duplicados/flags disponible; sin cubrir: moderación standalone y todos los comandos (T6) |
+| RNF34 | TC-TRAZA-46, TC-TRAZA-47 | `controllers/loginController.test.js`; `supabase/functions/api/tests/identityConfiguration.test.js` | Disponible; sin cubrir: verificación firma/claims JWT real, SecureStore y logout nativo (T9) |
+| RNF35 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: inspección schema/migraciones que excluya embeddings; mejora fuera de Fase 1 (T9) |
+| RNF36 | TC-TRAZA-35 | `supabase/functions/api/controllers/reportController.test.js` | Disponible; sin cubrir: validator PostgreSQL real; parser HTTP no prueba trigger DB (T5) |
+
+### HU → valor para cliente/negocio → casos → tests
+
+Las HU comparten casos con su RF correspondiente, conservando relaciones con RNF
+y aclaraciones de las tablas contractuales anteriores. La visión del cliente se
+valida en T14 con el socio, además de las pruebas del equipo; su conformidad no
+se deduce de un test simulado.
+
+| ID | RF principal | Valor que valida para el cliente/negocio | Caso(s) | Test(s) disponible(s) | Estado y brecha |
+|---|---|---|---|---|---|
+| HU-01 | RF01 | Reportero público: actuar sin cuenta y capturar sin red para sincronizar después | TC-TRAZA-01, TC-TRAZA-02 | `hooks/reportDraftQueueController.test.js`; `supabase/functions/api/services/reportService.test.js` | Disponible; sin cubrir: durabilidad física/proceso muerto y modo avión en dispositivo (T7) |
+| HU-02 | RF02 | Reportero público: reducir exposición de datos personales | TC-TRAZA-03 | `supabase/functions/api/controllers/reportController.test.js` | Disponible; sin cubrir: aviso de PII en UI y comprobación de no persistencia (T5/T9) |
+| HU-03 | RF03 | Reportero público y Asociación: evidencia opcional sin bloquear el reporte | TC-TRAZA-04, TC-TRAZA-05, TC-TRAZA-06, TC-TRAZA-07 | `supabase/functions/api/controllers/photoController.test.js`; `models/photoState.test.js`; `hooks/reportDraftQueueController.test.js`; `supabase/functions/api/services/photoService.test.js` | Disponible; sin cubrir: cámara/selección y carga nativa reales (T7) |
+| HU-04 | RF04 | Reportero público y Asociación: describir cantidad y riesgo de manada | TC-TRAZA-08 | `models/reportPayload.test.js` | Disponible; T5 amplía mínimo/máximo/promedio/excepción; caso inicial valida solo 1 y 2 |
+| HU-05 | RF05 | Reportero público: reportar rápido aun sin fotografía | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: acceso rápido visible sin foto no tiene test dedicado (T5) |
+| HU-06 | RF06 | Reportero público y Asociación: clasificar el riesgo para priorizar decisiones | TC-TRAZA-09 | `models/reportPayload.test.js` | Disponible; T5 completa combinaciones y límites por categoría |
+| HU-07 | RF07 | Reportero público: capturar el momento desde la primera pantalla | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: cold start cámara no tiene test dedicado (T5/T7) |
+| HU-08 | RF08 | Reportero público y Administrator: advertir contenido problemático sin destruir evidencia | TC-TRAZA-10, TC-TRAZA-51 | `supabase/functions/api/services/flag-service.test.js`; `supabase/functions/api/tests/flag-postgres.test.js` | Disponible; T5 añade casos de detalle público y diversidad; no demuestra concurrencia SQL |
+| HU-09 | RF09 | Reportero público: repetir fotos inválidas con explicación incluso offline | TC-TRAZA-11, TC-TRAZA-12 | `services/photoInference.test.js` | Disponible; sin cubrir: modelo real y calidad offline en dispositivo (T7) |
+| HU-10 | RF10 | Reportero público: ubicar riesgos sin exponer coordenadas exactas | TC-TRAZA-13, TC-TRAZA-52 | `supabase/functions/api/repositories/publicMapRepository.test.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; sin cubrir: render nativo y versión staging de entrega (T6/T7); SQL aislado disponible |
+| HU-11 | RF11 | Reportero público: leer zonas densas sin saturar el mapa | TC-TRAZA-14, TC-TRAZA-52 | `supabase/functions/api/repositories/publicMapRepository.test.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; sin cubrir: mapa nativo en teléfono (T7); SQL aislado disponible |
+| HU-12 | RF12 | Reportero público: percibir densidad a partir del tamaño del cluster | TC-TRAZA-15 | `models/publicMap.test.js` | Disponible; sin cubrir: tamaño del cluster en UI; disponible solo modelo (T6) |
+| HU-13 | RF13 | Reportero público y Asociación: distinguir severidad y desglose por incidente | TC-TRAZA-16, TC-TRAZA-52 | `tests/ui/publicMap.spec.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; Caso UI con HTTP simulado; T6 añade SQL/canónicos |
+| HU-14 | RF14 | Reportero público: pasar de panorama a detalle con el zoom | TC-TRAZA-17, TC-TRAZA-52 | `models/publicMap.test.js`; `supabase/functions/api/tests/publicMapPostgres.test.js` | Disponible; Caso de modelo; T6/T7 verifican interacción y mapa nativo |
+| HU-15 | RF15 | Asociación de Hoteles de Chihuahua: funciones exclusivas con atribución individual | TC-TRAZA-18 | `controllers/loginController.test.js` | Disponible; sin cubrir: múltiples cuentas provisionadas y SecureStore real (T6/T7) |
+| HU-16 | RF16 | Asociación de Hoteles de Chihuahua: decisiones con estadísticas de datos aceptados canónicos | TC-TRAZA-19 | `supabase/functions/api/repositories/associationReportRepository.test.js` | Disponible; sin cubrir: proyección SQL ejecutada y aceptación de estadísticas (T6/T14) |
+| HU-17 | RF17 | Asociación de Hoteles de Chihuahua: compartir exactamente la proyección autorizada | TC-TRAZA-20, TC-TRAZA-21 | `models/associationReport.test.js`; `models/associationWorkbook.test.js` | Disponible; sin cubrir: compartir nativo y conformidad del socio (T7/T14) |
+| HU-18 | RF18 | Administrator: moderar con identidad validada y permisos propios | TC-TRAZA-22, TC-TRAZA-37 | `controllers/loginController.test.js`; `supabase/functions/api/services/associationService.test.js` | Disponible; sin cubrir: sesión JWT desplegada/rol en la versión de entrega (T6/T7) |
+| HU-19 | RF19 | Administrator: revisar contexto completo sin recibir BI exclusivo de Asociación | TC-TRAZA-23, TC-TRAZA-24 | `services/moderationApi.test.js`; `models/moderation.test.js` | Disponible; sin cubrir: Service de cola y Command Center UI sin tests dedicados (T6) |
+| HU-20 | RF20 | Administrator: preservar calidad mediante ocultación/eliminación reversibles y auditadas | TC-TRAZA-25, TC-TRAZA-26, TC-TRAZA-27, TC-TRAZA-28 | `supabase/functions/api/domain/reportModeration.test.js`; `supabase/functions/api/controllers/moderationController.test.js`; `services/moderationApi.test.js`; `models/moderation.test.js` | Disponible; sin cubrir: auditoría/transacción SQL de moderación y UI Command Center (T6) |
+| HU-21 | RF21 | Administrator: revisar auto-ocultamientos y restaurar datos tras denuncias diversas | TC-TRAZA-29, TC-TRAZA-51 | `supabase/functions/api/services/flag-service.test.js`; `supabase/functions/api/tests/flag-postgres.test.js` | Disponible; sin cubrir: flujo UI completo de revisión/restore (T6); SQL auto-hide disponible |
+| HU-22 | RF22 | Reportero público y Asociación: obtener atributos con poco esfuerzo y sin identificar individuos | TC-TRAZA-30, TC-TRAZA-31 | `models/dogColor.test.js`; `models/reportPayload.test.js` | Disponible; sin cubrir: color con fotos reales en teléfono (T7) |
+| HU-23 | RF23 | Administrator y Asociación: evitar doble conteo con decisión humana canónica reversible | TC-TRAZA-32, TC-TRAZA-33, TC-TRAZA-34, TC-TRAZA-50 | `models/duplicateCandidate.test.js`; `supabase/functions/api/services/duplicateService.test.js`; `tests/ui/duplicateManagement.spec.js`; `supabase/functions/api/tests/duplicatePostgres.test.js` | Disponible; sin cubrir: candidatos SQL reales/actores de staging; T6 amplía límites |
+| HU-24 | RF24 | Reportero público: responder solo preguntas pertinentes para completar con rapidez | TC-TRAZA-09, TC-TRAZA-35 | `models/reportPayload.test.js`; `supabase/functions/api/controllers/reportController.test.js` | Disponible; sin cubrir: trigger PostgreSQL ejecutado en estos casos (T5) |
+
+### Comprobación automática
+
+`scripts/check-doc-paths.mjs` comprueba las citas de archivo de este documento y
+los archivos de texto de `docs/testing/` recursivamente. Solo se excluye
+`docs/testing/BACKLOG.md`, porque conserva citas incorrectas deliberadas. Enlaces
+externos, contratos HTTP/campos y parámetros de plantilla no son rutas concretas;
+las citas concretas (incluidos ejemplos) deben existir y estar desde la raíz.
+
+npm run test:docs ejecuta la comprobación sola; npm test la ejecuta como suite docs
+antes de Deno/node:test/Playwright mediante `scripts/test-all.mjs`. El workflow
+`.github/workflows/tests.yml` ya ejecuta npm test en PR/main desde T2.
+`scripts/check-doc-paths.test.js` prueba detección de rutas inválidas, ejemplos,
+links, documentos anidados y la exclusión exacta del backlog. El fallo imprime
+archivo, línea y cita, y devuelve un código distinto de cero.
+
+RF03 incorpora controller/Service de foto, estado terminal y cola report-first.
+RF19 incorpora adaptador de cola y modelo de resumen; falta Service/UI dedicada.
+RF20 incorpora dominio/transiciones, parser de nota, adaptador hide/restore y
+actualización de cola; estos tests no demuestran auditoría SQL de moderación.
