@@ -1,0 +1,42 @@
+{
+  "purpose": "Administración de zonas (RNF09 en T6): crear borrador, aprobación independiente de la Asociación y activación de una sola zona",
+  "origin": "sintético; geometría de prueba sin coordenadas oficiales",
+  "cases": [
+    "TC-ZONAS-01",
+    "TC-ZONAS-02",
+    "TC-ZONAS-03",
+    "TC-ZONAS-04",
+    "TC-ZONAS-05"
+  ],
+  "contract": "supabase/functions/api/domain/zoneSet.js: validateZoneSetCreation (name y source_version 1..120, source_uri absoluta 1..1000, source_sha256 del GeoJSON canónico) y validateZoneSetActivation (association_approval_reference 1..1000, note opcional 1..1000)",
+  "base_commit": "f5ed2c9",
+  "preparation": "Los tests generan la geometría y su checksum; Playwright intercepta la API",
+  "limitations": "No es la geocerca aprobada de Producción; PostGIS real solo en supabase/functions/api/tests/zonePostgres.test.js con base de datos",
+  "entries": [
+    {
+      "key": "ring-open-4",
+      "geometry": "Polygon con anillo de 4 posiciones sin cerrar",
+      "expected": "rechazo en geometry"
+    },
+    {
+      "key": "point",
+      "geometry": "Point",
+      "expected": "rechazo en geometry"
+    },
+    {
+      "key": "approval-1000",
+      "association_approval_reference": "1000 caracteres Unicode",
+      "expected": "aceptado"
+    },
+    {
+      "key": "approval-1001",
+      "association_approval_reference": "1001 caracteres",
+      "expected": "rechazo"
+    },
+    {
+      "key": "approval-blank",
+      "association_approval_reference": "   ",
+      "expected": "rechazo"
+    }
+  ]
+}
