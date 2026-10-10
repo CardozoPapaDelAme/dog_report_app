@@ -11,6 +11,16 @@ import {
   restore,
 } from '../services/moderationService.js';
 
+function presentAuthorizationError(c, error) {
+  if (error?.code === 'authentication_required') {
+    return presentError(c, 401, 'authentication_required', 'A valid Administrator session is required.');
+  }
+  if (error?.code === 'forbidden') {
+    return presentError(c, 403, 'forbidden', 'An active matching Administrator profile is required.');
+  }
+  return null;
+}
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function parseLimit(raw) {
@@ -64,7 +74,11 @@ export async function getModerationQueue(c) {
       cursor,
     });
     return presentModerationQueue(c, rows, limit);
-  } catch {
+  } catch (error) {
+    const denied = presentAuthorizationError(c, error);
+    if (denied) {
+      return denied;
+    }
     return presentError(c, 503, 'database_unavailable', 'Postgres is not reachable.');
   }
 }
@@ -135,6 +149,10 @@ export async function approveReport(c) {
     });
     return presentModerationCommand(c, report);
   } catch (error) {
+    const denied = presentAuthorizationError(c, error);
+    if (denied) {
+      return denied;
+    }
     if (error?.code === 'not_found') {
       return presentError(c, 404, 'not_found', 'Report was not found.');
     }
@@ -169,6 +187,10 @@ export async function hideReport(c) {
     });
     return presentModerationCommand(c, report);
   } catch (error) {
+    const denied = presentAuthorizationError(c, error);
+    if (denied) {
+      return denied;
+    }
     if (error?.code === 'not_found') {
       return presentError(c, 404, 'not_found', 'Report was not found.');
     }
@@ -203,6 +225,10 @@ export async function restoreReport(c) {
     });
     return presentModerationCommand(c, report);
   } catch (error) {
+    const denied = presentAuthorizationError(c, error);
+    if (denied) {
+      return denied;
+    }
     if (error?.code === 'not_found') {
       return presentError(c, 404, 'not_found', 'Report was not found.');
     }
@@ -237,6 +263,10 @@ export async function deleteReport(c) {
     });
     return presentModerationCommand(c, report);
   } catch (error) {
+    const denied = presentAuthorizationError(c, error);
+    if (denied) {
+      return denied;
+    }
     if (error?.code === 'not_found') {
       return presentError(c, 404, 'not_found', 'Report was not found.');
     }

@@ -7,23 +7,29 @@
 // observable as a fail-closed 503 from the Controller.
 import { Hono } from "hono";
 
-import { getModerationQueue } from "../controllers/moderationController.js";
+import { getModerationQueue, hideReport } from "../controllers/moderationController.js";
 import { presentModerationQueue } from "../presenters/moderation.js";
 import { listModerationQueue } from "../repositories/moderationRepository.js";
 import { moderationRoutes } from "../routes/moderation.js";
-import { listQueue } from "./moderationService.js";
+import { approve, deleteReport, hide, listQueue, restore } from "./moderationService.js";
 
 const DB_ENV = [
   "APP_BACKEND_DATABASE_URL",
   "SUPABASE_URL",
   "JWT_SECRET",
 ];
+// Same shape as the auth object built by requireAuth in middleware/auth.js.
 const administrator = {
   type: "authenticated",
   userId: "00000000-0000-4000-8000-000000000001",
   role: "administrator",
+  profile: { id: "00000000-0000-4000-8000-000000000001", role: "administrator", active: true },
 };
-const association = { ...administrator, role: "association" };
+const association = {
+  ...administrator,
+  role: "association",
+  profile: { ...administrator.profile, role: "association" },
+};
 const uuid = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
 function assert(condition, message) {
@@ -248,23 +254,58 @@ Deno.test("RF19 moderation queue presenter trims the look-ahead row, encodes nex
   assert(empty.body.data.items.length === 0 && empty.body.data.next_cursor === null, "empty queue is valid");
 });
 
-// Known gap (ADR-019 in docs/architecture/DECISIONS.md: Services own
-// authorization). Today only the route middleware requireAuth('administrator')
-// rejects the association role; listQueue itself does not. Kept as a marked
-// test for incident INC-1 in docs/testing/INCIDENTS.md. Run it with
-// RUN_KNOWN_GAPS=1 to reproduce.
-Deno.test({
-  name: "RF19 GAP INC-1: moderation service rejects the association role before database access",
-  ignore: Deno.env.get("RUN_KNOWN_GAPS") !== "1",
-  fn: async () => {
-    await withoutBackendEnv(() => {
-      let code = null;
-      try {
-        listQueue({ actor: association, limit: 20, cursor: null });
-      } catch (error) {
-        code = error.code ?? null;
+// INC-1 (docs/testing/INCIDENTS.md): ADR-019 in docs/architecture/DECISIONS.md
+// makes Services own authorization, so the moderation Service rejects any actor
+// that is not an active matching Administrator before it opens a connection,
+// independently of the route middleware requireAuth('administrator').
+const commands = { approve, hide, restore, deleteReport };
+const rejectedActors = [
+  ["anonymous", null, "authentication_required"],
+  ["association", association, "forbidden"],
+  ["inactive administrator", { ...administrator, profile: { ...administrator.profile, active: false } }, "forbidden"],
+  ["mismatched profile", { ...administrator, profile: { ...administrator.profile, id: uuid(2) } }, "forbidden"],
+  ["role without profile", { ...administrator, profile: undefined }, "forbidden"],
+];
+
+function rejectionCode(run) {
+  try {
+    run();
+  } catch (error) {
+    return error.code ?? null;
+  }
+  return "not rejected";
+}
+
+Deno.test("RF19 INC-1: moderation service rejects non-administrator actors before database access", async () => {
+  await withoutBackendEnv(() => {
+    for (const [label, actor, expected] of rejectedActors) {
+      const code = rejectionCode(() => listQueue({ actor, limit: 20, cursor: null }));
+      assert(code === expected, `listQueue with ${label} must be rejected with ${expected}, received ${code}`);
+      for (const [name, command] of Object.entries(commands)) {
+        const commandCode = rejectionCode(() => command({ actor, reportId: uuid(1), note: "Synthetic note" }));
+        assert(
+          commandCode === expected,
+          `${name} with ${label} must be rejected with ${expected}, received ${commandCode}`,
+        );
       }
-      assert(code === "forbidden", `association must be rejected with forbidden, received ${code}`);
-    });
-  },
+    }
+  });
+});
+
+Deno.test("RF19 INC-1: moderation controllers map Service authorization failures to 401 and 403", async () => {
+  await withoutBackendEnv(async () => {
+    const queue = await getModerationQueue(fakeContext({ limit: "20" }, association));
+    assert(queue.status === 403 && queue.body.error.code === "forbidden", "queue must answer 403 forbidden");
+    const anonymous = await getModerationQueue(fakeContext({ limit: "20" }, null));
+    assert(
+      anonymous.status === 401 && anonymous.body.error.code === "authentication_required",
+      "queue without actor must answer 401 authentication_required",
+    );
+    const context = {
+      ...fakeContext({}, association),
+      req: { param: () => uuid(1), text: () => Promise.resolve(JSON.stringify({ note: "Synthetic note" })) },
+    };
+    const command = await hideReport(context);
+    assert(command.status === 403 && command.body.error.code === "forbidden", "hide must answer 403 forbidden");
+  });
 });
