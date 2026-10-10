@@ -7,7 +7,13 @@
 // observable as a fail-closed 503 from the Controller.
 import { Hono } from "hono";
 
-import { getModerationQueue, hideReport } from "../controllers/moderationController.js";
+import {
+  approveReport,
+  deleteReport as deleteReportHandler,
+  getModerationQueue,
+  hideReport,
+  restoreReport,
+} from "../controllers/moderationController.js";
 import { presentModerationQueue } from "../presenters/moderation.js";
 import { listModerationQueue } from "../repositories/moderationRepository.js";
 import { moderationRoutes } from "../routes/moderation.js";
@@ -295,17 +301,45 @@ Deno.test("RF19 INC-1: moderation service rejects non-administrator actors befor
 Deno.test("RF19 INC-1: moderation controllers map Service authorization failures to 401 and 403", async () => {
   await withoutBackendEnv(async () => {
     const queue = await getModerationQueue(fakeContext({ limit: "20" }, association));
-    assert(queue.status === 403 && queue.body.error.code === "forbidden", "queue must answer 403 forbidden");
+    assert(queue.status === 403 && queue.body?.error?.code === "forbidden", "queue must answer 403 forbidden");
     const anonymous = await getModerationQueue(fakeContext({ limit: "20" }, null));
     assert(
-      anonymous.status === 401 && anonymous.body.error.code === "authentication_required",
+      anonymous.status === 401 && anonymous.body?.error?.code === "authentication_required",
       "queue without actor must answer 401 authentication_required",
     );
-    const context = {
-      ...fakeContext({}, association),
-      req: { param: () => uuid(1), text: () => Promise.resolve(JSON.stringify({ note: "Synthetic note" })) },
+    const handlers = {
+      approve: approveReport,
+      hide: hideReport,
+      restore: restoreReport,
+      delete: deleteReportHandler,
     };
-    const command = await hideReport(context);
-    assert(command.status === 403 && command.body.error.code === "forbidden", "hide must answer 403 forbidden");
+    const commandContext = (actor) => ({
+      ...fakeContext({}, actor),
+      req: { param: () => uuid(1), text: () => Promise.resolve(JSON.stringify({ note: "Synthetic note" })) },
+    });
+    const expectations = [
+      [association, 403, "forbidden"],
+      [null, 401, "authentication_required"],
+    ];
+    // With no backend configuration, any attempt to open a connection throws
+    // "APP_BACKEND_DATABASE_URL is not set". A rejected actor that receives its
+    // 401/403 response therefore never reached storage, so no mutation ran.
+    for (const [name, handler] of Object.entries(handlers)) {
+      for (const [actor, status, code] of expectations) {
+        const response = await handler(commandContext(actor));
+        assert(
+          response.status === status && response.body?.error?.code === code,
+          `${name} must answer ${status} ${code}, received ${response.status} ${response.body?.error?.code}`,
+        );
+      }
+      // Contrast: an authorized Administrator passes the guard and does reach storage.
+      let reachedStorage = false;
+      try {
+        await handler(commandContext(administrator));
+      } catch (error) {
+        reachedStorage = error.message === "APP_BACKEND_DATABASE_URL is not set";
+      }
+      assert(reachedStorage, `${name} with an Administrator must pass authorization and reach storage`);
+    }
   });
 });
