@@ -1,0 +1,86 @@
+{
+  "purpose": "Límites de los ocho umbrales configurables y de la nota de auditoría (aclaración #5, RF21, RF23)",
+  "origin": "sintético; los límites se copian del contrato, no se inventan",
+  "cases": [
+    "TC-CONFIGURACION-01",
+    "TC-CONFIGURACION-02",
+    "TC-CONFIGURACION-03",
+    "TC-CONFIGURACION-04",
+    "TC-CONFIGURACION-05"
+  ],
+  "contract": "supabase/functions/api/domain/configuration.js: CONFIGURATION_RULES; db/schema.sql, public.config_versions",
+  "base_commit": "f5ed2c9",
+  "preparation": "Los tests generan los valores a partir de CONFIGURATION_RULES; no se requiere base de datos",
+  "limitations": "El valor promedio es una configuración representativa, no una medición",
+  "rules": {
+    "flag_auto_hide_threshold": {
+      "min": 2,
+      "max": 100,
+      "decimals": 0
+    },
+    "duplicate_radius_meters": {
+      "min": 10,
+      "max": 1000,
+      "decimals": 0
+    },
+    "duplicate_time_window_minutes": {
+      "min": 5,
+      "max": 1440,
+      "decimals": 0
+    },
+    "trust_high_threshold": {
+      "min": 0,
+      "max": 1,
+      "decimals": 3
+    },
+    "trust_medium_threshold": {
+      "min": 0,
+      "max": 1,
+      "decimals": 3
+    },
+    "gps_accuracy_max_meters": {
+      "min": 5,
+      "max": 500,
+      "decimals": 2
+    },
+    "report_rate_limit_per_hour": {
+      "min": 1,
+      "max": 500,
+      "decimals": 0
+    },
+    "flag_rate_limit_per_hour": {
+      "min": 1,
+      "max": 1000,
+      "decimals": 0
+    }
+  },
+  "representative": {
+    "flag_auto_hide_threshold": 5,
+    "duplicate_radius_meters": 150,
+    "duplicate_time_window_minutes": 120,
+    "trust_high_threshold": 0.8,
+    "trust_medium_threshold": 0.5,
+    "gps_accuracy_max_meters": 50,
+    "report_rate_limit_per_hour": 10,
+    "flag_rate_limit_per_hour": 30
+  },
+  "invalid_examples": [
+    "min - 1",
+    "max + 1",
+    "'5' (texto)",
+    "NaN",
+    "Infinity",
+    "min + 10^-(decimales + 1)",
+    "trust_medium_threshold >= trust_high_threshold",
+    "campo extra environment"
+  ],
+  "change_note": {
+    "min_chars": 1,
+    "max_chars": 1000,
+    "invalid": [
+      "",
+      " \n ",
+      "1001 caracteres"
+    ]
+  }
+}

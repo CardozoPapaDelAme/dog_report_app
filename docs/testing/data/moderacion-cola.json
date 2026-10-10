@@ -1,0 +1,87 @@
+{
+  "purpose": "Cola de moderación del Administrator (RF19) y comandos auditados que abre (RF20): límites de página, cursor y estados en cola",
+  "origin": "sintético",
+  "cases": [
+    "TC-MODERACION-01",
+    "TC-MODERACION-02",
+    "TC-MODERACION-03",
+    "TC-MODERACION-04",
+    "TC-MODERACION-05",
+    "TC-MODERACION-06",
+    "TC-MODERACION-07",
+    "TC-MODERACION-08"
+  ],
+  "contract": "supabase/functions/api/controllers/moderationController.js (limit 1..500, predeterminado 50, cursor base64url synced_at|id); supabase/functions/api/repositories/moderationRepository.js (estados pending_review y hidden, ORDER BY synced_at DESC, id DESC, LIMIT limit + 1); services/moderationApi.js (la app pide limit=20); docs/API.md, sección de moderación",
+  "base_commit": "f5ed2c9",
+  "preparation": "Los tests crean sus propios dobles; no requieren base de datos. Playwright intercepta la API, sin sesión real",
+  "limitations": "Sin PostgreSQL: el orden real, RLS y el contexto de actor de listQueue no se observan en estas pruebas",
+  "limits": {
+    "valid": [
+      1,
+      250,
+      500,
+      null
+    ],
+    "invalid": [
+      0,
+      501,
+      -1,
+      1.5,
+      "abc"
+    ],
+    "default": 50,
+    "mobile_page_size": 20
+  },
+  "cursors": {
+    "valid": "base64url('2026-09-30T12:00:00.000Z|00000000-0000-4000-8000-000000000009')",
+    "invalid": [
+      "%%%",
+      "base64('no-separator')",
+      "base64('2026-09-30T12:00:00.000Z|not-a-uuid')"
+    ]
+  },
+  "queue_items": [
+    {
+      "key": "r1",
+      "incident_type": "ataque_humano",
+      "status": "pending_review",
+      "flags": 1,
+      "allowed_commands": [
+        "approve",
+        "hide",
+        "delete"
+      ]
+    },
+    {
+      "key": "r2",
+      "incident_type": "ataque_mascota",
+      "status": "pending_review",
+      "mock_suspected": true,
+      "allowed_commands": [
+        "approve",
+        "hide",
+        "delete"
+      ]
+    },
+    {
+      "key": "r3",
+      "incident_type": "avistamiento_simple",
+      "status": "hidden",
+      "allowed_commands": [
+        "approve",
+        "delete",
+        "restore"
+      ]
+    }
+  ],
+  "expected_summary": {
+    "total": 3,
+    "flagged": 1,
+    "urgent": 2
+  },
+  "notes": {
+    "hide_blank": "   ",
+    "hide_trimmed": "  Foto no corresponde  ",
+    "max_note_chars": 1000
+  }
+}

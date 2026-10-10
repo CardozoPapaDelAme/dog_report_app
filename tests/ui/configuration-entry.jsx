@@ -8,6 +8,9 @@ import DuplicateManagementScreen from '../../screens/DuplicateManagementScreen.j
 import ZoneSetScreen from '../../screens/ZoneSetScreen.js';
 import ConfigurationScreen from '../../screens/ConfigurationScreen.js';
 import PublicMapScreen from '../../screens/PublicMapScreen.js';
+import CommandCenterScreen from '../../screens/CommandCenterScreen.js';
+// Device map component (MapLibre is aliased to tests/ui/maplibre-stub.js) to measure cluster size.
+import NativePublicMapView from '../../components/PublicMapView.js';
 import ReportFormScreen from '../../screens/ReportFormScreen.js';
 import AssociationDashboardScreen from '../../screens/associationDashboardScreen.js';
 import LoginScreen from '../../screens/loginScreen.js';
@@ -279,8 +282,23 @@ function LoginFixture() {
   />;
 }
 
+// RF12: one cluster per synthetic report_count, rendered by the device map component.
+const nativeClusterCounts = [1, 2, 7, 100, 1000, 5000];
+function NativeClusterFixture() {
+  const clusters = nativeClusterCounts.map((count) => ({
+    cluster_id: `count-${count}`,
+    report_count: count,
+    approximate_location: { longitude: -107.6355, latitude: 27.7522 },
+    highest_severity: 'avistamiento_simple',
+    type_counts: { avistamiento_simple: count, ataque_mascota: 0, ataque_ganado: 0, ataque_humano: 0, perro_lastimado: 0, otro: 0 },
+  }));
+  return <NativePublicMapView mode="clusters" clusters={clusters} reports={[]}
+    initialCenter={{ longitude: -107.6355, latitude: 27.7522 }} initialZoom={13} />;
+}
+
 function Fixture() {
   const params = new URLSearchParams(location.search);
+  if (params.has('native-map-clusters')) return <div style={{height:'100dvh',overflow:'auto'}}><NativeClusterFixture /></div>;
   if (params.has('login')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><LoginFixture /></SafeAreaProvider>
   </div>;
@@ -298,6 +316,8 @@ function Fixture() {
     ? ReportFixture
     : params.has('association') || params.has('association-preview')
       ? AssociationDashboardScreen
+    : params.has('command-center')
+      ? CommandCenterScreen
     : params.has('duplicates')
       ? DuplicateManagementScreen
       : params.has('zones')
