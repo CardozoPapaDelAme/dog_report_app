@@ -10,6 +10,27 @@ import {
   restoreReportRow,
 } from '../repositories/moderationRepository.js';
 
+function authorizationError(code) {
+  const error = new Error(code);
+  error.code = code;
+  return error;
+}
+
+// ADR-019: the Service owns authorization, independently of the route
+// middleware. Only an active Administrator whose loaded profile matches the
+// token subject and role may read the queue or run a moderation command.
+function assertAdministrator(actor) {
+  if (actor?.type !== 'authenticated' || !actor.userId) {
+    throw authorizationError('authentication_required');
+  }
+  if (
+    actor.role !== 'administrator' || actor.profile?.active !== true ||
+    actor.profile.id !== actor.userId || actor.profile.role !== actor.role
+  ) {
+    throw authorizationError('forbidden');
+  }
+}
+
 function moderationValues(report) {
   return {
     status: report.status,
@@ -24,6 +45,7 @@ function moderationValues(report) {
 }
 
 export function listQueue({ actor, limit, cursor }) {
+  assertAdministrator(actor);
   const sql = getSql();
   return sql.begin(async (tx) => {
     await tx`SELECT set_config('app.user_id', ${actor.userId}, true)`;
@@ -77,6 +99,7 @@ export function deleteReport({ actor, reportId, note }) {
 }
 
 function executeTransition({ actor, reportId, note, command, action, persist }) {
+  assertAdministrator(actor);
   const sql = getSql();
   return sql.begin(async (tx) => {
     await tx`SELECT set_config('app.user_id', ${actor.userId}, true)`;
