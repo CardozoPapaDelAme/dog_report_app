@@ -1,7 +1,8 @@
 # Casos de prueba — Mapa y roles autenticados (T6)
 
-Estado: casos especificados para T6 / TD-119; las ejecuciones se registran en
-`docs/testing/TEST_LOG.md`. Convenciones: `docs/testing/README.md`.
+Estado: casos especificados para T6 / TD-119; ejecutados RUN-1 a RUN-81 en
+`docs/testing/TEST_LOG.md` (TC-ZONAS-07 no ejecutado: requiere PostgreSQL;
+TC-MODERACION-07 falló y abrió INC-1 en `docs/testing/INCIDENTS.md`). Convenciones: `docs/testing/README.md`.
 Responsable: Alan Ruiz Silva (P4).
 
 Fuentes: `docs/product/ETAPA1-REQUERIMIENTOS-V2.md` (RF10–RF21, RF23, RNF07,
@@ -33,7 +34,7 @@ dispositivo; la comprobación visual del mapa en teléfono pertenece a T7
 |---|---|---|---|---|---|---|---|
 | TC-MAPA-01 | RF10, HU-10 | normal | Deno; capturador SQL en memoria | Consulta de reportes públicos, `limit` 50 | 1. Ejecutar la consulta del repositorio; 2. Revisar el SQL capturado | La ubicación pública se calcula al leer con la aproximación de 50 m; no se exponen coordenadas exactas; solo visibles, vigentes y canónicos | `supabase/functions/api/repositories/publicMapRepository.test.js` — public map repository reports calculate approximate location at read time (mismo test que TC-TRAZA-13) |
 | TC-MAPA-02 | RF10, HU-10 | promedio | Deno; sin red | Consulta sin parámetros; `since` con zona `-06:00` | 1. Analizar la consulta; 2. Comparar valores | `limit` predeterminado 100; `since` se normaliza a UTC | `supabase/functions/api/controllers/publicMapController.test.js` — public reports query applies defaults and validates timestamps |
-| TC-MAPA-03 | RF10, HU-10 | máximo | Deno; sin red | `limit` = 1000 en la app y en el controlador | 1. Solicitar reportes con 1000; 2. Revisar la petición | Se acepta 1000 y se envía una sola petición | `services/publicMapApi.test.js` — ERI9 API: reports request validates since/limit and normalizes the response |
+| TC-MAPA-03 | RF10, HU-10 | máximo | Deno; sin red | `limit` = 1000 en el adaptador de la app | 1. Solicitar reportes con 1000; 2. Revisar la petición | Se acepta 1000 y se envía una sola petición | `services/publicMapApi.test.js` — ERI9 API: reports request validates since/limit and normalizes the response |
 | TC-MAPA-04 | RF10, HU-10 | excepción | Deno; sin red | `limit` 0, 1001 y 1.5; `since` sin zona; consulta de clusters con `limit` 5001 | 1. Enviar cada consulta; 2. Contar llamadas al servicio | 400 `invalid_request` (o `RangeError` en la app) y cero llamadas al servicio | `supabase/functions/api/controllers/publicMapController.test.js` — public map controller rejects malformed query before service call; `services/publicMapApi.test.js` — ERI9 API: reports request validates since/limit and normalizes the response |
 | TC-MAPA-05 | RF12, HU-12 | mínimo | Playwright; fixture `?native-map-clusters` | `docs/testing/data/mapa-tamano-cluster.json`, clave `count-1` | 1. Abrir el fixture; 2. Medir el marcador de 1 reporte | Diámetro 36 px (radio mínimo 18 px), marcador circular | `tests/ui/publicMapClusterSize.spec.js` — cluster markers grow with report_count between the minimum and maximum diameter |
 | TC-MAPA-06 | RF12, HU-12 | promedio | Playwright; fixture `?native-map-clusters` | Claves `count-2`, `count-7`, `count-100` | 1. Medir cada marcador; 2. Comparar | Diámetros ≈ 42, 53 y 76 px, estrictamente crecientes y menores que 96 px | `tests/ui/publicMapClusterSize.spec.js` — cluster markers grow with report_count between the minimum and maximum diameter |

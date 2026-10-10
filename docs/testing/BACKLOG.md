@@ -290,7 +290,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T6 · Casos funcionales B — Mapa y roles autenticados
-- **Persona:** P4 · **Estado:** pendiente · **Jira:** TD-119 · **Criterios:** C4, C1 · **Entregable:** Casos y datos
+- **Persona:** P4 · **Estado:** en curso · **Jira:** TD-119 · **Criterios:** C4, C1 · **Entregable:** Casos y datos
 - **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI).
 - **Requerimientos:** RF10–RF21, RF23 (y sus HU), configuración y zonas
   (aclaración #5 sobre RF21/RF23/RNF09); RNF07, RNF09 (solo la administración de
