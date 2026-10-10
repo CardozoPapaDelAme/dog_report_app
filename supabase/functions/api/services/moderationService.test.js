@@ -7,7 +7,13 @@
 // observable as a fail-closed 503 from the Controller.
 import { Hono } from "hono";
 
-import { getModerationQueue, hideReport } from "../controllers/moderationController.js";
+import {
+  approveReport,
+  deleteReport as deleteReportHandler,
+  getModerationQueue,
+  hideReport,
+  restoreReport,
+} from "../controllers/moderationController.js";
 import { presentModerationQueue } from "../presenters/moderation.js";
 import { listModerationQueue } from "../repositories/moderationRepository.js";
 import { moderationRoutes } from "../routes/moderation.js";
@@ -301,11 +307,28 @@ Deno.test("RF19 INC-1: moderation controllers map Service authorization failures
       anonymous.status === 401 && anonymous.body.error.code === "authentication_required",
       "queue without actor must answer 401 authentication_required",
     );
-    const context = {
-      ...fakeContext({}, association),
-      req: { param: () => uuid(1), text: () => Promise.resolve(JSON.stringify({ note: "Synthetic note" })) },
+    const handlers = {
+      approve: approveReport,
+      hide: hideReport,
+      restore: restoreReport,
+      delete: deleteReportHandler,
     };
-    const command = await hideReport(context);
-    assert(command.status === 403 && command.body.error.code === "forbidden", "hide must answer 403 forbidden");
+    const expectations = [
+      [association, 403, "forbidden"],
+      [null, 401, "authentication_required"],
+    ];
+    for (const [name, handler] of Object.entries(handlers)) {
+      for (const [actor, status, code] of expectations) {
+        const context = {
+          ...fakeContext({}, actor),
+          req: { param: () => uuid(1), text: () => Promise.resolve(JSON.stringify({ note: "Synthetic note" })) },
+        };
+        const response = await handler(context);
+        assert(
+          response.status === status && response.body.error.code === code,
+          `${name} must answer ${status} ${code}, received ${response.status} ${response.body?.error?.code}`,
+        );
+      }
+    }
   });
 });
