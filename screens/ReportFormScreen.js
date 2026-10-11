@@ -420,7 +420,9 @@ export default function ReportFormScreen({
                 {photoUri ? (
                   <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
                 ) : (
-                  <View style={styles.noPhoto} />
+                  <View testID="report-no-photo" style={styles.noPhoto}>
+                    <Text style={styles.noPhotoText}>{t('reportForm.noPhoto')}</Text>
+                  </View>
                 )}
               </View>
 
@@ -699,7 +701,8 @@ const styles = StyleSheet.create({
   state: { paddingVertical: 28, gap: 14, alignItems: 'center' },
   photoCard: { height: 136, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   preview: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.74, zIndex: 0 },
-  noPhoto: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', zIndex: 0 },
+  noPhoto: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', zIndex: 0, alignItems: 'center', justifyContent: 'center' },
+  noPhotoText: { color: '#5d6859', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13, lineHeight: 18 },
   section: { backgroundColor: colors.surface, borderWidth: 1, borderColor: '#dde4d8', borderRadius: 12, padding: 16, gap: 16, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   incidentSection: {},
   sectionTitle: { color: colors.ink, fontFamily: semiBoldFont, fontSize: 18, lineHeight: 24 },

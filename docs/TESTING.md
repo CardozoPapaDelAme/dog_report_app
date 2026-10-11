@@ -50,7 +50,7 @@ per-suite summary (passed / failed / skipped). It exits non-zero if any suite fa
 | Deno (mobile + backend) | `npm run test:deno` | Every `*.test.js` under `models`, `services`, `controllers`, `hooks`, `i18n`, `scripts` and `supabase/functions/api`, except files that import `node:test` |
 | `node:test` | `npm run test:node` | The `*.test.js` files that import `node:test` (they may import npm packages Deno does not resolve, such as `xlsx`) |
 | Playwright (UI) | `npm run test:e2e` | `tests/ui/*.spec.js` against the local preview server (needs `npx playwright install chromium` once) |
-| PostgreSQL/PostGIS | `npm run test:postgres` | The five database suites; needs Docker and is **not** part of `npm test` |
+| PostgreSQL/PostGIS | `npm run test:postgres` | The six database suites; needs Docker and is **not** part of `npm test` |
 
 Files are routed by content: a new test that imports `node:test` goes to the
 `node:test` suite automatically, so no list needs maintaining
@@ -61,7 +61,7 @@ per suite (the flag and public-map suites create cluster-level roles, so cluster
 cannot be shared), creates the fixed-name database, runs the suite and removes the
 container (`scripts/test-postgres.mjs`). Pass suite names to run a subset:
 `npm run test:postgres -- zone flag` (`configuration`, `zone`, `duplicate`, `flag`,
-`publicMap`). A suite that Deno reports as skipped counts as a failure. On
+`publicMap`, `report`). A suite that Deno reports as skipped counts as a failure. On
 Apple-silicon hosts the image runs emulated and is slower.
 
 `.github/workflows/tests.yml` runs on every pull request and on pushes to `main`,
@@ -74,10 +74,11 @@ with no secrets and read-only repository permissions:
 Each job writes its per-suite table to the GitHub job summary. A newer push to the
 same pull request cancels the previous run to save Actions minutes.
 
-Baseline recorded on 2026-10-07 (`main` plus this change): Deno 357 passed / 0 failed /
-5 skipped (the five database suites, which skip without their database), `node:test`
-10 / 0 / 0, Playwright 78 / 0 / 0, and each PostgreSQL suite 1 / 0 / 0 (one `Deno.test`
-with several steps).
+Baseline recorded on 2026-10-07 (`main` before the T5 report PostgreSQL suite):
+Deno 357 passed / 0 failed / 5 skipped, `node:test` 10 / 0 / 0, Playwright
+78 / 0 / 0, and each then-existing PostgreSQL suite 1 / 0 / 0 (one `Deno.test`
+with several steps). T5 adds the sixth database suite, `report`; refresh these
+global totals during the final T10 run.
 
 ## Database and API tests
 
@@ -240,6 +241,7 @@ PostGIS database** with a fixed name, supplied through its own URL variable:
 | `tests/duplicatePostgres.test.js` | `fab3_duplicate_test` | `DUPLICATE_TEST_DATABASE_URL` |
 | `tests/flag-postgres.test.js` | `fab4_flag_test` | `FLAG_TEST_DATABASE_URL` |
 | `tests/publicMapPostgres.test.js` | `fab_public_map_test` | `PUBLIC_MAP_TEST_DATABASE_URL` |
+| `tests/reportPostgres.test.js` | `fab5_report_test` | `REPORT_TEST_DATABASE_URL` |
 
 Suites refuse non-loopback URLs, other database names and nonempty schemas. The
 flag and public map suites create cluster-level roles, so each needs a fresh
@@ -668,8 +670,8 @@ npm run test:duplicates-ui
 CI=1 EXPO_NO_TELEMETRY=1 npx expo export --platform all
 ```
 
-Deno: **194 passed, 0 failed, 5 ignored** in the normal suite. The five SQL
-suites are opt-in; the duplicate SQL suite was also executed separately with a
+Deno: **194 passed, 0 failed, 5 ignored** in the normal L6 suite. At that point
+there were five opt-in SQL suites; the duplicate SQL suite was also executed separately with a
 new disposable PostgreSQL 17/PostGIS 3.5 container: **1 passed, 10 steps**.
 No shared/Supabase database is involved. Use the FAB-3 container procedure above,
 with the current test path `supabase/functions/api/tests/duplicatePostgres.test.js`.

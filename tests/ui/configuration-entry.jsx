@@ -311,8 +311,8 @@ function NativeClusterFixture() {
 function Fixture() {
   const params = new URLSearchParams(location.search);
   if (params.has('native-map-clusters')) return <div style={{height:'100dvh',overflow:'auto'}}><NativeClusterFixture /></div>;
-  if (params.has('camera')) return <div style={{height:'100dvh'}}>
-    <SafeAreaProvider><CameraFixture /></SafeAreaProvider>
+  if (params.has('camera')) return <div style={{height:'100dvh',display:'flex'}}>
+    <SafeAreaProvider style={{flex:1}}><CameraFixture /></SafeAreaProvider>
   </div>;
   if (params.has('login')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><LoginFixture /></SafeAreaProvider>
