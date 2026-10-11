@@ -1,8 +1,8 @@
 # Prueba alfa en dispositivo
 
-Estado: checklist y preparación definidos por T7 / TD-120. **La ejecución en el
-teléfono está pendiente**: no hay resultados, capturas ni filas `RUN` todavía, y T7
-no está cerrada hasta tenerlos.
+Estado: ejecución alfa en Android real documentada para T7 / TD-120. La sesión
+cerró con 31 casos que pasaron, 1 falla registrada como `INC-2` y 1 caso
+bloqueado por falta de fixture GeoJSON.
 Convenciones: `docs/testing/README.md`. Fuente: `docs/testing/BACKLOG.md`, T7.
 Casos con entradas, pasos y resultados esperados: `docs/testing/cases/alpha.md`
 (`TC-ALPHA-01` a `TC-ALPHA-33`).
@@ -13,12 +13,12 @@ Completar al ejecutar; una fila nueva de sesión por cada corrida (no sobrescrib
 
 | Campo | Valor |
 |---|---|
-| Fecha y responsable | pendiente (coordina P2; participa todo el equipo) |
-| Commit/build de la app | pendiente: SHA completo y tipo de build |
-| Dispositivo y versión Android | pendiente: marca, modelo y versión (Android 8.0 o superior, RNF05) |
-| Tipo de build y API/entorno | pendiente: build de desarrollo o release (no Expo Go); API de staging |
-| Configuración, idioma y red | pendiente: idioma del teléfono, Wi-Fi o datos, y cuándo se usó modo avión |
-| Datos y precondiciones | pendiente: cuentas usadas (sin credenciales), escenas ESC-A a ESC-D, geofence de staging |
+| Fecha y responsable | 2026-10-11; Erick Herrera |
+| Commit/build de la app | `fe8da67d23862517ab5878228da5a15ca971b973`; app `1.0.0`; paquete `com.wildogscanner.app`; build development/debug |
+| Dispositivo y versión Android | samsung SM-S918B; Android 16 (SDK 36) |
+| Tipo de build y API/entorno | Build nativo development/debug, no Expo Go; API de staging con servicios reales |
+| Configuración, idioma y red | Teléfono en español; red activa para flujos en línea; modo avión usado en TC-ALPHA-06, TC-ALPHA-15, TC-ALPHA-17 y TC-ALPHA-21 |
+| Datos y precondiciones | Cuentas de Asociación y Administrator sin credenciales documentadas; escenas ESC-A a ESC-D; geofence de staging vigente; TC-ALPHA-32 bloqueado por falta de archivo GeoJSON de prueba |
 
 ## Preparación
 
@@ -61,47 +61,47 @@ de verse en el mapa). Este orden evita repetir sesiones:
 | 8. Administrator: resto | Pasos 3–5 de TC-ALPHA-29 y TC-ALPHA-30 a 32 | Restaurar la configuración al terminar (TC-ALPHA-31) |
 | 9. Cierre | TC-ALPHA-33 | Cerrar sesión y reabrir |
 
-## Checklist por completar
+## Checklist ejecutado
 
 Detalle completo (precondiciones, entradas y pasos) en `docs/testing/cases/alpha.md`.
-Las columnas de ejecución y captura se llenan al correr cada caso; mientras digan
-«pendiente» el caso no está ejecutado ni aprobado.
+Las columnas de ejecución y captura registran el resultado observado y la evidencia
+de cada caso ejecutado.
 
 | Caso | Flujo | Resultado esperado (resumen) | Ejecución y resultado obtenido | Captura/video |
 |---|---|---|---|---|
-| TC-ALPHA-01 | Primera apertura y permiso de cámara | Abre en cámara; pide permiso | pendiente | pendiente |
-| TC-ALPHA-02 | Acceso «Reportar sin foto» | Visible en la cámara | pendiente | pendiente |
-| TC-ALPHA-03 | Foto nítida de perro | Foto aceptada | pendiente | pendiente |
-| TC-ALPHA-04 | Foto sin perro | «No detectamos un perro en la foto.» | pendiente | pendiente |
-| TC-ALPHA-05 | Foto borrosa | «La foto está borrosa.» | pendiente | pendiente |
-| TC-ALPHA-06 | Validación en modo avión | Se valida sin red | pendiente | pendiente |
-| TC-ALPHA-07 | Color predominante | Sugerido, editable; tamaño y collar opcionales | pendiente | pendiente |
-| TC-ALPHA-08 | Manada, cantidad 2 | «Reporte enviado» | pendiente | pendiente |
-| TC-ALPHA-09 | Manada, cantidad 1000 | «Reporte enviado» | pendiente | pendiente |
-| TC-ALPHA-10 | Manada, cantidad 1001 | Error de rango 2 a 1000 | pendiente | pendiente |
-| TC-ALPHA-11 | Manada, cantidad 1 | Error de rango 2 a 1000 | pendiente | pendiente |
-| TC-ALPHA-12 | Solitario y preguntas por categoría | Solo las preguntas de la categoría | pendiente | pendiente |
-| TC-ALPHA-13 | Reporte sin foto | Se envía y se acepta | pendiente | pendiente |
-| TC-ALPHA-14 | Sin datos personales y aviso de RF02 | Sin campos de identidad; aviso visible | pendiente | pendiente |
-| TC-ALPHA-15 | Reporte en modo avión | «Reporte guardado para sincronizar» | pendiente | pendiente |
-| TC-ALPHA-16 | Sincronizar al volver la red | «Reportes sincronizados»; un solo UUID | pendiente | pendiente |
-| TC-ALPHA-17 | Cola tras cerrar la app | Cola intacta; se sincroniza | pendiente | pendiente |
-| TC-ALPHA-18 | Mapa: clusters y zoom a pines | Clusters con conteo y color; pines a zoom 17 | pendiente | pendiente |
-| TC-ALPHA-19 | Detalle de cluster | Seis categorías y mayor gravedad | pendiente | pendiente |
-| TC-ALPHA-20 | Detalle de pin | Ubicación aproximada | pendiente | pendiente |
-| TC-ALPHA-21 | Mapa sin conexión | Mensaje de sin conexión y reportar sigue disponible | pendiente | pendiente |
-| TC-ALPHA-22 | Denuncia | «Gracias. Revisaremos el reporte.» | pendiente | pendiente |
-| TC-ALPHA-23 | Denuncia inválida o repetida | Bloqueos y «Ya denunciaste este reporte.» | pendiente | pendiente |
-| TC-ALPHA-24 | Login de Asociación | Error con datos malos; panel con datos buenos | pendiente | pendiente |
-| TC-ALPHA-25 | Consulta de 7 días | Solo datos de negocio | pendiente | pendiente |
-| TC-ALPHA-26 | Rango vacío y fechas inválidas | Mensajes exactos; exportar deshabilitado | pendiente | pendiente |
-| TC-ALPHA-27 | Exportar CSV y XLSX | Mismas filas que la tabla | pendiente | pendiente |
-| TC-ALPHA-28 | Login de Administrator | Command Center sin exportación | pendiente | pendiente |
-| TC-ALPHA-29 | Moderación | Aprobar, ocultar, restaurar y eliminar con motivo | pendiente | pendiente |
-| TC-ALPHA-30 | Duplicados | Resolver y revertir sin borrar | pendiente | pendiente |
-| TC-ALPHA-31 | Configuración de umbrales | Versión sube; valores restaurados | pendiente | pendiente |
-| TC-ALPHA-32 | Zonas: borrador | Guarda sin activar | pendiente | pendiente |
-| TC-ALPHA-33 | Cerrar sesión | Vuelve a cámara | pendiente | pendiente |
+| TC-ALPHA-01 | Primera apertura y permiso de cámara | Abre en cámara; pide permiso | pasó: abre cámara y solicita permiso | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-01-permiso-camara.jpg` |
+| TC-ALPHA-02 | Acceso «Reportar sin foto» | Visible en la cámara | pasó: acceso visible en la cámara | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-02-reportar-sin-foto.jpg` |
+| TC-ALPHA-03 | Foto nítida de perro | Foto aceptada | pasó: foto nítida aceptada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-03-foto-nitida.jpg` |
+| TC-ALPHA-04 | Foto sin perro | «No detectamos un perro en la foto.» | pasó: foto sin perro rechazada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-04-foto-sin-perro.jpg` |
+| TC-ALPHA-05 | Foto borrosa | «La foto está borrosa.» | pasó: foto borrosa rechazada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-05-foto-borrosa.jpg` |
+| TC-ALPHA-06 | Validación en modo avión | Se valida sin red | pasó: validación funciona en modo avión | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-06-modo-avion.jpg`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-06-validacion-foto-avion.jpg` |
+| TC-ALPHA-07 | Color predominante | Sugerido, editable; tamaño y collar opcionales | pasó: color sugerido y editable | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-07-color-editable.jpg` |
+| TC-ALPHA-08 | Manada, cantidad 2 | «Reporte enviado» | pasó: manada de 2 enviada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-08-manada-2.jpg` |
+| TC-ALPHA-09 | Manada, cantidad 1000 | «Reporte enviado» | pasó: cantidad 1000 aceptada y enviada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-09-manada-1000.jpg`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-09-manada-1000-enviado.jpg` |
+| TC-ALPHA-10 | Manada, cantidad 1001 | Error de rango 2 a 1000 | pasó: 1001 se rechaza por rango | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-10-manada-1001-error.jpg` |
+| TC-ALPHA-11 | Manada, cantidad 1 | Error de rango 2 a 1000 | pasó: 1 se rechaza por rango | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-11-manada-1-error.jpg` |
+| TC-ALPHA-12 | Solitario y preguntas por categoría | Solo las preguntas de la categoría | pasó: solitario no pide cantidad y muestra preguntas por categoría | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-12-solitario-categorias.jpg` |
+| TC-ALPHA-13 | Reporte sin foto | Se envía y se acepta | pasó: reporte sin foto enviado | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-13-reporte-sin-foto.jpg` |
+| TC-ALPHA-14 | Sin datos personales y aviso de RF02 | Sin campos de identidad; aviso visible | falló: no hay campos de identidad, pero no aparece el aviso RF02 sobre información incidental | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4` |
+| TC-ALPHA-15 | Reporte en modo avión | «Reporte guardado para sincronizar» | pasó: reporte offline queda guardado para sincronizar | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-15-reporte-modo-avion.jpg`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-15-modo-avion-sync.mp4` |
+| TC-ALPHA-16 | Sincronizar al volver la red | «Reportes sincronizados»; un solo UUID | pasó: sincronización confirmada a las 5:39 pm, sin duplicar | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-16-sincronizacion.jpg` |
+| TC-ALPHA-17 | Cola tras cerrar la app | Cola intacta; se sincroniza | pasó: cola persiste tras cierre y sincroniza al recuperar red | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-17-cola-tras-cierre.jpg` |
+| TC-ALPHA-18 | Mapa: clusters y zoom a pines | Clusters con conteo y color; pines a zoom 17 | pasó: mapa muestra clusters y pines al acercar | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-18-mapa-clusters.jpg` |
+| TC-ALPHA-19 | Detalle de cluster | Seis categorías y mayor gravedad | pasó: detalle de cluster visible | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-19-detalle-cluster.jpg` |
+| TC-ALPHA-20 | Detalle de pin | Ubicación aproximada | pasó: detalle de pin visible con ubicación aproximada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-20-detalle-pin.jpg` |
+| TC-ALPHA-21 | Mapa sin conexión | Mensaje de sin conexión y reportar sigue disponible | pasó: mapa comunica sin conexión y permite seguir reportando | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-21-mapa-sin-conexion.jpg` |
+| TC-ALPHA-22 | Denuncia | «Gracias. Revisaremos el reporte.» | pasó: denuncia válida enviada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-22-denuncia-form.jpg`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-22-denuncia-enviada.jpg` |
+| TC-ALPHA-23 | Denuncia inválida o repetida | Bloqueos y «Ya denunciaste este reporte.» | pasó: denuncia inválida/repetida bloqueada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-23-denuncia-repetida.jpg` |
+| TC-ALPHA-24 | Login de Asociación | Error con datos malos; panel con datos buenos | pasó: login inválido/válido de Asociación verificado | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-24-login-asociacion.mp4` |
+| TC-ALPHA-25 | Consulta de 7 días | Solo datos de negocio | pasó: panel de 7 días muestra datos de negocio | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-25-panel-7-dias.jpg` |
+| TC-ALPHA-26 | Rango vacío y fechas inválidas | Mensajes exactos; exportar deshabilitado | pasó: rangos vacíos/fechas inválidas bloqueados | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-26-rangos-invalidos-vacios.jpg` |
+| TC-ALPHA-27 | Exportar CSV y XLSX | Mismas filas que la tabla | pasó: exportación CSV/XLSX disponible y revisada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-27-export-botones.jpg`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-27-export-csv.jpg`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-27-export-xlsx.jpg` |
+| TC-ALPHA-28 | Login de Administrator | Command Center sin exportación | pasó: Administrator entra a Command Center sin exportación BI | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-28-login-administrator.jpg` |
+| TC-ALPHA-29 | Moderación | Aprobar, ocultar, restaurar y eliminar con motivo | pasó: comandos de moderación revisados | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-29-moderacion.jpg` |
+| TC-ALPHA-30 | Duplicados | Resolver y revertir sin borrar | pasó: duplicados resueltos/revertidos sin borrar reportes | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-30-duplicados.jpg` |
+| TC-ALPHA-31 | Configuración de umbrales | Versión sube; valores restaurados | pasó: umbral cambiado y restaurado | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-31-configuracion-umbrales.mp4` |
+| TC-ALPHA-32 | Zonas: borrador | Guarda sin activar | bloqueado: no se cuenta con archivo GeoJSON/geofence de prueba para validar guardado como borrador | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-zonas-sin-geojson.mp4` |
+| TC-ALPHA-33 | Cerrar sesión | Vuelve a cámara | pasó: cerrar sesión y reabrir vuelve a cámara sin sesión privada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-33-cierre-sesion.mp4` |
 
 ## Evidencia
 
@@ -146,4 +146,8 @@ Las columnas de ejecución y captura se llenan al correr cada caso; mientras dig
 
 ## Conclusiones y revisión
 
-Conclusiones, pendientes y revisión: pendientes hasta ejecutar la sesión.
+Conclusión: T7 queda ejecutada en Android real con evidencia local versionada.
+Resultado: 31 casos pasaron, TC-ALPHA-14 falló por ausencia del aviso RF02 y
+queda registrado como `INC-2`, y TC-ALPHA-32 quedó bloqueado por falta de archivo
+GeoJSON/geofence de prueba. Pendiente operativo: abrir o vincular el ticket Jira
+de `INC-2` y repetir TC-ALPHA-14 cuando se corrija el aviso.

@@ -1,7 +1,8 @@
 # Evidencia de la prueba alfa (T7)
 
 Aquí se guardan las capturas, videos y archivos exportados de las sesiones de
-`docs/testing/ALPHA.md`. Todavía no hay evidencia: la sesión no se ha ejecutado.
+`docs/testing/ALPHA.md`. La sesión alfa Android de T7 quedó registrada en
+`2026-10-11/` con evidencias para TC-ALPHA-01 a TC-ALPHA-33.
 
 ## Estructura y nombres
 

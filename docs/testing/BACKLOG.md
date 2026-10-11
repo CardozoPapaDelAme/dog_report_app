@@ -310,7 +310,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T7 · Prueba alfa en dispositivo
-- **Persona:** P2 · **Estado:** en curso · **Jira:** TD-120 · **Criterios:** C2
+- **Persona:** P2 · **Estado:** hecho · **Jira:** TD-120 · **Criterios:** C2
 - **Depende de:** T1.
 - **Objetivo:** validar la app completa en un Android real antes de usuarios externos.
 - **Alcance (`docs/testing/ALPHA.md`):** checklist del flujo completo: cámara →
@@ -320,6 +320,10 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   Lo ejecuta el equipo; cada falla se registra en `INCIDENTS.md`.
 - **Aceptación:** fecha, dispositivo y versión de Android, resultado por paso y
   capturas o video; las ejecuciones están en `TEST_LOG.md`.
+- **Evidencia:** sesión alfa Android real documentada en `docs/testing/ALPHA.md`;
+  evidencias en `docs/testing/data/alpha/2026-10-11/`; ejecuciones RUN-83 a
+  RUN-115. Resultado: 31 pasaron, 1 falló (`TC-ALPHA-14`, `INC-2`) y 1 quedó
+  bloqueado (`TC-ALPHA-32`, sin archivo GeoJSON/geofence de prueba).
 
 ### T8 · Pruebas con usuarios reales
 - **Persona:** P5 · **Estado:** pendiente · **Jira:** TD-121 · **Criterios:** C5 · **Requerimientos:** RNF04
