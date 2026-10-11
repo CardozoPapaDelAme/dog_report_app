@@ -1,6 +1,22 @@
+/**
+ * @module models/duplicateCandidate
+ * Client-side model for duplicate resolution (FAB-3): response validation, the pending-candidate graph,
+ * connected components and resolution input validation.
+ */
 // FAB-3 induced pending-candidate graph. No backend runtime in the mobile bundle.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+/** Throws `invalid_response`. */
 const invalid = () => { throw Object.assign(new Error('Invalid duplicate response'), {code:'invalid_response'}); };
+/**
+ * @typedef {object} CandidateSnapshot
+ * @property {Array<{id: string, status: 'visible' | 'hidden' | 'pending_review'}>} reports
+ * @property {Array<{id: string, status: 'pending', report_a: string, report_b: string}>} candidates
+ */
+/**
+ * @param {unknown} data
+ * @returns {CandidateSnapshot}
+ * @throws {Error} `invalid_response` for invalid ids, duplicates, statuses or edges to unknown reports.
+ */
 export function readCandidateSnapshot(data) {
   if (!Array.isArray(data?.reports) || !Array.isArray(data?.candidates)) invalid();
   const ids = new Set();
@@ -16,6 +32,20 @@ export function readCandidateSnapshot(data) {
   }
   return { reports: data.reports, candidates: data.candidates };
 }
+/**
+ * @typedef {object} DuplicateGroup
+ * @property {string} id
+ * @property {string} canonical_report_id - Always one of `report_ids`.
+ * @property {string[]} report_ids
+ * @property {string} status
+ * @property {number} resolution_version
+ */
+/**
+ * @param {unknown} group
+ * @param {string} [status='active'] - Required status.
+ * @returns {DuplicateGroup}
+ * @throws {Error} `invalid_response` when the group is malformed or has another status.
+ */
 export function readDuplicateGroup(group, status = 'active') {
   if (!UUID.test(group?.id) || !UUID.test(group.canonical_report_id) || group.status !== status ||
       !Number.isInteger(group.resolution_version) || group.resolution_version < 1 ||
@@ -24,12 +54,18 @@ export function readDuplicateGroup(group, status = 'active') {
   // Retention can remove a noncanonical member; existing groups may have one survivor.
   return group;
 }
+/**
+ * @param {unknown} data
+ * @returns {DuplicateGroup[]} Active groups.
+ * @throws {Error} `invalid_response` for a malformed list or repeated ids.
+ */
 export function readDuplicateGroups(data) {
   if (!Array.isArray(data?.duplicate_groups)) invalid();
   const groups = data.duplicate_groups.map((group)=>readDuplicateGroup(group));
   if (new Set(groups.map((g)=>g.id)).size !== groups.length) invalid();
   return groups;
 }
+/** Builds an undirected adjacency map of pending edges restricted to `ids`. */
 function adjacencyFor(ids, candidates) {
   const map = new Map(ids.map((id)=>[id, new Set()]));
   for (const edge of candidates) {
@@ -39,6 +75,7 @@ function adjacencyFor(ids, candidates) {
   }
   return map;
 }
+/** Returns the set of ids reachable from `start`. */
 function visit(start, adjacency) {
   const seen = new Set(), stack = [start];
   while (stack.length) {
@@ -49,9 +86,20 @@ function visit(start, adjacency) {
   }
   return seen;
 }
+/**
+ * @param {string[]} ids
+ * @param {CandidateSnapshot['candidates']} candidates
+ * @returns {boolean} Whether at least two distinct ids form one connected component.
+ */
 export function connectedSelection(ids, candidates) {
   return ids.length >= 2 && new Set(ids).size === ids.length && visit(ids[0], adjacencyFor(ids,candidates)).size === ids.length;
 }
+/**
+ * Groups reports not already in an active group into connected components of pending candidates.
+ * @param {CandidateSnapshot} snapshot
+ * @param {DuplicateGroup[]} [activeGroups=[]]
+ * @returns {Array<{id: string, reports: object[]}>} Sorted by component id (its smallest report id).
+ */
 export function groupDuplicateCandidates(snapshot, activeGroups = []) {
   const occupied = new Set(activeGroups.flatMap((g)=>g.report_ids));
   const reports = snapshot.reports.filter((r)=>!occupied.has(r.id));
@@ -66,6 +114,16 @@ export function groupDuplicateCandidates(snapshot, activeGroups = []) {
   }
   return components.sort((a,b)=>a.id.localeCompare(b.id));
 }
+/**
+ * @param {object} selection
+ * @param {string[]} selection.ids - Selected report ids (2 to 500).
+ * @param {string} selection.canonicalId - Must be one of `ids`.
+ * @param {string} selection.note - Optional note.
+ * @param {CandidateSnapshot} snapshot
+ * @param {DuplicateGroup[]} [activeGroups=[]]
+ * @returns {{errors: Record<string, {key: string}>,
+ *   input: {canonical_report_id: string, report_ids: string[], note?: string} | null}}
+ */
 export function validateResolution({ ids, canonicalId, note }, snapshot, activeGroups = []) {
   const errors = {};
   if (ids.length < 2 || ids.length > 500 || new Set(ids).size !== ids.length) errors.report_ids = {key:'count'};
@@ -79,9 +137,18 @@ export function validateResolution({ ids, canonicalId, note }, snapshot, activeG
     canonical_report_id:canonicalId, report_ids:[...ids].sort(), ...(note.trim() ? {note:note.trim()} : {}),
   } };
 }
+/**
+ * @param {unknown} note
+ * @param {boolean} [required=true]
+ * @returns {{key: 'note'} | null} Error when not a string, empty while required, or over 1000 characters.
+ */
 export function validateDuplicateNote(note, required = true) {
   return typeof note !== 'string' || (required && !note.trim()) || [...note.trim()].length > 1000 ? {key:'note'} : null;
 }
+/**
+ * @param {unknown} error - API error with `details.fields`.
+ * @returns {Record<string, string>} Messages for `canonical_report_id`, `report_ids` and `note`.
+ */
 export function duplicateFieldErrors(error) {
   const fields = error?.details?.fields;
   if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return {};

@@ -1,9 +1,21 @@
+/**
+ * @module presenters/configuration
+ * Shapes the active configuration version and active zone set into the API JSON envelope.
+ */
 import { CONFIGURATION_RULES } from '../domain/configuration.js';
 
+/** Converts a date-like value to an ISO 8601 UTC string, keeping null and undefined as null. */
 function utc(value) {
   return value == null ? null : new Date(value).toISOString();
 }
 
+/**
+ * Responds with the active configuration and zone set. Numeric rule fields are coerced to numbers.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {{configuration: object, zone_set: object | null}} state - Result of the configuration Service.
+ * @param {number} [status=200] - HTTP status (201 after a publish).
+ * @returns {Response} `{ data: { configuration, zone_set } }` with the `X-Request-Id` header.
+ */
 export function presentConfiguration(c, state, status = 200) {
   const row = state.configuration;
   const configuration = {

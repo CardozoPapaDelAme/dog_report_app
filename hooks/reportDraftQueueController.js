@@ -1,3 +1,10 @@
+/**
+ * @module hooks/reportDraftQueueController
+ * Framework-free controller for the offline report draft queue: creates drafts with a location
+ * snapshot, queues them with a frozen payload, and synchronizes them (submit report, upload photo,
+ * poll photo status, clean up local files), persisting every state transition and applying retry
+ * backoff on failure.
+ */
 import {
   REPORT_DRAFT_STATE,
   applySyncErrorToDraft,
@@ -16,6 +23,7 @@ const SYNCABLE_STATES = Object.freeze([
   REPORT_DRAFT_STATE.AWAITING_PROCESSING,
   REPORT_DRAFT_STATE.RETRY_WAIT,
 ]);
+/** Delay before re-checking a photo that is still processing. */
 const PHOTO_PROCESSING_RETRY_MS = 30_000;
 
 function fingerprintFromPayload(payload) {
@@ -26,6 +34,7 @@ function reportReceiptIsAccepted(receipt) {
   return typeof receipt?.report_id === 'string';
 }
 
+/** @throws {Error} `invalid_response` when the receipt has no string `report_id`. */
 function normalizeAcceptedReceipt(receipt, fallbackReportId) {
   if (!reportReceiptIsAccepted(receipt)) {
     throw Object.assign(new Error('invalid_report_receipt'), {
@@ -55,6 +64,7 @@ function reportIdFromReceipt(draft) {
   return reportId;
 }
 
+/** Deletes the local and prepared photo files and clears `photo_file_uri`. */
 async function cleanupLocalPhoto(draft, deleteLocalPhoto, deletePreparedPhoto) {
   const reportId = draft?.receipt?.report_id ?? draft?.id;
   if (draft.photo_file_uri) {
@@ -66,6 +76,7 @@ async function cleanupLocalPhoto(draft, deleteLocalPhoto, deletePreparedPhoto) {
   return { ...draft, photo_file_uri: null };
 }
 
+/** Fallback poller that performs at most one status request for a pending photo. */
 function createSingleStatusPoller(getPhotoStatus) {
   return async function pollPhotoStatus({ reportId, deviceFingerprint, initialStatus }) {
     if (!photoStatusIsPending(initialStatus)) return initialStatus;
@@ -73,6 +84,32 @@ function createSingleStatusPoller(getPhotoStatus) {
   };
 }
 
+/**
+ * @param {object} options
+ * @param {{insert: Function, update: Function, getById: Function, list: Function}} options.repository
+ *   Draft repository (see `dao/reportDraftDao.js`).
+ * @param {() => string} options.createId - Lowercase UUID generator.
+ * @param {() => Promise<object>} options.getLocationSnapshot
+ * @param {(input: {payload: object}) => Promise<object>} options.submitReport - Report submission (network call).
+ * @param {(input: {reportId: string, deviceFingerprint: string, photoUri: string}) =>
+ *   Promise<import('../models/photoState.js').PhotoStatus>} options.uploadPhoto - Photo upload (network call).
+ * @param {Function} [options.getPhotoStatus] - Required when `pollPhotoStatus` is not given.
+ * @param {(input: {reportId: string, deviceFingerprint: string,
+ *   initialStatus: import('../models/photoState.js').PhotoStatus}) =>
+ *   Promise<import('../models/photoState.js').PhotoStatus>} [options.pollPhotoStatus]
+ * @param {(uri: string) => Promise<void>} [options.deleteLocalPhoto]
+ * @param {(input: {reportId: string}) => Promise<void>} [options.deletePreparedPhoto]
+ * @param {Function} options.createDraftRecord - Usually `createLocalReportDraft`.
+ * @param {() => Date} [options.now]
+ * @returns {{
+ *   createDraft: (input?: {photo?: object | null}) => Promise<import('../models/reportDraft.js').ReportDraft>,
+ *   queueDraft: (id: string, options: object) => Promise<import('../models/reportDraft.js').ReportDraft>,
+ *   syncDraft: (id: string) => Promise<import('../models/reportDraft.js').ReportDraft | null>,
+ *   syncDueDrafts: () => Promise<Array<import('../models/reportDraft.js').ReportDraft | null>>}}
+ *   `syncDraft` returns the draft unchanged when it is missing or not due, and never rejects for
+ *   sync failures: they are persisted on the draft via `applySyncErrorToDraft`.
+ * @throws {Error} A `*_required` code when a dependency is missing.
+ */
 export function createReportDraftQueueController({
   repository,
   createId,

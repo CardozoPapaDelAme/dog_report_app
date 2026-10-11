@@ -1,8 +1,13 @@
+/**
+ * @module models/mobileNetV3Model
+ * Bundled MobileNetV3-Small classifier: model asset, labels and provenance metadata.
+ */
 import labels from './mobilenet_v3_small_100_224_labels.json';
 import { MOBILENET_V3_MODEL_ASSET } from './mobileNetV3Asset';
 
 export { MOBILENET_V3_MODEL_ASSET };
 
+/** @type {string[]} */
 export const MOBILENET_V3_LABELS = labels;
 
 export const MOBILENET_V3_MODEL_METADATA = Object.freeze({

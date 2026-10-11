@@ -1,3 +1,8 @@
+/**
+ * @module components/PublicMapView.web
+ * Presentational web stand-in for the public map: lists clusters or pins and offers zoom buttons that
+ * report a fixed region (`WEB_STUB_BOUNDS`) through `onRegionChange`.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +12,19 @@ import { WEB_STUB_BOUNDS } from '../services/mapConfig.js';
 
 // Web stub (react-native-web): MapLibre native is unavailable, so the same server data
 // is shown as an accessible list and zoom buttons drive onRegionChange for UI tests.
+/**
+ * Same props as the native `PublicMapView`; `initialCenter` is ignored.
+ * @param {object} props
+ * @param {'clusters' | 'pins'} props.mode
+ * @param {import('../models/publicMap.js').MapCluster[]} props.clusters
+ * @param {import('../models/publicMap.js').PublicReport[]} props.reports
+ * @param {number} props.initialZoom - Reported once on mount.
+ * @param {{zoom: number} | null} [props.focus] - A new object applies its zoom.
+ * @param {(region: {zoom: number, bounds: number[]}) => void} [props.onRegionChange]
+ * @param {(cluster: import('../models/publicMap.js').MapCluster) => void} [props.onSelectCluster]
+ * @param {(report: import('../models/publicMap.js').PublicReport) => void} [props.onSelectReport]
+ * @returns {JSX.Element}
+ */
 export default function PublicMapView({
   mode, clusters, reports, initialZoom, focus, onRegionChange, onSelectCluster, onSelectReport,
 }) {

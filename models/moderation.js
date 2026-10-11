@@ -1,6 +1,16 @@
+/**
+ * @module models/moderation
+ * Client-side helpers for the administrator moderation queue: report normalization, page summary and
+ * applying command results.
+ */
 const HIGH_SEVERITY = new Set(['ataque_humano', 'ataque_ganado', 'ataque_mascota']);
 const QUEUE_STATUSES = new Set(['pending_review', 'hidden']);
 
+/**
+ * Adds display fields to a queue report: `description`, `flagCount`, `duplicateCount`, `isHighSeverity`.
+ * @param {object} report - Queue item from the API.
+ * @returns {object}
+ */
 export function normalizeModerationReport(report) {
   return {
     ...report,
@@ -13,6 +23,10 @@ export function normalizeModerationReport(report) {
   };
 }
 
+/**
+ * @param {object[]} reports - Normalized reports.
+ * @returns {{total: number, flagged: number, urgent: number}}
+ */
 export function summarizeModerationPage(reports) {
   return reports.reduce(
     (summary, report) => ({
@@ -24,6 +38,13 @@ export function summarizeModerationPage(reports) {
   );
 }
 
+/**
+ * Removes the report when its new status leaves the queue, otherwise merges the result into it.
+ * @param {object[]} reports - Normalized reports.
+ * @param {string} reportId
+ * @param {{status: string}} result - Moderation command result.
+ * @returns {object[]}
+ */
 export function applyModerationResult(reports, reportId, result) {
   if (!QUEUE_STATUSES.has(result.status)) {
     return reports.filter((report) => report.id !== reportId);
@@ -35,6 +56,11 @@ export function applyModerationResult(reports, reportId, result) {
   );
 }
 
+/**
+ * @param {string | number | Date | null | undefined} value
+ * @param {string} [locale='es-MX']
+ * @returns {string} Short day, month and time, or `''` when missing or invalid.
+ */
 export function formatObservedAt(value, locale = 'es-MX') {
   if (!value) {
     return '';

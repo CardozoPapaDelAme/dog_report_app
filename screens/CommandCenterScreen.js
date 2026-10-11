@@ -1,3 +1,9 @@
+/**
+ * @module screens/CommandCenterScreen
+ * Container screen for moderation by an authenticated staff session: paginated moderation queue
+ * with summary metrics, approve/hide/restore/delete commands (all but approve require a note), and
+ * navigation to configuration, zone sets and duplicate management.
+ */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -57,6 +63,7 @@ const NOTE_COMMANDS = {
   },
 };
 
+/** Summary metric tile; `tone: 'danger'` highlights it. */
 function Metric({ label, value, tone }) {
   return (
     <View style={[styles.metric, tone === 'danger' && styles.metricDanger]}>
@@ -66,6 +73,7 @@ function Metric({ label, value, tone }) {
   );
 }
 
+/** Moderation queue card offering only the commands listed in `report.allowed_commands`. */
 function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t }) {
   const canApprove = report.allowed_commands?.includes('approve');
   const canHide = report.allowed_commands?.includes('hide');
@@ -149,6 +157,16 @@ function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t })
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.accessToken - Session access token.
+ * @param {() => void} props.onOpenConfiguration
+ * @param {() => void} props.onOpenZoneSets
+ * @param {() => void} props.onOpenDuplicates
+ * @param {() => void} props.onLogout
+ * @param {boolean} [props.logoutPending=false]
+ * @returns {JSX.Element}
+ */
 export default function CommandCenterScreen({ accessToken, onOpenConfiguration, onOpenZoneSets, onOpenDuplicates, onLogout, logoutPending = false }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();

@@ -1,9 +1,21 @@
+/**
+ * @module middleware/auth
+ * Authentication middleware for the Hono API.
+ * `optionalAuth` runs globally and only verifies a present token; `requireAuth` protects routes by
+ * verifying the token, loading the active profile, and checking that the token role matches it.
+ * Fine-grained authorization stays in Services (ADR-019); this layer only establishes identity.
+ */
 import { verifyAccessToken } from '../infrastructure/jwt.js';
 import { presentError } from '../presenters/error.js';
 import { findProfileById } from '../repositories/profileRepository.js';
 
 const KNOWN_ROLES = new Set(['association', 'administrator']);
 
+/**
+ * Parses the `Authorization` header.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {{kind: 'missing'} | {kind: 'invalid'} | {kind: 'present', token: string}}
+ */
 function bearerToken(c) {
   const header = c.req.header('Authorization');
   if (!header) {
@@ -16,6 +28,11 @@ function bearerToken(c) {
   return { kind: 'present', token: match[1] };
 }
 
+/**
+ * Reads the application role from `app_metadata.app_role`, falling back to `app_metadata.role`.
+ * @param {object} payload - Verified JWT claims.
+ * @returns {string | null}
+ */
 function claimRole(payload) {
   const metadata = payload.app_metadata ?? {};
   const value = metadata.app_role ?? metadata.role;
@@ -26,6 +43,21 @@ function claimSubject(payload) {
   return typeof payload.sub === 'string' && payload.sub ? payload.sub : null;
 }
 
+/**
+ * @typedef {object} AuthenticatedAuth
+ * @property {'authenticated'} type
+ * @property {object} claims - Verified JWT claims.
+ * @property {string} userId - Token subject (`sub`).
+ * @property {string} role - Role from the active profile.
+ * @property {import('../repositories/profileRepository.js').ProfileRow} profile - Active profile row.
+ */
+/**
+ * Fully authenticates a request: bearer token, signature, subject, active profile, and role match.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {Promise<{ok: true, auth: AuthenticatedAuth} | {ok: false, status: number, code: string, message: string}>}
+ *   Failure codes: `authentication_required`, `invalid_token` (401); `inactive_profile`,
+ *   `role_mismatch` (403); `database_unavailable` (503).
+ */
 async function authenticate(c) {
   const parsed = bearerToken(c);
   if (parsed.kind === 'missing') {
@@ -75,6 +107,14 @@ async function authenticate(c) {
   };
 }
 
+/**
+ * Global middleware: sets `auth` to `{ type: 'anonymous' }` when no token is sent, or to
+ * `{ type: 'authenticated', claims }` when the token verifies. Does not load the profile.
+ * Responds 401 `invalid_token` when a malformed or unverifiable token is supplied.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {import('hono').Next} next - Next middleware.
+ * @returns {Promise<Response | void>}
+ */
 export async function optionalAuth(c, next) {
   const parsed = bearerToken(c);
   if (parsed.kind === 'missing') {
@@ -94,6 +134,14 @@ export async function optionalAuth(c, next) {
   }
 }
 
+/**
+ * Creates middleware that requires a fully authenticated, active profile with one of the given roles.
+ * On success it replaces `auth` in the context with an {@link AuthenticatedAuth}. Failures are
+ * presented with the codes from `authenticate`, or 403 `forbidden` when the role is not allowed.
+ * @param {...('association' | 'administrator')} allowedRoles - Allowed roles; all known roles when omitted.
+ * @returns {import('hono').MiddlewareHandler}
+ * @throws {Error} At route-definition time when an unknown role is requested.
+ */
 export function requireAuth(...allowedRoles) {
   const roles = allowedRoles.length > 0 ? allowedRoles : [...KNOWN_ROLES];
   for (const role of roles) {

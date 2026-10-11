@@ -1,3 +1,10 @@
+/**
+ * @module App
+ * Root container: loads fonts and translations, owns the session (`useLogin`), the offline report
+ * draft flow and its auto-sync, the Supabase token auto-refresh, and screen selection. Association
+ * users get the association dashboard; other authenticated staff get the command center and its
+ * configuration, zone set and duplicate screens; anonymous users get the camera, map and report form.
+ */
 import { PlusJakartaSans_400Regular } from '@expo-google-fonts/plus-jakarta-sans/400Regular';
 import { PlusJakartaSans_600SemiBold } from '@expo-google-fonts/plus-jakarta-sans/600SemiBold';
 import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
@@ -25,8 +32,12 @@ import { summarizeReportDraftQueue } from './models/reportDraft.js';
 import { createAuthService } from './services/authService.js';
 import { supabase } from './services/supabaseClient.js';
 
+/** Single login controller for the app lifetime. */
 const loginController = createLoginController({ authService: createAuthService({ supabase }) });
 
+/**
+ * @returns {JSX.Element | null} `null` while fonts are loading.
+ */
 export default function App() {
   const [screen, setScreen] = useState('camera');
   const [draftQueueSyncing, setDraftQueueSyncing] = useState(false);

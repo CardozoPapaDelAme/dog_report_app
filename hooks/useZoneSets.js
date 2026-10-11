@@ -1,14 +1,38 @@
+/**
+ * @module hooks/useZoneSets
+ * Container hook for zone set management: loads the active zone set, prepares a GeoJSON draft (typed
+ * or picked from a file) with its checksum, creates it, and activates it with an association approval
+ * reference. After an uncertain create/activate it never replays the POST; activation can be
+ * verified against the active configuration instead.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { emptyZoneDraft, prepareZoneText, readZoneSet, validateZoneApproval, validateZoneDraft, zoneFieldErrors } from '../models/zoneSet.js';
 import { getConfiguration } from '../services/configurationApi.js';
 import { activateZoneSet, createZoneSet } from '../services/zoneSetApi.js';
 import { digestZone, pickZoneFile } from '../services/zoneFile';
 
+/** Default network and file dependencies. */
 const defaults = { getConfiguration, activateZoneSet, createZoneSet, digestZone, pickZoneFile };
+/** Initial state for a token; `session` phase when there is no token. */
 const empty = (token) => ({ token, phase: token ? 'loading' : 'session', environment: null, active: null,
   draft: emptyZoneDraft(), preview: null, filename: '', saved: null, approval: '', busy: null,
   errors: {}, error: null, uncertain: null, verified: false });
 
+/**
+ * @param {string | null} accessToken - Session access token.
+ * @param {{getConfiguration: Function, activateZoneSet: Function, createZoneSet: Function,
+ *   digestZone: (text: string) => Promise<string>, pickZoneFile: Function}} [dependencies=defaults]
+ * @returns {{token: string | null, phase: 'loading' | 'session' | 'ready' | 'forbidden' | 'error',
+ *   environment: string | null, active: import('../models/zoneSet.js').ZoneSet | null,
+ *   draft: Record<string, string>, preview: {geometry: object, checksum: string, polygons: number} | null,
+ *   filename: string, saved: import('../models/zoneSet.js').ZoneSet | null, approval: string,
+ *   busy: 'prepare' | 'create' | 'activate' | 'verify' | null, errors: object, error: Error | null,
+ *   uncertain: 'create' | 'activate' | null, verified: boolean, dirty: boolean,
+ *   changeField: (field: string, value: string) => void, changeApproval: (approval: string) => void,
+ *   prepare: (fromFile?: boolean) => Promise<void>, create: () => Promise<void>,
+ *   activate: () => Promise<void>, verifyActivation: () => Promise<void>, startNew: () => void,
+ *   reload: () => Promise<void>}}
+ */
 export function useZoneSets(accessToken, dependencies = defaults) {
   const [state, setState] = useState(() => empty(accessToken));
   const generation = useRef(0);
@@ -40,6 +64,7 @@ export function useZoneSets(accessToken, dependencies = defaults) {
     return () => { generation.current++; lock.current = false; };
   }, [load]);
 
+  /** Applies a request failure; marks a failed create/activate as uncertain unless it was a 400. */
   function fail(error, operation) {
     if (error.status === 401 || error.status === 403) {
       setState({ ...empty(accessToken), phase: error.status === 401 ? 'session' : 'forbidden', error });

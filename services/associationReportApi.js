@@ -1,6 +1,23 @@
+/**
+ * @module services/associationReportApi
+ * Association client for `GET /association/reports` (RIC-2), one cursor page at a time.
+ */
 import { readAssociationReportPage } from '../models/associationReport.js';
 import { apiRequest } from './apiClient.js';
 
+/**
+ * @param {object} options
+ * @param {string} options.accessToken - Association access token.
+ * @param {string} options.from - Inclusive ISO 8601 start instant.
+ * @param {string} options.to - Inclusive ISO 8601 end instant.
+ * @param {string | null} [options.cursor=null] - Cursor from the previous page.
+ * @param {number} [options.limit=500] - Page size, 1 to 5000.
+ * @param {typeof import('./apiClient.js').apiRequest} [request] - Injectable transport.
+ * @returns {Promise<import('../models/associationReport.js').AssociationReportPage>}
+ * @throws {Error} `authentication_required` (401) without a token; the API error `code` (default
+ *   `request_failed`) with `status` and `requestId`; `invalid_response` for a malformed page.
+ * @throws {RangeError} When `limit` is out of range.
+ */
 export async function getAssociationReportsPage({ accessToken, from, to, cursor = null, limit = 500 }, request = apiRequest) {
   if (typeof accessToken !== 'string' || !accessToken.trim()) {
     throw Object.assign(new Error('Association session required'), { code: 'authentication_required', status: 401 });

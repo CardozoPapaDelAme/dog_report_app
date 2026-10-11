@@ -1,4 +1,16 @@
 #!/usr/bin/env node
+/**
+ * Runner for the opt-in PostgreSQL/PostGIS Deno suites.
+ *
+ * Invoked as `npm run test:postgres` (`node scripts/test-postgres.mjs [configuration] [zone]
+ * [duplicate] [flag] [publicMap]`). Requires Docker. For each suite it starts a disposable
+ * `postgis/postgis` container on a loopback port, creates the suite database, runs the Deno
+ * test file with the suite's `*_TEST_DATABASE_URL` variable set, and stops the container.
+ * A suite that reports skipped tests or no passes counts as failed. Exits with 0 only when
+ * every suite passed (2 when Docker is unavailable or a suite name is unknown).
+ *
+ * @module scripts/test-postgres
+ */
 // Runs the opt-in PostgreSQL/PostGIS suites (backlog T2). Needs Docker.
 // Each suite gets its own throwaway container: flag and public-map create
 // cluster-level roles, and every suite requires a fresh database with a fixed
@@ -30,6 +42,15 @@ const suites = {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const docker = (...args) => spawnSync('docker', args, { encoding: 'utf8' });
 
+/**
+ * Starts a detached, auto-removed PostGIS container with tmpfs storage, published on
+ * `127.0.0.1:<port>`.
+ *
+ * @param {string} name Container name.
+ * @param {number} port Host loopback port mapped to 5432.
+ * @returns {void}
+ * @throws {Error} When `docker run` exits with a non-zero status.
+ */
 function startContainer(name, port) {
   // The image is amd64-only; Apple-silicon hosts run it emulated (slower).
   const platform = arch() === 'arm64' ? ['--platform', 'linux/amd64'] : [];
@@ -41,6 +62,13 @@ function startContainer(name, port) {
 
 // pg_isready over the unix socket succeeds while the image's init server is still
 // running, so probe over TCP: that only works once the final server is up.
+/**
+ * Polls the container with `psql ... SELECT 1` over TCP, every 2 s for up to 90 attempts.
+ *
+ * @param {string} name Container name.
+ * @returns {Promise<void>} Resolves once the server accepts connections.
+ * @throws {Error} When PostgreSQL is not ready after all attempts.
+ */
 async function waitForPostgres(name) {
   for (let attempt = 0; attempt < 90; attempt++) {
     const probe = docker('exec', name, 'psql', '-U', 'postgres', '-h', '127.0.0.1', '-d', 'postgres', '-tAc', 'SELECT 1');
@@ -50,6 +78,13 @@ async function waitForPostgres(name) {
   throw new Error(`PostgreSQL did not become ready in container ${name}`);
 }
 
+/**
+ * Runs one suite's Deno test file with network access limited to the suite port and read
+ * access limited to `suite.read`, forwarding output live while capturing it.
+ *
+ * @param {{port: number, db: string, env: string, file: string, read: string}} suite Suite definition.
+ * @returns {Promise<{code: number, output: string}>} Exit code (1 on spawn error or null code) and output; never rejects.
+ */
 function runDeno(suite) {
   const url = `postgres://postgres:${PASSWORD}@127.0.0.1:${suite.port}/${suite.db}`;
   const args = ['test', '--no-lock', '--allow-env', `--allow-net=127.0.0.1:${suite.port}`,
@@ -65,6 +100,13 @@ function runDeno(suite) {
   });
 }
 
+/**
+ * Runs one suite end to end in its own container and always stops the container.
+ *
+ * @param {string} key Suite key in `suites`.
+ * @returns {Promise<{suite: object, code: number, totals: {passed: number|null, failed: number|null, skipped: number|null}}>}
+ *   Result row; errors are logged and reported as `code: 1` instead of being thrown.
+ */
 async function runSuite(key) {
   const suite = suites[key];
   const container = `td-pg-${key.toLowerCase()}-${process.pid}`;

@@ -1,3 +1,9 @@
+/**
+ * @module hooks/useReportDraftQueue
+ * Container hook for the durable offline report draft queue: opens the SQLite draft repository,
+ * wires the queue controller with the device location, report API and photo upload client, and
+ * exposes draft actions that reload the draft list after each change.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -15,6 +21,7 @@ import {
   uploadReportPhoto,
 } from '../services/reportApi.js';
 
+/** Returns whether `jail-monkey` reports that the location can be mocked; `false` on failure. */
 async function readMockDetector(mockDetector = JailMonkey) {
   try {
     const result = mockDetector?.canMockLocation?.();
@@ -24,6 +31,16 @@ async function readMockDetector(mockDetector = JailMonkey) {
   }
 }
 
+/**
+ * Requests foreground location permission and reads a high-accuracy position.
+ * @param {object} [options]
+ * @param {typeof Location} [options.location=Location] - `expo-location` module.
+ * @param {{canMockLocation?: () => (boolean | Promise<boolean>)}} [options.mockDetector=JailMonkey]
+ * @returns {Promise<{longitude: number, latitude: number, accuracy_meters: number,
+ *   mock_suspected: boolean, mocked_by_provider: boolean, mock_detector_suspected: boolean,
+ *   captured_at: string}>} Raw snapshot; `accuracy_meters` defaults to 99999.99 when unknown.
+ * @throws {Error} `location_permission_denied` (status 400) when permission is not granted.
+ */
 export async function getCurrentLocationSnapshot({
   location = Location,
   mockDetector = JailMonkey,
@@ -53,6 +70,7 @@ export async function getCurrentLocationSnapshot({
   };
 }
 
+/** Builds the queue controller with production dependencies, each overridable through `dependencies`. */
 function createDefaultController(repository, dependencies = {}) {
   const photoUploadClient = dependencies.photoUploadClient ?? createReportPhotoUploadClient({
     preparePhoto: dependencies.preparePhoto,
@@ -82,6 +100,21 @@ function createDefaultController(repository, dependencies = {}) {
   });
 }
 
+/**
+ * @param {object} [options]
+ * @param {() => Promise<Awaited<ReturnType<typeof createReportDraftDao>>>} [options.repositoryFactory=createReportDraftDao]
+ *   Opens the draft repository (local storage).
+ * @param {object} [options.dependencies] - Controller and upload overrides; read once when the repository opens.
+ * @returns {{ready: boolean, loading: boolean, drafts: import('../models/reportDraft.js').ReportDraft[],
+ *   error: Error | null,
+ *   createDraft: (input: {photo?: object | null}) => Promise<import('../models/reportDraft.js').ReportDraft>,
+ *   queueDraft: (id: string, options: object) => Promise<import('../models/reportDraft.js').ReportDraft>,
+ *   syncDraft: (id: string) => Promise<import('../models/reportDraft.js').ReportDraft | null>,
+ *   syncDueDrafts: () => Promise<Array<import('../models/reportDraft.js').ReportDraft | null>>,
+ *   isSyncBusy: () => boolean, reload: () => Promise<import('../models/reportDraft.js').ReportDraft[]>}}
+ *   Actions reject with `report_draft_queue_not_ready` before the repository opens. `queueDraft`
+ *   options follow `queueReportDraft` in `models/reportDraft.js`.
+ */
 export function useReportDraftQueue({
   repositoryFactory = createReportDraftDao,
   dependencies = {},

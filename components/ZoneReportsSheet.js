@@ -1,3 +1,8 @@
+/**
+ * @module components/ZoneReportsSheet
+ * Bottom sheet listing the public reports of a selected cluster area, with loading, empty, offline
+ * and error states and a retry action.
+ */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -6,6 +11,16 @@ import { loadZoneReports } from '../hooks/zoneReports.js';
 const colors = { ink: '#191d17', primary: '#00450d', muted: '#5d6859', line: '#e0e0e0', warningSoft: '#fff0c2', warning: '#8a5700' };
 
 // Bottom sheet listing the public reports of a tapped cluster area (approximate, locally filtered).
+/**
+ * @param {object} props
+ * @param {import('../models/publicMap.js').MapCluster} props.cluster
+ * @param {number} props.zoom - Map zoom used to resolve cluster membership.
+ * @param {(report: import('../models/publicMap.js').PublicReport) => void} props.onSelect
+ * @param {() => void} props.onClose
+ * @param {(key: string, options?: object) => string} props.t - Translation function.
+ * @param {typeof loadZoneReports} [props.load=loadZoneReports] - Loader (network call); reloads on retry.
+ * @returns {JSX.Element}
+ */
 export default function ZoneReportsSheet({ cluster, zoom, onSelect, onClose, t, load = loadZoneReports }) {
   const [state, setState] = useState({ phase: 'loading', reports: [] });
   const [attempt, setAttempt] = useState(0);

@@ -1,3 +1,9 @@
+/**
+ * @module controllers/associationController
+ * HTTP adapter for the association report list (Hono API on Supabase Edge: routes -> Controllers ->
+ * Services -> Repositories; Presenters shape responses). Parses and validates query parameters; the
+ * Service owns authorization (ADR-019).
+ */
 import { presentError } from "../presenters/error.js";
 import { presentAssociationReports } from "../presenters/associationPresenter.js";
 import { listAssociationReports } from "../services/associationService.js";
@@ -7,6 +13,11 @@ const MAX_LIMIT = 5000;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/**
+ * Parses `limit` (default 100, 1 to 5000).
+ * @param {string | undefined} value - Raw query value.
+ * @returns {number | null} The limit, or null when invalid.
+ */
 export function parseAssociationLimit(value) {
   if (value === undefined || value === "") return DEFAULT_LIMIT;
   if (!/^\d+$/.test(value)) return null;
@@ -16,6 +27,11 @@ export function parseAssociationLimit(value) {
     : null;
 }
 
+/**
+ * Parses an RFC 3339 timestamp that carries an explicit timezone.
+ * @param {string | undefined} value - Raw value.
+ * @returns {string | null | undefined} ISO string, null when absent, or undefined when invalid.
+ */
 export function parseAssociationTimestamp(value) {
   if (value === undefined || value === "") return null;
   if (typeof value !== "string" || !/(?:Z|[+-]\d{2}:\d{2})$/.test(value)) {
@@ -25,6 +41,11 @@ export function parseAssociationTimestamp(value) {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
+/**
+ * Decodes a base64url `<accepted_at>|<uuid>` keyset cursor.
+ * @param {string | undefined} value - Raw cursor.
+ * @returns {{acceptedAt: string, id: string} | null | undefined} Cursor, null when absent, or undefined when malformed.
+ */
 export function parseAssociationCursor(value) {
   if (value === undefined || value === "") return null;
   try {
@@ -41,6 +62,12 @@ export function parseAssociationCursor(value) {
   }
 }
 
+/**
+ * Validates the association list query.
+ * @param {{from?: string, to?: string, limit?: string, cursor?: string}} query - Raw query values.
+ * @returns {{ok: true, from: string | null, to: string | null, limit: number, cursor: {acceptedAt: string, id: string} | null}
+ *   | {ok: false, message: string}}
+ */
 export function parseAssociationQuery(query) {
   const limit = parseAssociationLimit(query.limit);
   const from = parseAssociationTimestamp(query.from);
@@ -72,6 +99,12 @@ export function parseAssociationQuery(query) {
   return { ok: true, from, to, limit, cursor };
 }
 
+/**
+ * `GET /association/reports`: lists accepted reports for the association role.
+ * Responds 200, 400 `invalid_request`, 403 `forbidden`, or 503 `database_unavailable` for any other failure.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {Promise<Response>}
+ */
 export async function getAssociationReports(c) {
   const parsed = parseAssociationQuery({
     from: c.req.query("from"),

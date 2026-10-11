@@ -1,3 +1,10 @@
+/**
+ * @module app
+ * Composes the Hono application for the `api` Supabase Edge Function.
+ * Registers global middleware (request id, optional authentication), mounts every route module under
+ * the `/api` base path, and maps unmatched routes and uncaught errors to the standard error envelope.
+ * Request flow: Routes -> Controllers -> Services -> Repositories, with Presenters shaping responses.
+ */
 import { Hono } from 'hono';
 
 import { optionalAuth } from './middleware/auth.js';
@@ -39,4 +46,8 @@ app.onError((error, c) => {
   return presentError(c, 500, 'internal_error', 'The request could not be completed.');
 });
 
+/**
+ * Configured Hono application instance; `index.js` serves its `fetch` handler.
+ * @type {import('hono').Hono}
+ */
 export { app };

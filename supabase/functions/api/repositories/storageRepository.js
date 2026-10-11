@@ -1,3 +1,8 @@
+/**
+ * @module repositories/storageRepository
+ * Supabase Storage REST client for photo objects, authenticated with the service role key.
+ * Each request has a 10-second timeout; `fetchImplementation` is injectable for tests.
+ */
 function storageHeaders(serviceRoleKey, extra = {}) {
   return {
     apikey: serviceRoleKey,
@@ -20,6 +25,7 @@ function objectUrl({ supabaseUrl, bucket, objectPath }) {
   }`;
 }
 
+/** Builds an `Error` carrying a storage error `code` and the HTTP `status`. */
 function storageError(code, status) {
   const error = new Error(code);
   error.code = code;
@@ -27,6 +33,19 @@ function storageError(code, status) {
   return error;
 }
 
+/**
+ * Uploads an object without overwriting an existing one (`x-upsert: false`).
+ * @param {object} options
+ * @param {string} options.supabaseUrl - Supabase project URL.
+ * @param {string} options.serviceRoleKey - Service role key.
+ * @param {string} options.bucket - Bucket name.
+ * @param {string} options.objectPath - Object path inside the bucket.
+ * @param {BodyInit} options.bytes - Object body.
+ * @param {string} options.contentType - MIME type.
+ * @param {typeof fetch} [fetchImplementation] - Fetch function.
+ * @returns {Promise<void>}
+ * @throws {Error} `storage_upload_failed`, with the HTTP `status`, on a non-2xx response.
+ */
 export async function uploadStorageObject(
   { supabaseUrl, serviceRoleKey, bucket, objectPath, bytes, contentType },
   fetchImplementation = fetch,
@@ -49,6 +68,17 @@ export async function uploadStorageObject(
   }
 }
 
+/**
+ * Downloads an object as a stream.
+ * @param {object} options
+ * @param {string} options.supabaseUrl - Supabase project URL.
+ * @param {string} options.serviceRoleKey - Service role key.
+ * @param {string} options.bucket - Bucket name.
+ * @param {string} options.objectPath - Object path inside the bucket.
+ * @param {typeof fetch} [fetchImplementation] - Fetch function.
+ * @returns {Promise<{body: ReadableStream<Uint8Array> | null, contentType: string | null, contentLength: string | null}>}
+ * @throws {Error} `storage_download_failed`, with the HTTP `status`, on a non-2xx response.
+ */
 export async function downloadStorageObject(
   { supabaseUrl, serviceRoleKey, bucket, objectPath },
   fetchImplementation = fetch,
@@ -71,6 +101,17 @@ export async function downloadStorageObject(
   };
 }
 
+/**
+ * Deletes an object by path.
+ * @param {object} options
+ * @param {string} options.supabaseUrl - Supabase project URL.
+ * @param {string} options.serviceRoleKey - Service role key.
+ * @param {string} options.bucket - Bucket name.
+ * @param {string} options.objectPath - Object path inside the bucket.
+ * @param {typeof fetch} [fetchImplementation] - Fetch function.
+ * @returns {Promise<void>}
+ * @throws {Error} `storage_delete_failed`, with the HTTP `status`, on a non-2xx response.
+ */
 export async function deleteStorageObject(
   { supabaseUrl, serviceRoleKey, bucket, objectPath },
   fetchImplementation = fetch,

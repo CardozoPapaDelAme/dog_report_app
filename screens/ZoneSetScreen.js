@@ -1,3 +1,9 @@
+/**
+ * @module screens/ZoneSetScreen
+ * Container screen for zone set management of an authenticated staff session (403 shown as
+ * `forbidden`): shows the active zone set, prepares a GeoJSON draft from text or a file, creates it,
+ * and activates it with an association approval reference. Confirms before discarding a draft.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ActivityIndicator, BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -6,6 +12,7 @@ import { useZoneSets } from '../hooks/useZoneSets.js';
 import { validateZoneApproval } from '../models/zoneSet.js';
 
 const colors = { background: '#f7fbf1', ink: '#191d17', muted: '#5d6859', primary: '#00450d', soft: '#d9f2d4', border: '#c0c9bb', danger: '#a51e1e' };
+/** Translates a validation error (`{key, values}`) or returns a string error as is. */
 const message = (error, t) => typeof error === 'string' ? error : error ? t(`zoneSets.validation.${error.key}`, error.values) : '';
 function Button({ title, onPress, disabled = false, secondary = false, busy = false, testID }) {
   return <Pressable testID={testID} accessibilityRole="button" accessibilityState={{ disabled, busy }} disabled={disabled} onPress={onPress}
@@ -25,6 +32,7 @@ function Field({ name, label, value, error, onChange, disabled, multiline, input
     {error ? <Text nativeID={`zone-${name}-error`} accessibilityLiveRegion="polite" style={styles.errorText}>{message(error, t)}</Text> : null}
   </View>;
 }
+/** Read-only details of a zone set, including its SHA-256 checksum. */
 function ZoneSummary({ zone, t }) {
   return <View style={styles.summary}>
     <Text style={styles.label}>{zone.name} · {t('zoneSets.version', { version: zone.version })}</Text>
@@ -37,6 +45,13 @@ function ZoneSummary({ zone, t }) {
   </View>;
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.accessToken - Session access token.
+ * @param {() => void} [props.onBack]
+ * @param {object} [props.dependencies] - Network and file overrides for `useZoneSets`.
+ * @returns {JSX.Element}
+ */
 export default function ZoneSetScreen({ accessToken, onBack, dependencies }) {
   const { t } = useTranslation();
   const form = useZoneSets(accessToken, dependencies);

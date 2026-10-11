@@ -1,5 +1,33 @@
+/**
+ * @module repositories/publicMapRepository
+ * Read models for the anonymous public map. Only visible, unexpired, non-duplicate reports are returned,
+ * and locations are approximated by `app_private.approximate_public_location` before leaving the database.
+ */
 import { INCIDENT_TYPES } from "../domain/publicMap.js";
 
+/**
+ * @typedef {object} PublicReportRow
+ * @property {string} report_id
+ * @property {number} approximate_longitude
+ * @property {number} approximate_latitude
+ * @property {string} incident_type
+ * @property {*} sighting_type
+ * @property {*} details
+ * @property {*} color_predominante
+ * @property {*} tamano
+ * @property {*} tiene_collar
+ * @property {boolean} has_sanitized_photo
+ * @property {Date} occurred_at - Client creation time of the report.
+ * @property {boolean} has_flags
+ */
+/**
+ * Lists public reports, most recently published first.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string | null | undefined} options.since - Only reports published at or after this ISO timestamp.
+ * @param {number} options.limit - Maximum rows.
+ * @returns {Promise<PublicReportRow[]>}
+ */
 export async function listPublicReports(tx, { since, limit }) {
   const rows = await tx`
     WITH visible_reports AS (
@@ -61,6 +89,31 @@ export async function listPublicReports(tx, { since, limit }) {
   return rows;
 }
 
+/**
+ * @typedef {object} PublicClusterRow
+ * @property {string} cluster_id - Stable id derived from zoom, radius, and member ids.
+ * @property {number} report_count
+ * @property {number} approximate_longitude
+ * @property {number} approximate_latitude
+ * @property {number} count_avistamiento_simple
+ * @property {number} count_ataque_mascota
+ * @property {number} count_ataque_ganado
+ * @property {number} count_ataque_humano
+ * @property {number} count_perro_lastimado
+ * @property {number} count_otro
+ */
+/**
+ * Clusters the most recent public reports with DBSCAN (metric projection EPSG:32613) and returns
+ * per-cluster counts by incident type, newest cluster first.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {number} options.zoom - Map zoom, used only in `cluster_id`.
+ * @param {number} options.radiusMeters - Clustering distance (see `clusterRadiusForZoom`).
+ * @param {{minLongitude: number, minLatitude: number, maxLongitude: number, maxLatitude: number} | null} options.viewport
+ *   Bounding box filter, or null for no filter.
+ * @param {number} options.limit - Maximum reports considered before clustering.
+ * @returns {Promise<PublicClusterRow[]>}
+ */
 export async function listPublicClusters(
   tx,
   { zoom, radiusMeters, viewport, limit },

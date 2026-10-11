@@ -1,4 +1,13 @@
+/**
+ * @module domain/configuration
+ * Domain rules for the administrator-managed operational configuration (thresholds, radii, rate limits).
+ * Pure validation with no I/O; persistence lives in `repositories/configurationRepository.js`.
+ */
 // Exact storage limits: db/schema.sql, public.config_versions.
+/**
+ * Allowed range and decimal precision for each configurable value.
+ * @type {Readonly<Record<string, {min: number, max: number, decimals: number}>>}
+ */
 export const CONFIGURATION_RULES = Object.freeze({
   flag_auto_hide_threshold: { min: 2, max: 100, decimals: 0 },
   duplicate_radius_meters: { min: 10, max: 1000, decimals: 0 },
@@ -10,6 +19,11 @@ export const CONFIGURATION_RULES = Object.freeze({
   flag_rate_limit_per_hour: { min: 1, max: 1000, decimals: 0 },
 });
 
+/**
+ * Validation error raised by configuration rules.
+ * @property {string} code - Machine-readable error code (currently `invalid_request`).
+ * @property {{fields: Record<string, string>} | undefined} details - Per-field messages, when available.
+ */
 export class ConfigurationError extends Error {
   constructor(code, message, details) {
     super(message);
@@ -19,6 +33,25 @@ export class ConfigurationError extends Error {
   }
 }
 
+/**
+ * @typedef {object} ConfigurationValues
+ * @property {number} flag_auto_hide_threshold
+ * @property {number} duplicate_radius_meters
+ * @property {number} duplicate_time_window_minutes
+ * @property {number} trust_high_threshold
+ * @property {number} trust_medium_threshold
+ * @property {number} gps_accuracy_max_meters
+ * @property {number} report_rate_limit_per_hour
+ * @property {number} flag_rate_limit_per_hour
+ * @property {string} change_note - Non-blank note of 1 to 1000 characters.
+ */
+/**
+ * Validates a complete configuration submission. Every rule field and `change_note` are required,
+ * unknown fields are rejected, and `trust_medium_threshold` must be below `trust_high_threshold`.
+ * @param {unknown} input - Parsed request body.
+ * @returns {ConfigurationValues} Only the allowed fields, copied from the input.
+ * @throws {ConfigurationError} `invalid_request`, with `details.fields` when individual fields fail.
+ */
 export function validateConfiguration(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new ConfigurationError('invalid_request', 'Body must be a JSON object.');

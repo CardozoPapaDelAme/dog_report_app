@@ -1,3 +1,8 @@
+/**
+ * @module services/zoneService
+ * Administrator use cases for geofence zone sets: creating a draft and activating it. Per ADR-019 this
+ * Service owns authorization and re-checks the stored profile and environment inside each transaction.
+ */
 import {
   assertActivatableZoneSet,
   assertAtMostOneActiveZone,
@@ -9,6 +14,10 @@ import { getConfig } from "../infrastructure/config.js";
 import { getSql } from "../infrastructure/db.js";
 import * as repository from "../repositories/zoneRepository.js";
 
+/**
+ * Requires an authenticated, active Administrator whose profile matches the token subject and role.
+ * @throws {ZoneSetError} `authentication_required` or `forbidden`.
+ */
 function assertAdministrator(actor) {
   if (actor?.type !== "authenticated" || !actor.userId) {
     throw new ZoneSetError(
@@ -27,9 +36,23 @@ function assertAdministrator(actor) {
   }
 }
 
+/**
+ * Creates the zone set Service.
+ * @param {object} [dependencies] - Overrides for `getConfig`, `getSql`, and `repository` (tests).
+ * @returns {{
+ *   create: (options: {actor: import('../middleware/auth.js').AuthenticatedAuth, input: unknown}) => Promise<import('../repositories/zoneRepository.js').ZoneSetRow>,
+ *   activate: (options: {actor: import('../middleware/auth.js').AuthenticatedAuth, zoneSetId: string, input: unknown}) => Promise<import('../repositories/zoneRepository.js').ZoneSetRow>
+ * }}
+ *   `create` stores a validated draft; `activate` makes a draft the single active zone set. Both
+ *   write an audit entry.
+ * @throws {ZoneSetError} `authentication_required`, `forbidden`, `invalid_request`, `not_found`,
+ *   `zone_set_conflict` (also for unique violations and serialization failures), `preflight_mismatch`,
+ *   or `dependency_unavailable` (connection failures, SQLSTATE class 08 and 57P01-57P03). Unknown errors propagate unchanged.
+ */
 export function createZoneService(dependencies = {}) {
   const deps = { getConfig, getSql, repository, ...dependencies };
 
+  /** Runs `operation(tx, environment)` after the in-transaction actor and environment preflight, mapping storage errors. */
   async function inTransaction(actor, operation) {
     const expectedEnvironment = deps.getConfig().expectedEnvironment;
     if (!["staging", "production"].includes(expectedEnvironment)) {
@@ -180,4 +203,5 @@ export function createZoneService(dependencies = {}) {
   };
 }
 
+/** Production zone set Service instance. */
 export const zoneService = createZoneService();

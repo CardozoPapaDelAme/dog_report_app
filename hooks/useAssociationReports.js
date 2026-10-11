@@ -1,11 +1,28 @@
+/**
+ * @module hooks/useAssociationReports
+ * Container hook for the association dashboard: validates a date range and loads all association
+ * reports in it, discarding stale responses after a newer request or a token change.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { validateAssociationDateRange } from '../models/associationReport.js';
 import { getAssociationReportsPage } from '../services/associationReportApi.js';
 import { loadAssociationReportRange } from './associationReportLoader.js';
 
+/** Initial state for a token; `session` phase when there is no token. */
 const initial = (token) => ({ token, phase: token ? 'idle' : 'session', rows: [], range: null,
   dates: null, errors: {}, error: null });
 
+/**
+ * @param {string | null} accessToken - Session access token.
+ * @param {typeof getAssociationReportsPage} [getPage=getAssociationReportsPage] - Page request (network call).
+ * @returns {{token: string | null,
+ *   phase: 'idle' | 'session' | 'invalid' | 'loading' | 'ready' | 'empty' | 'forbidden' | 'error',
+ *   rows: import('../models/associationReport.js').AssociationReport[],
+ *   range: {from: string, to: string} | null, dates: {fromDay: string, toDay: string} | null,
+ *   errors: object, error: Error | null,
+ *   loadRange: (fromDay: string, toDay: string) => Promise<boolean>,
+ *   reload: () => (Promise<boolean> | null)}} `loadRange` resolves `true` only when rows were loaded.
+ */
 export function useAssociationReports(accessToken, getPage = getAssociationReportsPage) {
   const [state, setState] = useState(() => initial(accessToken));
   const generation = useRef(0);

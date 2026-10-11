@@ -1,3 +1,8 @@
+/**
+ * @module components/PublicMapView
+ * Presentational native public map (MapLibre): server clusters or report pins, colored by severity.
+ * The web build uses `components/PublicMapView.web.js` with the same props.
+ */
 import { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +13,19 @@ import { getMapStyleUrl } from '../services/mapConfig.js';
 
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
 // Renders exactly what the server returned; no client-side clustering.
+/**
+ * @param {object} props
+ * @param {'clusters' | 'pins'} props.mode
+ * @param {import('../models/publicMap.js').MapCluster[]} props.clusters - Rendered in `clusters` mode.
+ * @param {import('../models/publicMap.js').PublicReport[]} props.reports - Rendered in `pins` mode.
+ * @param {{longitude: number, latitude: number}} props.initialCenter
+ * @param {number} props.initialZoom
+ * @param {{longitude: number, latitude: number, zoom: number} | null} [props.focus] - A new object eases the camera.
+ * @param {(region: {zoom: number, bounds: number[]}) => void} [props.onRegionChange] - Called after load and each move.
+ * @param {(cluster: import('../models/publicMap.js').MapCluster) => void} [props.onSelectCluster]
+ * @param {(report: import('../models/publicMap.js').PublicReport) => void} [props.onSelectReport]
+ * @returns {JSX.Element}
+ */
 export default function PublicMapView({
   mode,
   clusters,

@@ -1,3 +1,8 @@
+/**
+ * @module services/photoValidationRuntime
+ * Runtime wiring for on-device photo validation: Expo environment detection, lazy TFLite model loading,
+ * pixel decoding and MobileNetV3 classification.
+ */
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
@@ -24,6 +29,11 @@ function logOnce(error) {
 }
 
 // Returns {status:'accepted'|'rejected', ...} or {status:'skipped', reason}.
+/**
+ * @param {string} uri - Local photo URI.
+ * @returns {Promise<import('./photoInference.js').PhotoClassification |
+ *   import('./photoValidationFlow.js').SkippedPhotoValidation>} Never rejects.
+ */
 export function validateCapturedPhoto(uri) {
   const availability = photoValidationAvailability({
     executionEnvironment: Constants.executionEnvironment,

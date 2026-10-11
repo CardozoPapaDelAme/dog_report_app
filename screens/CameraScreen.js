@@ -1,3 +1,9 @@
+/**
+ * @module screens/CameraScreen
+ * Container screen for the public reporting entry point: camera preview with capture and on-device
+ * photo validation (`useCameraCapture`), rejection feedback, the draft queue banner, and shortcuts to
+ * the map, staff login and reporting without a photo.
+ */
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTranslation } from 'react-i18next';
 import {
@@ -25,12 +31,27 @@ const colors = {
   line: 'rgba(255, 255, 255, 0.36)',
 };
 
+/** Joins translated rejection reasons, or returns a capture error message; `null` when none. */
 function reasonText(t, state) {
   if (state.error) return t('camera.errors.capture');
   if (!state.reasons?.length) return null;
   return state.reasons.map((reason) => t(`camera.rejections.${reason}`)).join(' ');
 }
 
+/**
+ * @param {object} props
+ * @param {(photo: {photoUri: string, validation: object, validationSkipped: string | null}) => void} [props.onPhotoAccepted]
+ *   Receives each accepted, persisted photo.
+ * @param {() => void} [props.onReportWithoutPhoto]
+ * @param {() => void} [props.onOpenModeration] - Used by the moderation shortcut.
+ * @param {() => void} [props.onOpenLogin] - Shows the staff login shortcut when given.
+ * @param {() => void} [props.onOpenMap] - Shows the map shortcut when given.
+ * @param {boolean} [props.showModerationShortcut=false] - Shown only with camera permission.
+ * @param {ReturnType<typeof import('../models/reportDraft.js').summarizeReportDraftQueue> | null} [props.draftQueueSummary=null]
+ * @param {boolean} [props.draftQueueSynced=false]
+ * @param {() => void} [props.onRetryDraftQueue]
+ * @returns {JSX.Element}
+ */
 export default function CameraScreen({
   onPhotoAccepted,
   onReportWithoutPhoto,

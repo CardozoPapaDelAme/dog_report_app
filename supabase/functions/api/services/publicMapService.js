@@ -1,3 +1,8 @@
+/**
+ * @module services/publicMapService
+ * Anonymous public map use cases: listing approximate public reports and clustering them by zoom.
+ * Rows are mapped to camel-cased view objects for the presenter.
+ */
 import {
   clusterRadiusForZoom,
   highestSeverityFromTypeCounts,
@@ -15,6 +20,10 @@ function serviceError(code, message, details) {
   return new PublicMapError(code, message, details);
 }
 
+/**
+ * Applies the default limit and caps it at the maximum.
+ * @throws {PublicMapError} `invalid_request` when the value is not a positive safe integer.
+ */
 function boundedLimit(value, defaultLimit, maxLimit) {
   const candidate = value ?? defaultLimit;
   if (!Number.isSafeInteger(candidate) || candidate < 1) {
@@ -23,6 +32,7 @@ function boundedLimit(value, defaultLimit, maxLimit) {
   return Math.min(candidate, maxLimit);
 }
 
+/** Maps connection failures to `PublicMapError` `database_unavailable`. */
 function mapPersistenceError(error) {
   if (
     [
@@ -86,9 +96,19 @@ function mapCluster(row) {
   };
 }
 
+/**
+ * Creates the public map Service. Queries run in an anonymous transaction.
+ * @param {object} [dependencies] - Overrides for `getSql` and `repository` (tests).
+ * @returns {{
+ *   listReports: (options?: {since?: string | null, limit?: number}) => Promise<object[]>,
+ *   listClusters: (options?: {zoom: number, viewport?: object | null, limit?: number}) => Promise<object[]>
+ * }}
+ * @throws {PublicMapError} `invalid_request` (invalid limit or zoom) or `database_unavailable`.
+ */
 export function createPublicMapService(dependencies = {}) {
   const deps = { getSql, repository, ...dependencies };
 
+  /** Runs `operation(tx)` with the anonymous role, mapping connection failures. */
   async function inAnonymousTransaction(operation) {
     try {
       return await deps.getSql().begin(async (tx) => {
@@ -136,4 +156,5 @@ export function createPublicMapService(dependencies = {}) {
   };
 }
 
+/** Production public map Service instance. */
 export const publicMapService = createPublicMapService();

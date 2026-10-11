@@ -1,3 +1,9 @@
+/**
+ * @module hooks/useReportPhotoUpload
+ * Report photo upload pipeline: prepares a reduced JPEG copy (longest side 1600 px) in the cache
+ * directory, uploads it, resolves ambiguous upload failures through the photo status endpoint, and
+ * polls the status until it is final.
+ */
 import {
   DEFAULT_PHOTO_POLL_ATTEMPTS,
   DEFAULT_PHOTO_POLL_INTERVAL_MS,
@@ -42,12 +48,14 @@ async function loadDefaultImageManipulator() {
   return import('expo-image-manipulator');
 }
 
+/** Resolves after `ms` milliseconds. */
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
 
+/** Whether the upload may have reached the server (network error or no HTTP status). */
 function uploadFailureCanBeAmbiguous(error) {
   return (
     error?.code === 'network_unavailable' ||
@@ -56,6 +64,7 @@ function uploadFailureCanBeAmbiguous(error) {
   );
 }
 
+/** @throws {Error} `photo_upload_directory_unavailable` without a cache or document directory. */
 function baseUploadDirectory(fileSystem) {
   const base = fileSystem.cacheDirectory ?? fileSystem.documentDirectory;
   if (!base) {
@@ -67,10 +76,24 @@ function baseUploadDirectory(fileSystem) {
   return `${base}${PREPARED_PHOTO_DIRECTORY}`;
 }
 
+/**
+ * @param {string} reportId
+ * @param {{cacheDirectory?: string | null, documentDirectory?: string | null}} fileSystem
+ * @returns {string} URI of the prepared upload copy for the report.
+ * @throws {Error} `report_required_before_photo_upload` or `photo_upload_directory_unavailable`.
+ */
 export function preparedReportPhotoUri(reportId, fileSystem) {
   return `${baseUploadDirectory(fileSystem)}${assertExistingReportId(reportId)}.jpg`;
 }
 
+/**
+ * @param {object} size
+ * @param {number} size.width
+ * @param {number} size.height
+ * @param {number} [size.maxLongestSide=1600]
+ * @returns {{width: number} | {height: number} | null} Resize action, or `null` when already small
+ *   enough or the size is invalid.
+ */
 export function resizeForLongestSide({ width, height, maxLongestSide = DEFAULT_MAX_LONGEST_SIDE }) {
   if (
     !Number.isFinite(width) ||
@@ -103,6 +126,7 @@ async function deleteIfPossible(fileSystem, uri) {
   }
 }
 
+/** Renders the photo, resizes it when needed and saves it as JPEG; releases native image handles. */
 async function saveReducedPhoto({
   imageManipulator,
   photoUri,
@@ -142,6 +166,21 @@ async function saveReducedPhoto({
   }
 }
 
+/**
+ * Creates (or reuses) the prepared JPEG copy of a report photo.
+ * @param {object} options
+ * @param {string} options.reportId
+ * @param {string} options.photoUri - Local original photo URI.
+ * @param {object} [options.fileSystem] - `expo-file-system/legacy`; loaded lazily when omitted.
+ * @param {object} [options.imageManipulator] - `expo-image-manipulator`; loaded lazily when omitted.
+ * @param {() => Promise<object>} [options.loadFileSystem]
+ * @param {() => Promise<object>} [options.loadImageManipulator]
+ * @param {number} [options.maxLongestSide=1600]
+ * @param {number} [options.jpegQuality=0.82]
+ * @returns {Promise<{photoUri: string, filename: string, mimeType: string, width?: number, height?: number}>}
+ *   Dimensions are omitted when an existing prepared copy is reused.
+ * @throws {Error} `report_required_before_photo_upload`, `photo_uri_required` or file system errors.
+ */
 export async function prepareReportPhotoForUpload({
   reportId,
   photoUri,
@@ -192,6 +231,15 @@ export async function prepareReportPhotoForUpload({
   };
 }
 
+/**
+ * Best-effort deletion of a report's prepared upload copy.
+ * @param {object} options
+ * @param {string} options.reportId
+ * @param {object} [options.fileSystem]
+ * @param {() => Promise<object>} [options.loadFileSystem]
+ * @returns {Promise<void>}
+ * @throws {Error} `report_required_before_photo_upload` for a missing report id.
+ */
 export async function deletePreparedReportPhoto({
   reportId,
   fileSystem,
@@ -202,6 +250,19 @@ export async function deletePreparedReportPhoto({
   await deleteIfPossible(fs, preparedReportPhotoUri(reportId, fs));
 }
 
+/**
+ * Polls the photo status until it is terminal or the attempts run out.
+ * @param {object} options
+ * @param {string} options.reportId
+ * @param {string} options.deviceFingerprint
+ * @param {import('../models/photoState.js').PhotoStatus | null} [options.initialStatus=null]
+ * @param {typeof getReportPhotoStatus} [options.getPhotoStatus=getReportPhotoStatus] - Network call.
+ * @param {(ms: number) => Promise<void>} [options.wait] - Delay between pending readings.
+ * @param {number} [options.pollIntervalMs]
+ * @param {number} [options.maxAttempts]
+ * @returns {Promise<import('../models/photoState.js').PhotoStatus | null>} The last status read, which may
+ *   still be pending.
+ */
 export async function pollPhotoStatusUntilFinal({
   reportId,
   deviceFingerprint,
@@ -227,6 +288,22 @@ export async function pollPhotoStatusUntilFinal({
   return status;
 }
 
+/**
+ * @param {object} [options]
+ * @param {typeof prepareReportPhotoForUpload} [options.preparePhoto]
+ * @param {Function | null} [options.uploadPreparedFile] - Preferred over `uploadPhoto` when given.
+ * @param {typeof uploadReportPhoto} [options.uploadPhoto=uploadReportPhoto] - Network call.
+ * @param {typeof getReportPhotoStatus} [options.getPhotoStatus=getReportPhotoStatus] - Network call.
+ * @param {typeof deletePreparedReportPhoto} [options.deletePreparedPhoto]
+ * @param {(ms: number) => Promise<void>} [options.wait]
+ * @param {number} [options.pollIntervalMs]
+ * @param {number} [options.maxPollAttempts]
+ * @returns {{uploadPhoto: (input: {reportId: string, deviceFingerprint: string, photoUri: string}) =>
+ *   Promise<import('../models/photoState.js').PhotoStatus>, pollPhotoStatus: (input: object) =>
+ *   Promise<import('../models/photoState.js').PhotoStatus | null>, deletePreparedPhoto: Function}}
+ *   `uploadPhoto` returns the server status instead of failing when the status shows the upload
+ *   arrived (terminal, or pending after an ambiguous failure).
+ */
 export function createReportPhotoUploadClient({
   preparePhoto = prepareReportPhotoForUpload,
   uploadPreparedFile = null,

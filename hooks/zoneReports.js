@@ -1,10 +1,25 @@
+/**
+ * @module hooks/zoneReports
+ * Loaders for public report lists shown outside the map: zone (cluster) detail and the Expo Go
+ * recent-reports fallback.
+ */
 import { reportsInCluster } from '../models/publicMap.js';
 import { getPublicReports } from '../services/publicMapApi.js';
 
+/** Maximum public reports fetched to resolve the members of one cluster. */
 export const ZONE_REPORTS_LIMIT = 1000;
 
 // Zone detail (ERI-10): no endpoint lists cluster members, so load the public projection and filter locally.
 // Resolves to { phase: 'ready' | 'empty' | 'offline' | 'error', reports } and never throws.
+/**
+ * @param {object} query
+ * @param {import('../models/publicMap.js').MapCluster} query.cluster
+ * @param {number} query.zoom - Current map zoom.
+ * @param {object} [dependencies]
+ * @param {typeof getPublicReports} [dependencies.fetchReports=getPublicReports] - Network call.
+ * @returns {Promise<{phase: 'ready' | 'empty' | 'offline' | 'error',
+ *   reports: import('../models/publicMap.js').PublicReport[]}>}
+ */
 export async function loadZoneReports({ cluster, zoom }, { fetchReports = getPublicReports } = {}) {
   try {
     const all = await fetchReports({ limit: ZONE_REPORTS_LIMIT });
@@ -16,9 +31,18 @@ export async function loadZoneReports({ cluster, zoom }, { fetchReports = getPub
   }
 }
 
+/** Default number of reports in the recent-reports fallback list. */
 export const RECENT_REPORTS_LIMIT = 100;
 
 // Expo Go fallback list: newest public reports without a map. Same result shape as loadZoneReports.
+/**
+ * @param {object} [query]
+ * @param {number} [query.limit=RECENT_REPORTS_LIMIT]
+ * @param {object} [dependencies]
+ * @param {typeof getPublicReports} [dependencies.fetchReports=getPublicReports] - Network call.
+ * @returns {Promise<{phase: 'ready' | 'empty' | 'offline' | 'error',
+ *   reports: import('../models/publicMap.js').PublicReport[]}>} Sorted by `occurred_at`, newest first.
+ */
 export async function loadRecentReports({ limit = RECENT_REPORTS_LIMIT } = {}, { fetchReports = getPublicReports } = {}) {
   try {
     const reports = [...await fetchReports({ limit })]

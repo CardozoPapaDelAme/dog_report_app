@@ -1,3 +1,8 @@
+/**
+ * @module components/DraftQueueBanner
+ * Presentational banner for the offline report draft queue: terminal errors, syncing, pending
+ * (with an optional retry action), scheduled retries and a transient "synced" notice.
+ */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +16,7 @@ const colors = {
   dangerSoft: '#ffdad6',
 };
 
+/** Chooses the banner tone, texts and optional action label; `null` when nothing should show. */
 function queueBannerContent(t, summary = {}, synced = false) {
   if (summary.terminalCount > 0) {
     return {
@@ -55,6 +61,15 @@ function queueBannerContent(t, summary = {}, synced = false) {
   return null;
 }
 
+/**
+ * @param {object} props
+ * @param {ReturnType<typeof import('../models/reportDraft.js').summarizeReportDraftQueue> | null} [props.summary=null]
+ *   Queue summary (`pendingCount`, `terminalCount`, `isSyncing`, `canRetryNow`, ...).
+ * @param {boolean} [props.synced=false] - Shows the "synced" notice when nothing else applies.
+ * @param {() => void} [props.onRetry] - Retry action; enabled only when `summary.canRetryNow` and not syncing.
+ * @param {*} [props.style] - Extra container style.
+ * @returns {JSX.Element | null} `null` when there is nothing to show.
+ */
 export default function DraftQueueBanner({
   summary = null,
   synced = false,

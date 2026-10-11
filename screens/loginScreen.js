@@ -1,3 +1,8 @@
+/**
+ * @module screens/loginScreen
+ * Staff login screen (email and password). Authentication is delegated to `onLogin`; the screen only
+ * holds the form fields and the password visibility toggle.
+ */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -22,6 +27,15 @@ const colors = {
   dangerSoft: "#ffdad6",
 };
 
+/**
+ * @param {object} props
+ * @param {(email: string, password: string) => Promise<unknown>} props.onLogin - Receives the trimmed email.
+ * @param {() => void} [props.onBack] - Shows a back button when given and not loading.
+ * @param {Error | null} [props.error] - Shows a generic login error when set.
+ * @param {boolean} [props.pending] - Disables submission while a request is running.
+ * @param {boolean} [props.loading] - Shows the session check indicator instead of the form.
+ * @returns {JSX.Element}
+ */
 export default function LoginScreen({ onLogin, onBack, error, pending, loading }) {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");

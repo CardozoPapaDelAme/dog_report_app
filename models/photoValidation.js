@@ -1,3 +1,9 @@
+/** Model input width and height in pixels. */
+/**
+ * @module models/photoValidation
+ * Pure photo validation logic: dog class resolution from labels, classifier output normalization,
+ * dog probability, Laplacian blur score, model input conversion and the accept/reject decision.
+ */
 export const IMAGE_SIZE = 224;
 
 export const DEFAULT_DOG_CLASS_RANGE = Object.freeze({
@@ -14,6 +20,7 @@ export const DEFAULT_PHOTO_VALIDATION_THRESHOLDS = Object.freeze({
 const DOG_START_MARKERS = ['chihuahua'];
 const DOG_END_MARKERS = ['mexican hairless', 'mexican_hairless'];
 
+/** Converts an array-like value to an array (`[]` for nullish). */
 function asArray(values) {
   if (!values) return [];
   if (Array.isArray(values)) return values;
@@ -24,6 +31,13 @@ function labelText(label) {
   return String(label ?? '').toLowerCase();
 }
 
+/**
+ * Finds the contiguous dog class range in the labels (from `chihuahua` to `mexican hairless`), falling
+ * back to `fallback` when the markers are missing or implausible.
+ * @param {ArrayLike<string>} labels
+ * @param {{start: number, end: number}} [fallback=DEFAULT_DOG_CLASS_RANGE]
+ * @returns {number[]}
+ */
 export function resolveDogClassIndices(labels, fallback = DEFAULT_DOG_CLASS_RANGE) {
   const normalized = asArray(labels).map(labelText);
   const start = normalized.findIndex((label) =>
@@ -47,6 +61,10 @@ export function resolveDogClassIndices(labels, fallback = DEFAULT_DOG_CLASS_RANG
   );
 }
 
+/**
+ * @param {ArrayLike<number>} values
+ * @returns {number[]}
+ */
 export function softmax(values) {
   const numbers = asArray(values).map(Number);
   if (!numbers.length) return [];
@@ -56,6 +74,12 @@ export function softmax(values) {
   return total > 0 ? exp.map((value) => value / total) : numbers.map(() => 0);
 }
 
+/**
+ * Converts raw output to probabilities: kept as is when it already sums to about 1, dequantized for
+ * `Uint8Array`/`Int8Array`, otherwise passed through softmax.
+ * @param {ArrayLike<number>} output
+ * @returns {number[]}
+ */
 export function normalizeClassifierOutput(output) {
   const values = asArray(output).map(Number);
   if (!values.length) return [];
@@ -85,11 +109,22 @@ export function normalizeClassifierOutput(output) {
   return softmax(values);
 }
 
+/**
+ * @param {ArrayLike<number>} classifierOutput
+ * @param {number[]} dogClassIndices
+ * @returns {number} Summed probability of the dog classes.
+ */
 export function dogProbability(classifierOutput, dogClassIndices) {
   const probabilities = normalizeClassifierOutput(classifierOutput);
   return dogClassIndices.reduce((sum, index) => sum + (probabilities[index] ?? 0), 0);
 }
 
+/**
+ * @param {Uint8Array} rgba
+ * @param {number} width
+ * @param {number} height
+ * @returns {Uint8Array} Luma (BT.601 weights) per pixel.
+ */
 export function rgbaToGrayscale(rgba, width, height) {
   const pixels = width * height;
   const grayscale = new Uint8Array(pixels);
@@ -102,6 +137,12 @@ export function rgbaToGrayscale(rgba, width, height) {
   return grayscale;
 }
 
+/**
+ * @param {Uint8Array} grayscale
+ * @param {number} width
+ * @param {number} height
+ * @returns {number} Variance of the 4-neighbour Laplacian; lower means blurrier. 0 for images under 3x3.
+ */
 export function laplacianVariance(grayscale, width, height) {
   if (width < 3 || height < 3) return 0;
   const values = [];
@@ -120,6 +161,11 @@ export function laplacianVariance(grayscale, width, height) {
   return values.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / values.length;
 }
 
+/**
+ * @param {Uint8Array} rgba
+ * @param {'uint8' | 'int8' | 'float32'} [inputDataType='uint8']
+ * @returns {Uint8Array | Int8Array | Float32Array} Packed RGB scaled for the tensor type.
+ */
 export function rgbaToModelInput(rgba, inputDataType = 'uint8') {
   const pixels = rgba.length / 4;
   if (inputDataType === 'float32') {
@@ -150,6 +196,25 @@ export function rgbaToModelInput(rgba, inputDataType = 'uint8') {
   return input;
 }
 
+/**
+ * @typedef {object} PhotoFrameValidation
+ * @property {boolean} passed
+ * @property {Array<'no_dog' | 'blurry'>} reasons
+ * @property {number} dogProbability - Rounded to 4 decimals.
+ * @property {number} blurVariance - Rounded to 2 decimals.
+ * @property {{dogProbability: number, blurVariance: number}} thresholds
+ * @property {{first: number | null, last: number | null, count: number}} dogClassRange
+ */
+/**
+ * @param {object} options
+ * @param {ArrayLike<number>} options.classifierOutput
+ * @param {Uint8Array} options.rgba
+ * @param {number} options.width
+ * @param {number} options.height
+ * @param {ArrayLike<string>} [options.labels=[]]
+ * @param {{dogProbability: number, blurVariance: number}} [options.thresholds]
+ * @returns {PhotoFrameValidation}
+ */
 export function validatePhotoFrame({
   classifierOutput,
   rgba,

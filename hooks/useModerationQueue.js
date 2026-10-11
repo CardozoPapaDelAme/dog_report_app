@@ -1,8 +1,22 @@
+/**
+ * @module hooks/useModerationQueue
+ * Container hook for the moderation queue: paginated loading, refresh, and one moderation command
+ * at a time, discarding responses from superseded requests.
+ */
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from 'react';
 
 import { applyModerationResult, normalizeModerationReport } from '../models/moderation.js';
 import { getModerationQueue, runModerationCommand } from '../services/moderationApi.js';
 
+/**
+ * @param {string | null} accessToken - Session access token; without it the queue stays empty.
+ * @returns {{reports: object[], nextCursor: string | null, loading: boolean, refreshing: boolean,
+ *   loadingMore: boolean, error: Error | null, pendingReportId: string | null,
+ *   refresh: () => Promise<void>, loadMore: () => (Promise<void> | null),
+ *   execute: (reportId: string, command: string, note?: string) => Promise<boolean>}}
+ *   `reports` are normalized with `normalizeModerationReport`; `execute` resolves `false` when another
+ *   command is pending or the request fails.
+ */
 export function useModerationQueue(accessToken) {
   const [reports, setReports] = useState([]);
   const [nextCursor, setNextCursor] = useState(null);

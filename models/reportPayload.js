@@ -1,3 +1,8 @@
+/**
+ * @module models/reportPayload
+ * Report form model and `POST /reports` payload builder: catalogues, empty form, form validation and the
+ * details contract per incident type.
+ */
 import { isDogColor } from './dogColor.js';
 
 export const INCIDENT_TYPES = Object.freeze([
@@ -19,6 +24,7 @@ export const INJURED_DOG_SITUATIONS = Object.freeze([
   'mal_estado',
 ]);
 
+/** Allowed `details` keys per incident type. */
 export const REPORT_DETAILS_CONTRACT = Object.freeze({
   avistamiento_simple: Object.freeze(['cantidad_aprox', 'descripcion']),
   ataque_humano: Object.freeze(['hubo_mordida', 'descripcion']),
@@ -42,6 +48,7 @@ const FIELD_MAX = Object.freeze({
   predominant_color: 80,
 });
 
+/** Throws `<name>_must_be_object` unless `value` is a non-array object. */
 function requirePlainObject(value, name) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${name}_must_be_object`);
@@ -49,6 +56,7 @@ function requirePlainObject(value, name) {
   return value;
 }
 
+/** Throws `<name>_must_be_number` unless `value` is a finite number. */
 function finiteNumber(value, name) {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`${name}_must_be_number`);
@@ -56,6 +64,7 @@ function finiteNumber(value, name) {
   return value;
 }
 
+/** Throws `invalid_report_draft_id` unless `id` is a lowercase UUID. */
 function assertDraftId(id) {
   if (typeof id !== 'string' || !UUID_PATTERN.test(id)) {
     throw new Error('invalid_report_draft_id');
@@ -63,6 +72,7 @@ function assertDraftId(id) {
   return id;
 }
 
+/** Validates the stored location snapshot; throws `invalid_location_snapshot` when out of range. */
 function normalizeLocationSnapshot(snapshot) {
   const value = requirePlainObject(snapshot, 'location_snapshot');
   const longitude = finiteNumber(value.longitude, 'longitude');
@@ -103,6 +113,7 @@ function locationForReportPayload(locationSnapshot) {
   };
 }
 
+/** Snapshot capture time as ISO 8601, or the current time when missing. */
 function clientCreatedAtForReportPayload(locationSnapshot) {
   const snapshot = normalizeLocationSnapshot(locationSnapshot);
   if (typeof snapshot.captured_at === 'string' && snapshot.captured_at) {
@@ -119,6 +130,7 @@ function codePointLength(value) {
   return [...String(value ?? '')].length;
 }
 
+/** Parses a digits-only string within `[min, max]`; `null` otherwise. */
 function integerFromText(value, { min = 1, max = 1000 } = {}) {
   const text = textOrEmpty(value).trim();
   if (!/^\d+$/.test(text)) return null;
@@ -126,12 +138,14 @@ function integerFromText(value, { min = 1, max = 1000 } = {}) {
   return Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : null;
 }
 
+/** Maps `true`/`si`/`yes`/`true` and `false`/`no`/`false` to booleans; `null` otherwise. */
 function booleanFromChoice(value) {
   if (value === true || value === 'si' || value === 'yes' || value === 'true') return true;
   if (value === false || value === 'no' || value === 'false') return false;
   return null;
 }
 
+/** Adds the trimmed `descripcion` or records a length error. */
 function addDescription(details, form, errors) {
   const description = textOrEmpty(form?.descripcion).trim();
   if (codePointLength(description) > FIELD_MAX.descripcion) {
@@ -143,6 +157,7 @@ function addDescription(details, form, errors) {
   }
 }
 
+/** Adds a required trimmed text field or records a required/length error. */
 function addRequiredText(details, form, key, errors) {
   const text = textOrEmpty(form?.[key]).trim();
   if (!text) {
@@ -161,6 +176,9 @@ function addOptionalBoolean(details, form, key) {
   if (value !== null) details[key] = value;
 }
 
+/**
+ * @returns {object} Initial report form values (simple sighting, single dog, collar unknown).
+ */
 export function createEmptyReportFormDraft() {
   return {
     incident_type: 'avistamiento_simple',
@@ -180,6 +198,10 @@ export function createEmptyReportFormDraft() {
   };
 }
 
+/**
+ * @param {object} form
+ * @returns {boolean} Whether either hidden honeypot field has a value.
+ */
 export function honeypotFilledFromForm(form) {
   return Boolean(
     textOrEmpty(form?.honeypot_website) ||
@@ -187,6 +209,19 @@ export function honeypotFilledFromForm(form) {
   );
 }
 
+/**
+ * @typedef {object} ReportFields
+ * @property {string} incident_type
+ * @property {string} sighting_type
+ * @property {object} details - Keys allowed by {@link REPORT_DETAILS_CONTRACT}.
+ * @property {{predominant_color: string | null, size: string | null, has_collar: boolean | null}} dog
+ */
+/**
+ * Validates form values and builds the editable report fields.
+ * @param {object} form
+ * @returns {{reportFields: ReportFields | null, errors: Record<string, {key: string, values?: object}>}}
+ * @throws {Error} `report_form_must_be_object`.
+ */
 export function validateReportFormDraft(form) {
   const value = requirePlainObject(form, 'report_form');
   const errors = {};
@@ -276,6 +311,7 @@ export function validateReportFormDraft(form) {
   };
 }
 
+/** Throws for an unknown incident/sighting type or details keys outside the contract. */
 function assertDetailsContract(reportFields) {
   const incidentType = reportFields.incident_type;
   const sightingType = reportFields.sighting_type;
@@ -290,6 +326,7 @@ function assertDetailsContract(reportFields) {
   }
 }
 
+/** Validates dog fields; throws `invalid_dog_fields`. */
 function normalizeDog(dog = {}) {
   const value = requirePlainObject(dog, 'dog');
   const predominantColor = value.predominant_color ?? null;
@@ -319,6 +356,19 @@ export function clientCheckPassedForPayload(draft) {
   return draft.photo_validation?.status === 'accepted' ? true : null;
 }
 
+/**
+ * Builds the `POST /reports` body from a draft and validated fields.
+ * @param {object} options
+ * @param {import('./reportDraft.js').ReportDraft} options.draft
+ * @param {ReportFields} options.reportFields
+ * @param {string} options.deviceFingerprint - At least 16 characters.
+ * @param {boolean} [options.honeypotFilled=false]
+ * @returns {object} Payload with `id`, `location`, types, `details`, `dog`, `photo`, `anti_abuse` and
+ *   `client_created_at`.
+ * @throws {Error} `draft_must_be_object`, `report_fields_must_be_object`, `unsupported_report_fields:<keys>`,
+ *   `invalid_device_fingerprint`, `invalid_incident_type`, `invalid_sighting_type`,
+ *   `unsupported_report_details:<keys>`, `invalid_report_draft_id`, location errors or `invalid_dog_fields`.
+ */
 export function buildReportPayload({
   draft,
   reportFields,

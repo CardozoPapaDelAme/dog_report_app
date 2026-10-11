@@ -1,9 +1,26 @@
+/**
+ * @module hooks/useConfiguration
+ * Container hook for the operational configuration screen: loads the active configuration, edits a
+ * string draft, validates and publishes a new version, and blocks saving after an uncertain publish
+ * until the configuration is reloaded.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { configurationFieldErrors, configurationIsDirty, configurationToDraft, validateConfigurationDraft } from '../models/configuration.js';
 import * as configurationApi from '../services/configurationApi.js';
 
+/** Initial state for a token; `session` phase when there is no token. */
 const empty = (token) => ({ token, phase: token ? 'loading' : 'session', configuration: null, zone: null, draft: {}, fieldErrors: {}, error: null, saving: false, savedVersion: null, needsReload: false });
 
+/**
+ * @param {string | null} accessToken - Session access token.
+ * @param {{getConfiguration: Function, publishConfiguration: Function}} [api=configurationApi] - Network calls.
+ * @returns {{token: string | null, phase: 'loading' | 'session' | 'ready' | 'forbidden' | 'error',
+ *   configuration: object | null, zone: object | null, draft: Record<string, string>,
+ *   fieldErrors: object, error: Error | null, saving: boolean, savedVersion: number | null,
+ *   needsReload: boolean, dirty: boolean, changeField: (field: string, value: string) => void,
+ *   save: () => Promise<boolean>, reload: () => Promise<void>}} `configuration`/`zone` follow
+ *   {@link import('../models/configuration.js').ConfigurationState}; `save` resolves `true` on publish.
+ */
 export function useConfiguration(accessToken, api = configurationApi) {
   const [state, setState] = useState(() => empty(accessToken));
   const generation = useRef(0);

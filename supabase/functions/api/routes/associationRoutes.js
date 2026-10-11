@@ -1,3 +1,8 @@
+/**
+ * @module routes/associationRoutes
+ * Association router (Hono API on Supabase Edge: routes -> Controllers -> Services -> Repositories).
+ * Registers `GET /association/reports` (role `association`).
+ */
 import { Hono } from "hono";
 
 import { getAssociationReports } from "../controllers/associationController.js";
