@@ -1,3 +1,8 @@
+/**
+ * @module routes/retention
+ * Internal retention router. Registers `POST /internal/retention/run` and
+ * `POST /api/internal/retention/run`, protected by the internal shared secret (no user role).
+ */
 import { Hono } from 'hono';
 
 import { runRetentionController } from '../controllers/retentionController.js';

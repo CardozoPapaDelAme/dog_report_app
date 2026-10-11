@@ -1,5 +1,10 @@
+/**
+ * @module services/moderationApi
+ * Administrator client for the moderation queue and report moderation commands.
+ */
 import { apiRequest } from './apiClient.js';
 
+/** Returns `payload.data`; throws an Error with the API `code` (default `request_failed`) and `status` on non-2xx. */
 async function readResponse(response) {
   let payload;
   try {
@@ -16,6 +21,15 @@ async function readResponse(response) {
   return payload.data;
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.accessToken - Administrator access token.
+ * @param {string} [options.cursor] - Cursor from the previous page.
+ * @param {number} [options.limit=20] - Page size.
+ * @param {typeof import('./apiClient.js').apiRequest} [request] - Injectable transport.
+ * @returns {Promise<*>} The unvalidated queue page (`data` of the envelope).
+ * @throws {Error} The API error `code` (default `request_failed`) with `status`; transport errors.
+ */
 export async function getModerationQueue({ accessToken, cursor, limit = 20 }, request = apiRequest) {
   const query = new URLSearchParams({ limit: String(limit) });
   if (cursor) {
@@ -27,6 +41,17 @@ export async function getModerationQueue({ accessToken, cursor, limit = 20 }, re
   return readResponse(response);
 }
 
+/**
+ * Runs `POST /admin/reports/{reportId}/{command}`.
+ * @param {object} options
+ * @param {string} options.accessToken - Administrator access token.
+ * @param {string} options.reportId - Report id.
+ * @param {string} options.command - Command path segment: `approve`, `hide`, `restore` or `delete`.
+ * @param {string | null} [options.note] - Optional moderator note.
+ * @param {typeof import('./apiClient.js').apiRequest} [request] - Injectable transport.
+ * @returns {Promise<*>} The command result (`data` of the envelope).
+ * @throws {Error} The API error `code` (default `request_failed`) with `status`; transport errors.
+ */
 export async function runModerationCommand(
   { accessToken, reportId, command, note },
   request = apiRequest,

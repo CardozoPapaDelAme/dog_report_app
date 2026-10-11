@@ -1,3 +1,8 @@
+/**
+ * @module hooks/useDraftAutoSync
+ * React wiring for automatic draft queue synchronization (RNF12) on reconnect, app foreground and
+ * retry backoff expiry. The scheduling logic lives in `hooks/draftAutoSync.js`.
+ */
 import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import * as Network from 'expo-network';
@@ -6,6 +11,16 @@ import { createDraftAutoSync, createNetworkTrigger, createRetryWakeup, networkIs
 
 // Wires RNF12 auto-sync once at app level. Degrades to a no-op where a signal
 // is unavailable (never throws).
+/**
+ * Subscribes to network (`expo-network`, or `online`/`offline` events on web) and `AppState` changes
+ * while `ready`, and removes every listener and timer on cleanup.
+ * @param {object} options
+ * @param {boolean} options.ready - Whether the local draft queue has loaded.
+ * @param {() => Promise<unknown>} options.syncDueDrafts - Synchronizes due drafts.
+ * @param {() => boolean} options.isSyncBusy - Whether a sync is already running.
+ * @param {import('../models/reportDraft.js').ReportDraft[]} options.drafts - Current drafts, for retry wake-ups.
+ * @returns {void}
+ */
 export function useDraftAutoSync({ ready, syncDueDrafts, isSyncBusy, drafts }) {
   const syncRef = useRef(syncDueDrafts);
   const busyRef = useRef(isSyncBusy);

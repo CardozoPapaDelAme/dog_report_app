@@ -1,3 +1,8 @@
+/**
+ * @module i18n
+ * Initializes the shared i18next instance for React with the Spanish and English resources and the
+ * detected device language (Spanish fallback). Imported once for its side effect by `App.js`.
+ */
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
@@ -17,4 +22,5 @@ i18n.use(initReactI18next).init({
   },
 });
 
+/** @type {import('i18next').i18n} Configured instance; components translate through `useTranslation()`. */
 export default i18n;

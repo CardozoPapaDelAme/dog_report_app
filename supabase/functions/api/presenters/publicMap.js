@@ -1,3 +1,13 @@
+/**
+ * @module presenters/publicMap
+ * Shapes anonymous public map reports and clusters. Only approximate locations reach this layer.
+ */
+/**
+ * Responds 200 with public reports.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {object[]} reports - Camel-cased public reports from the public map Service.
+ * @returns {Response} `{ data: [...] }` with the `X-Request-Id` header.
+ */
 export function presentPublicReports(c, reports) {
   const requestId = c.get("requestId") ?? "";
   c.header("X-Request-Id", requestId);
@@ -21,6 +31,12 @@ export function presentPublicReports(c, reports) {
   }, 200);
 }
 
+/**
+ * Responds 200 with public report clusters.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {object[]} clusters - Camel-cased clusters from the public map Service.
+ * @returns {Response} `{ data: [...] }` with the `X-Request-Id` header.
+ */
 export function presentPublicClusters(c, clusters) {
   const requestId = c.get("requestId") ?? "";
   c.header("X-Request-Id", requestId);

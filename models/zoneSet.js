@@ -1,11 +1,25 @@
+/**
+ * @module models/zoneSet
+ * Client-side model for administrator zone sets (FAB-2): GeoJSON file checks, geometry normalization,
+ * draft validation and response validation.
+ */
 // Client contract mirrors FAB-2. No server modules are bundled into the app.
 export const MAX_ZONE_FILE_BYTES = 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA = /^[0-9a-f]{64}$/;
+/** @returns {{name: string, source_uri: string, source_version: string, content: string}} */
 export const emptyZoneDraft = () => ({ name: '', source_uri: '', source_version: '', content: '' });
+/**
+ * @param {string} key - Validation key (e.g. `size`, `json`, `geometry`, `ring`, `position`).
+ * @returns {Error} With `code: 'invalid_zone_file'` and `validationKey`.
+ */
 export function zoneValidation(key) {
   return Object.assign(new Error(key), { code: 'invalid_zone_file', validationKey: key });
 }
+/**
+ * @param {unknown} text
+ * @throws {Error} `invalid_zone_file` with `validationKey` `empty` or `size` (UTF-8 bytes).
+ */
 export function checkZoneTextSize(text) {
   if (typeof text !== 'string' || !text.trim()) throw zoneValidation('empty');
   let bytes = 0;
@@ -15,6 +29,12 @@ export function checkZoneTextSize(text) {
     if (bytes > MAX_ZONE_FILE_BYTES) throw zoneValidation('size');
   }
 }
+/**
+ * Validates a Polygon or MultiPolygon geometry and returns it as a MultiPolygon.
+ * @param {unknown} geometry - Object with exactly `type` and `coordinates`.
+ * @returns {{type: 'MultiPolygon', coordinates: number[][][][]}}
+ * @throws {Error} `invalid_zone_file` with `validationKey` `geometry`, `ring` or `position`.
+ */
 export function normalizeZoneGeometry(geometry) {
   if (!geometry || Array.isArray(geometry) || typeof geometry !== 'object' ||
       Object.keys(geometry).length !== 2 || !Object.hasOwn(geometry, 'coordinates') ||
@@ -37,6 +57,14 @@ export function normalizeZoneGeometry(geometry) {
   });
   return { type: 'MultiPolygon', coordinates };
 }
+/**
+ * Parses, normalizes and hashes zone file text.
+ * @param {string} content - GeoJSON geometry text (a leading BOM is ignored).
+ * @param {(text: string) => Promise<string>} digest - SHA-256 hex digest function.
+ * @returns {Promise<{geometry: object, checksum: string, polygons: number}>}
+ * @throws {Error} `invalid_zone_file` (`empty`, `size`, `json` or a geometry key), or
+ *   `checksum_unavailable` when the digest is not 64 hex characters.
+ */
 export async function prepareZoneText(content, digest) {
   checkZoneTextSize(content);
   let parsed;
@@ -50,6 +78,12 @@ export async function prepareZoneText(content, digest) {
 function textField(value, max) {
   return typeof value === 'string' && value.trim().length > 0 && [...value.trim()].length <= max;
 }
+/**
+ * @param {{name: string, source_uri: string, source_version: string}} draft
+ * @param {{geometry: object, checksum: string} | null} preview - Result of {@link prepareZoneText}.
+ * @returns {{errors: Record<string, {key: string, values?: object}>, input: object | null}}
+ *   `input` is the create payload, or `null` when there are errors.
+ */
 export function validateZoneDraft(draft, preview) {
   const errors = {};
   for (const [field, max] of [['name', 120], ['source_uri', 1000], ['source_version', 120]]) {
@@ -64,15 +98,41 @@ export function validateZoneDraft(draft, preview) {
     geometry: preview.geometry, source_sha256: preview.checksum,
   } };
 }
+/**
+ * @param {unknown} reference - Association approval reference.
+ * @returns {{key: 'approval'} | null}
+ */
 export function validateZoneApproval(reference) {
   return textField(reference, 1000) ? null : { key: 'approval' };
 }
+/**
+ * @param {unknown} error - API error with `details.fields`.
+ * @returns {Record<string, string>} Messages for known zone fields only.
+ */
 export function zoneFieldErrors(error) {
   const fields = error?.details?.fields;
   if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return {};
   const allowed = ['name', 'source_uri', 'source_version', 'source_sha256', 'geometry', 'association_approval_reference'];
   return Object.fromEntries(Object.entries(fields).filter(([key, value]) => allowed.includes(key) && typeof value === 'string' && value.trim()));
 }
+/**
+ * @typedef {object} ZoneSet
+ * @property {string} id
+ * @property {number} version
+ * @property {'staging' | 'production'} environment
+ * @property {'draft' | 'active'} status
+ * @property {string} source_sha256
+ * @property {string} name
+ * @property {string} source_version
+ * @property {string} [association_approval_reference] - Required when active.
+ */
+/**
+ * Validates `data.zone_set` and optionally checks it against expected values.
+ * @param {unknown} data
+ * @param {{status?: string, id?: string, checksum?: string, environment?: string}} [expected]
+ * @returns {ZoneSet}
+ * @throws {Error} `invalid_response` when malformed or not matching `expected`.
+ */
 export function readZoneSet(data, { status, id, checksum, environment } = {}) {
   const zone = data?.zone_set;
   if (!zone || !UUID.test(zone.id) || !Number.isInteger(zone.version) || zone.version < 1 ||

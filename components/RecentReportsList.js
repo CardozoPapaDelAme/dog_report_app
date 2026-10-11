@@ -1,3 +1,8 @@
+/**
+ * @module components/RecentReportsList
+ * List of recent public reports used when the native map is unavailable (Expo Go), with loading,
+ * empty, offline and error states and a retry action.
+ */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -6,6 +11,13 @@ import { loadRecentReports } from '../hooks/zoneReports.js';
 const colors = { ink: '#191d17', primary: '#00450d', muted: '#5d6859', line: '#e0e0e0', warning: '#8a5700' };
 
 // Expo Go fallback: recent public reports as a plain list (no native map). Selecting a row hands the report to the caller.
+/**
+ * @param {object} props
+ * @param {(report: import('../models/publicMap.js').PublicReport) => void} props.onSelect
+ * @param {(key: string, options?: object) => string} props.t - Translation function.
+ * @param {typeof loadRecentReports} [props.load=loadRecentReports] - Loader (network call); reloads on retry.
+ * @returns {JSX.Element}
+ */
 export default function RecentReportsList({ onSelect, t, load = loadRecentReports }) {
   const [state, setState] = useState({ phase: 'loading', reports: [] });
   const [attempt, setAttempt] = useState(0);

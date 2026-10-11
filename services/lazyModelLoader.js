@@ -1,7 +1,19 @@
+/**
+ * @module services/lazyModelLoader
+ * Lazy, resettable cache for an expensive asynchronous model load.
+ */
 // Caches one in-flight/successful model load. `reset()` drops the cached promise so
 // the next `load()` starts a fresh attempt (used after a hung or failed load).
 // `pendingSinceMs()` reports how long the current load has been in flight (null
 // when nothing is pending) so callers can tell a slow load from a hung one.
+/**
+ * @template T
+ * @param {() => T | Promise<T>} factory - Starts one load attempt.
+ * @param {object} [options]
+ * @param {() => number} [options.now=Date.now] - Clock in milliseconds (tests).
+ * @returns {{load: () => Promise<T>, reset: () => void, pendingSinceMs: () => number | null}}
+ *   A failed attempt is dropped automatically so the next `load()` retries.
+ */
 export function createLazyModelLoader(factory, { now = () => Date.now() } = {}) {
   let promise = null;
   let startedAt = null;

@@ -1,6 +1,11 @@
+/**
+ * @module components/associationDatePicker
+ * Presentational modal month calendar for picking one day between five years ago and today.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+/** Formats a local date as `YYYY-MM-DD`. */
 function dateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -9,6 +14,19 @@ function monthStart(value) {
   return new Date(value.getFullYear(), value.getMonth(), 1);
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {string} props.value - Selected day, `YYYY-MM-DD`.
+ * @param {string} props.title
+ * @param {string} props.locale - Locale for month, weekday and day labels.
+ * @param {string} props.previousMonthLabel - Accessibility label.
+ * @param {string} props.nextMonthLabel - Accessibility label.
+ * @param {string} props.cancelLabel
+ * @param {(day: string) => void} props.onSelect - Receives the chosen day as `YYYY-MM-DD`.
+ * @param {() => void} props.onClose
+ * @returns {JSX.Element}
+ */
 export default function AssociationDatePicker({ visible, value, title, locale, previousMonthLabel, nextMonthLabel, cancelLabel, onSelect, onClose }) {
   const selected = useMemo(() => new Date(`${value}T12:00:00`), [value]);
   const [month, setMonth] = useState(() => monthStart(selected));

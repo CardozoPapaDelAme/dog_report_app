@@ -1,3 +1,14 @@
+/**
+ * @module infrastructure/constantTime
+ * Timing-safe string comparison for secrets, based on Web Crypto SHA-256 digests.
+ */
+/**
+ * Compares two strings without leaking their common prefix length through timing.
+ * Both inputs are hashed first, so the comparison always runs over equal-length digests.
+ * @param {string} left - First value.
+ * @param {string} right - Second value.
+ * @returns {Promise<boolean>} True when both strings are equal.
+ */
 export async function constantTimeEqual(left, right) {
   const encoder = new TextEncoder();
   const [leftDigest, rightDigest] = await Promise.all([

@@ -1,8 +1,20 @@
+/**
+ * @module routes/publicMap
+ * Anonymous public map router. Registers `GET /public/reports` and `GET /public/clusters`, each with and
+ * without the `/api` prefix; other methods get 405 `method_not_allowed` with an `Allow` header.
+ */
 import { Hono } from "hono";
 
 import { createPublicMapController } from "../controllers/publicMapController.js";
 import { presentError } from "../presenters/error.js";
 
+/**
+ * Creates the public map router.
+ * @param {object} [options]
+ * @param {ReturnType<typeof import('../services/publicMapService.js').createPublicMapService>} [options.service]
+ *   Public map Service; the production instance when omitted.
+ * @returns {import('hono').Hono}
+ */
 export function createPublicMapRoutes({ service } = {}) {
   const routes = new Hono();
   const controller = createPublicMapController(service);
@@ -33,4 +45,5 @@ export function createPublicMapRoutes({ service } = {}) {
   return routes;
 }
 
+/** Production public map router. */
 export const publicMapRoutes = createPublicMapRoutes();

@@ -1,3 +1,8 @@
+/**
+ * @module controllers/reportController
+ * HTTP adapter for anonymous report submission: strict body parsing into a
+ * {@link import('../services/reportService.js').ReportCommand} and mapping of Service errors.
+ */
 import { validateReportDetails } from "../domain/reportDetailsValidator.js";
 import { presentError } from "../presenters/error.js";
 import { presentReportReceipt } from "../presenters/report.js";
@@ -25,6 +30,7 @@ function hasOnlyKeys(value, keys) {
   return Object.keys(value).every((key) => keys.includes(key));
 }
 
+/** Builds a 400 parse failure with the given code. */
 function invalid(code, message) {
   return { ok: false, status: 400, code, message };
 }
@@ -33,6 +39,7 @@ function finiteNumber(value) {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+/** Validates WGS84 coordinates and GPS accuracy (0 < accuracy <= 99999.99); failure code `invalid_coordinates`. */
 function parseLocation(location) {
   if (
     !isPlainObject(location) ||
@@ -70,6 +77,7 @@ function parseLocation(location) {
   };
 }
 
+/** Validates the optional dog description; missing fields become null. */
 function parseDog(dog) {
   if (dog === undefined) {
     return {
@@ -107,6 +115,7 @@ function parseDog(dog) {
   };
 }
 
+/** Validates the optional photo intent; defaults to `{ expected: false }`. */
 function parsePhoto(photo) {
   if (photo === undefined) {
     return {
@@ -137,6 +146,7 @@ function parsePhoto(photo) {
   };
 }
 
+/** Validates the device fingerprint (at least 16 characters) and honeypot flag. */
 function parseAntiAbuse(antiAbuse) {
   if (
     !isPlainObject(antiAbuse) ||
@@ -159,6 +169,7 @@ function parseAntiAbuse(antiAbuse) {
   };
 }
 
+/** Validates an RFC 3339 UTC (`Z`) timestamp and normalizes it to ISO 8601. */
 function parseClientCreatedAt(value) {
   if (typeof value !== "string" || !RFC3339_UTC_PATTERN.test(value)) {
     return invalid(
@@ -176,6 +187,7 @@ function parseClientCreatedAt(value) {
   return { ok: true, value: parsed.toISOString() };
 }
 
+/** Logs a structured `report_create_failed` event for 5xx responses only. */
 function logReportOperationalError(c, error, response) {
   if (!response || response.status < 500) return;
   console.error(JSON.stringify({
@@ -189,6 +201,15 @@ function logReportOperationalError(c, error, response) {
   }));
 }
 
+/**
+ * Maps a report Service error to an HTTP error description.
+ * 409 `report_id_payload_conflict`; 400 `client_created_at_out_of_bounds`, `invalid_coordinates` (for
+ * `outside_geofence`), `invalid_details`; 429 `report_rate_limit_exceeded` (with `retryAfterSeconds`);
+ * 503 `geofence_not_configured`, `configuration_unavailable`, `database_unavailable`, `preflight_mismatch`.
+ * @param {*} error - Error thrown by `createReport`.
+ * @returns {{status: number, code: string, message: string, details?: object, retryAfterSeconds?: number} | null}
+ *   Null when the error is not a known Service error.
+ */
 export function createReportErrorResponse(error) {
   if (error?.code === "report_id_payload_conflict") {
     return {
@@ -260,6 +281,13 @@ export function createReportErrorResponse(error) {
   return null;
 }
 
+/**
+ * Parses and validates a report submission body.
+ * @param {string} raw - Raw request body.
+ * @returns {{ok: true, command: import('../services/reportService.js').ReportCommand, deviceFingerprint: string}
+ *   | {ok: false, status: 400, code: string, message: string}} Failure codes: `invalid_request`,
+ *   `invalid_coordinates`, or `invalid_details`.
+ */
 export function parseCreateReportBody(raw) {
   if (!raw) {
     return invalid("invalid_request", "Request body must be a JSON object.");
@@ -347,6 +375,13 @@ export function parseCreateReportBody(raw) {
   };
 }
 
+/**
+ * `POST /reports`: responds 201 with the receipt (200 for an idempotent replay), 400 for invalid input,
+ * or the status from {@link createReportErrorResponse} (setting `Retry-After` on 429). Unknown errors
+ * are rethrown.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {Promise<Response>}
+ */
 export async function createReportController(c) {
   const parsed = parseCreateReportBody(await c.req.text());
   if (!parsed.ok) {

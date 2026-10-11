@@ -1,4 +1,15 @@
 #!/usr/bin/env node
+/**
+ * Documentation path checker.
+ *
+ * Invoked as `npm run test:docs` (`node scripts/check-doc-paths.mjs`) and as the `docs`
+ * suite of `scripts/test-all.mjs`. Scans `docs/TRACEABILITY.md` and every file under
+ * `docs/testing/` (except `docs/testing/BACKLOG.md`) for repository file citations and
+ * reports those that are not repo-rooted or do not exist. Sets exit code 1 when any error
+ * is found.
+ *
+ * @module scripts/check-doc-paths
+ */
 // Repository file citations in traceability and Stage 4 docs must stay valid.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -9,6 +20,12 @@ const extensions = 'js|jsx|mjs|cjs|ts|tsx|json|sql|md|ya?ml|pdf|png|jpe?g|webp|m
 const rootedFileCitation = /(?<![\w/])(?:\.{1,2}\/|\/)?(?:[\w@.-]+\/)+[\w@.-]+\.[a-zA-Z][a-zA-Z\d_-]*(?![\w.])/g;
 const fileCitation = new RegExp(`(?<![\\w/])(?:\\.{1,2}/|/)?(?:[\\w@.-]+/)*[\\w@.-]+\\.(?:${extensions})(?![\\w.])`, 'g');
 
+/**
+ * Lists the documents to scan, sorted.
+ *
+ * @param {string} root Repository root directory.
+ * @returns {string[]} Repository-relative document paths.
+ */
 function documents(root) {
   const paths = ['docs/TRACEABILITY.md'];
   function walk(dir) {
@@ -23,6 +40,15 @@ function documents(root) {
   return paths.sort();
 }
 
+/**
+ * Checks every file citation (Markdown link targets and inline path-like tokens) in the
+ * scanned documents. A citation is valid when it is repository-rooted (no `./`, `../`,
+ * absolute path or `.`/`..` segment) and points to an existing file.
+ *
+ * @param {string} [root=repositoryRoot] Repository root directory.
+ * @returns {{files: number, citations: number, errors: Array<{doc: string, line: number, path: string, reason: string}>}}
+ *   Scanned file count, citation count and invalid citations.
+ */
 export function checkDocumentPaths(root = repositoryRoot) {
   const errors = [];
   let citations = 0;

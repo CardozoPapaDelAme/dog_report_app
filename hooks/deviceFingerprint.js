@@ -1,3 +1,8 @@
+/**
+ * @module hooks/deviceFingerprint
+ * Native installation fingerprint: a random UUID persisted in a dedicated SQLite database
+ * (`report-device-identity.db`). The web variant lives in `hooks/deviceFingerprint.web.js`.
+ */
 import * as Crypto from 'expo-crypto';
 import * as SQLite from 'expo-sqlite';
 
@@ -5,8 +10,10 @@ const FINGERPRINT_DB = 'report-device-identity.db';
 const FINGERPRINT_TABLE = 'device_identity';
 const FINGERPRINT_KEY = 'installation_fingerprint';
 
+/** Lazily opened database shared by every call in this process. */
 let identityDbPromise = null;
 
+/** Opens the identity database once and ensures the key/value table exists. */
 async function openIdentityDatabase(sqlite = SQLite) {
   if (!identityDbPromise) {
     identityDbPromise = sqlite.openDatabaseAsync(FINGERPRINT_DB);
@@ -22,6 +29,14 @@ async function openIdentityDatabase(sqlite = SQLite) {
   return db;
 }
 
+/**
+ * Returns the stored installation fingerprint, creating and storing a new UUID when missing or
+ * shorter than 16 characters.
+ * @param {object} [options]
+ * @param {typeof SQLite} [options.sqlite=SQLite] - `expo-sqlite` module (injectable for tests).
+ * @param {{randomUUID: () => string}} [options.crypto=Crypto] - `expo-crypto` module.
+ * @returns {Promise<string>}
+ */
 export async function getOrCreateDeviceFingerprint({
   sqlite = SQLite,
   crypto = Crypto,

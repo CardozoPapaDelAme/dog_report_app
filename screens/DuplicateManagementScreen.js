@@ -1,10 +1,18 @@
+/**
+ * @module screens/DuplicateManagementScreen
+ * Container screen for duplicate report management of an authenticated staff session (403 shown as
+ * `forbidden`): groups candidate reports, selects reports and a canonical one with a note to resolve
+ * a duplicate group, and reverses active groups. Confirms before discarding unsaved selections.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ActivityIndicator, BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDuplicateResolution } from '../hooks/useDuplicateResolution.js';
 const colors={background:'#f7fbf1',primary:'#00450d',soft:'#d9f2d4',ink:'#191d17',muted:'#5d6859',border:'#c0c9bb',danger:'#a51e1e'};
+/** Last six characters of an id, used as a short label. */
 const short=(id)=>id.slice(-6);
+/** Translates a validation error (`{key, values}`) or returns a string error as is. */
 const errorText=(error,t)=>typeof error==='string'?error:error?t(`duplicates.validation.${error.key}`,error.values):'';
 function Button({title,onPress,disabled=false,secondary=false,testID}) {
   return <Pressable testID={testID} accessibilityRole="button" accessibilityState={{disabled}} disabled={disabled} onPress={onPress}
@@ -12,6 +20,7 @@ function Button({title,onPress,disabled=false,secondary=false,testID}) {
     <Text style={[styles.buttonText,secondary&&styles.secondaryText]}>{title}</Text>
   </Pressable>;
 }
+/** Candidate report with a selection checkbox and a canonical radio option. */
 function ReportCard({report,selected,canonical,disabled,onToggle,onCanonical,t}) {
   const label=t('duplicates.report',{id:short(report.id)});
   return <View style={[styles.report,selected&&styles.selected]}>
@@ -40,6 +49,13 @@ function Note({value,onChange,label,error,disabled,t,inputRef,testID}) {
     <Text style={error?styles.errorText:styles.caption}>{errorText(error,t)||t('duplicates.noteHint')}</Text>
   </View>;
 }
+/**
+ * @param {object} props
+ * @param {string} props.accessToken - Session access token.
+ * @param {() => void} [props.onBack]
+ * @param {object} [props.api] - Network call overrides for `useDuplicateResolution`.
+ * @returns {JSX.Element}
+ */
 export default function DuplicateManagementScreen({accessToken,onBack,api}) {
   const {t}=useTranslation();
   const form=useDuplicateResolution(accessToken,api);

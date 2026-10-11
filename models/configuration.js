@@ -1,5 +1,14 @@
+/**
+ * @module models/configuration
+ * Client-side model for the administrator configuration form (FAB-1): field bounds, draft conversion,
+ * validation, dirty checking and response validation.
+ */
 // Mobile form contract: docs/API.md and docs/DATA-MODEL.md (FAB-1).
 // Kept independent of the server runtime; parity is checked in tests.
+/**
+ * Editable numeric fields with their group, inclusive bounds and allowed decimals.
+ * @type {ReadonlyArray<{key: string, group: string, min: number, max: number, decimals: number}>}
+ */
 export const CONFIGURATION_FIELDS = Object.freeze([
   { key: 'flag_auto_hide_threshold', group: 'flags', min: 2, max: 100, decimals: 0 },
   { key: 'duplicate_radius_meters', group: 'duplicates', min: 10, max: 1000, decimals: 0 },
@@ -14,6 +23,17 @@ export const CONFIGURATION_GROUPS = ['flags', 'duplicates', 'trust', 'location',
 const FIELD_KEYS = new Set([...CONFIGURATION_FIELDS.map(({ key }) => key), 'change_note']);
 const DECIMAL = /^-?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/;
 
+/**
+ * @typedef {object} ConfigurationState
+ * @property {object} configuration - Active configuration row: `id`, `version`, `environment`
+ *   (`staging` or `production`), `is_active: true` and one number per {@link CONFIGURATION_FIELDS} key.
+ * @property {object | null} zone_set - Active zone set summary, or `null`.
+ */
+/**
+ * Converts a configuration into string form values with an empty `change_note`.
+ * @param {object} configuration
+ * @returns {Record<string, string>}
+ */
 export function configurationToDraft(configuration) {
   return Object.fromEntries([
     ...CONFIGURATION_FIELDS.map(({ key }) => [key, String(configuration[key])]),
@@ -22,6 +42,13 @@ export function configurationToDraft(configuration) {
   ]);
 }
 
+/**
+ * Validates form values: range, decimals, `trust_medium_threshold < trust_high_threshold`, and a
+ * non-empty `change_note` of at most 1000 characters. Decimal commas are accepted.
+ * @param {Record<string, string>} draft
+ * @returns {{payload: object | null, errors: Record<string, {key: string, values?: object}>}}
+ *   `payload` holds numeric values plus `change_note`, or `null` when there are errors.
+ */
 export function validateConfigurationDraft(draft) {
   const errors = {};
   const payload = {};
@@ -46,12 +73,22 @@ export function validateConfigurationDraft(draft) {
   return { payload: Object.keys(errors).length ? null : payload, errors };
 }
 
+/**
+ * @param {Record<string, string>} draft
+ * @param {object | null} configuration
+ * @returns {boolean} Whether any field differs from the configuration (always `false` without one).
+ */
 export function configurationIsDirty(draft, configuration) {
   if (!configuration) return false;
   const original = configurationToDraft(configuration);
   return [...FIELD_KEYS].some((key) => draft[key] !== original[key]);
 }
 
+/**
+ * Extracts per-field server messages from an API error's `details.fields`.
+ * @param {unknown} error
+ * @returns {Record<string, string>} Only known field keys with non-empty messages.
+ */
 export function configurationFieldErrors(error) {
   const fields = error?.details?.fields;
   if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return {};
@@ -60,6 +97,12 @@ export function configurationFieldErrors(error) {
   ));
 }
 
+/**
+ * Validates the `data` of a configuration response.
+ * @param {unknown} data
+ * @returns {ConfigurationState}
+ * @throws {Error} `invalid_response` when the configuration is missing, inactive or out of bounds.
+ */
 export function readConfigurationState(data) {
   const config = data?.configuration;
   const invalid = () => {

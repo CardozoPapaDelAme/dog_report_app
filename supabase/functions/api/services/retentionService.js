@@ -1,3 +1,9 @@
+/**
+ * @module services/retentionService
+ * Internal data retention run: prepares expired data, deletes purged photo objects from private
+ * storage, acknowledges each purge, and finalizes retention. Per-photo failures are collected instead
+ * of aborting the run.
+ */
 import { getConfig } from '../infrastructure/config.js';
 import { getSql } from '../infrastructure/db.js';
 import {
@@ -9,12 +15,19 @@ import {
 } from '../repositories/retentionRepository.js';
 import { deleteStorageObject } from '../repositories/storageRepository.js';
 
+/** Wraps a cause in an `Error` with `code` `dependency_unavailable`. */
 function dependencyError(cause) {
   const error = new Error('retention_dependency_unavailable', { cause });
   error.code = 'dependency_unavailable';
   return error;
 }
 
+/**
+ * Fail-closed preflight: the Supabase URL must belong to the expected project, the environment must be
+ * `staging` or `production`, and the service role key and photo bucket must be set.
+ * @param {import('../infrastructure/config.js').ApiConfig} config - API configuration.
+ * @returns {boolean}
+ */
 export function validateRetentionConfig(config) {
   let projectRef = '';
   try {
@@ -33,6 +46,7 @@ export function validateRetentionConfig(config) {
   );
 }
 
+/** Runs `operation(tx)` with the `internal` role. */
 function inInternalTransaction(operation) {
   const sql = getSql();
   return sql.begin(async (tx) => {
@@ -66,6 +80,14 @@ const productionDependencies = {
   },
 };
 
+/**
+ * Executes one retention run.
+ * @param {object} [dependencies] - Overrides for configuration, transactions, and storage (tests).
+ * @returns {Promise<object>} Preparation and finalization counters plus `objects_deleted`,
+ *   `photos_acknowledged`, and `failures` (`{photo_id, code, storage_status?}` per failed photo).
+ * @throws {Error} With `code` `preflight_mismatch` (invalid configuration or environment mismatch) or
+ *   `dependency_unavailable` (preparation or finalization failed).
+ */
 export async function runRetention(dependencies = productionDependencies) {
   const config = dependencies.getConfig();
   if (!validateRetentionConfig(config)) {

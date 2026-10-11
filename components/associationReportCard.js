@@ -1,7 +1,12 @@
+/**
+ * @module components/associationReportCard
+ * Presentational card for one association report, formatted by `presentAssociationReport`.
+ */
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { presentAssociationReport } from '../presenters/associationDisplay.js';
 
+/** Label/value pair with a selectable value. */
 function Info({ label, value, style }) {
   return <View style={[styles.info, style]}>
     <Text style={styles.infoLabel}>{label}</Text>
@@ -9,6 +14,11 @@ function Info({ label, value, style }) {
   </View>;
 }
 
+/**
+ * @param {object} props
+ * @param {import('../models/associationReport.js').AssociationReport} props.report
+ * @returns {JSX.Element}
+ */
 export default function AssociationReportCard({ report }) {
   const { t, i18n } = useTranslation();
   const display = presentAssociationReport(report, t, i18n.language);

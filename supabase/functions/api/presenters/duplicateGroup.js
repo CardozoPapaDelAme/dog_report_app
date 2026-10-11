@@ -1,3 +1,8 @@
+/**
+ * @module presenters/duplicateGroup
+ * Shapes duplicate groups and pending duplicate candidates into API JSON envelopes.
+ */
+/** Maps a duplicate group row to its public view with ISO timestamps. */
 function view(row) {
   return {
     id: row.id,
@@ -11,15 +16,34 @@ function view(row) {
       : new Date(row.reversed_at).toISOString(),
   };
 }
+/**
+ * Responds with a single duplicate group.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {import('../repositories/duplicateRepository.js').DuplicateGroupRow} row - Group row.
+ * @param {number} [status=200] - HTTP status (201 after a resolution).
+ * @returns {Response} `{ data: { duplicate_group } }` with the `X-Request-Id` header.
+ */
 export function presentDuplicateGroup(c, row, status = 200) {
   c.header("X-Request-Id", c.get("requestId") ?? "");
   return c.json({ data: { duplicate_group: view(row) } }, status);
 }
+/**
+ * Responds 200 with the active duplicate groups.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {Array<import('../repositories/duplicateRepository.js').DuplicateGroupRow>} rows - Group rows.
+ * @returns {Response} `{ data: { duplicate_groups } }` with the `X-Request-Id` header.
+ */
 export function presentDuplicateGroups(c, rows) {
   c.header("X-Request-Id", c.get("requestId") ?? "");
   return c.json({ data: { duplicate_groups: rows.map(view) } });
 }
 
+/**
+ * Responds 200 with pending duplicate candidates and the reports they connect.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {{reports: object[], candidates: object[]}} snapshot - Result of `listPendingDuplicateCandidates`.
+ * @returns {Response} `{ data: { reports, candidates } }` with the `X-Request-Id` header.
+ */
 export function presentDuplicateCandidates(c, snapshot) {
   c.header("X-Request-Id", c.get("requestId") ?? "");
   return c.json({ data: {

@@ -1,3 +1,14 @@
+/**
+ * Local development build doctor.
+ *
+ * Invoked as `npm run doctor` (`node scripts/doctor.mjs [android|ios]`, default `android`)
+ * and imported by `scripts/app.mjs` and `scripts/setup.mjs`. Checks Node, installed
+ * dependencies, the required `.env` keys (names only) and, per target, Java, the Android
+ * SDK, `adb` and a connected device, or the macOS/Xcode/CocoaPods toolchain. Reads
+ * `ANDROID_HOME`, `ANDROID_SDK_ROOT` and `LOCALAPPDATA`. Exits with 1 when any check fails.
+ *
+ * @module scripts/doctor
+ */
 // Local development build doctor (README option C).
 // Pure check functions are exported for tests; command execution and file
 // access are injected into runDoctor.
@@ -6,6 +17,11 @@ import fs from "node:fs";
 import os from "node:os";
 import { pathToFileURL } from "node:url";
 
+/**
+ * Environment variable names that `.env` must define with a non-empty value.
+ *
+ * @type {string[]}
+ */
 export const REQUIRED_ENV_KEYS = [
   "EXPO_PUBLIC_API_BASE_URL",
   "EXPO_PUBLIC_SUPABASE_URL",
@@ -63,6 +79,13 @@ export function parseJavaVersion(output) {
   return first === 1 && match[2] !== undefined ? Number.parseInt(match[2], 10) : first;
 }
 
+/**
+ * Checks that Java is installed and at least `minMajor`.
+ *
+ * @param {string} output Combined `java -version` output.
+ * @param {number} [minMajor=17] Minimum accepted major version.
+ * @returns {{id: string, ok: boolean, message: string, hint?: string}} Check result.
+ */
 export function checkJava(output, minMajor = 17) {
   const major = parseJavaVersion(output);
   if (major === null) {
@@ -94,6 +117,13 @@ export function parseAdbDevices(output) {
   return devices;
 }
 
+/**
+ * Classifies the `adb devices` list: passes when at least one device is in `device` state,
+ * otherwise fails with a hint for the unauthorized, offline or no-device case.
+ *
+ * @param {Array<{serial: string, state: string}>} devices Parsed device list.
+ * @returns {{id: string, ok: boolean, message: string, hint?: string}} Check result.
+ */
 export function checkAdbDevices(devices) {
   if (devices.some((d) => d.state === "device")) {
     const n = devices.filter((d) => d.state === "device").length;
@@ -123,6 +153,11 @@ export function checkAdbDevices(devices) {
 /**
  * Locate the Android SDK folder. Environment variables win; otherwise use the
  * OS default. `fromEnv` tells the caller whether it must export ANDROID_HOME.
+ *
+ * @param {Record<string, string|undefined>} env Environment variables (`ANDROID_HOME`, `ANDROID_SDK_ROOT`, `LOCALAPPDATA`).
+ * @param {string} platform Node platform identifier (`process.platform`).
+ * @param {string} homedir User home directory.
+ * @returns {{path: string, fromEnv: boolean}} SDK path and whether it came from the environment.
  */
 export function resolveAndroidSdk(env, platform, homedir) {
   const fromVar = env.ANDROID_HOME || env.ANDROID_SDK_ROOT;
@@ -138,6 +173,12 @@ export function resolveAndroidSdk(env, platform, homedir) {
 // Returns a copy of env with `dir` prepended to the search path. Windows stores it
 // as "Path" (case-insensitive in process.env but not in a plain copy), so reuse the
 // existing key whatever its casing and never create a second one.
+/**
+ * @param {Record<string, string|undefined>} env Environment to copy; it is not mutated.
+ * @param {string} dir Directory to prepend.
+ * @param {string} [separator=";"] Path list separator.
+ * @returns {Record<string, string|undefined>} New environment with a single search-path key.
+ */
 export function withDirOnPath(env, dir, separator = ";") {
   const next = { ...env };
   const keys = Object.keys(next).filter((key) => key.toUpperCase() === "PATH");
@@ -148,6 +189,13 @@ export function withDirOnPath(env, dir, separator = ";") {
   return next;
 }
 
+/**
+ * Builds the Android SDK `platform-tools` directory path for the platform.
+ *
+ * @param {string} sdkPath Android SDK root.
+ * @param {string} platform Node platform identifier.
+ * @returns {string} The `platform-tools` path.
+ */
 export function platformToolsDir(sdkPath, platform) {
   return platform === "win32" ? `${sdkPath}\\platform-tools` : `${sdkPath}/platform-tools`;
 }
@@ -182,6 +230,17 @@ const combined = (r) => `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
 /**
  * Run every check for a target ("android" | "ios"). Returns
  * { ok, results, sdk, adbDir } where sdk/adbDir help the caller build the child env.
+ *
+ * @param {object} options
+ * @param {string} options.target `"ios"` for iOS checks; any other value runs the Android checks.
+ * @param {(cmd: string, args: string[]) => Promise<{code: number|null, stdout: string, stderr: string}>} options.exec Command runner.
+ * @param {{existsSync: Function, readFileSync: Function}} options.fs File system API; a read failure of `.env` counts as missing.
+ * @param {Record<string, string|undefined>} options.env Environment variables used to locate the Android SDK.
+ * @param {string} options.platform Node platform identifier.
+ * @param {string} options.homedir User home directory.
+ * @param {string} options.cwd Project directory containing `node_modules` and `.env`.
+ * @param {string} options.nodeVersion Node version string.
+ * @returns {Promise<{ok: boolean, results: Array<{id: string, ok: boolean, message: string, hint?: string}>, sdk: {path: string, fromEnv: boolean}|null, adbDir: string|null}>}
  */
 export async function runDoctor({ target, exec, fs: fsApi, env, platform, homedir, cwd, nodeVersion }) {
   const results = [checkNode(nodeVersion)];
@@ -247,12 +306,26 @@ export async function runDoctor({ target, exec, fs: fsApi, env, platform, homedi
   return { ok: results.every((r) => r.ok), results, sdk, adbDir };
 }
 
+/**
+ * Runs a command synchronously and normalizes its result; never throws.
+ *
+ * @param {string} cmd Executable name or path.
+ * @param {string[]} args Arguments.
+ * @returns {{code: number|null, stdout: string, stderr: string}} `code` is `null` when the process could not be spawned.
+ */
 export function defaultExec(cmd, args) {
   const r = spawnSync(cmd, args, { encoding: "utf8", shell: process.platform === "win32" && cmd === "npx" });
   if (r.error) return { code: null, stdout: "", stderr: String(r.error.message) };
   return { code: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 }
 
+/**
+ * Prints each check result with a ✓/✗ marker and, for failures, its hint.
+ *
+ * @param {Array<{ok: boolean, message: string, hint?: string}>} results Check results.
+ * @param {(line: string) => void} [log=console.log] Output function.
+ * @returns {void}
+ */
 export function printResults(results, log = console.log) {
   for (const r of results) {
     log(`${r.ok ? "✓" : "✗"} ${r.message}`);
@@ -260,6 +333,12 @@ export function printResults(results, log = console.log) {
   }
 }
 
+/**
+ * Runs {@link runDoctor} with the real process environment, file system and command runner.
+ *
+ * @param {string} target `"android"` or `"ios"`.
+ * @returns {Promise<{ok: boolean, results: Array<{id: string, ok: boolean, message: string, hint?: string}>, sdk: {path: string, fromEnv: boolean}|null, adbDir: string|null}>}
+ */
 export function runDoctorWithDefaults(target) {
   return runDoctor({
     target,

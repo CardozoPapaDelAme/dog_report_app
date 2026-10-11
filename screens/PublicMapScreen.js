@@ -1,3 +1,10 @@
+/**
+ * @module screens/PublicMapScreen
+ * Container screen for the public map: the native MapLibre map with clusters, pins, zone report
+ * lists, report details and flagging, or a recent-reports list when the native map is unavailable
+ * (Expo Go). The initial center is the device location when available within 3 seconds, otherwise
+ * Creel.
+ */
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,12 +31,14 @@ const DETAIL_KEYS = ['descripcion', 'cantidad_aprox', 'hubo_mordida', 'tipo_anim
 // Lazy on purpose: Expo Go must never evaluate the MapLibre native module.
 // Keep the extensionless path so Metro/esbuild still pick PublicMapView.web.js on web.
 let cachedMapView = null;
+/** Requires `components/PublicMapView` on first use and caches it. */
 function getPublicMapView() {
   if (!cachedMapView) cachedMapView = require('../components/PublicMapView').default;
   return cachedMapView;
 }
 
 // Foreground location is optional: never block the map when it is denied or slow.
+/** Device location when permitted (no prompt on web), otherwise `CREEL_CENTER`; never rejects. */
 async function resolveInitialCenter() {
   try {
     let permission = await Location.getForegroundPermissionsAsync();
@@ -45,6 +54,7 @@ async function resolveInitialCenter() {
   }
 }
 
+/** Resolves the initial map center, falling back to `CREEL_CENTER` after `LOCATION_TIMEOUT_MS`; `null` while pending. */
 function useInitialCenter() {
   const [center, setCenter] = useState(null);
   useEffect(() => {
@@ -57,10 +67,12 @@ function useInitialCenter() {
   return center;
 }
 
+/** Public photo URL of a report, or `null` when the API base URL is not configured. */
 function photoUrl(reportId) {
   try { return `${getApiBaseUrl()}/reports/${encodeURIComponent(reportId)}/photo`; } catch { return null; }
 }
 
+/** Overlay for a selected cluster with zoom-in and view-reports actions. */
 function ClusterModal({ cluster, onClose, onZoomIn, onViewReports, t }) {
   return (
     <View style={styles.backdrop}>
@@ -91,12 +103,14 @@ function ClusterModal({ cluster, onClose, onZoomIn, onViewReports, t }) {
   );
 }
 
+/** Formats a report detail value for display. */
 function detailValue(t, key, value) {
   if (typeof value === 'boolean') return t(`reportForm.boolean.${value ? 'si' : 'no'}`);
   if (key === 'situacion') return t(`reportForm.situations.${value}`, { defaultValue: String(value) });
   return String(value);
 }
 
+/** Bottom sheet with the details, sanitized photo (when available) and flag action of one public report. */
 function PinSheet({ report, onClose, onFlag, t }) {
   const [photoFailed, setPhotoFailed] = useState(false);
   const uri = report.has_sanitized_photo ? photoUrl(report.report_id) : null;
@@ -145,11 +159,18 @@ function PinSheet({ report, onClose, onFlag, t }) {
 }
 
 // `mapAvailable` is an override for tests; production reads the runtime (Expo Go has no native map).
+/**
+ * @param {object} props
+ * @param {() => void} props.onBack
+ * @param {boolean} [props.mapAvailable] - Overrides the native map runtime check.
+ * @returns {JSX.Element}
+ */
 export default function PublicMapScreen({ onBack, mapAvailable }) {
   const available = mapAvailable ?? isNativeMapAvailableAtRuntime();
   return available ? <NativeMapScreen onBack={onBack} /> : <ExpoGoFallbackScreen onBack={onBack} />;
 }
 
+/** Map replacement for Expo Go: notice, recent reports, report details and flagging. */
 function ExpoGoFallbackScreen({ onBack }) {
   const { t } = useTranslation();
   const [selectedReport, setSelectedReport] = useState(null);
@@ -179,6 +200,7 @@ function ExpoGoFallbackScreen({ onBack }) {
   );
 }
 
+/** Native map screen driven by `usePublicMap`. */
 function NativeMapScreen({ onBack }) {
   const PublicMapView = getPublicMapView();
   const { t } = useTranslation();

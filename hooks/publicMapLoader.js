@@ -1,6 +1,12 @@
+/**
+ * @module hooks/publicMapLoader
+ * Framework-free state machine behind the public map: debounced region loads, cluster/pin mode
+ * switching by zoom, stale-response protection and retry.
+ */
 import { normalizeZoom, queryModeForZoom, viewportFromBounds, isInViewport } from '../models/publicMap.js';
 import { getPublicClusters, getPublicReports } from '../services/publicMapApi.js';
 
+/** Delay in milliseconds between the last region change and the request. */
 export const PUBLIC_MAP_DEBOUNCE_MS = 300;
 
 const initialState = Object.freeze({
@@ -9,6 +15,22 @@ const initialState = Object.freeze({
 });
 
 // Plain state machine: debounced region loads, mode switch, stale-response protection, retry.
+/**
+ * @param {object} [options]
+ * @param {typeof getPublicClusters} [options.getClusters=getPublicClusters] - Cluster request (network call).
+ * @param {typeof getPublicReports} [options.getReports=getPublicReports] - Report request (network call).
+ * @param {typeof setTimeout} [options.schedule=setTimeout]
+ * @param {typeof clearTimeout} [options.cancel=clearTimeout]
+ * @param {number} [options.debounceMs=PUBLIC_MAP_DEBOUNCE_MS]
+ * @param {(state: object) => void} [options.onChange] - Receives every new state until disposed.
+ * @returns {{setRegion: (region: {zoom: number, bounds: *}) => boolean, retry: () => boolean,
+ *   dispose: () => void, getState: () => {phase: 'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'offline',
+ *   mode: 'clusters' | 'pins', region: {zoom: number, viewport: import('../models/publicMap.js').Viewport} | null,
+ *   clusters: import('../models/publicMap.js').MapCluster[],
+ *   reports: import('../models/publicMap.js').PublicReport[], error: Error | null}}}
+ *   `setRegion` returns `false` for an invalid zoom or bounds; `retry` returns `false` before any region.
+ *   In pin mode all reports are loaded once and filtered locally per viewport.
+ */
 export function createPublicMapLoader({
   getClusters = getPublicClusters, getReports = getPublicReports,
   schedule = setTimeout, cancel = clearTimeout, debounceMs = PUBLIC_MAP_DEBOUNCE_MS, onChange = () => {},

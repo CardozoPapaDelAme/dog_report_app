@@ -1,3 +1,8 @@
+/**
+ * @module hooks/draftAutoSync
+ * Framework-free scheduling for automatic draft synchronization: a debounced single-flight runner,
+ * a reconnect detector and a retry wake-up timer.
+ */
 // RNF12: pure scheduler that retries the durable draft queue when the network
 // returns or the app comes to the foreground.
 //
@@ -7,8 +12,21 @@
 // `draft` (waiting on the user) and `terminal_error` / `synced` are never touched.
 // Retries reuse the same submit/upload path, so the final report UUID keeps the
 // server idempotent (replay -> 200).
+/** Debounce window in milliseconds for coalescing sync triggers. */
 export const AUTO_SYNC_DEBOUNCE_MS = 2000;
 
+/**
+ * @param {object} options
+ * @param {() => Promise<unknown>} options.syncDueDrafts - Synchronizes due drafts.
+ * @param {() => boolean} [options.isBusy] - When true, the pass is deferred by another debounce window.
+ * @param {number} [options.debounceMs=AUTO_SYNC_DEBOUNCE_MS]
+ * @param {typeof setTimeout} [options.schedule=setTimeout]
+ * @param {typeof clearTimeout} [options.cancel=clearTimeout]
+ * @param {(error: unknown) => void} [options.onError] - Receives sync failures.
+ * @param {() => void} [options.onPassSettled] - Called after every pass.
+ * @returns {{trigger: () => void, dispose: () => void}}
+ * @throws {Error} `sync_due_drafts_required` when `syncDueDrafts` is not a function.
+ */
 export function createDraftAutoSync({
   syncDueDrafts,
   isBusy = () => false,
@@ -64,11 +82,19 @@ export function createDraftAutoSync({
   return { trigger, dispose };
 }
 
+/**
+ * @param {{isConnected?: boolean | null, isInternetReachable?: boolean | null} | null | undefined} state
+ * @returns {boolean} True when connected and internet reachability is not explicitly false.
+ */
 export function networkIsOnline(state) {
   return Boolean(state?.isConnected) && state?.isInternetReachable !== false;
 }
 
 // Fires only on an offline -> online transition (or the first online reading).
+/**
+ * @param {() => void} onReconnect
+ * @returns {(state: object) => void} Network state handler.
+ */
 export function createNetworkTrigger(onReconnect) {
   let online = false;
   return function handleNetworkState(state) {
@@ -79,6 +105,7 @@ export function createNetworkTrigger(onReconnect) {
   };
 }
 
+/** Minimum delay in milliseconds for a retry wake-up timer. */
 export const RETRY_WAKEUP_MIN_MS = 1000;
 const MAX_TIMER_MS = 2 ** 31 - 1;
 const RETRY_WAIT_STATES = Object.freeze([
@@ -87,6 +114,12 @@ const RETRY_WAIT_STATES = Object.freeze([
 
 // Milliseconds until the earliest FUTURE `next_retry_at` among syncable drafts,
 // clamped to [minMs, MAX_TIMER_MS]; null when nothing is due later.
+/**
+ * @param {import('../models/reportDraft.js').ReportDraft[] | null | undefined} drafts
+ * @param {Date | string | number} [now=new Date()]
+ * @param {number} [minMs=RETRY_WAKEUP_MIN_MS]
+ * @returns {number | null}
+ */
 export function nextRetryDelayMs(drafts, now = new Date(), minMs = RETRY_WAKEUP_MIN_MS) {
   const current = new Date(now).getTime();
   let earliest = null;
@@ -102,6 +135,17 @@ export function nextRetryDelayMs(drafts, now = new Date(), minMs = RETRY_WAKEUP_
 
 // Re-arms one timer for the earliest backoff expiry while online and active, and
 // calls `trigger` when it elapses. Call `setDrafts` after every pass/reload.
+/**
+ * @param {object} options
+ * @param {() => void} options.trigger - Called when the earliest backoff expires.
+ * @param {() => Date} [options.now]
+ * @param {typeof setTimeout} [options.schedule=setTimeout]
+ * @param {typeof clearTimeout} [options.cancel=clearTimeout]
+ * @param {number} [options.minMs=RETRY_WAKEUP_MIN_MS]
+ * @returns {{setDrafts: (drafts: import('../models/reportDraft.js').ReportDraft[]) => void,
+ *   setActive: (active: boolean) => void, rearm: () => void, dispose: () => void}}
+ * @throws {Error} `trigger_required` when `trigger` is not a function.
+ */
 export function createRetryWakeup({
   trigger,
   now = () => new Date(),

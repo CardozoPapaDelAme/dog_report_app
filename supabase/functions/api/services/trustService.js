@@ -1,3 +1,8 @@
+/**
+ * @module services/trustService
+ * Pure trust scoring for new reports: combines GPS accuracy and origin submission frequency into a
+ * score and tier, and decides whether a report auto-publishes or waits for moderation.
+ */
 function clamp01(value) {
   return Math.max(0, Math.min(1, value));
 }
@@ -6,6 +11,7 @@ function roundScore(value) {
   return Number(clamp01(value).toFixed(3));
 }
 
+/** Rounded mean of the non-null values. */
 function average(values) {
   const present = values.filter((value) =>
     value !== null && value !== undefined
@@ -15,6 +21,7 @@ function average(values) {
   );
 }
 
+/** Maps a score to `high`, `medium`, or `low` using the configured thresholds. */
 function trustTier(score, config) {
   if (score >= Number(config.trust_high_threshold)) {
     return "high";
@@ -25,6 +32,7 @@ function trustTier(score, config) {
   return "low";
 }
 
+/** 1 within the accuracy limit; otherwise `maxMeters / accuracyMeters`, rounded. */
 function gpsTrustScore(accuracyMeters, maxMeters) {
   if (accuracyMeters <= maxMeters) {
     return 1;
@@ -32,6 +40,7 @@ function gpsTrustScore(accuracyMeters, maxMeters) {
   return roundScore(maxMeters / accuracyMeters);
 }
 
+/** 1 for the first submission in the hourly bucket, decreasing linearly with further submissions. */
 function fingerprintTrustScore(rateBucketCount, limit) {
   const count = Number.isInteger(rateBucketCount) && rateBucketCount > 0
     ? rateBucketCount
@@ -46,6 +55,17 @@ function fingerprintTrustScore(rateBucketCount, limit) {
   return roundScore(1 - ((count - 1) / configuredLimit));
 }
 
+/**
+ * Scores a report and chooses its initial status. Only a high-trust report without honeypot, mock
+ * location, or imprecise GPS signals is published immediately (`visible`); everything else is
+ * `pending_review` with the reason recorded in `statusReason`.
+ * @param {object} options
+ * @param {import('./reportService.js').ReportCommand} options.command - Validated report command.
+ * @param {import('../repositories/reportRepository.js').ActiveReportConfig} options.config - Active configuration.
+ * @param {number | undefined} options.rateBucketCount - Submissions from this origin in the current hour.
+ * @returns {{status: 'visible' | 'pending_review', statusReason: string, trustTier: 'high' | 'medium' | 'low',
+ *   trustScore: number, gpsTrustScore: number, fingerprintTrustScore: number}}
+ */
 export function assessReportTrust({ command, config, rateBucketCount }) {
   const gpsScore = gpsTrustScore(
     command.location.accuracyMeters,

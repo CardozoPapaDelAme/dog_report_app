@@ -1,3 +1,15 @@
+/**
+ * Local development build launcher.
+ *
+ * Invoked as `npm run app:android` / `npm run app:ios` (`node scripts/app.mjs <android|ios>`).
+ * Runs the doctor checks for the target, then `npx expo run:android` or
+ * `npx expo run:ios --device`. Exits with code 2 on a missing/invalid target and 1 when
+ * a check fails or `npx` cannot be launched; otherwise exits with the child's code.
+ * For Android, when the SDK path was not taken from the environment, it sets
+ * `ANDROID_HOME` and prepends `platform-tools` to `PATH` for the child process.
+ *
+ * @module scripts/app
+ */
 // One-command local development build: doctor, then `expo run:<platform>`.
 import { spawn } from "node:child_process";
 import { delimiter } from "node:path";

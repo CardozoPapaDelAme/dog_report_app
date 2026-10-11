@@ -1,3 +1,8 @@
+/**
+ * @module models/session
+ * Client-side session model: validates the Supabase session and the `GET /me` profile, and maps roles
+ * to dashboards.
+ */
 const VALID_ROLES = new Set(["association", "administrator"]);
 
 function isNonEmptyString(value) {
@@ -11,6 +16,9 @@ function isValidTimestamp(value) {
 /**
  * Validates and normalizes the Supabase Auth session fields needed by the app.
  * Supabase remains responsible for refreshing expired access tokens.
+ * @param {{access_token: string, refresh_token: string, expires_at: number}} authSession
+ * @returns {Readonly<{accessToken: string, refreshToken: string, expiresAt: number}>}
+ * @throws {TypeError} When a token or the expiry (Unix seconds) is missing or invalid.
  */
 export function createSession(authSession) {
   if (!authSession || typeof authSession !== "object") {
@@ -39,6 +47,10 @@ export function createSession(authSession) {
 
 /**
  * Validates the ProfileView returned by GET /me before role-based navigation.
+ * @param {{user_id: string, role: string, display_name: string | null, active: boolean}} profile
+ * @returns {Readonly<{userId: string, role: 'association' | 'administrator', displayName: string | null,
+ *   active: true}>}
+ * @throws {TypeError} When a field is invalid or the profile is inactive.
  */
 export function createSessionProfile(profile) {
   if (!profile || typeof profile !== "object") {
@@ -69,6 +81,10 @@ export function createSessionProfile(profile) {
 
 /**
  * Combines a valid Supabase session and server-verified profile.
+ * @param {object} authSession - See {@link createSession}.
+ * @param {object} profile - See {@link createSessionProfile}.
+ * @returns {Readonly<object>} Session fields plus `profile`.
+ * @throws {TypeError} From either validator.
  */
 export function createAuthenticatedSession(authSession, profile) {
   return Object.freeze({
@@ -77,11 +93,21 @@ export function createAuthenticatedSession(authSession, profile) {
   });
 }
 
+/**
+ * @param {{expiresAt: number} | null | undefined} session
+ * @param {number} [nowMs=Date.now()]
+ * @returns {boolean} `true` when missing, invalid or expired.
+ */
 export function isSessionExpired(session, nowMs = Date.now()) {
   return !session || !isValidTimestamp(session.expiresAt) ||
     session.expiresAt * 1000 <= nowMs;
 }
 
+/**
+ * @param {string} role
+ * @returns {'associationDashboard' | 'administratorDashboard'}
+ * @throws {TypeError} For an unknown role.
+ */
 export function dashboardForRole(role) {
   if (!VALID_ROLES.has(role)) {
     throw new TypeError("A validated application role is required.");

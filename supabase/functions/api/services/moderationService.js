@@ -1,3 +1,9 @@
+/**
+ * @module services/moderationService
+ * Administrator moderation use cases: reading the moderation queue and applying the `approve`, `hide`,
+ * `restore`, and `delete` commands. Each command locks the report, validates the transition with
+ * `domain/reportModeration.js`, persists it, and writes an audit entry in one transaction.
+ */
 import { getSql } from '../infrastructure/db.js';
 import { assertTransition } from '../domain/reportModeration.js';
 import {
@@ -10,6 +16,7 @@ import {
   restoreReportRow,
 } from '../repositories/moderationRepository.js';
 
+/** Creates an `Error` whose message and `code` are both `code`. */
 function authorizationError(code) {
   const error = new Error(code);
   error.code = code;
@@ -31,6 +38,7 @@ function assertAdministrator(actor) {
   }
 }
 
+/** Picks the moderation status fields recorded in audit entries. */
 function moderationValues(report) {
   return {
     status: report.status,
@@ -44,6 +52,15 @@ function moderationValues(report) {
   };
 }
 
+/**
+ * Reads one page of the moderation queue.
+ * @param {object} options
+ * @param {import('../middleware/auth.js').AuthenticatedAuth} options.actor - Administrator actor.
+ * @param {number} options.limit - Page size; up to `limit + 1` rows are returned.
+ * @param {{syncedAt: string, id: string} | null} options.cursor - Keyset cursor, or null for the first page.
+ * @returns {Promise<object[]>} Queue rows.
+ * @throws {Error} `authentication_required` or `forbidden`; database errors propagate unchanged.
+ */
 export function listQueue({ actor, limit, cursor }) {
   assertAdministrator(actor);
   const sql = getSql();
@@ -54,6 +71,15 @@ export function listQueue({ actor, limit, cursor }) {
   });
 }
 
+/**
+ * Approves a report and publishes it.
+ * @param {object} options
+ * @param {import('../middleware/auth.js').AuthenticatedAuth} options.actor - Administrator actor.
+ * @param {string} options.reportId - Report id.
+ * @param {string | null} options.note - Optional audit note.
+ * @returns {Promise<import('../repositories/moderationRepository.js').ModerationReportState>} Updated state.
+ * @throws {Error} `authentication_required`, `forbidden`, `not_found`, or `invalid_approve_transition`.
+ */
 export function approve({ actor, reportId, note }) {
   return executeTransition({
     actor,
@@ -65,6 +91,15 @@ export function approve({ actor, reportId, note }) {
   });
 }
 
+/**
+ * Hides a report from the public map.
+ * @param {object} options
+ * @param {import('../middleware/auth.js').AuthenticatedAuth} options.actor - Administrator actor.
+ * @param {string} options.reportId - Report id.
+ * @param {string} options.note - Audit note.
+ * @returns {Promise<import('../repositories/moderationRepository.js').ModerationReportState>} Updated state.
+ * @throws {Error} `authentication_required`, `forbidden`, `not_found`, or `invalid_hide_transition`.
+ */
 export function hide({ actor, reportId, note }) {
   return executeTransition({
     actor,
@@ -76,6 +111,15 @@ export function hide({ actor, reportId, note }) {
   });
 }
 
+/**
+ * Restores a hidden report.
+ * @param {object} options
+ * @param {import('../middleware/auth.js').AuthenticatedAuth} options.actor - Administrator actor.
+ * @param {string} options.reportId - Report id.
+ * @param {string} options.note - Audit note.
+ * @returns {Promise<import('../repositories/moderationRepository.js').ModerationReportState>} Updated state.
+ * @throws {Error} `authentication_required`, `forbidden`, `not_found`, or `invalid_restore_transition`.
+ */
 export function restore({ actor, reportId, note }) {
   return executeTransition({
     actor,
@@ -87,6 +131,15 @@ export function restore({ actor, reportId, note }) {
   });
 }
 
+/**
+ * Logically deletes a report.
+ * @param {object} options
+ * @param {import('../middleware/auth.js').AuthenticatedAuth} options.actor - Administrator actor.
+ * @param {string} options.reportId - Report id.
+ * @param {string} options.note - Audit note.
+ * @returns {Promise<import('../repositories/moderationRepository.js').ModerationReportState>} Updated state.
+ * @throws {Error} `authentication_required`, `forbidden`, `not_found`, or `invalid_delete_transition`.
+ */
 export function deleteReport({ actor, reportId, note }) {
   return executeTransition({
     actor,
@@ -98,6 +151,7 @@ export function deleteReport({ actor, reportId, note }) {
   });
 }
 
+/** Authorizes, locks, validates, persists, and audits one moderation command in a single transaction. */
 function executeTransition({ actor, reportId, note, command, action, persist }) {
   assertAdministrator(actor);
   const sql = getSql();

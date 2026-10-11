@@ -1,3 +1,9 @@
+/**
+ * @module routes/moderation
+ * Administrator moderation router (role `administrator`). Each route is registered with and without
+ * the `/api` prefix: `GET /admin/moderation-queue` and `POST /admin/reports/:report_id/{approve,
+ * delete, hide, restore}`.
+ */
 import { Hono } from 'hono';
 
 import {

@@ -1,3 +1,13 @@
+/**
+ * @module repositories/configurationRepository
+ * SQL access for operational configuration versions (`public.config_versions`). Every function runs on a
+ * caller-provided transaction; the configuration Service owns authorization (ADR-019) and orchestration.
+ */
+/**
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} userId - Profile id of the caller.
+ * @returns {Promise<{id: string, role: string, active: boolean} | null>} The actor's profile, or null.
+ */
 export async function readConfigurationActor(tx, userId) {
   const rows = await tx`
     SELECT id, role, active FROM public.profiles WHERE id = ${userId}
@@ -5,6 +15,10 @@ export async function readConfigurationActor(tx, userId) {
   return rows[0] ?? null;
 }
 
+/**
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @returns {Promise<string | null>} The deployment environment, or null when missing.
+ */
 export async function readConfigurationEnvironment(tx) {
   const rows = await tx`
     SELECT environment FROM public.deployment_metadata WHERE singleton = TRUE
@@ -12,12 +26,26 @@ export async function readConfigurationEnvironment(tx) {
   return rows[0]?.environment ?? null;
 }
 
+/**
+ * Takes a transaction-scoped advisory lock that serializes configuration publishing per environment
+ * (`staging` and every other value map to different keys).
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} environment - Deployment environment.
+ * @returns {Promise<void>}
+ */
 export async function lockConfigurationEnvironment(tx, environment) {
   // A stable lock per environment also covers an environment with no versions.
   // Unlike locking the active row, this lock survives replacement of that row.
   await tx`SELECT pg_catalog.pg_advisory_xact_lock(102001, ${environment === 'staging' ? 1 : 2})`;
 }
 
+/**
+ * Reads the active configuration version and the active zone set for an environment in one query.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} environment - Deployment environment.
+ * @returns {Promise<{configuration: object | null, zone_set: object | null}>} Each value is a JSON
+ *   object of the respective row, or null when none is active.
+ */
 export async function readActiveConfiguration(tx, environment) {
   const rows = await tx`
     SELECT
@@ -35,6 +63,15 @@ export async function readActiveConfiguration(tx, environment) {
   return rows[0];
 }
 
+/**
+ * Inserts an inactive configuration version numbered after the environment's latest version.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.environment - Deployment environment.
+ * @param {string} options.actorId - Administrator profile id stored as `created_by`.
+ * @param {import('../domain/configuration.js').ConfigurationValues} options.values - Validated values.
+ * @returns {Promise<string>} New version id.
+ */
 export async function insertConfigurationVersion(tx, { environment, actorId, values }) {
   const rows = await tx`
     INSERT INTO public.config_versions (
@@ -55,6 +92,15 @@ export async function insertConfigurationVersion(tx, { environment, actorId, val
   return rows[0].id;
 }
 
+/**
+ * Makes one version the environment's only active version.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.environment - Deployment environment.
+ * @param {string} options.id - Version id to activate.
+ * @returns {Promise<void>}
+ * @throws {Error} When the activation does not update exactly one row.
+ */
 export async function activateConfigurationVersion(tx, { environment, id }) {
   // Deactivate before activating to respect the immediate partial unique index.
   await tx`
@@ -69,6 +115,16 @@ export async function activateConfigurationVersion(tx, { environment, id }) {
   if (rows.length !== 1) throw new Error('Configuration activation did not update one row.');
 }
 
+/**
+ * Records a `configuration_published` audit entry.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.actorId - Administrator profile id.
+ * @param {*} options.previous - Previous active configuration snapshot (stored as JSON).
+ * @param {{id: string}} options.current - New configuration snapshot; `id` becomes the audited entity id.
+ * @param {string} options.note - Change note.
+ * @returns {Promise<void>}
+ */
 export async function insertConfigurationAudit(tx, { actorId, previous, current, note }) {
   await tx`
     INSERT INTO public.audit_log (

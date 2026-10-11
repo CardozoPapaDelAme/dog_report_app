@@ -1,5 +1,11 @@
+/**
+ * @module presenters/moderation
+ * Shapes the administrator moderation queue and moderation command results, including the commands
+ * allowed from each report status.
+ */
 import { allowedCommands } from '../domain/reportModeration.js';
 
+/** Normalizes an array or a JSON-encoded array string to an array; anything else becomes `[]`. */
 function asArray(value) {
   if (Array.isArray(value)) {
     return value;
@@ -15,11 +21,20 @@ function asArray(value) {
   return [];
 }
 
+/** Encodes the keyset cursor `<synced_at ISO>|<id>` as unpadded base64url. */
 function encodeCursor(row) {
   const raw = `${new Date(row.synced_at).toISOString()}|${row.id}`;
   return btoa(raw).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
+/**
+ * Responds 200 with one page of the moderation queue. The caller fetches `limit + 1` rows; the extra
+ * row only signals that `next_cursor` must be emitted.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {object[]} rows - Queue rows from `listModerationQueue`.
+ * @param {number} limit - Page size.
+ * @returns {Response} `{ data: { items, next_cursor } }` with the `X-Request-Id` header.
+ */
 export function presentModerationQueue(c, rows, limit) {
   const requestId = c.get('requestId') ?? '';
   c.header('X-Request-Id', requestId);
@@ -85,6 +100,12 @@ export function presentModerationQueue(c, rows, limit) {
   );
 }
 
+/**
+ * Responds 200 with the report state after a moderation command.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {import('../repositories/moderationRepository.js').ModerationReportState} report - Updated report state.
+ * @returns {Response} `{ data: { report_id, status, ..., allowed_commands } }` with the `X-Request-Id` header.
+ */
 export function presentModerationCommand(c, report) {
   const requestId = c.get('requestId') ?? '';
   c.header('X-Request-Id', requestId);

@@ -1,3 +1,8 @@
+/**
+ * @module services/flag-service
+ * Anonymous report flagging. A device may flag a public, canonical report once; flags are rate limited
+ * per origin hash, and a report is auto-hidden once enough distinct origins flag it.
+ */
 import { getSql } from "../infrastructure/db.js";
 import {
   autoHideReportByFlags,
@@ -11,6 +16,7 @@ import {
 } from "../repositories/flag-repository.js";
 import { secondsUntilNextHour, sha256Hex } from "./reportService.js";
 
+/** Creates an `Error` carrying `code` and any extra `details` properties. */
 function flagError(code, message, details = {}) {
   const error = new Error(message);
   error.code = code;
@@ -18,6 +24,7 @@ function flagError(code, message, details = {}) {
   return error;
 }
 
+/** Picks the moderation status fields recorded in audit entries. */
 function moderationValues(report) {
   return {
     status: report.status,
@@ -31,6 +38,7 @@ function moderationValues(report) {
   };
 }
 
+/** True for a visible, publicly available, canonical report. */
 function isReportFlaggable(report) {
   return Boolean(
     report &&
@@ -40,6 +48,7 @@ function isReportFlaggable(report) {
   );
 }
 
+/** Maps unique violations to `flag_already_submitted` and connection failures to `dependency_unavailable`. */
 function mapPersistenceError(error) {
   if (error?.code === "23505") {
     return flagError(
@@ -81,6 +90,19 @@ const productionDependencies = {
   insertFlagAudit,
 };
 
+/**
+ * Records an anonymous flag in a transaction scoped to the device origin, auto-hiding the report when
+ * the distinct-origin threshold is reached.
+ * @param {object} options
+ * @param {string} options.reportId - Report id.
+ * @param {{reason: string, detail: string | null}} options.command - Validated flag fields.
+ * @param {string} options.deviceFingerprint - Opaque device fingerprint; only its SHA-256 is stored.
+ * @param {object} [dependencies] - Repository and `getSql` overrides (tests).
+ * @returns {Promise<{flagId: string, reportStatus: string}>} New flag id and the report status after flagging.
+ * @throws {Error} With `code` `report_not_flaggable`, `flag_already_submitted`,
+ *   `configuration_unavailable`, `flag_rate_limit_exceeded` (with `retryAfterSeconds`), or
+ *   `dependency_unavailable`. Unknown errors propagate unchanged.
+ */
 export async function submitFlag(
   { reportId, command, deviceFingerprint },
   dependencies = productionDependencies,

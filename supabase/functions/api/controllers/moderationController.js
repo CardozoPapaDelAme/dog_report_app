@@ -1,3 +1,9 @@
+/**
+ * @module controllers/moderationController
+ * HTTP adapter for administrator moderation: the moderation queue and the approve, hide, restore, and
+ * delete commands. The moderation Service owns authorization (ADR-019); this Controller maps its
+ * errors to HTTP statuses.
+ */
 import { presentError } from '../presenters/error.js';
 import {
   presentModerationCommand,
@@ -11,6 +17,7 @@ import {
   restore,
 } from '../services/moderationService.js';
 
+/** Maps `authentication_required` to 401 and `forbidden` to 403; returns null for other errors. */
 function presentAuthorizationError(c, error) {
   if (error?.code === 'authentication_required') {
     return presentError(c, 401, 'authentication_required', 'A valid Administrator session is required.');
@@ -23,6 +30,7 @@ function presentAuthorizationError(c, error) {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Parses `limit` (default 50, 1 to 500); returns null when invalid. */
 function parseLimit(raw) {
   if (raw === undefined || raw === null || raw === '') {
     return 50;
@@ -34,6 +42,7 @@ function parseLimit(raw) {
   return value;
 }
 
+/** Decodes a base64url `<synced_at>|<uuid>` cursor; null when absent, undefined when malformed. */
 function parseCursor(raw) {
   if (raw === undefined || raw === null || raw === '') {
     return null;
@@ -57,6 +66,12 @@ function parseCursor(raw) {
   }
 }
 
+/**
+ * `GET /admin/moderation-queue`: responds 200 with a queue page, 400 `invalid_request`, 401, 403, or
+ * 503 `database_unavailable` for any other failure.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {Promise<Response>}
+ */
 export async function getModerationQueue(c) {
   const limit = parseLimit(c.req.query('limit'));
   if (limit === null) {
@@ -83,6 +98,11 @@ export async function getModerationQueue(c) {
   }
 }
 
+/**
+ * Parses a body that may contain only `note` (string, at most 1000 characters; non-blank when required).
+ * An empty body is accepted when the note is optional.
+ * @returns {{ok: true, note: string | null} | {ok: false}}
+ */
 function parseNoteBody(raw, noteRequired) {
   if (!raw) {
     return noteRequired ? { ok: false } : { ok: true, note: null };
@@ -114,22 +134,49 @@ function parseNoteBody(raw, noteRequired) {
   return { ok: true, note: body.note };
 }
 
+/**
+ * Parses an approve body; the note is optional.
+ * @param {string} raw - Raw request body.
+ * @returns {{ok: true, note: string | null} | {ok: false}}
+ */
 export function parseApproveBody(raw) {
   return parseNoteBody(raw, false);
 }
 
+/**
+ * Parses a delete body; a non-blank note is required.
+ * @param {string} raw - Raw request body.
+ * @returns {{ok: true, note: string} | {ok: false}}
+ */
 export function parseDeleteBody(raw) {
   return parseNoteBody(raw, true);
 }
 
+/**
+ * Parses a hide body; a non-blank note is required.
+ * @param {string} raw - Raw request body.
+ * @returns {{ok: true, note: string} | {ok: false}}
+ */
 export function parseHideBody(raw) {
   return parseNoteBody(raw, true);
 }
 
+/**
+ * Parses a restore body; a non-blank note is required.
+ * @param {string} raw - Raw request body.
+ * @returns {{ok: true, note: string} | {ok: false}}
+ */
 export function parseRestoreBody(raw) {
   return parseNoteBody(raw, true);
 }
 
+/**
+ * `POST /admin/reports/:report_id/approve`: responds 200 with the updated report, 400
+ * `invalid_request`, 401, 403, 404 `not_found`, or 409 `invalid_approve_transition`. Other errors are
+ * rethrown.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {Promise<Response>}
+ */
 export async function approveReport(c) {
   const reportId = c.req.param('report_id');
   if (!UUID_PATTERN.test(reportId)) {
@@ -168,6 +215,12 @@ export async function approveReport(c) {
   }
 }
 
+/**
+ * `POST /admin/reports/:report_id/hide`: responds 200 with the updated report, 400 `invalid_request`,
+ * 401, 403, 404 `not_found`, or 409 `invalid_hide_transition`. Other errors are rethrown.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {Promise<Response>}
+ */
 export async function hideReport(c) {
   const reportId = c.req.param('report_id');
   if (!UUID_PATTERN.test(reportId)) {
@@ -206,6 +259,13 @@ export async function hideReport(c) {
   }
 }
 
+/**
+ * `POST /admin/reports/:report_id/restore`: responds 200 with the updated report, 400
+ * `invalid_request`, 401, 403, 404 `not_found`, or 409 `invalid_restore_transition`. Other errors are
+ * rethrown.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {Promise<Response>}
+ */
 export async function restoreReport(c) {
   const reportId = c.req.param('report_id');
   if (!UUID_PATTERN.test(reportId)) {
@@ -244,6 +304,13 @@ export async function restoreReport(c) {
   }
 }
 
+/**
+ * `POST /admin/reports/:report_id/delete`: logically deletes a report. Responds 200 with the updated
+ * report, 400 `invalid_request`, 401, 403, 404 `not_found`, or 409 `invalid_delete_transition`. Other
+ * errors are rethrown.
+ * @param {import('hono').Context} c - Hono request context.
+ * @returns {Promise<Response>}
+ */
 export async function deleteReport(c) {
   const reportId = c.req.param('report_id');
   if (!UUID_PATTERN.test(reportId)) {

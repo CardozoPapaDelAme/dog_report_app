@@ -1,3 +1,8 @@
+/**
+ * @module components/ReportFlagSheet
+ * Bottom sheet for anonymously flagging a public report: reason, optional detail with a length
+ * counter, and a neutral outcome message.
+ */
 import { useState, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -8,6 +13,14 @@ import { FLAG_DETAIL_MAX, FLAG_REASONS, flagDetailLength } from '../models/repor
 const colors = { ink: '#191d17', primary: '#00450d', muted: '#5d6859', line: '#e0e0e0', error: '#ba1a1a', errorSoft: '#ffdad6', ok: '#e6f4e1' };
 
 // Anonymous report flag form. Shows only neutral outcomes: never moderation status, counts or thresholds.
+/**
+ * @param {object} props
+ * @param {import('../models/publicMap.js').PublicReport} props.report - Report being flagged.
+ * @param {() => void} props.onClose
+ * @param {(key: string, options?: object) => string} props.t - Translation function.
+ * @param {typeof sendReportFlag} [props.send=sendReportFlag] - Submits the flag with the device fingerprint.
+ * @returns {JSX.Element}
+ */
 export default function ReportFlagSheet({ report, onClose, t, send = sendReportFlag }) {
   const [reason, setReason] = useState(null);
   const [detail, setDetail] = useState('');

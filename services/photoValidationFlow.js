@@ -1,3 +1,8 @@
+/**
+ * @module services/photoValidationFlow
+ * Platform-independent orchestration of one on-device photo validation with timeout and fail-open
+ * handling. Runtime dependencies are injected by `photoValidationRuntime.js`.
+ */
 import { withTimeout } from './withTimeout.js';
 
 export const PHOTO_VALIDATION_TIMEOUT_MS = 8000;
@@ -6,6 +11,25 @@ export const PHOTO_VALIDATION_TIMEOUT_MS = 8000;
 export const MODEL_LOAD_HUNG_MS = 60000;
 
 // Orchestrates one validation; never throws. Failures fail open as `model_error`.
+/**
+ * @typedef {object} SkippedPhotoValidation
+ * @property {'skipped'} status
+ * @property {string} reason - `web`, `expo_go`, `timeout` or `model_error`.
+ */
+/**
+ * @param {object} options
+ * @param {string} options.uri - Local photo URI.
+ * @param {import('./photoValidationAvailability.js').PhotoValidationAvailability} options.availability
+ * @param {(uri: string) => Promise<*>} options.getPixels - Decodes the photo into model pixels.
+ * @param {() => *} options.loadModel - Returns the (possibly cached) model or a promise of it.
+ * @param {(input: {model: *, pixels: *}) => *} options.classify - Produces the validation result.
+ * @param {(error: unknown) => void} [options.onError] - Reports any failure.
+ * @param {(error: unknown) => void} [options.onModelFailure] - Called when the model load failed or is hung.
+ * @param {() => number | null} [options.loadPendingMs] - Age of the pending model load.
+ * @param {number} [options.hungMs=60000]
+ * @param {number} [options.timeoutMs=8000]
+ * @returns {Promise<*>} The `classify` result, or a {@link SkippedPhotoValidation}. Never rejects.
+ */
 export async function runPhotoValidationFlow({
   uri,
   availability,

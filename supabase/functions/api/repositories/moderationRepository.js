@@ -1,5 +1,29 @@
+/**
+ * @module repositories/moderationRepository
+ * SQL access for administrator report moderation: row locking, status transitions, audit entries, and
+ * the moderation queue. Every function runs on a caller-provided transaction; the moderation Service
+ * owns authorization (ADR-019) and validates transitions with `domain/reportModeration.js`.
+ */
 const QUEUE_STATUSES = ['pending_review', 'hidden'];
 
+/**
+ * @typedef {object} ModerationReportState
+ * @property {string} id
+ * @property {string} status
+ * @property {string | null} status_reason
+ * @property {string | null} previous_status
+ * @property {Date | null} accepted_at
+ * @property {Date | null} published_at
+ * @property {Date | null} public_until
+ * @property {Date | null} hidden_at
+ * @property {Date | null} deleted_at
+ */
+/**
+ * Locks a report `FOR UPDATE` and returns its moderation state.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} reportId - Report id.
+ * @returns {Promise<ModerationReportState | null>}
+ */
 export async function lockReportForModeration(tx, reportId) {
   const rows = await tx`
     SELECT
@@ -19,6 +43,13 @@ export async function lockReportForModeration(tx, reportId) {
   return rows[0] ?? null;
 }
 
+/**
+ * Publishes a report for 90 days (keeping the first `accepted_at`) and resets the public window of its
+ * approved photo.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} reportId - Report id.
+ * @returns {Promise<ModerationReportState | undefined>} Updated state, or undefined when no row matched.
+ */
 export async function approveReport(tx, reportId) {
   const rows = await tx`
     UPDATE public.reports
@@ -47,6 +78,12 @@ export async function approveReport(tx, reportId) {
   return report;
 }
 
+/**
+ * Hides a report with reason `administrator_hidden`.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} reportId - Report id.
+ * @returns {Promise<ModerationReportState | undefined>}
+ */
 export async function hideReportRow(tx, reportId) {
   const rows = await tx`
     UPDATE public.reports
@@ -70,6 +107,12 @@ export async function hideReportRow(tx, reportId) {
   return rows[0];
 }
 
+/**
+ * Returns a report to `pending_review` with reason `restored_for_review`, clearing hide/delete timestamps.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} reportId - Report id.
+ * @returns {Promise<ModerationReportState | undefined>}
+ */
 export async function restoreReportRow(tx, reportId) {
   const rows = await tx`
     UPDATE public.reports
@@ -94,6 +137,12 @@ export async function restoreReportRow(tx, reportId) {
   return rows[0];
 }
 
+/**
+ * Logically deletes a report (status `deleted`, reason `logical_deletion`); the row is kept.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} reportId - Report id.
+ * @returns {Promise<ModerationReportState | undefined>}
+ */
 export async function deleteReport(tx, reportId) {
   const rows = await tx`
     UPDATE public.reports
@@ -117,6 +166,18 @@ export async function deleteReport(tx, reportId) {
   return rows[0];
 }
 
+/**
+ * Records a moderation audit entry for a report.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.actorId - Administrator profile id.
+ * @param {string} options.action - Audit action.
+ * @param {string} options.reportId - Report id.
+ * @param {*} options.previousValues - Previous state (stored as JSON).
+ * @param {*} options.newValues - New state (stored as JSON).
+ * @param {string | null} options.note - Optional note.
+ * @returns {Promise<void>}
+ */
 export async function insertModerationAudit(
   tx,
   { actorId, action, reportId, previousValues, newValues, note },
@@ -143,6 +204,16 @@ export async function insertModerationAudit(
   `;
 }
 
+/**
+ * Lists `pending_review` and `hidden` reports, newest `synced_at` first, using keyset pagination.
+ * Each row includes trust signals, exact coordinates, photo state, flags, pending duplicate candidates,
+ * and active duplicate membership.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {number} options.limit - Page size; one extra row is fetched to detect a next page.
+ * @param {{syncedAt: string, id: string} | null | undefined} options.cursor - Keyset cursor from the previous page.
+ * @returns {Promise<object[]>} Up to `limit + 1` queue rows.
+ */
 export async function listModerationQueue(tx, { limit, cursor }) {
   const rows = cursor
     ? await tx`

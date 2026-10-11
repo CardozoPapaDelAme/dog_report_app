@@ -1,3 +1,8 @@
+/**
+ * @module domain/reportDetailsValidator
+ * Validates the incident-specific `details` object of a report submission. Allowed keys and value rules
+ * depend on the incident type (and sighting type for `avistamiento_simple`). Pure logic with no I/O.
+ */
 function isPlainObject(value) {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
@@ -10,10 +15,12 @@ function isIntegerInRange(value, min, max) {
   return Number.isInteger(value) && value >= min && value <= max;
 }
 
+/** Builds the `invalid_details` failure result. */
 function invalid(message) {
   return { ok: false, code: "invalid_details", message };
 }
 
+/** Validates the optional free-text `descripcion` (string up to 2000 characters). */
 function validateDescription(details) {
   if (
     Object.hasOwn(details, "descripcion") &&
@@ -27,6 +34,14 @@ function validateDescription(details) {
   return { ok: true };
 }
 
+/**
+ * Validates report details for the given incident type. Returns a result instead of throwing.
+ * @param {object} options
+ * @param {string} options.incidentType - Incident type (see `INCIDENT_TYPES` in `domain/publicMap.js`).
+ * @param {string} [options.sightingType] - Sighting type (`solitario` or `manada`) for `avistamiento_simple`.
+ * @param {unknown} options.details - Details object from the request.
+ * @returns {{ok: true} | {ok: false, code: 'invalid_details', message: string}}
+ */
 export function validateReportDetails({ incidentType, sightingType, details }) {
   if (!isPlainObject(details)) {
     return invalid("details must be an object.");
