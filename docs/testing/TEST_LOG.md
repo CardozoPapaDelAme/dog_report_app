@@ -1,8 +1,14 @@
 # Test log — registro de ejecuciones
 
-Estado: plantilla de T1 con ejecuciones de casos de T6 y T7 (RUN-1 a RUN-116).
+Estado: plantilla de T1 con ejecuciones de casos de T5, T6 y T7 (RUN-1 a RUN-123).
 Convenciones: `docs/testing/README.md`. Cada ejecutor agrega sus filas; T12 / TD-125
 consolida el resumen. Los ejemplos de formato no cuentan como ejecuciones.
+
+T8 / TD-121 tiene protocolo y casos preparados en `docs/testing/UAT.md` y
+`docs/testing/cases/uat.md`; aún no hay ejecuciones de usuarios generales.
+Cuando se realicen, registrar una fila real por participante y por cada uno de
+TC-UAT-01, TC-UAT-02 y TC-UAT-03 usando el siguiente `RUN-<n>` consecutivo. No
+registrar marcadores ni resultados simulados como ejecuciones.
 
 ## Resumen (T12)
 
