@@ -171,6 +171,8 @@
     "photoPreview": "Vista previa de la foto del reporte",
     "photoAttached": "Foto adjunta",
     "selectPlaceholder": "Selecciona una opción",
+    "privacyTitle": "No ingreses datos personales",
+    "privacyBody": "Evita escribir nombres, teléfonos, placas, domicilios o datos privados. La foto y la descripción pueden contener información incidental; el reporte sigue siendo público y anónimo.",
     "summaryTitle": "Reporte",
     "id": "UUID: {{value}}",
     "localState": "Estado local: {{value}}",

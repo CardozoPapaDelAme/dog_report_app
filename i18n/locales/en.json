@@ -165,6 +165,8 @@
     "photoPreview": "Preview of the report photo",
     "photoAttached": "Photo attached",
     "selectPlaceholder": "Select an option",
+    "privacyTitle": "Do not enter personal data",
+    "privacyBody": "Avoid writing names, phone numbers, plates, addresses, or private details. Photos and descriptions can contain incidental information; the report remains public and anonymous.",
     "summaryTitle": "Report",
     "id": "UUID: {{value}}",
     "localState": "Local state: {{value}}",

@@ -1,0 +1,124 @@
+{
+  "task": "T5",
+  "suite": "reportero publico",
+  "cases": [
+    {
+      "id": "TC-REPORTE-RF04-MIN-EXCEPTION",
+      "requirement": "RF04",
+      "type": "excepcion",
+      "input": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": 1
+      },
+      "expected": {
+        "accepted": false,
+        "error": "integerRange",
+        "range": {
+          "min": 2,
+          "max": 1000
+        }
+      }
+    },
+    {
+      "id": "TC-REPORTE-RF04-MIN",
+      "requirement": "RF04",
+      "type": "minimo",
+      "input": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": 2
+      },
+      "expected": {
+        "accepted": true,
+        "details": {
+          "cantidad_aprox": 2
+        }
+      }
+    },
+    {
+      "id": "TC-REPORTE-RF04-AVG",
+      "requirement": "RF04",
+      "type": "promedio",
+      "input": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": 500
+      },
+      "expected": {
+        "accepted": true,
+        "details": {
+          "cantidad_aprox": 500
+        }
+      }
+    },
+    {
+      "id": "TC-REPORTE-RF04-MAX",
+      "requirement": "RF04",
+      "type": "maximo",
+      "input": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": 1000
+      },
+      "expected": {
+        "accepted": true,
+        "details": {
+          "cantidad_aprox": 1000
+        }
+      }
+    },
+    {
+      "id": "TC-REPORTE-RF04-MAX-EXCEPTION",
+      "requirement": "RF04",
+      "type": "excepcion",
+      "input": {
+        "incident_type": "avistamiento_simple",
+        "sighting_type": "manada",
+        "cantidad_aprox": 1001
+      },
+      "expected": {
+        "accepted": false,
+        "error": "integerRange",
+        "range": {
+          "min": 2,
+          "max": 1000
+        }
+      }
+    },
+    {
+      "id": "TC-REPORTE-RNF36-VALID",
+      "requirement": "RNF36",
+      "type": "promedio",
+      "input": {
+        "incident_type": "ataque_humano",
+        "details": {
+          "hubo_mordida": true,
+          "descripcion": "Reporte sintetico para trigger"
+        }
+      },
+      "expected": {
+        "accepted": true
+      }
+    },
+    {
+      "id": "TC-REPORTE-RNF36-INVALID",
+      "requirement": "RNF36",
+      "type": "excepcion",
+      "input": {
+        "incident_type": "ataque_humano",
+        "details": {
+          "descripcion": "Falta hubo_mordida"
+        }
+      },
+      "expected": {
+        "accepted": false,
+        "postgres_error": "missing_hubo_mordida"
+      }
+    }
+  ],
+  "evidence": {
+    "device": "docs/testing/ALPHA.md#t7--validacion-en-android-fisico",
+    "alphaData": "docs/testing/data/alpha/2026-10-11/"
+  }
+}

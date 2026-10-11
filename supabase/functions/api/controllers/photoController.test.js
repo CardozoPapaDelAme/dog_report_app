@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 
 import { createPhotoRoutes } from "../routes/photo.js";
+import { PhotoServiceError } from "../services/photoService.js";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -61,6 +62,43 @@ Deno.test("photo upload rejects multipart fields other than a single photo part"
   assert(
     body.error.code === "invalid_request",
     "extra multipart fields should reject",
+  );
+});
+
+Deno.test("photo upload maps unsupported sanitizer media to public 415 unsupported_photo_type", async () => {
+  const app = appWithService({
+    getStatus() {
+      throw new Error("status service should not run");
+    },
+    download() {
+      throw new Error("download service should not run");
+    },
+    upload() {
+      throw new PhotoServiceError(
+        "unsupported_media_type",
+        "Only JPEG and PNG photos are supported.",
+      );
+    },
+  });
+  const form = new FormData();
+  form.set(
+    "photo",
+    new File(["not-a-supported-photo"], "report.webp", {
+      type: "image/webp",
+    }),
+  );
+
+  const response = await app.request(`/reports/${REPORT_ID}/photo`, {
+    method: "POST",
+    headers: { "X-Device-Fingerprint": FINGERPRINT },
+    body: form,
+  });
+  const body = await response.json();
+
+  assert(response.status === 415, JSON.stringify(body));
+  assert(
+    body.error.code === "unsupported_photo_type",
+    "public API must expose RNF32 unsupported_photo_type",
   );
 });
 

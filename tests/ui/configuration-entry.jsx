@@ -9,6 +9,7 @@ import ZoneSetScreen from '../../screens/ZoneSetScreen.js';
 import ConfigurationScreen from '../../screens/ConfigurationScreen.js';
 import PublicMapScreen from '../../screens/PublicMapScreen.js';
 import CommandCenterScreen from '../../screens/CommandCenterScreen.js';
+import CameraScreen from '../../screens/CameraScreen.js';
 // Device map component (MapLibre is aliased to tests/ui/maplibre-stub.js) to measure cluster size.
 import NativePublicMapView from '../../components/PublicMapView.js';
 import ReportFormScreen from '../../screens/ReportFormScreen.js';
@@ -282,6 +283,17 @@ function LoginFixture() {
   />;
 }
 
+function CameraFixture() {
+  const [screen, setScreen] = useState('camera');
+  if (screen === 'report') return <ReportFixture />;
+  return <CameraScreen
+    onOpenLogin={() => {}}
+    onOpenMap={() => {}}
+    onReportWithoutPhoto={() => setScreen('report')}
+    onPhotoAccepted={() => setScreen('report')}
+  />;
+}
+
 // RF12: one cluster per synthetic report_count, rendered by the device map component.
 const nativeClusterCounts = [1, 2, 7, 100, 1000, 5000];
 function NativeClusterFixture() {
@@ -299,6 +311,9 @@ function NativeClusterFixture() {
 function Fixture() {
   const params = new URLSearchParams(location.search);
   if (params.has('native-map-clusters')) return <div style={{height:'100dvh',overflow:'auto'}}><NativeClusterFixture /></div>;
+  if (params.has('camera')) return <div style={{height:'100dvh'}}>
+    <SafeAreaProvider><CameraFixture /></SafeAreaProvider>
+  </div>;
   if (params.has('login')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><LoginFixture /></SafeAreaProvider>
   </div>;

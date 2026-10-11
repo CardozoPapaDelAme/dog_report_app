@@ -3,7 +3,7 @@
  * Runner for the opt-in PostgreSQL/PostGIS Deno suites.
  *
  * Invoked as `npm run test:postgres` (`node scripts/test-postgres.mjs [configuration] [zone]
- * [duplicate] [flag] [publicMap]`). Requires Docker. For each suite it starts a disposable
+ * [duplicate] [flag] [publicMap] [report]`). Requires Docker. For each suite it starts a disposable
  * `postgis/postgis` container on a loopback port, creates the suite database, runs the Deno
  * test file with the suite's `*_TEST_DATABASE_URL` variable set, and stops the container.
  * A suite that reports skipped tests or no passes counts as failed. Exits with 0 only when
@@ -15,7 +15,7 @@
 // Each suite gets its own throwaway container: flag and public-map create
 // cluster-level roles, and every suite requires a fresh database with a fixed
 // name created after startup (see docs/TESTING.md, "Database suites").
-//   node scripts/test-postgres.mjs               -> all five suites
+//   node scripts/test-postgres.mjs               -> all six suites
 //   node scripts/test-postgres.mjs zone flag     -> only the named ones
 import { spawn, spawnSync } from 'node:child_process';
 import { arch } from 'node:os';
@@ -37,6 +37,7 @@ const suites = {
   duplicate: { label: 'PostgreSQL · duplicados (FAB-3)', db: 'fab3_duplicate_test', env: 'DUPLICATE_TEST_DATABASE_URL', file: 'duplicatePostgres.test.js', port: 55433, read: 'supabase/migrations' },
   flag: { label: 'PostgreSQL · reportes (L2)', db: 'fab4_flag_test', env: 'FLAG_TEST_DATABASE_URL', file: 'flag-postgres.test.js', port: 55434, read: 'supabase/migrations' },
   publicMap: { label: 'PostgreSQL · mapa público', db: 'fab_public_map_test', env: 'PUBLIC_MAP_TEST_DATABASE_URL', file: 'publicMapPostgres.test.js', port: 55435, read: 'supabase/migrations' },
+  report: { label: 'PostgreSQL · reportero público (T5)', db: 'fab5_report_test', env: 'REPORT_TEST_DATABASE_URL', file: 'reportPostgres.test.js', port: 55436, read: 'supabase/migrations' },
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

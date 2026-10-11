@@ -411,6 +411,11 @@ export default function ReportFormScreen({
 
           {draft ? (
             <>
+              <View testID="report-privacy-warning" style={styles.privacyWarning}>
+                <Text style={styles.privacyTitle}>{t('reportForm.privacyTitle')}</Text>
+                <Text style={styles.privacyBody}>{t('reportForm.privacyBody')}</Text>
+              </View>
+
               <View style={styles.photoCard}>
                 {photoUri ? (
                   <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
@@ -727,6 +732,9 @@ const styles = StyleSheet.create({
   errorBanner: { backgroundColor: colors.dangerSoft, borderColor: '#f3b3ad', borderWidth: 1, borderRadius: 12, padding: 14, gap: 5 },
   errorTitle: { color: colors.danger, fontFamily: boldFont, fontSize: 15 },
   errorBody: { color: '#5f1414', fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
+  privacyWarning: { backgroundColor: colors.soft, borderColor: '#cfdac7', borderWidth: 1, borderRadius: 12, padding: 14, gap: 4 },
+  privacyTitle: { color: colors.primary, fontFamily: boldFont, fontSize: 15, lineHeight: 20 },
+  privacyBody: { color: '#364233', fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
   success: { backgroundColor: colors.soft, borderRadius: 12, padding: 14, gap: 4 },
   successTitle: { color: colors.primary, fontFamily: boldFont, fontSize: 15 },
   successText: { color: colors.primary, fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },

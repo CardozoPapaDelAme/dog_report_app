@@ -20,6 +20,37 @@ async function chooseIncident(page, value) {
   await page.getByTestId(`report-incident_type-${value}`).click();
 }
 
+test('shows RF02 privacy warning and does not render reporter identity fields', async ({ page }) => {
+  await openReport(page, (route) => route.fulfill({ status: 500 }));
+
+  const warning = page.getByTestId('report-privacy-warning');
+  await expect(warning).toBeVisible();
+  await expect(warning).toContainText('No ingreses datos personales');
+  await expect(warning).toContainText('teléfonos');
+  await expect(warning).toContainText('anónimo');
+  await expect(page.getByTestId('report-submit')).toBeVisible();
+
+  await expect(page.getByTestId('report-reporter_name')).toHaveCount(0);
+  await expect(page.getByTestId('report-reporter_phone')).toHaveCount(0);
+  await expect(page.getByTestId('report-reporter_email')).toHaveCount(0);
+  await expect(page.locator('#report-reporter_name, #report-reporter_phone, #report-reporter_email')).toHaveCount(0);
+});
+
+test('opens the public reporter on the camera screen and starts a no-photo draft from quick access', async ({ page }) => {
+  await page.goto('/?camera');
+
+  await expect(page.getByTestId('camera-screen')).toBeVisible();
+  await expect(page.getByTestId('camera-preview')).toBeVisible();
+  await expect(page.getByTestId('camera-without-photo')).toBeVisible();
+  await expect(page.getByText('Nuevo Reporte')).toHaveCount(0);
+
+  await page.getByTestId('camera-without-photo').click();
+  await expect(page.getByText('Nuevo Reporte')).toBeVisible();
+  await expect(page.getByText('Sin foto')).toBeVisible();
+  await expect(page.getByTestId('report-privacy-warning')).toBeVisible();
+  await expect(page.getByTestId('report-submit')).toBeVisible();
+});
+
 test('shows only the conditional questions allowed for the selected incident', async ({ page }) => {
   await openReport(page, (route) => route.fulfill({ status: 500 }));
 

@@ -27,6 +27,10 @@ const ERROR_STATUSES = {
   database_unavailable: 503,
 };
 
+const PUBLIC_ERROR_CODES = {
+  unsupported_media_type: "unsupported_photo_type",
+};
+
 function invalid(message) {
   return { ok: false, code: "invalid_request", message };
 }
@@ -100,10 +104,11 @@ async function parsePhotoPart(c) {
 
 function handlePhotoError(c, error) {
   if (error instanceof PhotoServiceError && ERROR_STATUSES[error.code]) {
+    const code = PUBLIC_ERROR_CODES[error.code] ?? error.code;
     return presentError(
       c,
       ERROR_STATUSES[error.code],
-      error.code,
+      code,
       error.message,
       error.details,
     );
@@ -128,7 +133,7 @@ function routeReportId(c) {
  * - `download`: `GET /reports/:report_id/photo`, streams the image with `Cache-Control: private, no-store`.
  * Errors: 400 `invalid_request` / `invalid_image_content`, 401 `invalid_token`, 403 `inactive_profile` /
  * `role_mismatch`, 404 `photo_not_available`, 409 `photo_content_conflict` / `photo_not_expected` /
- * `photo_processing_conflict`, 413 `photo_too_large` / `image_too_large`, 415 `unsupported_media_type`,
+ * `photo_processing_conflict`, 413 `photo_too_large` / `image_too_large`, 415 `unsupported_photo_type`,
  * 503 `storage_unavailable` / `database_unavailable`. Unmapped errors are rethrown.
  * @param {ReturnType<typeof import('../services/photoService.js').createPhotoService>} [service] - Photo Service.
  * @returns {{status: (c: import('hono').Context) => Promise<Response>, upload: (c: import('hono').Context) => Promise<Response>,
