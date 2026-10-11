@@ -1,3 +1,33 @@
+/**
+ * @module repositories/associationReportRepository
+ * Read model for associations: accepted, visible, non-duplicate reports within the last five years.
+ */
+/**
+ * @typedef {object} AssociationReportRow
+ * @property {string} id
+ * @property {number} longitude
+ * @property {number} latitude
+ * @property {string} incident_type
+ * @property {*} sighting_type
+ * @property {*} details
+ * @property {*} color_predominante
+ * @property {*} tamano
+ * @property {*} tiene_collar
+ * @property {boolean} has_sanitized_photo - True when an approved photo asset exists.
+ * @property {Date} client_created_at
+ * @property {Date} accepted_at
+ */
+/**
+ * Lists visible reports ordered by `accepted_at` then `id`, newest first, using keyset pagination.
+ * The window is clamped to the last five years and to now.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string | null} options.from - Inclusive lower bound for `accepted_at` (ISO timestamp), or null.
+ * @param {string | null} options.to - Inclusive upper bound for `accepted_at` (ISO timestamp), or null.
+ * @param {number} options.limit - Page size; one extra row is fetched to detect a next page.
+ * @param {{acceptedAt: string, id: string} | null | undefined} options.cursor - Keyset cursor from the previous page.
+ * @returns {Promise<AssociationReportRow[]>} Up to `limit + 1` rows.
+ */
 export async function listAcceptedAssociationReports(
   tx,
   { from, to, limit, cursor },

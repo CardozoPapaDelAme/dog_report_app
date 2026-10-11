@@ -1,3 +1,10 @@
+/**
+ * @module screens/ReportFormScreen
+ * Container screen for the public report form of a local draft: photo preview, incident and dog
+ * fields (dog color prefilled from on-device detection), submission through `useSubmitReport`, and
+ * success, queued, photo pending and error dialogs. Fields are editable only while the draft is in
+ * state `draft`.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -48,12 +55,14 @@ const bodyFont = 'PlusJakartaSans_400Regular';
 const semiBoldFont = 'PlusJakartaSans_600SemiBold';
 const boldFont = 'PlusJakartaSans_700Bold';
 
+/** Translates a field validation error (`{key, values}`) or returns a string error as is. */
 function fieldErrorText(error, t) {
   if (!error) return '';
   if (typeof error === 'string') return error;
   return t(`reportForm.validation.${error.key}`, error.values);
 }
 
+/** Single-choice field that opens a modal option list. */
 function SelectField({ label, field, value, options, disabled, error, t, onChange }) {
   const [open, setOpen] = useState(false);
   const message = fieldErrorText(error, t);
@@ -116,6 +125,7 @@ function SelectField({ label, field, value, options, disabled, error, t, onChang
   );
 }
 
+/** Translated message for a submission error code, with a generic fallback. */
 function reportErrorText(error, t) {
   if (!error) return '';
   return t(`reportForm.errors.${error.code}`, {
@@ -127,6 +137,7 @@ function reportErrorCode(error) {
   return error?.code ?? 'request_failed';
 }
 
+/** Rejection code of a terminal, unsuccessful photo status; `null` otherwise. */
 function photoRejectedInfo(draft) {
   const status = draft?.photo_status;
   if (!status || !photoStatusIsTerminal(status) || photoStatusSucceeded(status)) {
@@ -137,6 +148,7 @@ function photoRejectedInfo(draft) {
   };
 }
 
+/** Element identity props for a text input; web also receives `id` and `name`. */
 function textInputIdentity(id, name) {
   if (Platform.OS !== 'web') {
     return { nativeID: id };
@@ -165,6 +177,7 @@ function Button({ title, onPress, disabled, busy, secondary, testID }) {
   );
 }
 
+/** Group of option chips; `allowDeselect` lets a second tap clear the value. */
 function ChoiceGroup({ label, field, value, options, disabled, error, t, onChange, allowDeselect = false }) {
   const message = fieldErrorText(error, t);
   return (
@@ -242,6 +255,17 @@ function TextField({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {import('../models/reportDraft.js').ReportDraft | null} props.draft - Active draft.
+ * @param {boolean} [props.loading=false] - Draft is being created.
+ * @param {{code?: string} | null} [props.error=null] - Draft creation or queue error.
+ * @param {() => void} props.onBackToCamera
+ * @param {(id: string, options: object) => Promise<import('../models/reportDraft.js').ReportDraft>} props.queueDraft
+ * @param {(id: string) => Promise<import('../models/reportDraft.js').ReportDraft | null>} props.syncDraft
+ * @param {object} [props.submitDependencies] - Extra `useSubmitReport` options (e.g. `getDeviceFingerprint`).
+ * @returns {JSX.Element}
+ */
 export default function ReportFormScreen({
   draft,
   loading = false,

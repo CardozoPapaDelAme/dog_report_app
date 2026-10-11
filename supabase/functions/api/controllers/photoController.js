@@ -1,9 +1,15 @@
+/**
+ * @module controllers/photoController
+ * HTTP adapter for report photos: reporter status and multipart upload (identified by the
+ * `X-Device-Fingerprint` header) and private download.
+ */
 import { presentError } from "../presenters/error.js";
 import { presentPhotoStatus } from "../presenters/photo.js";
 import { photoService, PhotoServiceError } from "../services/photoService.js";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** HTTP status for each `PhotoServiceError` code; other errors are rethrown. */
 const ERROR_STATUSES = {
   invalid_request: 400,
   invalid_image_content: 400,
@@ -29,6 +35,7 @@ function validateReportId(reportId) {
   return typeof reportId === "string" && UUID_PATTERN.test(reportId);
 }
 
+/** Returns an `invalid_request` failure when the URL has a query string, otherwise null. */
 function rejectQuery(c) {
   if (new URL(c.req.url).search) {
     return invalid("This route does not accept query parameters.");
@@ -36,6 +43,7 @@ function rejectQuery(c) {
   return null;
 }
 
+/** Returns `X-Device-Fingerprint` when it has at least 16 characters, otherwise null. */
 function deviceFingerprint(c) {
   const value = c.req.header("X-Device-Fingerprint");
   if (typeof value !== "string" || value.length < 16) {
@@ -52,6 +60,11 @@ function normalizePartValues(value) {
   return Array.isArray(value) ? value : [value];
 }
 
+/**
+ * Parses a `multipart/form-data` body that must contain exactly one `photo` file part.
+ * @returns {Promise<{ok: true, value: {bytes: Uint8Array, declaredMimeType: string, filename: string}}
+ *   | {ok: false, code: 'invalid_request', message: string}>}
+ */
 async function parsePhotoPart(c) {
   if (multipartContentType(c) !== "multipart/form-data") {
     return invalid("Content-Type must be multipart/form-data.");
@@ -98,6 +111,7 @@ function handlePhotoError(c, error) {
   throw error;
 }
 
+/** Returns the `report_id` route parameter when it is a lowercase UUID, otherwise null. */
 function routeReportId(c) {
   const reportId = c.req.param("report_id");
   if (!validateReportId(reportId)) {
@@ -106,6 +120,20 @@ function routeReportId(c) {
   return reportId;
 }
 
+/**
+ * Creates the photo Controller.
+ * - `status`: `GET /reports/:report_id/photo-status`, responds 200.
+ * - `upload`: `POST /reports/:report_id/photo`, responds 201 after a new approval or 200 for an
+ *   already processed identical photo.
+ * - `download`: `GET /reports/:report_id/photo`, streams the image with `Cache-Control: private, no-store`.
+ * Errors: 400 `invalid_request` / `invalid_image_content`, 401 `invalid_token`, 403 `inactive_profile` /
+ * `role_mismatch`, 404 `photo_not_available`, 409 `photo_content_conflict` / `photo_not_expected` /
+ * `photo_processing_conflict`, 413 `photo_too_large` / `image_too_large`, 415 `unsupported_media_type`,
+ * 503 `storage_unavailable` / `database_unavailable`. Unmapped errors are rethrown.
+ * @param {ReturnType<typeof import('../services/photoService.js').createPhotoService>} [service] - Photo Service.
+ * @returns {{status: (c: import('hono').Context) => Promise<Response>, upload: (c: import('hono').Context) => Promise<Response>,
+ *   download: (c: import('hono').Context) => Promise<Response>}}
+ */
 export function createPhotoController(service = photoService) {
   return {
     async status(c) {
@@ -215,4 +243,5 @@ export function createPhotoController(service = photoService) {
   };
 }
 
+/** Production photo Controller. */
 export const photoController = createPhotoController();

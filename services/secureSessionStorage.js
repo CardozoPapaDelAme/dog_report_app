@@ -1,5 +1,12 @@
+/**
+ * @module services/secureSessionStorage
+ * Supabase Auth storage adapter over `expo-secure-store` for native builds. Values larger than the
+ * SecureStore item limit are split into UTF-8 chunks referenced by a versioned manifest under the key,
+ * and each write uses a new chunk generation so a failed write never corrupts the previous session.
+ */
 const DEFAULT_MAX_ITEM_BYTES = 1500;
 
+/** Returns the UTF-8 byte length of one code point. */
 function utf8Size(character) {
   const codePoint = character.codePointAt(0);
   if (codePoint <= 0x7f) return 1;
@@ -8,6 +15,7 @@ function utf8Size(character) {
   return 4;
 }
 
+/** Splits text into chunks of at most `maxBytes` UTF-8 bytes without breaking code points. */
 function splitUtf8(value, maxBytes) {
   const chunks = [];
   let chunk = "";
@@ -26,6 +34,7 @@ function splitUtf8(value, maxBytes) {
   return chunks;
 }
 
+/** Parses a `{version: 1, generation, count}` manifest; returns `null` when absent or invalid. */
 function parseManifest(value) {
   if (!value) return null;
   try {
@@ -45,6 +54,7 @@ function chunkKey(key, generation, index) {
   return `${key}.chunk.${generation}.${index}`;
 }
 
+/** Deletes the `count` chunks of one generation. */
 async function removeGeneration(secureStore, key, generation, count) {
   await Promise.all(Array.from({ length: count }, (_, index) =>
     secureStore.deleteItemAsync(chunkKey(key, generation, index))
@@ -52,6 +62,18 @@ async function removeGeneration(secureStore, key, generation, count) {
 }
 
 
+/**
+ * @param {object} options
+ * @param {{getItemAsync: Function, setItemAsync: Function, deleteItemAsync: Function}} options.secureStore
+ *   `expo-secure-store` module or a compatible double.
+ * @param {number} [options.maxItemBytes=1500] - Maximum UTF-8 bytes per stored chunk (at least 4).
+ * @param {() => string} [options.createGeneration] - Unique generation id factory.
+ * @returns {Readonly<{getItem: (key: string) => Promise<string | null>,
+ *   setItem: (key: string, value: string) => Promise<void>, removeItem: (key: string) => Promise<void>}>}
+ *   `getItem` returns `null` for a missing or damaged manifest or chunk; `setItem` throws a TypeError for
+ *   non-string values and rethrows SecureStore write errors after removing the partial generation.
+ * @throws {TypeError} When `secureStore` is incompatible or `maxItemBytes` is invalid.
+ */
 export function createSecureSessionStorage({
   secureStore,
   maxItemBytes = DEFAULT_MAX_ITEM_BYTES,

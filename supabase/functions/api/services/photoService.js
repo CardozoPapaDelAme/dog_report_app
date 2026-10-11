@@ -1,3 +1,9 @@
+/**
+ * @module services/photoService
+ * Report photo use cases: reporter status checks and uploads (scoped to the device origin hash) and
+ * downloads for anonymous or authenticated readers. Uploads are sanitized, stored in private storage
+ * under a content-addressed path, and approved in the database; storage is compensated on failure.
+ */
 import { PhotoImageError, sanitizePhotoBytes } from "../domain/photoImage.js";
 import { getConfig } from "../infrastructure/config.js";
 import { getSql } from "../infrastructure/db.js";
@@ -23,7 +29,15 @@ const CONNECTION_ERROR_CODES = new Set([
   "57P03",
 ]);
 
+/**
+ * Error raised by the photo Service; `code` maps to an HTTP status in the photo Controller.
+ */
 export class PhotoServiceError extends Error {
+  /**
+   * @param {string} code - API error code.
+   * @param {string} message - Human-readable description.
+   * @param {object} [details] - Optional structured details.
+   */
   constructor(code, message, details) {
     super(message);
     this.name = "PhotoServiceError";
@@ -36,6 +50,7 @@ function serviceError(code, message, details) {
   return new PhotoServiceError(code, message, details);
 }
 
+/** Reads the application role from `app_metadata.app_role` or `app_metadata.role`. */
 function claimRole(payload) {
   const metadata = payload?.app_metadata ?? {};
   const value = metadata.app_role ?? metadata.role;
@@ -53,6 +68,7 @@ async function sha256BytesHex(bytes) {
     .join("");
 }
 
+/** Maps a photo status row to the camel-cased status view. */
 function statusFromRow(row) {
   return {
     reportId: row.report_id,
@@ -62,6 +78,7 @@ function statusFromRow(row) {
   };
 }
 
+/** Builds the status view from a report and its existing photo row. */
 function existingStatus(report, photo) {
   return {
     reportId: report.id,
@@ -75,10 +92,12 @@ function extensionForMime(mimeType) {
   return mimeType === "image/png" ? "png" : "jpg";
 }
 
+/** Content-addressed storage path: `reports/<reportId>/<sourceSha256>.<png|jpg>`. */
 function approvedObjectPath({ reportId, sourceSha256, mimeType }) {
   return `reports/${reportId}/${sourceSha256}.${extensionForMime(mimeType)}`;
 }
 
+/** Maps unique violations to `photo_content_conflict` and connection failures to `database_unavailable`. */
 function mapPersistenceError(error) {
   if (error instanceof PhotoServiceError) return error;
   if (error?.code === "23505") {
@@ -96,6 +115,7 @@ function mapPersistenceError(error) {
   return error;
 }
 
+/** Maps storage upload, download, and delete failures to `storage_unavailable`. */
 function mapStorageError(error) {
   if (
     [
@@ -114,6 +134,10 @@ function mapStorageError(error) {
   return error;
 }
 
+/**
+ * Extracts the private storage settings.
+ * @throws {PhotoServiceError} `storage_unavailable` when any setting is missing.
+ */
 function requireStorageConfig(config) {
   if (
     !config.supabaseUrl || !config.serviceRoleKey ||
@@ -131,6 +155,21 @@ function requireStorageConfig(config) {
   };
 }
 
+/**
+ * Creates the photo Service.
+ * @param {object} [dependencies] - Overrides for configuration, database, repository, sanitizer,
+ *   storage, and hashing (tests).
+ * @returns {{
+ *   getStatus: (options: {reportId: string, deviceFingerprint: string}) => Promise<{reportId: string, photoExpected: boolean, state: string | null, rejectionCode: string | null}>,
+ *   upload: (options: {reportId: string, deviceFingerprint: string, photo: {bytes: Uint8Array, declaredMimeType: string, filename: string}}) => Promise<{status: object, responseStatus: 200 | 201}>,
+ *   download: (options: {reportId: string, actor: {type: string, claims?: object} | undefined}) => Promise<{body: *, contentType: string, contentLength: string | null}>
+ * }}
+ *   `upload` returns 200 for an already processed identical photo and 201 after a new approval.
+ * @throws {PhotoServiceError} `photo_not_available`, `photo_not_expected`, `photo_content_conflict`,
+ *   `photo_processing_conflict`, the sanitizer codes (`invalid_image_content`, `photo_too_large`,
+ *   `image_too_large`, `unsupported_media_type`), `invalid_token`, `inactive_profile`, `role_mismatch`,
+ *   `storage_unavailable`, or `database_unavailable`. Unknown errors propagate unchanged.
+ */
 export function createPhotoService(dependencies = {}) {
   const deps = {
     getConfig,
@@ -145,6 +184,7 @@ export function createPhotoService(dependencies = {}) {
     ...dependencies,
   };
 
+  /** Runs `operation(tx)` as the anonymous reporter scoped to the report id and origin hash. */
   async function inReporterTransaction({ reportId, originHash }, operation) {
     try {
       return await deps.getSql().begin(async (tx) => {
@@ -159,6 +199,11 @@ export function createPhotoService(dependencies = {}) {
     }
   }
 
+  /**
+   * Sets the transaction role for a download. Anonymous callers get the `anonymous` role; authenticated
+   * callers must carry a known JWT role matching an active profile.
+   * @throws {PhotoServiceError} `invalid_token`, `inactive_profile`, or `role_mismatch`.
+   */
   async function setDownloadContext(tx, actor) {
     if (actor?.type !== "authenticated") {
       await tx`SELECT set_config('app.user_id', '', true)`;
@@ -209,6 +254,10 @@ export function createPhotoService(dependencies = {}) {
     }
   }
 
+  /**
+   * Locks the report and registers a `processing` photo, or detects an existing photo with the same hash.
+   * @throws {PhotoServiceError} `photo_not_available`, `photo_not_expected`, or `photo_content_conflict`.
+   */
   async function reserveUpload({ reportId, originHash, sourceSha256 }) {
     return inReporterTransaction({ reportId, originHash }, async (tx) => {
       const report = await deps.repository.lockReportForPhotoUpload(tx, {
@@ -253,6 +302,7 @@ export function createPhotoService(dependencies = {}) {
     });
   }
 
+  /** Marks the reserved photo as rejected with the sanitizer rejection code. */
   async function rejectReservedPhoto({
     reportId,
     originHash,
@@ -275,6 +325,7 @@ export function createPhotoService(dependencies = {}) {
     });
   }
 
+  /** Marks the reserved photo as approved with the sanitized object metadata. */
   async function approveReservedPhoto({
     reportId,
     originHash,
@@ -431,4 +482,5 @@ export function createPhotoService(dependencies = {}) {
   return { getStatus, upload, download };
 }
 
+/** Production photo Service instance. */
 export const photoService = createPhotoService();

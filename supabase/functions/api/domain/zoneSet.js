@@ -1,3 +1,9 @@
+/**
+ * @module domain/zoneSet
+ * Domain rules for zone sets (the geofence used to accept reports): creation and activation validation,
+ * GeoJSON normalization to a canonical MultiPolygon, SHA-256 checksums, and activation invariants.
+ * Pure logic apart from Web Crypto hashing; persistence lives in `repositories/zoneRepository.js`.
+ */
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const CREATION_FIELDS = new Set([
   "name",
@@ -7,6 +13,11 @@ const CREATION_FIELDS = new Set([
   "geometry",
 ]);
 
+/**
+ * Error raised by zone-set rules.
+ * @property {string} code - `invalid_request` or `zone_set_conflict`.
+ * @property {{fields: Record<string, string>} | undefined} details - Per-field messages for `invalid_request`.
+ */
 export class ZoneSetError extends Error {
   constructor(code, message, details) {
     super(message);
@@ -20,6 +31,10 @@ function characterCount(value) {
   return [...value].length;
 }
 
+/**
+ * Trims a string and checks it is non-blank and at most `max` characters.
+ * @returns {{value: string} | {error: string}}
+ */
 function meaningfulString(value, field, max) {
   if (typeof value !== "string") return { error: `${field} must be a string.` };
   const normalized = value.trim();
@@ -36,6 +51,7 @@ function equalPosition(a, b) {
   return a[0] === b[0] && a[1] === b[1];
 }
 
+/** Validates a WGS84 `[longitude, latitude]` pair. @throws {ZoneSetError} `invalid_request`. */
 function normalizePosition(value, field) {
   if (
     !Array.isArray(value) || value.length !== 2 ||
@@ -58,6 +74,7 @@ function normalizePosition(value, field) {
   return [longitude, latitude];
 }
 
+/** Validates a closed linear ring of at least four positions. @throws {ZoneSetError} `invalid_request`. */
 function normalizeRing(value, field) {
   if (!Array.isArray(value) || value.length < 4) {
     throw new ZoneSetError("invalid_request", "Zone geometry is invalid.", {
@@ -75,6 +92,7 @@ function normalizeRing(value, field) {
   return ring;
 }
 
+/** Validates a polygon as a non-empty list of linear rings. @throws {ZoneSetError} `invalid_request`. */
 function normalizePolygon(value, field) {
   if (!Array.isArray(value) || value.length === 0) {
     throw new ZoneSetError("invalid_request", "Zone geometry is invalid.", {
@@ -84,6 +102,17 @@ function normalizePolygon(value, field) {
   return value.map((ring, index) => normalizeRing(ring, `${field}[${index}]`));
 }
 
+/**
+ * @typedef {object} MultiPolygonGeometry
+ * @property {'MultiPolygon'} type
+ * @property {number[][][][]} coordinates
+ */
+/**
+ * Normalizes a GeoJSON Polygon or MultiPolygon to a MultiPolygon with validated coordinates.
+ * @param {unknown} geometry - GeoJSON geometry with only `type` and `coordinates`.
+ * @returns {MultiPolygonGeometry}
+ * @throws {ZoneSetError} `invalid_request` with `details.fields.geometry`.
+ */
 // The API persists this exact normalized MultiPolygon representation. Its UTF-8
 // JSON is the checksum payload, avoiding client-specific whitespace/key ordering.
 export function normalizeZoneGeometry(geometry) {
@@ -128,10 +157,19 @@ export function normalizeZoneGeometry(geometry) {
   });
 }
 
+/**
+ * @param {unknown} geometry - GeoJSON Polygon or MultiPolygon.
+ * @returns {string} JSON of the normalized geometry; the checksum payload.
+ * @throws {ZoneSetError} `invalid_request` when the geometry is invalid.
+ */
 export function canonicalZoneGeometry(geometry) {
   return JSON.stringify(normalizeZoneGeometry(geometry));
 }
 
+/**
+ * @param {string} value - Text to hash as UTF-8.
+ * @returns {Promise<string>} Lowercase hexadecimal SHA-256 digest.
+ */
 export async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -140,6 +178,21 @@ export async function sha256Hex(value) {
   ).join("");
 }
 
+/**
+ * @typedef {object} ZoneSetCreation
+ * @property {string} name
+ * @property {string} source_uri - Absolute URI of the geometry source.
+ * @property {string} source_version
+ * @property {string} source_sha256 - SHA-256 of `canonical_geometry`.
+ * @property {MultiPolygonGeometry} geometry
+ * @property {string} canonical_geometry - JSON of `geometry`.
+ */
+/**
+ * Validates a zone-set creation body and verifies `source_sha256` against the canonical geometry.
+ * @param {unknown} input - Parsed request body.
+ * @returns {Promise<ZoneSetCreation>}
+ * @throws {ZoneSetError} `invalid_request`, with `details.fields` for field-level failures.
+ */
 export async function validateZoneSetCreation(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new ZoneSetError("invalid_request", "Body must be a JSON object.");
@@ -206,6 +259,12 @@ export async function validateZoneSetCreation(input) {
   };
 }
 
+/**
+ * Validates a zone-set activation body.
+ * @param {unknown} input - Parsed body with `association_approval_reference` and optional `note`.
+ * @returns {{association_approval_reference: string, note: string | null}}
+ * @throws {ZoneSetError} `invalid_request`, with `details.fields` for field-level failures.
+ */
 export function validateZoneSetActivation(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new ZoneSetError("invalid_request", "Body must be a JSON object.");
@@ -240,6 +299,11 @@ export function validateZoneSetActivation(input) {
   return { association_approval_reference: approvalResult.value, note };
 }
 
+/**
+ * @param {unknown[]} zoneSets - Currently active zone sets.
+ * @returns {void}
+ * @throws {ZoneSetError} `zone_set_conflict` when the input is not an array or holds more than one item.
+ */
 // The partial unique index is the database backstop. This domain rule makes the
 // application invariant explicit before replacement is attempted.
 export function assertAtMostOneActiveZone(zoneSets) {
@@ -251,6 +315,12 @@ export function assertAtMostOneActiveZone(zoneSets) {
   }
 }
 
+/**
+ * Asserts that a stored zone set is a draft whose geometry still matches its stored checksum.
+ * @param {{status: string, source_geojson: unknown, source_sha256: string} | null | undefined} zoneSet - Stored zone set.
+ * @returns {Promise<void>}
+ * @throws {ZoneSetError} `zone_set_conflict`.
+ */
 export async function assertActivatableZoneSet(zoneSet) {
   if (
     !zoneSet || zoneSet.status !== "draft" || !zoneSet.source_geojson ||

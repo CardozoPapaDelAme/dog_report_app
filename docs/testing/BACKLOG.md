@@ -211,7 +211,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 ## Fase 2 — Ejecución
 
 ### T4 · Matriz de trazabilidad completa
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-117 · **Criterios:** C1
+- **Persona:** P1 · **Estado:** hecho · **Jira:** TD-117 · **Criterios:** C1
+- **PR:** [#57](https://github.com/CardozoPapaDelAme/dog_report_app/pull/57). Cierre efectivo al fusionarse este PR; entrega revisada y merge autorizado por Fabián el 2026-10-08. Comprobación documental y suites validadas en la CI del PR.
 - **Depende de:** T1, T2 (la comprobación de rutas se suma a `npm test` y corre en la CI).
 - **Objetivo:** demostrar que cada requerimiento se valida, incluyendo la visión
   del cliente y del negocio.
@@ -289,7 +290,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   ejecución de sus casos está registrada en `TEST_LOG.md`.
 
 ### T6 · Casos funcionales B — Mapa y roles autenticados
-- **Persona:** P4 · **Estado:** pendiente · **Jira:** TD-119 · **Criterios:** C4, C1 · **Entregable:** Casos y datos
+- **Persona:** P4 · **Estado:** hecho · **Jira:** TD-119 · **Criterios:** C4, C1 · **Entregable:** Casos y datos
+- **PR (evidencia):** [#58](https://github.com/CardozoPapaDelAme/dog_report_app/pull/58) — CI en verde ([corrida 38092288928](https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38092288928)). INC-1 corregido en [#59](https://github.com/CardozoPapaDelAme/dog_report_app/pull/59) (commit `313f045`) y verificado en RUN-82 (ticket de bug en Jira pendiente).
 - **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI).
 - **Requerimientos:** RF10–RF21, RF23 (y sus HU), configuración y zonas
   (aclaración #5 sobre RF21/RF23/RNF09); RNF07, RNF09 (solo la administración de

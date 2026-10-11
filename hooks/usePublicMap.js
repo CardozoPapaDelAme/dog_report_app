@@ -1,6 +1,17 @@
+/**
+ * @module hooks/usePublicMap
+ * React binding for the public map loader state machine (`hooks/publicMapLoader.js`).
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPublicMapLoader } from './publicMapLoader.js';
 
+/**
+ * Creates one loader per mount (disposed on unmount) and mirrors its state.
+ * @param {Parameters<typeof createPublicMapLoader>[0]} [options] - Loader options; read only on mount.
+ * @returns {ReturnType<ReturnType<typeof createPublicMapLoader>['getState']> & {
+ *   setRegion: (region: {zoom: number, bounds: *}) => (boolean | undefined),
+ *   retry: () => (boolean | undefined)}} Loader state plus actions; actions return `undefined` before mount.
+ */
 export function usePublicMap(options = {}) {
   const [state, setState] = useState(() => createPublicMapLoader().getState());
   const loader = useRef(null);

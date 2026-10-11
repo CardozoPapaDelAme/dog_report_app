@@ -1,7 +1,19 @@
+/**
+ * @module presenters/zoneSet
+ * Shapes a zone set row into the API JSON envelope.
+ */
+/** Converts a date-like value to an ISO 8601 UTC string, keeping null and undefined as null. */
 function utc(value) {
   return value == null ? null : new Date(value).toISOString();
 }
 
+/**
+ * Responds with a zone set, exposing `source_geojson` as `geometry`.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {import('../repositories/zoneRepository.js').ZoneSetRow} row - Zone set row.
+ * @param {number} [status=200] - HTTP status (201 after creation).
+ * @returns {Response} `{ data: { zone_set } }` with the `X-Request-Id` header.
+ */
 export function presentZoneSet(c, row, status = 200) {
   const zoneSet = {
     id: row.id,

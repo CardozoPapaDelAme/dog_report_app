@@ -1,3 +1,8 @@
+/**
+ * @module models/reportFlag
+ * Client-side model for report flagging: allowed reasons, draft validation and the mapping of submission
+ * results to neutral UI outcomes.
+ */
 // Report flag ("denunciar") model: reasons, draft validation and neutral UI outcomes.
 // Never exposes moderation state: a 201 is always just "submitted".
 
@@ -10,10 +15,20 @@ export const FLAG_DEFAULT_RETRY_MINUTES = 60;
 
 // The server enforces `detail.length` (UTF-16 units), so the client uses the same measure to never send a
 // value the server would reject (astral characters such as emoji count as 2).
+/**
+ * @param {unknown} detail
+ * @returns {number} UTF-16 length, or 0 for non-strings.
+ */
 export function flagDetailLength(detail) {
   return typeof detail === 'string' ? detail.length : 0;
 }
 
+/**
+ * @param {object} [draft]
+ * @param {string} [draft.reason]
+ * @param {string | null} [draft.detail]
+ * @returns {{ok: boolean, errors: {reason?: 'required', detail?: 'invalid' | 'too_long'}}}
+ */
 export function validateFlagDraft({ reason, detail } = {}) {
   const errors = {};
   if (!FLAG_REASONS.includes(reason)) errors.reason = 'required';
@@ -25,6 +40,11 @@ export function validateFlagDraft({ reason, detail } = {}) {
 }
 
 // Accepts a thrown error (from submitReportFlag) or a successful result ({ flagId, reportStatus }).
+/**
+ * @param {Error | object} errorOrResult
+ * @returns {{key: 'submitted' | 'offline' | 'already_flagged' | 'not_flaggable' | 'invalid' | 'unavailable'}
+ *   | {key: 'rate_limited', retryAfterMinutes: number}}
+ */
 export function flagOutcome(errorOrResult) {
   const value = errorOrResult;
   if (!(value instanceof Error) && !(value && typeof value === 'object' && ('code' in value || 'status' in value))) {

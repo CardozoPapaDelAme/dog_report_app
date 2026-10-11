@@ -1,20 +1,30 @@
+/**
+ * @module services/publicMapApi
+ * Anonymous client for the public map: `GET /public/clusters` and `GET /public/reports`. Inputs are
+ * validated locally; responses are parsed with `models/publicMap.js`.
+ */
 import { MAX_ZOOM, MIN_ZOOM, readClusters, readPublicReports, viewportToQuery } from '../models/publicMap.js';
 import { apiRequest } from './apiClient.js';
 
+/** Maximum `limit` accepted for clusters. */
 export const CLUSTER_LIMIT_MAX = 5000;
+/** Maximum `limit` accepted for public reports. */
 export const REPORT_LIMIT_MAX = 1000;
 const RFC3339_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
+/** Builds a RangeError with `code: 'invalid_request'`. */
 function invalidInput(message) {
   return Object.assign(new RangeError(message), { code: 'invalid_request' });
 }
 
+/** Throws `invalid_request` when a defined `limit` is not an integer in `[1, max]`. */
 function checkLimit(limit, max) {
   if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > max)) {
     throw invalidInput(`limit must be between 1 and ${max}`);
   }
 }
 
+/** GETs `path` and returns `data`; throws the API `code` (default `request_failed`), `status`, `requestId`. */
 async function fetchData(path, request) {
   const response = await request(path, { method: 'GET' });
   let payload;
@@ -29,6 +39,16 @@ async function fetchData(path, request) {
   return payload?.data;
 }
 
+/**
+ * @param {object} [options]
+ * @param {number} options.zoom - Integer zoom from `MIN_ZOOM` to `MAX_ZOOM`.
+ * @param {import('../models/publicMap.js').Viewport | null} [options.viewport] - Visible bounds; omitted when null.
+ * @param {number} [options.limit] - 1 to {@link CLUSTER_LIMIT_MAX}.
+ * @param {typeof import('./apiClient.js').apiRequest} [request] - Injectable transport.
+ * @returns {Promise<import('../models/publicMap.js').MapCluster[]>}
+ * @throws {RangeError} `invalid_request` for an invalid zoom or limit; `invalid_viewport` for invalid bounds.
+ * @throws {Error} The API error (default `request_failed`); `invalid_response`; transport errors.
+ */
 export async function getPublicClusters({ zoom, viewport, limit } = {}, request = apiRequest) {
   if (!Number.isInteger(zoom) || zoom < MIN_ZOOM || zoom > MAX_ZOOM) {
     throw invalidInput(`zoom must be an integer from ${MIN_ZOOM} to ${MAX_ZOOM}`);
@@ -39,6 +59,15 @@ export async function getPublicClusters({ zoom, viewport, limit } = {}, request 
   return readClusters(await fetchData(`/public/clusters?${query}`, request));
 }
 
+/**
+ * @param {object} [options]
+ * @param {string | null} [options.since] - RFC 3339 timestamp with timezone; only newer reports.
+ * @param {number} [options.limit] - 1 to {@link REPORT_LIMIT_MAX}.
+ * @param {typeof import('./apiClient.js').apiRequest} [request] - Injectable transport.
+ * @returns {Promise<import('../models/publicMap.js').PublicReport[]>}
+ * @throws {RangeError} `invalid_request` for an invalid `since` or limit.
+ * @throws {Error} The API error (default `request_failed`); `invalid_response`; transport errors.
+ */
 export async function getPublicReports({ since, limit } = {}, request = apiRequest) {
   if (since !== undefined && since !== null && (typeof since !== 'string' || !RFC3339_WITH_ZONE.test(since)
     || Number.isNaN(Date.parse(since)))) {

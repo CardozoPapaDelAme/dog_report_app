@@ -1,3 +1,7 @@
+/**
+ * @module models/dogColor
+ * Deterministic predominant dog colour detection from decoded RGB pixels.
+ */
 // Predominant dog colour from decoded RGB pixels (RF22, HU-22, RNF11).
 //
 // Pure and deterministic: no network, no randomness. The result is a *signal* for
@@ -28,10 +32,15 @@ export const DOG_COLOR_THRESHOLDS = Object.freeze({
   mixedPairShare: 0.7,
 });
 
+/**
+ * @param {unknown} value
+ * @returns {boolean} Whether `value` is one of {@link DOG_COLORS}.
+ */
 export function isDogColor(value) {
   return DOG_COLORS.includes(value);
 }
 
+/** Converts 0-255 RGB to hue in degrees and saturation/value in `[0, 1]`. */
 function rgbToHsv(r, g, b) {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
@@ -48,6 +57,12 @@ function rgbToHsv(r, g, b) {
 }
 
 // Maps one pixel to a base colour or null (background / not a dog coat colour).
+/**
+ * @param {number} r
+ * @param {number} g
+ * @param {number} b
+ * @returns {'negro' | 'blanco' | 'gris' | 'café' | 'dorado' | null}
+ */
 export function classifyPixel(r, g, b) {
   const { h, s, v } = rgbToHsv(r, g, b);
   if (v < 0.2) return 'negro';
@@ -70,6 +85,16 @@ function centreWeight(x, y, width, height) {
 }
 
 // Returns { color, confidence } or null when the image is unusable or unclear.
+/**
+ * @typedef {object} DogColorResult
+ * @property {string} color - One of {@link DOG_COLORS}.
+ * @property {number} confidence - Weighted share of classified pixels, in `[0, 1]`.
+ */
+/**
+ * @param {{width: number, height: number, rgb: Uint8Array}} image - Packed RGB pixels.
+ * @param {typeof DOG_COLOR_THRESHOLDS} [thresholds]
+ * @returns {DogColorResult | null} `null` when the image is unusable or the colour is unclear.
+ */
 export function predominantDogColor(image, thresholds = DOG_COLOR_THRESHOLDS) {
   const { width, height, rgb } = image ?? {};
   if (
@@ -119,6 +144,10 @@ export function predominantDogColor(image, thresholds = DOG_COLOR_THRESHOLDS) {
 
 // Draft integration: the detection lives inside `photo_validation.dog_color`
 // (JSON column already persisted by the draft DAO; no schema change).
+/**
+ * @param {object} draft - Local report draft.
+ * @returns {string} The detected colour, or `''` when none is stored.
+ */
 export function detectedDogColorFromDraft(draft) {
   const color = draft?.photo_validation?.dog_color?.color;
   return isDogColor(color) ? color : '';

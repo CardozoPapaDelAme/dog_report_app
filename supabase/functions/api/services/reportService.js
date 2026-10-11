@@ -1,3 +1,9 @@
+/**
+ * @module services/reportService
+ * Anonymous report submission. Submissions are idempotent by report id and content hash, bounded in
+ * time, checked against the active geofence and hourly rate limit, scored by the trust Service, and
+ * stored in a transaction scoped to the device origin hash.
+ */
 import { getSql } from "../infrastructure/db.js";
 import { getConfig } from "../infrastructure/config.js";
 import {
@@ -11,9 +17,24 @@ import {
 } from "../repositories/reportRepository.js";
 import { assessReportTrust } from "./trustService.js";
 
+/**
+ * @typedef {object} ReportCommand
+ * @property {string} id - Client-generated lowercase UUID.
+ * @property {{longitude: number, latitude: number, accuracyMeters: number, mockSuspected: boolean}} location
+ * @property {string} incidentType
+ * @property {string} sightingType
+ * @property {*} details - Incident-specific details, validated by `domain/reportDetailsValidator.js`.
+ * @property {{predominantColor: string | null, size: string | null, hasCollar: boolean | null}} dog
+ * @property {{expected: boolean, clientCheckPassed: boolean | null}} photo
+ * @property {{honeypotFilled: boolean}} antiAbuse
+ * @property {string} clientCreatedAt - ISO 8601 UTC timestamp.
+ */
+/** Maximum age of `client_created_at` relative to the database time (30 days). */
 const CLIENT_CREATED_AT_PAST_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+/** Maximum `client_created_at` lead over the database time (1 hour). */
 const CLIENT_CREATED_AT_FUTURE_WINDOW_MS = 60 * 60 * 1000;
 
+/** Creates an `Error` carrying `code` and any extra `details` properties. */
 function serviceError(code, message, details = {}) {
   const error = new Error(message);
   error.code = code;
@@ -21,6 +42,7 @@ function serviceError(code, message, details = {}) {
   return error;
 }
 
+/** Builds client-safe `details` and log-only `logDetails` (with a truncated SQL message). */
 function sqlDiagnostics(error, category) {
   const sqlCode = typeof error?.code === "string" && error.code
     ? error.code
@@ -38,6 +60,7 @@ function sqlDiagnostics(error, category) {
   };
 }
 
+/** Recursively sorts object keys so equal payloads serialize identically. */
 function canonicalize(value) {
   if (Array.isArray(value)) {
     return value.map(canonicalize);
@@ -52,6 +75,11 @@ function canonicalize(value) {
   return value;
 }
 
+/**
+ * Hashes a string with SHA-256.
+ * @param {string} value - UTF-8 input.
+ * @returns {Promise<string>} Lowercase hexadecimal digest.
+ */
 export async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -60,6 +88,11 @@ export async function sha256Hex(value) {
     .join("");
 }
 
+/**
+ * Builds the snake_case payload whose hash identifies a submission (excludes the device fingerprint).
+ * @param {ReportCommand} command - Validated report command.
+ * @returns {object}
+ */
 export function reportSubmissionPayload(command) {
   return {
     location: command.location,
@@ -75,12 +108,23 @@ export function reportSubmissionPayload(command) {
   };
 }
 
+/**
+ * Hashes the canonicalized submission payload, used to detect idempotent replays.
+ * @param {ReportCommand} command - Validated report command.
+ * @returns {Promise<string>} Lowercase hexadecimal SHA-256.
+ */
 export async function reportSubmissionHash(command) {
   return sha256Hex(
     JSON.stringify(canonicalize(reportSubmissionPayload(command))),
   );
 }
 
+/**
+ * Checks that the client timestamp is at most 30 days in the past and 1 hour in the future.
+ * @param {string} clientCreatedAt - Client timestamp.
+ * @param {Date | string} serverNow - Database time.
+ * @returns {boolean}
+ */
 export function clientCreatedAtIsInBounds(clientCreatedAt, serverNow) {
   const clientMs = new Date(clientCreatedAt).getTime();
   const serverMs = new Date(serverNow).getTime();
@@ -92,6 +136,11 @@ export function clientCreatedAtIsInBounds(clientCreatedAt, serverNow) {
   );
 }
 
+/**
+ * Seconds until the next UTC hour boundary, used for `Retry-After`.
+ * @param {Date | string} serverNow - Database time.
+ * @returns {number} At least 1.
+ */
 export function secondsUntilNextHour(serverNow) {
   const now = new Date(serverNow);
   const next = new Date(now);
@@ -100,6 +149,7 @@ export function secondsUntilNextHour(serverNow) {
   return Math.max(1, Math.ceil((next.getTime() - now.getTime()) / 1000));
 }
 
+/** Maps a stored report row to the submission receipt. */
 function receiptFromRow(row, replayed) {
   return {
     reportId: row.id,
@@ -109,6 +159,11 @@ function receiptFromRow(row, replayed) {
   };
 }
 
+/**
+ * Maps storage errors: unique violations to `report_id_payload_conflict`, details trigger rejections to
+ * `invalid_details`, connection failures to `database_unavailable`, and rate-limit context, missing
+ * secret, schema, or privilege errors to `preflight_mismatch`. Other errors pass through.
+ */
 function mapPersistenceError(error) {
   if (error?.code === "23505") {
     return serviceError(
@@ -225,10 +280,23 @@ const productionDependencies = {
   insertReport,
 };
 
+/** True when configuration explicitly allows reports while no geofence is active. */
 function allowsMissingActiveGeofence(dependencies) {
   return dependencies.getConfig?.().allowReportsWithoutActiveGeofence === true;
 }
 
+/**
+ * Creates a report, or returns the existing receipt when the same id is replayed with identical content.
+ * @param {object} options
+ * @param {ReportCommand} options.command - Validated report command.
+ * @param {string} options.deviceFingerprint - Opaque device fingerprint; only its SHA-256 is stored.
+ * @param {object} [dependencies] - Repository, configuration, and trust overrides (tests).
+ * @returns {Promise<{reportId: string, moderationStatus: string, photoExpected: boolean, replayed: boolean}>}
+ * @throws {Error} With `code` `report_id_payload_conflict`, `configuration_unavailable`,
+ *   `client_created_at_out_of_bounds`, `geofence_not_configured`, `outside_geofence`,
+ *   `report_rate_limit_exceeded` (with `retryAfterSeconds`), `invalid_details`, `database_unavailable`,
+ *   or `preflight_mismatch`. Unknown errors propagate unchanged.
+ */
 export async function createReport(
   { command, deviceFingerprint },
   dependencies = productionDependencies,

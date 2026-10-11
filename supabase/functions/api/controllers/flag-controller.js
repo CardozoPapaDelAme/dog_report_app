@@ -1,3 +1,8 @@
+/**
+ * @module controllers/flag-controller
+ * HTTP adapter for anonymous report flags: validates the report id and body, then delegates to the
+ * flag Service.
+ */
 import { presentError } from "../presenters/error.js";
 import { presentFlagReceipt } from "../presenters/flag.js";
 import { submitFlag } from "../services/flag-service.js";
@@ -21,10 +26,17 @@ function hasOnlyKeys(value, keys) {
   return Object.keys(value).every((key) => keys.includes(key));
 }
 
+/** Builds a 400 `invalid_request` parse failure. */
 function invalid(message) {
   return { ok: false, status: 400, code: "invalid_request", message };
 }
 
+/**
+ * Parses and validates a flag request body.
+ * @param {string} raw - Raw request body.
+ * @returns {{ok: true, command: {reason: string, detail: string | null}, deviceFingerprint: string}
+ *   | {ok: false, status: 400, code: 'invalid_request', message: string}}
+ */
 export function parseFlagBody(raw) {
   if (!raw) {
     return invalid("Request body must be a JSON object.");
@@ -71,6 +83,11 @@ export function parseFlagBody(raw) {
   };
 }
 
+/**
+ * Maps flag Service errors: 404 `report_not_flaggable`, 409 `flag_already_submitted`, 429
+ * `flag_rate_limit_exceeded` (with `Retry-After`), 503 `configuration_unavailable` /
+ * `dependency_unavailable`. Other errors are rethrown.
+ */
 function handleFlagError(c, error) {
   if (error?.code === "report_not_flaggable") {
     return presentError(
@@ -116,6 +133,12 @@ function handleFlagError(c, error) {
   throw error;
 }
 
+/**
+ * Creates the `POST /reports/:report_id/flags` handler. Responds 201 with the flag receipt, 400
+ * `invalid_request`, or the statuses from the flag Service error mapping.
+ * @param {typeof import('../services/flag-service.js').submitFlag} [service] - Flag submission function.
+ * @returns {(c: import('hono').Context) => Promise<Response>}
+ */
 export function createFlagController(service = submitFlag) {
   return async function flagController(c) {
     const reportId = c.req.param("report_id");
@@ -146,4 +169,5 @@ export function createFlagController(service = submitFlag) {
   };
 }
 
+/** Production flag handler. */
 export const flagController = createFlagController();

@@ -1,3 +1,8 @@
+/**
+ * @module dao/reportDraftDao
+ * Local SQLite persistence for the offline report draft queue (`expo-sqlite`). JSON fields are stored
+ * as text columns; the database is opened once per app process.
+ */
 import * as SQLite from 'expo-sqlite';
 
 const DATABASE_NAME = 'report-draft-queue.db';
@@ -15,6 +20,7 @@ function parse(value) {
   return value == null ? null : JSON.parse(value);
 }
 
+/** Maps a table row to a draft, parsing the JSON columns; `null` for no row. */
 function rowToDraft(row) {
   if (!row) return null;
   return {
@@ -36,6 +42,7 @@ function rowToDraft(row) {
   };
 }
 
+/** Returns the insert parameters in column order, serializing JSON fields. */
 function draftValues(draft) {
   return [
     draft.id,
@@ -56,6 +63,7 @@ function draftValues(draft) {
   ];
 }
 
+/** Opens the shared database (WAL) and creates the table when missing. */
 async function openDatabase(sqlite = SQLite) {
   if (!databasePromise) {
     databasePromise = sqlite.openDatabaseAsync(DATABASE_NAME);
@@ -85,6 +93,15 @@ async function openDatabase(sqlite = SQLite) {
   return db;
 }
 
+/**
+ * @param {typeof import('expo-sqlite')} [sqlite] - Injectable SQLite module.
+ * @returns {Promise<{
+ *   insert: (draft: import('../models/reportDraft.js').ReportDraft) => Promise<void>,
+ *   update: (draft: import('../models/reportDraft.js').ReportDraft) => Promise<void>,
+ *   getById: (id: string) => Promise<import('../models/reportDraft.js').ReportDraft | null>,
+ *   list: (filter?: {states?: string[]}) => Promise<import('../models/reportDraft.js').ReportDraft[]>
+ * }>} `insert` and `update` are the same upsert; `list` orders by `updated_at` descending.
+ */
 export async function createReportDraftDao(sqlite = SQLite) {
   const db = await openDatabase(sqlite);
   const columns = `

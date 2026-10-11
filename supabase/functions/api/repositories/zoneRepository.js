@@ -1,9 +1,24 @@
+/**
+ * @module repositories/zoneRepository
+ * SQL access for zone sets (`public.zone_sets`) and their zones (`public.zones`). Every function runs on
+ * a caller-provided transaction; the zone Service owns authorization (ADR-019) and validation via
+ * `domain/zoneSet.js`.
+ */
+/**
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} userId - Profile id of the caller.
+ * @returns {Promise<{id: string, role: string, active: boolean} | null>}
+ */
 export async function readZoneActor(tx, userId) {
   const rows =
     await tx`SELECT id, role, active FROM public.profiles WHERE id = ${userId}`;
   return rows[0] ?? null;
 }
 
+/**
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @returns {Promise<string | null>} The deployment environment, or null when missing.
+ */
 export async function readZoneEnvironment(tx) {
   const rows = await tx`
     SELECT environment FROM public.deployment_metadata WHERE singleton = TRUE
@@ -11,6 +26,12 @@ export async function readZoneEnvironment(tx) {
   return rows[0]?.environment ?? null;
 }
 
+/**
+ * Takes the transaction-scoped advisory lock that serializes zone-set changes per environment.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} environment - Deployment environment.
+ * @returns {Promise<void>}
+ */
 export async function lockZoneEnvironment(tx, environment) {
   // A distinct stable advisory lock serializes both version allocation and
   // active-set replacement, including environments with no current active set.
@@ -19,6 +40,15 @@ export async function lockZoneEnvironment(tx, environment) {
   })`;
 }
 
+/**
+ * Inserts a `draft` zone set with the next version number and one zone built from its canonical geometry.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.environment - Deployment environment.
+ * @param {string} options.actorId - Administrator profile id.
+ * @param {import('../domain/zoneSet.js').ZoneSetCreation} options.values - Validated creation values.
+ * @returns {Promise<string | undefined>} New zone set id.
+ */
 export async function insertZoneSet(tx, { environment, actorId, values }) {
   const rows = await tx`
     WITH created AS (
@@ -44,6 +74,32 @@ export async function insertZoneSet(tx, { environment, actorId, values }) {
   return rows[0]?.id;
 }
 
+/**
+ * @typedef {object} ZoneSetRow
+ * @property {string} id
+ * @property {string} environment
+ * @property {number} version
+ * @property {string} name
+ * @property {string} source_uri
+ * @property {string} source_version
+ * @property {string} source_sha256
+ * @property {object} source_geojson - Normalized MultiPolygon geometry.
+ * @property {string} status - `draft`, `active`, or `retired`.
+ * @property {string | null} association_approval_reference
+ * @property {Date | null} approved_at
+ * @property {Date | null} activated_at
+ * @property {Date | null} retired_at
+ * @property {string} created_by
+ * @property {Date} created_at
+ */
+/**
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.environment - Deployment environment.
+ * @param {string} options.id - Zone set id.
+ * @param {boolean} [options.forUpdate] - Lock the row `FOR UPDATE`.
+ * @returns {Promise<ZoneSetRow | null>}
+ */
 export async function readZoneSet(tx, { environment, id, forUpdate = false }) {
   if (forUpdate) {
     const rows = await tx`
@@ -66,6 +122,12 @@ export async function readZoneSet(tx, { environment, id, forUpdate = false }) {
   return rows[0] ?? null;
 }
 
+/**
+ * Locks and returns the environment's active zone sets (at most one is expected).
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} environment - Deployment environment.
+ * @returns {Promise<ZoneSetRow[]>}
+ */
 export async function readActiveZoneSets(tx, environment) {
   return tx`
     SELECT id, environment, version, name, source_uri, source_version, source_sha256,
@@ -77,6 +139,16 @@ export async function readActiveZoneSets(tx, environment) {
   `;
 }
 
+/**
+ * Retires the environment's active zone set and activates the given draft with the approval reference.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.environment - Deployment environment.
+ * @param {string} options.id - Draft zone set id.
+ * @param {string} options.associationApprovalReference - Association approval evidence.
+ * @returns {Promise<void>}
+ * @throws {Error} When the draft row was not updated.
+ */
 export async function activateZoneSet(
   tx,
   { environment, id, associationApprovalReference },
@@ -107,6 +179,17 @@ export async function activateZoneSet(
   }
 }
 
+/**
+ * Records a zone-set audit entry.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.actorId - Administrator profile id.
+ * @param {string} options.action - Audit action.
+ * @param {*} options.previous - Previous snapshot (stored as JSON).
+ * @param {{id: string}} options.current - New snapshot; `id` becomes the audited entity id.
+ * @param {string | null} options.note - Optional note.
+ * @returns {Promise<void>}
+ */
 export async function insertZoneAudit(
   tx,
   { actorId, action, previous, current, note },

@@ -1,3 +1,12 @@
+/**
+ * @module domain/publicMap
+ * Domain constants and helpers for the public map: incident types, severity ranking, list and cluster
+ * limits, and the zoom-to-cluster-radius bands. Pure logic with no I/O.
+ */
+/**
+ * Incident type identifiers (stored values, Spanish by design).
+ * @type {ReadonlyArray<string>}
+ */
 export const INCIDENT_TYPES = Object.freeze([
   "avistamiento_simple",
   "ataque_mascota",
@@ -7,6 +16,10 @@ export const INCIDENT_TYPES = Object.freeze([
   "otro",
 ]);
 
+/**
+ * Severity rank per incident type; higher is more severe.
+ * @type {Readonly<Record<string, number>>}
+ */
 export const INCIDENT_SEVERITY = Object.freeze({
   avistamiento_simple: 1,
   otro: 2,
@@ -23,6 +36,10 @@ export const PUBLIC_CLUSTER_MAX_LIMIT = 5000;
 export const PUBLIC_CLUSTER_MIN_ZOOM = 0;
 export const PUBLIC_CLUSTER_MAX_ZOOM = 22;
 
+/**
+ * Cluster radius in meters for each inclusive map zoom range.
+ * @type {ReadonlyArray<{min: number, max: number, radiusMeters: number}>}
+ */
 export const ZOOM_RADIUS_BANDS = Object.freeze([
   { min: 0, max: 8, radiusMeters: 1000 },
   { min: 9, max: 11, radiusMeters: 500 },
@@ -31,6 +48,11 @@ export const ZOOM_RADIUS_BANDS = Object.freeze([
   { min: 17, max: 22, radiusMeters: 50 },
 ]);
 
+/**
+ * Validation error raised by public map rules.
+ * @property {string} code - Machine-readable error code (for example `invalid_request`).
+ * @property {*} details - Optional extra details.
+ */
 export class PublicMapError extends Error {
   constructor(code, message, details) {
     super(message);
@@ -40,6 +62,11 @@ export class PublicMapError extends Error {
   }
 }
 
+/**
+ * @param {number} zoom - Map zoom level.
+ * @returns {number} Cluster radius in meters for that zoom.
+ * @throws {PublicMapError} `invalid_request` when the zoom falls outside every band.
+ */
 export function clusterRadiusForZoom(zoom) {
   const band = ZOOM_RADIUS_BANDS.find((candidate) =>
     zoom >= candidate.min && zoom <= candidate.max
@@ -53,6 +80,11 @@ export function clusterRadiusForZoom(zoom) {
   return band.radiusMeters;
 }
 
+/**
+ * Produces a count for every known incident type, coercing values to non-negative integers.
+ * @param {Record<string, unknown>} [counts] - Raw counts keyed by incident type.
+ * @returns {Record<string, number>}
+ */
 export function normalizeTypeCounts(counts = {}) {
   return INCIDENT_TYPES.reduce((result, type) => {
     const value = Number(counts[type] ?? 0);
@@ -61,6 +93,10 @@ export function normalizeTypeCounts(counts = {}) {
   }, {});
 }
 
+/**
+ * @param {Record<string, number>} counts - Counts keyed by incident type.
+ * @returns {string | null} The most severe incident type with a positive count, or null when none.
+ */
 export function highestSeverityFromTypeCounts(counts) {
   let selected = null;
   let selectedRank = -Infinity;

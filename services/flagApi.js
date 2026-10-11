@@ -1,8 +1,17 @@
+/**
+ * @module services/flagApi
+ * Anonymous client for `POST /reports/{id}/flags` (report flagging). Validates the draft locally with
+ * `models/reportFlag.js` before sending.
+ */
 import { apiRequest } from './apiClient.js';
 import { FLAG_DETAIL_MAX, FLAG_REASONS, flagDetailLength } from '../models/reportFlag.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+/**
+ * Returns `payload.data`; on non-2xx throws an Error with the API `code` (default `request_failed`),
+ * `status`, `details`, `requestId` and `retryAfterSeconds` from `Retry-After`.
+ */
 async function readEnvelope(response, fallbackMessage) {
   let payload;
   try {
@@ -27,11 +36,24 @@ async function readEnvelope(response, fallbackMessage) {
   return payload?.data;
 }
 
+/** Builds a RangeError with `code: 'invalid_request'` and `status: 400`. */
 function invalidInput(message) {
   return Object.assign(new RangeError(message), { code: 'invalid_request', status: 400 });
 }
 
 // Anonymous command: no Authorization header; the fingerprint travels in the BODY (unlike report submission).
+/**
+ * @param {object} [options]
+ * @param {string} options.reportId - Lowercase UUID of the report.
+ * @param {string} options.reason - One of `FLAG_REASONS`.
+ * @param {string | null} [options.detail] - Optional text, trimmed before sending.
+ * @param {string} options.deviceFingerprint - Device fingerprint, at least 16 characters.
+ * @param {typeof import('./apiClient.js').apiRequest} [request] - Injectable transport.
+ * @returns {Promise<{flagId: string, reportStatus: *}>}
+ * @throws {RangeError} `invalid_request` (400) for an invalid id, reason or detail.
+ * @throws {Error} `invalid_device_fingerprint` (400); the API error (see `readEnvelope`);
+ *   `invalid_response` when `flag_id` is missing; transport errors.
+ */
 export async function submitReportFlag(
   { reportId, reason, detail, deviceFingerprint } = {},
   request = apiRequest,

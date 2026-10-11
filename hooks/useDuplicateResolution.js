@@ -1,15 +1,39 @@
+/**
+ * @module hooks/useDuplicateResolution
+ * Container hook for duplicate management: loads candidates and active groups, edits a resolution
+ * (selected reports, canonical report, note) or a reversal, and sends one command at a time. After
+ * an uncertain command it only offers a reload, never a replay.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as duplicateApi from '../services/duplicateApi.js';
 import { duplicateFieldErrors, groupDuplicateCandidates, validateDuplicateNote, validateResolution } from '../models/duplicateCandidate.js';
+/** Initial state for a token; `session` phase when there is no token. */
 const empty = (token) => ({token,phase:token?'loading':'session',snapshot:{reports:[],candidates:[]},groups:[],
   ids:[],canonicalId:null,note:'',reverseId:null,reverseNote:'',errors:{},error:null,busy:null,needsReload:false,notice:null});
 
+/**
+ * @param {string | null} accessToken - Session access token.
+ * @param {{getDuplicateCandidates: Function, getDuplicateGroups: Function,
+ *   resolveDuplicateGroup: Function, reverseDuplicateGroup: Function}} [api=duplicateApi] - Network calls.
+ * @returns {{token: string | null, phase: 'loading' | 'session' | 'ready' | 'forbidden' | 'error',
+ *   snapshot: import('../models/duplicateCandidate.js').CandidateSnapshot,
+ *   groups: import('../models/duplicateCandidate.js').DuplicateGroup[],
+ *   components: Array<{id: string, reports: object[]}>, ids: string[], canonicalId: string | null,
+ *   note: string, reverseId: string | null, reverseNote: string, errors: object, error: Error | null,
+ *   busy: 'resolve' | 'reverse' | 'refresh' | null, needsReload: boolean,
+ *   notice: {kind: 'resolve' | 'reverse', groupId: string} | null, selectionError: *, dirty: boolean,
+ *   toggleReport: (id: string) => void, chooseCanonical: (id: string) => void,
+ *   changeNote: (note: string) => void, openReverse: (groupId: string) => void, closeReverse: () => void,
+ *   changeReverseNote: (note: string) => void, resolve: () => Promise<void>, reverse: () => Promise<void>,
+ *   reload: () => (Promise<void> | undefined)}}
+ */
 export function useDuplicateResolution(accessToken, api = duplicateApi) {
   const [state,setState] = useState(()=>empty(accessToken));
   const generation = useRef(0), lock = useRef(false), token = useRef(accessToken);
   token.current = accessToken;
   const visible = state.token === accessToken ? state : empty(accessToken);
   const current = (epoch) => generation.current === epoch && token.current === accessToken;
+  /** Fetches candidates and active groups in parallel. */
   const fetchState = useCallback(async () => {
     const [snapshot,groups] = await Promise.all([
       api.getDuplicateCandidates({accessToken}), api.getDuplicateGroups({accessToken}),
@@ -53,6 +77,7 @@ export function useDuplicateResolution(accessToken, api = duplicateApi) {
   function changeReverseNote(reverseNote) {
     if (editable) setState((previous)=>({...previous,reverseNote,errors:{},error:null}));
   }
+  /** Validates and sends a `resolve` or `reverse` command, then re-reads the server state. */
   async function mutate(kind) {
     if (!editable || (kind==='resolve' && visible.reverseId)) return;
     let input;

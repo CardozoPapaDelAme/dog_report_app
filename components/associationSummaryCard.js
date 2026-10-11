@@ -1,11 +1,22 @@
+/**
+ * @module components/associationSummaryCard
+ * Presentational summary for the association dashboard: total count and a scrollable bar chart by day
+ * or month with a selectable bucket.
+ */
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+/** Local noon date for a `YYYY-MM-DD` (day) or `YYYY-MM` (month) bucket key. */
 function bucketDate(key, grouping) {
   return new Date(`${key}${grouping === 'month' ? '-01' : ''}T12:00:00`);
 }
 
+/**
+ * @param {object} props
+ * @param {ReturnType<typeof import('../models/associationSummary.js').buildAssociationSummary>} props.summary
+ * @returns {JSX.Element}
+ */
 export default function AssociationSummaryCard({ summary }) {
   const { t, i18n } = useTranslation();
   const initial = [...summary.buckets].reverse().find((bucket) => bucket.count > 0) ?? summary.buckets[summary.buckets.length - 1];

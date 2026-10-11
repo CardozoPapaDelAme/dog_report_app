@@ -1,3 +1,8 @@
+/**
+ * @module hooks/useSubmitReport
+ * Container logic for submitting a report form: validates the form, queues the local draft with the
+ * device fingerprint, synchronizes it and maps the resulting draft to a UI outcome phase.
+ */
 import { useCallback, useRef, useState } from 'react';
 
 import { REPORT_DRAFT_STATE, thawReportPayload } from '../models/reportDraft.js';
@@ -11,6 +16,7 @@ import {
 } from '../models/photoState.js';
 import { getOrCreateDeviceFingerprint } from './deviceFingerprint';
 
+/** Converts a thrown error into the serializable `last_error` shape. */
 function serializedError(error) {
   return {
     code: error?.code ?? 'request_failed',
@@ -44,6 +50,7 @@ function draftHasRejectedPhoto(draft) {
   );
 }
 
+/** Maps a draft's local state and photo status to a UI phase and error. */
 function outcomeForDraft(draft) {
   if (!draft) return { phase: 'idle', error: null };
   if (draft.local_state === REPORT_DRAFT_STATE.SYNCED) {
@@ -71,6 +78,22 @@ function outcomeForDraft(draft) {
   return { phase: 'idle', error: null };
 }
 
+/**
+ * Validates and queues a draft in state `draft`, then synchronizes it. Synced and terminal drafts are
+ * returned unchanged.
+ * @param {object} options
+ * @param {import('../models/reportDraft.js').ReportDraft | null} options.draft
+ * @param {object} options.formDraft - Raw form values for `validateReportFormDraft`.
+ * @param {(id: string, options: object) => Promise<import('../models/reportDraft.js').ReportDraft>} [options.queueDraft]
+ *   Required when the draft is in state `draft`.
+ * @param {(id: string) => Promise<import('../models/reportDraft.js').ReportDraft | null>} options.syncDraft
+ * @param {() => Promise<string>} [options.getDeviceFingerprint=getOrCreateDeviceFingerprint]
+ * @returns {Promise<{draft: import('../models/reportDraft.js').ReportDraft, fieldErrors: object,
+ *   outcome: {phase: 'idle' | 'invalid' | 'syncing' | 'photo_pending' | 'retry_wait' | 'success' |
+ *   'photo_rejected' | 'terminal_error', error: object | null}}>}
+ * @throws {Error} `draft_not_ready`, `sync_draft_required` or `queue_draft_required`; queue and sync
+ *   errors propagate.
+ */
 export async function submitReportDraft({
   draft,
   formDraft,
@@ -116,6 +139,20 @@ export async function submitReportDraft({
   };
 }
 
+/**
+ * @param {object} [options]
+ * @param {import('../models/reportDraft.js').ReportDraft | null} [options.draft]
+ * @param {Function} [options.queueDraft] - See {@link submitReportDraft}.
+ * @param {Function} [options.syncDraft] - See {@link submitReportDraft}.
+ * @param {() => Promise<string>} [options.getDeviceFingerprint]
+ * @param {(draft: import('../models/reportDraft.js').ReportDraft) => void} [options.onPhotoPending]
+ *   Called when the report was accepted but its photo is still pending.
+ * @returns {{submitting: boolean, fieldErrors: object, error: object | null, phase: string,
+ *   submittedDraft: import('../models/reportDraft.js').ReportDraft | null,
+ *   submit: (formDraft: object) => Promise<boolean>, clearFieldError: (field: string) => void}}
+ *   `phase` is an outcome phase from {@link submitReportDraft}, `submitting` or `error`; `submit`
+ *   resolves `false` while busy, for invalid input or when the outcome carries an error.
+ */
 export function useSubmitReport({
   draft,
   queueDraft,

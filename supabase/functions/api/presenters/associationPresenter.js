@@ -1,3 +1,9 @@
+/**
+ * @module presenters/associationPresenter
+ * Shapes the association report list into the public JSON envelope (Hono API on Supabase Edge:
+ * routes -> Controllers -> Services -> Repositories; Presenters shape responses).
+ */
+/** Encodes the keyset cursor `<accepted_at ISO>|<id>` as unpadded base64url. */
 function encodeCursor(row) {
   const raw = `${new Date(row.accepted_at).toISOString()}|${row.id}`;
   return btoa(raw).replaceAll("+", "-").replaceAll("/", "_").replaceAll(
@@ -6,6 +12,14 @@ function encodeCursor(row) {
   );
 }
 
+/**
+ * Responds 200 with a page of association reports and the next keyset cursor.
+ * @param {import('hono').Context} c - Hono request context.
+ * @param {object} page
+ * @param {import('../repositories/associationReportRepository.js').AssociationReportRow[]} page.rows - Rows of this page.
+ * @param {boolean} page.hasMore - Whether another page exists; enables `next_cursor`.
+ * @returns {Response} `{ data: { items, next_cursor } }` with the `X-Request-Id` header.
+ */
 export function presentAssociationReports(c, { rows, hasMore }) {
   const requestId = c.get("requestId") ?? "";
   c.header("X-Request-Id", requestId);

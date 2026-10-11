@@ -1,3 +1,7 @@
+/**
+ * @module routes/health
+ * Health router. Registers `GET /health` and `GET /api/health` (public, no authentication).
+ */
 import { Hono } from 'hono';
 
 import { getHealth } from '../controllers/healthController.js';

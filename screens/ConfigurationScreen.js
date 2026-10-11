@@ -1,3 +1,10 @@
+/**
+ * @module screens/ConfigurationScreen
+ * Container screen for the operational configuration (thresholds and limits by group) of an
+ * authenticated staff session; the API answers 403 for other roles, shown as `forbidden`. Confirms
+ * before discarding unsaved changes on back, logout or reload, focuses the first invalid field and
+ * announces saved versions for accessibility.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ActivityIndicator, BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
@@ -8,6 +15,7 @@ import { CONFIGURATION_FIELDS, CONFIGURATION_GROUPS } from '../models/configurat
 const colors = { background: '#f7fbf1', surface: '#ffffff', ink: '#191d17', muted: '#5d6859', outline: '#c0c9bb', primary: '#00450d', soft: '#d9f2d4', danger: '#a51e1e', dangerSoft: '#fff0ee' };
 const bodyFont = 'PlusJakartaSans_400Regular';
 const boldFont = 'PlusJakartaSans_700Bold';
+/** Translates a validation error (`{key, values}`) or returns a string error as is. */
 function errorText(error, t) {
   return typeof error === 'string' ? error : error ? t(`configuration.validation.${error.key}`, error.values) : '';
 }
@@ -18,6 +26,7 @@ function Button({ title, onPress, disabled, secondary, busy, testID }) {
     <Text style={[styles.buttonText, secondary && styles.secondaryText]}>{title}</Text>
   </Pressable>;
 }
+/** Numeric input for one `CONFIGURATION_FIELDS` entry with hint, help and error text. */
 function ThresholdField({ field, value, error, disabled, t, wide, inputRef, onChange, onLayout }) {
   const label = t(`configuration.fields.${field.key}`);
   const message = errorText(error, t);
@@ -33,6 +42,15 @@ function ThresholdField({ field, value, error, disabled, t, wide, inputRef, onCh
   </View>;
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.accessToken - Session access token.
+ * @param {() => void} [props.onBack]
+ * @param {() => void} [props.onLogout]
+ * @param {boolean} [props.logoutPending=false]
+ * @param {object} [props.api] - Network call overrides for `useConfiguration`.
+ * @returns {JSX.Element}
+ */
 export default function ConfigurationScreen({ accessToken, onBack, onLogout, logoutPending = false, api }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();

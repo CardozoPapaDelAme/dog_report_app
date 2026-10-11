@@ -1,3 +1,8 @@
+/** Translates `path`, falling back to `fallback`. */
+/**
+ * @module presenters/associationDisplay
+ * Formats association reports for display and export with translated, locale-aware labels.
+ */
 function translated(t, path, fallback) {
   return t(path, { defaultValue: fallback });
 }
@@ -9,10 +14,18 @@ function dateTime(value, locale, includeTime = true) {
   });
 }
 
+/** Translated yes/no, or `unknown` for `null`. */
 function yesNo(value, t, unknown) {
   return value === null ? unknown : t(value ? 'common.yes' : 'common.no');
 }
 
+/**
+ * @param {import('../models/associationReport.js').AssociationReport} report
+ * @param {(key: string, options?: object) => string} t - i18n translate function.
+ * @param {string} locale - BCP 47 locale for dates.
+ * @returns {object} Display strings: `incident`, `sighting`, dates, coordinates, dog fields, `photo`
+ *   and `details` as `{key, label, value}` entries.
+ */
 export function presentAssociationReport(report, t, locale) {
   const unknown = t('associationDashboard.card.unknown');
   const details = Object.entries(report.details)
@@ -42,6 +55,10 @@ export function presentAssociationReport(report, t, locale) {
   };
 }
 
+/**
+ * @param {ReturnType<typeof presentAssociationReport>} display
+ * @returns {Array<*>} Row values in the association export column order, with details joined.
+ */
 export function associationDisplayValues(display) {
   return [display.id, display.acceptedAt, display.occurredAt, display.incident, display.sighting,
     display.details.map(({ label, value }) => `${label}: ${value}`).join(' · ') || '—',

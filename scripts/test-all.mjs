@@ -1,6 +1,17 @@
 #!/usr/bin/env node
+/**
+ * Single entry point for the automated test suites.
+ *
+ * Invoked as `npm test` (all suites) or `npm run test:deno|test:node|test:e2e`
+ * (`node scripts/test-all.mjs [docs] [deno] [node] [e2e]`). Discovers `*.test.js`/`*.test.mjs`
+ * files under the configured roots, routes files importing `node:test` to Node and the rest
+ * to Deno, runs each selected suite, prints a per-suite summary and exits with 0 only when
+ * every suite passed (2 for an unknown suite name).
+ *
+ * @module scripts/test-all
+ */
 // Single entry point for the whole automated test suite (backlog T2).
-//   node scripts/test-all.mjs            -> deno, node and e2e
+//   node scripts/test-all.mjs            -> docs, deno, node and e2e
 //   node scripts/test-all.mjs deno node  -> only the named suites
 // PostgreSQL suites are not run here: they skip themselves unless their
 // *_TEST_DATABASE_URL variable is set (see docs/TESTING.md).
@@ -17,6 +28,13 @@ const TEST_ROOTS = ['models', 'services', 'controllers', 'hooks', 'i18n', 'scrip
 const SKIP_DIRS = new Set(['node_modules', '.git', '.expo']);
 const NODE_TEST_IMPORT = /from\s+['"]node:test['"]/;
 
+/**
+ * Recursively collects test files (`*.test.js`/`*.test.mjs`), skipping `SKIP_DIRS`.
+ *
+ * @param {string} dir Directory to scan, relative to the repository root.
+ * @param {string[]} [found=[]] Accumulator of collected paths.
+ * @returns {string[]} The accumulator with every test file path found.
+ */
 function collectTests(dir, found = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (SKIP_DIRS.has(entry.name)) continue;
@@ -33,7 +51,23 @@ const allTests = TEST_ROOTS.flatMap((dir) => collectTests(dir)).sort();
 const nodeTests = allTests.filter((file) => NODE_TEST_IMPORT.test(readFileSync(file, 'utf8')));
 const denoTests = allTests.filter((file) => !nodeTests.includes(file));
 
+/**
+ * Suite definitions keyed by CLI name: label, command, arguments and an output parser
+ * that returns `{passed, failed, skipped}` counters (`null` when not printed).
+ *
+ * @type {Record<string, {label: string, cmd: string, args: string[], parse: (out: string) => {passed: number|null, failed: number|null, skipped: number|null}}>}
+ */
 const suites = {
+  docs: {
+    label: 'Documentación (rutas)',
+    cmd: process.execPath,
+    args: ['scripts/check-doc-paths.mjs'],
+    parse: (out) => ({
+      passed: /, 0 errores\./.test(out) ? 1 : 0,
+      failed: last(out, /(\d+) errores/g),
+      skipped: 0,
+    }),
+  },
   deno: {
     label: 'Deno (móvil + backend)',
     cmd: 'deno',
@@ -68,6 +102,12 @@ const suites = {
   },
 };
 
+/**
+ * Runs one suite, forwarding its stdout/stderr live while capturing the combined output.
+ *
+ * @param {{cmd: string, args: string[]}} suite Suite definition.
+ * @returns {Promise<{code: number, output: string}>} Exit code (1 on spawn error or null code) and output; never rejects.
+ */
 function run(suite) {
   return new Promise((resolve) => {
     const child = spawn(suite.cmd, suite.args, { stdio: ['inherit', 'pipe', 'pipe'] });

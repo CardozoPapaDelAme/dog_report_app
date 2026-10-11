@@ -1,3 +1,8 @@
+/**
+ * @module hooks/useCameraCapture
+ * Container hook for photo capture: takes a picture, validates it on device, deletes rejected photos
+ * and moves accepted ones to the app document directory (`reports/photos/`).
+ */
 import { useCallback, useRef, useState } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 
@@ -5,6 +10,7 @@ import { validateCapturedPhoto } from '../services/photoValidationRuntime.js';
 
 const PHOTO_DIRECTORY = `${FileSystem.documentDirectory ?? ''}reports/photos/`;
 
+/** Best-effort file deletion; never throws. */
 async function deleteIfPossible(uri) {
   if (!uri) return;
   try {
@@ -19,6 +25,7 @@ async function ensurePhotoDirectory() {
   await FileSystem.makeDirectoryAsync(PHOTO_DIRECTORY, { intermediates: true });
 }
 
+/** Moves a validated photo into the photo directory and returns its new URI. */
 async function persistValidatedPhoto(uri) {
   await ensurePhotoDirectory();
   const fileName = `report-photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
@@ -27,6 +34,18 @@ async function persistValidatedPhoto(uri) {
   return destination;
 }
 
+/**
+ * @param {object} [options]
+ * @param {(photo: {photoUri: string, validation: object, validationSkipped: string | null}) => void}
+ *   [options.onPhotoAccepted] - Called with the persisted photo.
+ * @param {typeof validateCapturedPhoto} [options.validatePhoto=validateCapturedPhoto]
+ * @returns {{cameraRef: {current: *}, cameraReady: boolean, setCameraReady: (ready: boolean) => void,
+ *   modelStatus: string, captureState: {phase: 'idle' | 'capturing' | 'validating' | 'rejected' |
+ *   'accepted' | 'error', rejection: *, reasons: Array<*>, error: string | null, validation: object | null},
+ *   capture: () => Promise<object | null>, clearFeedback: () => void}} `capture` resolves `null` when
+ *   the camera is not ready or busy, otherwise `{accepted: true, photoUri, validation, validationSkipped}`
+ *   or `{accepted: false, reason: 'validation_rejected' | 'capture_failed', ...}`.
+ */
 export function useCameraCapture({
   onPhotoAccepted,
   validatePhoto = validateCapturedPhoto,

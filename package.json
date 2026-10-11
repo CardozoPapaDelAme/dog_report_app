@@ -26,7 +26,8 @@
     "test:report-form-ui": "playwright test reportForm.spec.js",
     "test:public-map-ui": "playwright test publicMap.spec.js",
     "test:admin-ui": "playwright test",
-    "test:duplicates-ui": "playwright test duplicateManagement.spec.js"
+    "test:duplicates-ui": "playwright test duplicateManagement.spec.js",
+    "test:docs": "node scripts/check-doc-paths.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",

@@ -1,17 +1,32 @@
+/**
+ * @module models/associationSummary
+ * Aggregates association report rows into per-day or per-month counts for the dashboard summary.
+ */
 import { associationDateText, validateAssociationDateRange } from './associationReport.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Splits `YYYY-MM-DD` into numeric `[year, month, day]`. */
 function dayParts(day) {
   return day.split('-').map(Number);
 }
 
+/** Formats a local date as `YYYY-MM`. */
 function monthKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
 // GET /association/reports has already filtered these rows by accepted_at.
 // Use local calendar dates, matching the date-only filters sent to the API.
+/**
+ * Counts rows by local `accepted_at` date; ranges of up to 31 days group by day, longer ones by month.
+ * Empty buckets are included.
+ * @param {Array<{accepted_at: string}>} rows
+ * @param {string} fromDay - `YYYY-MM-DD`.
+ * @param {string} toDay - `YYYY-MM-DD`.
+ * @returns {{total: number, grouping: 'day' | 'month', buckets: Array<{key: string, count: number}>}}
+ * @throws {RangeError} When the date range is invalid.
+ */
 export function buildAssociationSummary(rows, fromDay, toDay) {
   if (!validateAssociationDateRange(fromDay, toDay).range) {
     throw new RangeError('Invalid association summary range');

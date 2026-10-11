@@ -1,5 +1,14 @@
+/**
+ * @module domain/photoImage
+ * Photo content rules: size limits, content sniffing, and sanitization. Uploaded bytes are validated
+ * against their real format and re-encoded with `jimp-compact`, which strips metadata such as EXIF/GPS.
+ * Only JPEG and PNG are accepted; HEIC is detected so it can be rejected explicitly.
+ */
+/** Maximum photo size in bytes (10 MiB), before and after sanitization. */
 export const MAX_PHOTO_BYTES = 10_485_760;
+/** Maximum width or height in pixels. */
 export const MAX_PHOTO_DIMENSION = 12_000;
+/** Maximum total pixel count (width × height). */
 export const MAX_PHOTO_PIXELS = 24_000_000;
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
@@ -15,6 +24,13 @@ const HEIC_BRANDS = new Set([
   "msf1",
 ]);
 
+/**
+ * Error raised when a photo is rejected.
+ * @property {string} code - API error code: `invalid_image_content`, `photo_too_large`,
+ *   `image_too_large`, or `unsupported_media_type`.
+ * @property {string} rejectionCode - Finer rejection reason (for example `undecodable_image` or
+ *   `mime_mismatch`); defaults to `code`.
+ */
 export class PhotoImageError extends Error {
   constructor(code, message, rejectionCode = code) {
     super(message);
@@ -44,6 +60,11 @@ function hasPngSignature(bytes) {
   return PNG_SIGNATURE.every((byte, index) => bytes[index] === byte);
 }
 
+/**
+ * Detects the image format from magic bytes, ignoring any declared MIME type.
+ * @param {Uint8Array} bytes - Raw file bytes.
+ * @returns {'image/jpeg' | 'image/png' | 'image/heic' | null} Detected type, or null when unrecognized.
+ */
 export function sniffImageMimeType(bytes) {
   if (
     bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 &&
@@ -82,6 +103,10 @@ function isSofMarker(marker) {
   );
 }
 
+/**
+ * Reads width and height from the first JPEG start-of-frame segment.
+ * @throws {PhotoImageError} `invalid_image_content` when no readable frame header exists.
+ */
 function jpegDimensions(bytes) {
   let offset = 2;
   while (offset < bytes.length) {
@@ -110,6 +135,10 @@ function jpegDimensions(bytes) {
   );
 }
 
+/**
+ * Reads width and height from the PNG IHDR chunk.
+ * @throws {PhotoImageError} `invalid_image_content` when the header is invalid.
+ */
 function pngDimensions(bytes) {
   if (
     bytes.length < 24 || !hasPngSignature(bytes) ||
@@ -127,6 +156,10 @@ function pngDimensions(bytes) {
   };
 }
 
+/**
+ * When a MIME type is declared, requires it to be allowed and to match the detected content.
+ * @throws {PhotoImageError} `unsupported_media_type`.
+ */
 function assertDeclaredMimeType(declaredMimeType, detectedMimeType) {
   if (!declaredMimeType) return;
   const normalized = declaredMimeType.toLowerCase();
@@ -146,6 +179,7 @@ function assertDeclaredMimeType(declaredMimeType, detectedMimeType) {
   }
 }
 
+/** @throws {PhotoImageError} `image_too_large` when dimensions or pixel count exceed the limits. */
 function assertDimensions({ width, height }) {
   if (
     !Number.isSafeInteger(width) ||
@@ -164,6 +198,10 @@ function assertDimensions({ width, height }) {
   }
 }
 
+/**
+ * Decodes the image and re-encodes it in its detected format, discarding metadata.
+ * @returns {Promise<{bytes: Uint8Array, width: number, height: number}>}
+ */
 async function decodeAndEncodeImage(bytes, detectedMimeType) {
   const { default: Jimp } = await import("jimp-compact");
   const input = bytes.buffer.slice(
@@ -186,6 +224,23 @@ async function decodeAndEncodeImage(bytes, detectedMimeType) {
   };
 }
 
+/**
+ * @typedef {object} SanitizedPhoto
+ * @property {Uint8Array} bytes - Re-encoded image bytes.
+ * @property {'image/jpeg' | 'image/png'} detectedMimeType
+ * @property {number} width
+ * @property {number} height
+ */
+/**
+ * Validates and sanitizes an uploaded photo: size, sniffed format, declared MIME type, header
+ * dimensions, decoded dimensions, and the size of the re-encoded output.
+ * @param {object} [options]
+ * @param {Uint8Array} options.bytes - Raw uploaded bytes.
+ * @param {string} [options.declaredMimeType] - Client-declared MIME type; checked only when non-empty.
+ * @returns {Promise<SanitizedPhoto>}
+ * @throws {PhotoImageError} `invalid_image_content`, `photo_too_large`, `image_too_large`, or
+ *   `unsupported_media_type`. Unexpected decode failures become `invalid_image_content`.
+ */
 export async function sanitizePhotoBytes({
   bytes,
   declaredMimeType = "",

@@ -1,5 +1,17 @@
+/**
+ * @module hooks/useLogin
+ * Container hook for staff authentication: restores the stored session on mount and exposes
+ * login/logout actions backed by the login controller.
+ */
 import { useEffect, useState } from "react";
 
+/**
+ * @param {ReturnType<typeof import('../controllers/loginController.js').createLoginController>} controller
+ * @returns {Partial<import('../controllers/loginController.js').LoginResult> & {loading: boolean,
+ *   pending: boolean, error: Error | null, login: (email: string, password: string) => Promise<boolean>,
+ *   logout: () => Promise<void>}} `session`/`destination` are present only while authenticated;
+ *   `loading` is true until the restore attempt settles.
+ */
 export function useLogin(controller) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);

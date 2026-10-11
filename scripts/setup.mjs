@@ -1,8 +1,24 @@
+/**
+ * One-time local setup script.
+ *
+ * Invoked as `npm run setup` (`node scripts/setup.mjs`), from the repository root.
+ * Checks the Node version, creates `.env` from a publishable staging template when
+ * it does not exist (an existing `.env` is never modified; missing keys are only
+ * reported), and runs `npm install` when `node_modules` is absent. Exits with code 1
+ * when Node is too old or `npm install` fails.
+ *
+ * @module scripts/setup
+ */
 // One-time local setup: .env (publishable staging config) and dependencies.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import { checkEnvFile, checkNode } from "./doctor.mjs";
 
+/**
+ * Contents written to a new `.env`: publishable staging client configuration only.
+ *
+ * @type {string}
+ */
 const ENV_TEMPLATE = `# Publishable client configuration for the staging project (safe to share).
 # Never put service keys, database passwords or access tokens in this file.
 EXPO_PUBLIC_API_BASE_URL=https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api

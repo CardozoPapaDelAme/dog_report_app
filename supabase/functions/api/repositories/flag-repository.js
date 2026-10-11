@@ -1,3 +1,16 @@
+/**
+ * @module repositories/flag-repository
+ * SQL access for anonymous report flags: report locking, active flag configuration, per-origin
+ * deduplication and rate limiting, automatic hiding at the flag threshold, and audit entries.
+ * Every function runs on a caller-provided transaction.
+ */
+/**
+ * Locks a report `FOR UPDATE` and returns its moderation state.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} reportId - Report id.
+ * @returns {Promise<object | null>} Report status fields plus `publicly_available` and `noncanonical`
+ *   flags, or null when missing.
+ */
 export async function lockReportForFlag(tx, reportId) {
   const rows = await tx`
     SELECT
@@ -19,6 +32,11 @@ export async function lockReportForFlag(tx, reportId) {
   return rows[0] ?? null;
 }
 
+/**
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @returns {Promise<{id: string, flag_auto_hide_threshold: number, flag_rate_limit_per_hour: number, fingerprint_retention_days: number, server_now: Date} | null>}
+ *   Active configuration for the deployment environment, or null when none is active.
+ */
 export async function getActiveFlagConfig(tx) {
   const rows = await tx`
     SELECT
@@ -37,6 +55,13 @@ export async function getActiveFlagConfig(tx) {
   return rows[0] ?? null;
 }
 
+/**
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.reportId - Report id.
+ * @param {string} options.originHash - Hashed origin fingerprint.
+ * @returns {Promise<{id: string} | null>} An existing flag from that origin, or null.
+ */
 export async function findExistingFlagByOrigin(tx, { reportId, originHash }) {
   const rows = await tx`
     SELECT id
@@ -48,6 +73,14 @@ export async function findExistingFlagByOrigin(tx, { reportId, originHash }) {
   return rows[0] ?? null;
 }
 
+/**
+ * Consumes one unit of the origin's hourly flag budget via `app_private.consume_rate_limit`.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.originHash - Hashed origin fingerprint.
+ * @param {number} options.limit - Allowed flags per hour.
+ * @returns {Promise<boolean>} True when the flag is allowed.
+ */
 export async function consumeFlagRateLimit(tx, { originHash, limit }) {
   const rows = await tx`
     SELECT app_private.consume_rate_limit('flag', ${originHash}, ${limit}) AS allowed
@@ -55,6 +88,17 @@ export async function consumeFlagRateLimit(tx, { originHash, limit }) {
   return rows[0]?.allowed === true;
 }
 
+/**
+ * Inserts a flag whose fingerprint expires after the configured retention.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.reportId - Report id.
+ * @param {string} options.reason - `public.flag_reason` value.
+ * @param {string | null} options.detail - Optional reason detail.
+ * @param {string} options.originHash - Hashed origin fingerprint.
+ * @param {number} options.fingerprintRetentionDays - Days to keep the fingerprint.
+ * @returns {Promise<{id: string}>}
+ */
 export async function insertFlag(
   tx,
   { reportId, reason, detail, originHash, fingerprintRetentionDays },
@@ -79,6 +123,11 @@ export async function insertFlag(
   return rows[0];
 }
 
+/**
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} reportId - Report id.
+ * @returns {Promise<number>} Distinct unexpired origin fingerprints that flagged the report.
+ */
 export async function countDistinctActiveFlagOrigins(tx, reportId) {
   const rows = await tx`
     SELECT count(DISTINCT device_fingerprint_hash)::int AS distinct_origins
@@ -90,6 +139,12 @@ export async function countDistinctActiveFlagOrigins(tx, reportId) {
   return rows[0]?.distinct_origins ?? 0;
 }
 
+/**
+ * Hides a visible report with reason `flag_threshold`.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {string} reportId - Report id.
+ * @returns {Promise<object | null>} Updated status fields, or null when the report was not visible.
+ */
 export async function autoHideReportByFlags(tx, reportId) {
   const rows = await tx`
     UPDATE public.reports
@@ -114,6 +169,16 @@ export async function autoHideReportByFlags(tx, reportId) {
   return rows[0] ?? null;
 }
 
+/**
+ * Records a system (actorless) audit entry for a report.
+ * @param {import('postgres').TransactionSql} tx - Active transaction.
+ * @param {object} options
+ * @param {string} options.action - `public.audit_action` value.
+ * @param {string} options.reportId - Report id.
+ * @param {*} options.previousValues - Previous snapshot (stored as JSON).
+ * @param {*} options.newValues - New snapshot (stored as JSON).
+ * @returns {Promise<void>}
+ */
 export async function insertFlagAudit(
   tx,
   { action, reportId, previousValues, newValues },

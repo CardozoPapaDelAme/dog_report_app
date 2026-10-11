@@ -1,0 +1,52 @@
+{
+  "purpose": "Conteos de cluster para comprobar que el tamaño visual del marcador es proporcional (RF12) dentro de los límites fijos del modelo",
+  "origin": "sintético",
+  "cases": [
+    "TC-MAPA-05",
+    "TC-MAPA-06",
+    "TC-MAPA-07",
+    "TC-MAPA-08"
+  ],
+  "contract": "models/publicMap.js: clusterRadiusPx, CLUSTER_RADIUS_MIN_PX = 18, CLUSTER_RADIUS_MAX_PX = 48, saturación en 1000 reportes; components/PublicMapView.js dibuja diámetro = 2 × radio",
+  "base_commit": "f5ed2c9",
+  "preparation": "Sin preparación: la URL ?native-map-clusters de tests/ui/configuration-entry.jsx monta estos conteos con MapLibre sustituido por tests/ui/maplibre-stub.js",
+  "limitations": "Mide el marcador que construye el componente del dispositivo en Chromium; no dibuja teselas ni proyección real. La verificación en teléfono corresponde a T7",
+  "entries": [
+    {
+      "key": "count-1",
+      "report_count": 1,
+      "highest_severity": "avistamiento_simple",
+      "expected_diameter_px": 36
+    },
+    {
+      "key": "count-2",
+      "report_count": 2,
+      "highest_severity": "avistamiento_simple",
+      "expected_diameter_px": 42.02
+    },
+    {
+      "key": "count-7",
+      "report_count": 7,
+      "highest_severity": "avistamiento_simple",
+      "expected_diameter_px": 52.9
+    },
+    {
+      "key": "count-100",
+      "report_count": 100,
+      "highest_severity": "avistamiento_simple",
+      "expected_diameter_px": 76.0
+    },
+    {
+      "key": "count-1000",
+      "report_count": 1000,
+      "highest_severity": "avistamiento_simple",
+      "expected_diameter_px": 96
+    },
+    {
+      "key": "count-5000",
+      "report_count": 5000,
+      "highest_severity": "avistamiento_simple",
+      "expected_diameter_px": 96
+    }
+  ]
+}

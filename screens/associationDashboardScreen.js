@@ -1,3 +1,8 @@
+/**
+ * @module screens/associationDashboardScreen
+ * Container screen for users with the `association` role: date range presets and custom dates,
+ * accepted report summary, report cards (narrow) or table (wide, at least 900 px), and CSV/XLSX export.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -12,12 +17,25 @@ import AssociationReportCard from '../components/associationReportCard.js';
 import { buildAssociationSummary } from '../models/associationSummary.js';
 import { associationDisplayValues, presentAssociationReport } from '../presenters/associationDisplay.js';
 
+/** Table column widths in pixels, in `ASSOCIATION_REPORT_COLUMNS` order. */
 const WIDTHS = [210, 190, 190, 175, 130, 290, 150, 100, 105, 120, 120, 105];
 const TABLE_WIDTH = WIDTHS.reduce((sum, width) => sum + width, 0);
 function Cell({ value, width, header = false }) {
   return <Text numberOfLines={header ? 2 : 3} selectable={!header} style={[styles.cell, { width }, header && styles.headerCell]}>{value == null ? '—' : String(value)}</Text>;
 }
 
+/**
+ * Loads the last 30 days on mount through `useAssociationReports`.
+ * @param {object} props
+ * @param {string} props.accessToken - Session access token.
+ * @param {string} props.displayName - Shown in the header.
+ * @param {() => void} props.onLogout
+ * @param {boolean} props.pending - Logout in progress; disables export.
+ * @param {Function} [props.getPage] - Page request override for `useAssociationReports`.
+ * @param {(file: {filename: string, content: string}) => Promise<void>} [props.saveCsv=saveAssociationCsv]
+ * @param {(file: {filename: string, content: Uint8Array}) => Promise<void>} [props.saveXlsx=saveAssociationXlsx]
+ * @returns {JSX.Element}
+ */
 export default function AssociationDashboardScreen({ accessToken, displayName, onLogout, pending, getPage, saveCsv = saveAssociationCsv, saveXlsx = saveAssociationXlsx }) {
   const { t, i18n } = useTranslation();
   const { width } = useWindowDimensions();

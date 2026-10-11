@@ -1,3 +1,9 @@
+/**
+ * @module services/duplicateService
+ * Administrator use cases for duplicate report groups: listing candidates and groups, resolving a
+ * connected set of reports into a group, and reversing a group. Per ADR-019 this Service owns
+ * authorization and re-checks the stored profile and environment inside each transaction.
+ */
 import {
   assertAvailableReports,
   assertConnectedCandidates,
@@ -10,6 +16,10 @@ import { getConfig } from "../infrastructure/config.js";
 import { getSql } from "../infrastructure/db.js";
 import * as repository from "../repositories/duplicateRepository.js";
 
+/**
+ * Requires an authenticated, active Administrator whose profile matches the token subject and role.
+ * @throws {DuplicateError} `authentication_required` or `forbidden`.
+ */
 function assertAdministrator(actor) {
   if (actor?.type !== "authenticated" || !actor.userId) {
     throw new DuplicateError(
@@ -28,9 +38,27 @@ function assertAdministrator(actor) {
   }
 }
 
+/**
+ * Creates the duplicate Service.
+ * @param {object} [dependencies] - Overrides for `getConfig`, `getSql`, and `repository` (tests).
+ * @returns {{
+ *   candidates: (options: {actor: import('../middleware/auth.js').AuthenticatedAuth}) => Promise<{reports: object[], candidates: object[]}>,
+ *   list: (options: {actor: import('../middleware/auth.js').AuthenticatedAuth}) => Promise<object[]>,
+ *   resolve: (options: {actor: import('../middleware/auth.js').AuthenticatedAuth, input: unknown}) => Promise<import('../repositories/duplicateRepository.js').DuplicateGroupRow>,
+ *   reverse: (options: {actor: import('../middleware/auth.js').AuthenticatedAuth, groupId: string, input: unknown}) => Promise<import('../repositories/duplicateRepository.js').DuplicateGroupRow>
+ * }}
+ *   `resolve` confirms the pending candidates connecting the reports and creates an active group;
+ *   `reverse` reverts an active group to `reversed` and returns its candidates to `pending`. Both
+ *   write an audit entry.
+ * @throws {DuplicateError} `authentication_required`, `forbidden`, `invalid_request`, `not_found`,
+ *   `duplicate_graph_disconnected`, `duplicate_membership_conflict`, `duplicate_group_conflict`
+ *   (also for unique/foreign-key violations and serialization failures), `preflight_mismatch`, or
+ *   `dependency_unavailable` (connection failures, SQLSTATE class 08 and 57P01-57P03). Unknown errors propagate unchanged.
+ */
 export function createDuplicateService(dependencies = {}) {
   const deps = { getConfig, getSql, repository, ...dependencies };
   const repo = deps.repository;
+  /** Runs `operation(tx)` after the in-transaction actor and environment preflight, mapping storage errors. */
   async function inTransaction(actor, operation) {
     const expected = deps.getConfig().expectedEnvironment;
     if (!["staging", "production"].includes(expected)) {
@@ -215,4 +243,5 @@ export function createDuplicateService(dependencies = {}) {
     },
   };
 }
+/** Production duplicate Service instance. */
 export const duplicateService = createDuplicateService();

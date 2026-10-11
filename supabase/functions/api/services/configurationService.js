@@ -1,8 +1,18 @@
+/**
+ * @module services/configurationService
+ * Administrator use cases for reading and publishing the versioned runtime configuration. Per ADR-019
+ * this Service owns authorization: it checks the actor before any I/O and re-checks the stored profile
+ * and deployment environment inside the transaction.
+ */
 import { ConfigurationError, validateConfiguration } from '../domain/configuration.js';
 import { getConfig } from '../infrastructure/config.js';
 import { getSql } from '../infrastructure/db.js';
 import * as repository from '../repositories/configurationRepository.js';
 
+/**
+ * Requires an authenticated, active Administrator whose profile matches the token subject and role.
+ * @throws {ConfigurationError} `authentication_required` or `forbidden`.
+ */
 function assertAdministrator(actor) {
   if (actor?.type !== 'authenticated' || !actor.userId) {
     throw new ConfigurationError('authentication_required', 'A valid administrator session is required.');
@@ -16,9 +26,23 @@ function assertAdministrator(actor) {
   }
 }
 
+/**
+ * Creates the configuration Service. Every operation runs in a transaction scoped to the actor and
+ * translates storage errors into {@link ConfigurationError} codes.
+ * @param {object} [dependencies] - Overrides for `getConfig`, `getSql`, and `repository` (tests).
+ * @returns {{read: (options: {actor: import('../middleware/auth.js').AuthenticatedAuth}) => Promise<{configuration: object, zone_set: object | null}>,
+ *   publish: (options: {actor: import('../middleware/auth.js').AuthenticatedAuth, input: unknown}) => Promise<{configuration: object, zone_set: object | null}>}}
+ *   `read` returns the active state; `publish` validates the input, inserts and activates a new
+ *   version, writes an audit entry, and returns the new active state.
+ * @throws {ConfigurationError} `authentication_required`, `forbidden`, `invalid_request`,
+ *   `preflight_mismatch` (environment not configured or mismatched), `configuration_unavailable`
+ *   (no active version on read), `configuration_conflict` (unique violation or serialization failure),
+ *   or `dependency_unavailable` (connection failures, SQLSTATE class 08 and 57P01-57P03). Unknown errors propagate unchanged.
+ */
 export function createConfigurationService(dependencies = {}) {
   const deps = { getConfig, getSql, repository, ...dependencies };
 
+  /** Runs `operation(tx, environment)` after the in-transaction actor and environment preflight, mapping storage errors. */
   async function inTransaction(actor, operation) {
     const expectedEnvironment = deps.getConfig().expectedEnvironment;
     if (!['staging', 'production'].includes(expectedEnvironment)) {
@@ -95,4 +119,5 @@ export function createConfigurationService(dependencies = {}) {
   };
 }
 
+/** Production configuration Service instance. */
 export const configurationService = createConfigurationService();

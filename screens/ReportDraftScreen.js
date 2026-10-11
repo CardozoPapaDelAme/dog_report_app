@@ -1,3 +1,8 @@
+/**
+ * @module screens/ReportDraftScreen
+ * Presentational read-only summary of a local report draft: photo, queue state, location snapshot
+ * and on-device photo validation metrics. Not imported by `App.js`, which renders `ReportFormScreen`.
+ */
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +28,14 @@ function formatLocation(snapshot) {
   return `${snapshot.latitude.toFixed(5)}, ${snapshot.longitude.toFixed(5)}`;
 }
 
+/**
+ * @param {object} props
+ * @param {import('../models/reportDraft.js').ReportDraft | null} props.draft
+ * @param {boolean} [props.loading=false]
+ * @param {{code?: string} | null} [props.error=null] - Shown with a message keyed by `code`.
+ * @param {() => void} props.onBackToCamera
+ * @returns {JSX.Element}
+ */
 export default function ReportDraftScreen({ draft, loading = false, error = null, onBackToCamera }) {
   const { t } = useTranslation();
   const validation = draft?.photo_validation;
