@@ -11,6 +11,7 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 | ID | Fecha | Caso o suite CI | Ejecución del test log | Severidad | Módulo | Jira | Estado | Responsable | Corrección y verificación |
 |---|---|---|---|---|---|---|---|---|---|
 | INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | Pendiente (Alan Ruiz) | corregido | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
+| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | Pendiente (Erick Herrera) | abierto | Erick Herrera | Pendiente agregar aviso RF02 y verificar con nueva ejecución |
 
 ## Severidad y estado
 
@@ -76,6 +77,28 @@ que pruebe la corrección y deje evidencia vinculada.
 | Solución | `supabase/functions/api/services/moderationService.js` autoriza al actor antes de obtener conexión (Administrator activo con perfil coincidente; si no, `forbidden`; sin sesión, `authentication_required`) en `listQueue` y en los cuatro comandos. `supabase/functions/api/controllers/moderationController.js` traduce esos errores a 403/401 |
 | Commit o PR correctivo | `313f0458ebc300cc39c2c8e15b45d80d0ffa7be4` en la rama `TD-119-fix-inc-1-rol-en-servicio-de-moderacion` |
 | Verificación y cierre | Test de brecha reemplazado por dos tests de regresión que corren en npm test; RUN-82 pasó. Pendiente solo el ticket de bug en Jira |
+
+### INC-2 — Falta aviso RF02 en el formulario público de reporte
+
+| Campo | Detalle |
+|---|---|
+| Fecha y hora con zona | 2026-10-11 00:00 America/Mexico_City |
+| Caso o suite CI | TC-ALPHA-14; docs/testing/cases/alpha.md |
+| Ejecución que lo originó | RUN-96 en docs/testing/TEST_LOG.md |
+| Severidad y justificación | baja: no bloquea el envío de reportes y no se observaron campos de identidad, pero falta el aviso visible requerido por RF02 sobre información incidental en foto o texto libre |
+| Módulo | REPORTE / PRIVACIDAD (RF02) |
+| Entorno y commit | Android real; samsung SM-S918B; Android 16 SDK 36; staging con servicios reales; app 1.0.0 com.wildogscanner.app; build development/debug no Expo Go; fe8da67d23862517ab5878228da5a15ca971b973 |
+| Precondiciones y datos | Formulario público de reporte abierto durante la sesión alfa T7; cuentas y credenciales no documentadas; evidencia en docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4 |
+| Pasos para reproducir | 1. Abrir el flujo público de reporte; 2. Recorrer las preguntas del formulario; 3. Verificar que no haya campos de nombre, teléfono o correo; 4. Buscar un aviso sobre información incidental en foto o texto libre |
+| Resultado esperado | No hay campos que pidan identificadores personales y se muestra el aviso RF02 sobre información incidental |
+| Resultado obtenido | No se observaron campos de identidad, pero no apareció el aviso RF02 en las preguntas del reporte |
+| Evidencia | docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4 |
+| Ticket de bug en Jira | Pendiente; responsable Erick Herrera |
+| Estado y responsable | abierto; Erick Herrera |
+| Diagnóstico | Confirmado en ejecución manual alfa; falta definir el texto y ubicación del aviso RF02 en el formulario público |
+| Solución | Pendiente agregar aviso visible en el formulario público sin pedir datos personales |
+| Commit o PR correctivo | Pendiente |
+| Verificación y cierre | Pendiente repetir TC-ALPHA-14 y registrar nueva fila RUN-n cuando el aviso exista |
 
 ## Anexo histórico (T11)
 
