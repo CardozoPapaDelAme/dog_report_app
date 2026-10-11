@@ -11,7 +11,7 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 | ID | Fecha | Caso o suite CI | Ejecución del test log | Severidad | Módulo | Jira | Estado | Responsable | Corrección y verificación |
 |---|---|---|---|---|---|---|---|---|---|
 | INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | Pendiente (Alan Ruiz) | corregido | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
-| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | Pendiente (Erick Herrera) | abierto | Erick Herrera | Pendiente agregar aviso RF02 y verificar con nueva ejecución |
+| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | Pendiente (Erick Herrera) | pendiente de verificación | Erick Herrera | Aviso RF02 agregado y verificado en RUN-117; cierre pendiente de repetir TC-ALPHA-14 en Android |
 
 ## Severidad y estado
 
@@ -94,11 +94,11 @@ que pruebe la corrección y deje evidencia vinculada.
 | Resultado obtenido | No se observaron campos de identidad, pero no apareció el aviso RF02 en las preguntas del reporte |
 | Evidencia | docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4 |
 | Ticket de bug en Jira | Pendiente; responsable Erick Herrera |
-| Estado y responsable | abierto; Erick Herrera |
-| Diagnóstico | Confirmado en ejecución manual alfa; falta definir el texto y ubicación del aviso RF02 en el formulario público |
-| Solución | Pendiente agregar aviso visible en el formulario público sin pedir datos personales |
-| Commit o PR correctivo | Pendiente |
-| Verificación y cierre | Pendiente repetir TC-ALPHA-14 y registrar nueva fila RUN-n cuando el aviso exista |
+| Estado y responsable | pendiente de verificación; Erick Herrera |
+| Diagnóstico | Confirmado en ejecución manual alfa; la UI automatizada de T5 ya cubre el aviso RF02 y la ausencia de campos de identidad, pero la evidencia que abrió el incidente fue Android real y debe repetirse ahí |
+| Solución | Aviso visible agregado en el formulario público sin pedir nombre, teléfono, correo ni otros datos de identidad |
+| Commit o PR correctivo | Pendiente de commit T5 |
+| Verificación y cierre | RUN-117 pasó con `npm run test:report-form-ui` y cubrió `TC-REPORTE-03`; no cerrar hasta repetir `TC-ALPHA-14` en Android real y registrar la nueva RUN |
 
 ## Anexo histórico (T11)
 

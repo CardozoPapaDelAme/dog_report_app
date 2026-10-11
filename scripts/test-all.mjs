@@ -23,6 +23,7 @@ import { ANSI, lastNumber as last, printSummary, summaryRow } from './lib/summar
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 process.chdir(root);
+const playwrightCli = join(root, 'node_modules', '@playwright', 'test', 'cli.js');
 
 const TEST_ROOTS = ['models', 'services', 'controllers', 'hooks', 'i18n', 'scripts', 'supabase/functions/api'];
 const SKIP_DIRS = new Set(['node_modules', '.git', '.expo']);
@@ -92,8 +93,8 @@ const suites = {
   },
   e2e: {
     label: 'Playwright (UI)',
-    cmd: 'npx',
-    args: ['playwright', 'test'],
+    cmd: process.execPath,
+    args: [playwrightCli, 'test'],
     parse: (out) => ({
       passed: last(out, /(\d+) passed/g),
       failed: last(out, /(\d+) failed/g),

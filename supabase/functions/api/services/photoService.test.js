@@ -286,6 +286,69 @@ Deno.test("valid image path uploads sanitized bytes and registers clean metadata
   );
 });
 
+Deno.test("raw EXIF and source metadata are not persisted for approved photos", async () => {
+  const approved = [];
+  const uploads = [];
+  let sanitizerInput = null;
+  const { dependencies } = baseDependencies({
+    repository: {
+      ...baseDependencies().dependencies.repository,
+      approvePhoto: (_tx, values) => {
+        approved.push(values);
+        return {
+          report_id: REPORT_ID,
+          photo_expected: true,
+          state: "approved",
+          rejection_code: null,
+        };
+      },
+    },
+    sanitizePhotoBytes: (input) => {
+      sanitizerInput = input;
+      return {
+        bytes: new Uint8Array([9, 8, 7]),
+        detectedMimeType: "image/jpeg",
+        width: 2,
+        height: 1,
+        rawExif: { GPSLatitude: "27.750000", CameraOwnerName: "Jane Doe" },
+        sourceMetadata: { filename: "original-with-exif.jpg" },
+      };
+    },
+    uploadStorageObject: (input) => {
+      uploads.push(input);
+    },
+  });
+  const service = createPhotoService(dependencies);
+
+  const result = await service.upload({
+    reportId: REPORT_ID,
+    deviceFingerprint: "raw-device-fingerprint",
+    photo: {
+      bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe1]),
+      declaredMimeType: "image/jpeg",
+      filename: "original-with-exif.jpg",
+    },
+  });
+
+  assert(result.responseStatus === 201, "upload should approve the sanitized photo");
+  assert(sanitizerInput.declaredMimeType === "image/jpeg");
+  assert(approved.length === 1, "approved metadata should be persisted once");
+  assert(uploads.length === 1, "sanitized bytes should be uploaded once");
+  assert(approved[0].detectedMimeType === "image/jpeg");
+  assert(approved[0].byteSize === 3);
+  assert(approved[0].widthPixels === 2);
+  assert(approved[0].heightPixels === 1);
+  assert(uploads[0].contentType === "image/jpeg");
+  assert(uploads[0].bytes[0] === 9, "storage receives sanitized bytes");
+
+  const persisted = JSON.stringify({ approved, uploads });
+  assert(!persisted.includes("rawExif"), "raw EXIF container must not persist");
+  assert(!persisted.includes("GPSLatitude"), "raw GPS EXIF must not persist");
+  assert(!persisted.includes("CameraOwnerName"), "source EXIF must not persist");
+  assert(!persisted.includes("sourceMetadata"), "source metadata must not persist");
+  assert(!persisted.includes("original-with-exif.jpg"), "source filename must not persist");
+});
+
 Deno.test("database failure after storage upload deletes the orphan object", async () => {
   const { calls, dependencies } = baseDependencies({
     repository: {

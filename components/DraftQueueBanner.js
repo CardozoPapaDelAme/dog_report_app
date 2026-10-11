@@ -18,15 +18,16 @@ const colors = {
 
 /** Chooses the banner tone, texts and optional action label; `null` when nothing should show. */
 function queueBannerContent(t, summary = {}, synced = false) {
-  if (summary.terminalCount > 0) {
+  const safeSummary = summary ?? {};
+  if (safeSummary.terminalCount > 0) {
     return {
       tone: 'danger',
       title: t('camera.queue.terminalTitle'),
-      body: t('camera.queue.terminalBody', { count: summary.terminalCount }),
+      body: t('camera.queue.terminalBody', { count: safeSummary.terminalCount }),
       action: null,
     };
   }
-  if (summary.isSyncing) {
+  if (safeSummary.isSyncing) {
     return {
       tone: 'pending',
       title: t('camera.queue.syncingTitle'),
@@ -34,19 +35,19 @@ function queueBannerContent(t, summary = {}, synced = false) {
       action: null,
     };
   }
-  if (summary.pendingCount > 0) {
-    if (summary.canRetryNow) {
+  if (safeSummary.pendingCount > 0) {
+    if (safeSummary.canRetryNow) {
       return {
         tone: 'pending',
         title: t('camera.queue.pendingTitle'),
-        body: t('camera.queue.pendingBody', { count: summary.pendingCount }),
+        body: t('camera.queue.pendingBody', { count: safeSummary.pendingCount }),
         action: t('camera.queue.retryNow'),
       };
     }
     return {
       tone: 'pending',
       title: t('camera.queue.scheduledTitle'),
-      body: t('camera.queue.scheduledBody', { count: summary.pendingCount }),
+      body: t('camera.queue.scheduledBody', { count: safeSummary.pendingCount }),
       action: null,
     };
   }

@@ -52,19 +52,29 @@ Deno.test('L7 form omits quantity for solitary sightings and never keeps stale c
 });
 
 Deno.test('L7 form requires pack quantity from 2 to 1000 only for avistamiento manada', () => {
-  const invalid = validateReportFormDraft({
-    ...createEmptyReportFormDraft(),
-    sighting_type: 'manada',
-    cantidad_aprox: '1',
-  });
-  assert(invalid.errors.cantidad_aprox.key === 'integerRange');
+  for (const value of ['1', '1001']) {
+    const invalid = validateReportFormDraft({
+      ...createEmptyReportFormDraft(),
+      sighting_type: 'manada',
+      cantidad_aprox: value,
+    });
+    assert(
+      invalid.errors.cantidad_aprox.key === 'integerRange',
+      `manada ${value} should be outside the accepted range`,
+    );
+  }
 
-  const valid = validateReportFormDraft({
-    ...createEmptyReportFormDraft(),
-    sighting_type: 'manada',
-    cantidad_aprox: '2',
-  });
-  assert(valid.reportFields.details.cantidad_aprox === 2);
+  for (const value of ['2', '500', '1000']) {
+    const valid = validateReportFormDraft({
+      ...createEmptyReportFormDraft(),
+      sighting_type: 'manada',
+      cantidad_aprox: value,
+    });
+    assert(
+      valid.reportFields.details.cantidad_aprox === Number(value),
+      `manada ${value} should be accepted`,
+    );
+  }
 });
 
 Deno.test('L7 conditional incident sections build only their allowed details', () => {

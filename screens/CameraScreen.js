@@ -74,9 +74,10 @@ export default function CameraScreen({
   const captureDisabled = busy || !capture.cameraReady || !hasPermission;
 
   return (
-    <View style={styles.root}>
+    <View testID="camera-screen" style={styles.root}>
       {hasPermission ? (
         <CameraView
+          testID="camera-preview"
           ref={capture.cameraRef}
           style={StyleSheet.absoluteFill}
           facing="back"
@@ -164,6 +165,7 @@ export default function CameraScreen({
       {hasPermission ? (
         <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           <Pressable
+            testID="camera-without-photo"
             accessibilityRole="button"
             disabled={busy}
             onPress={onReportWithoutPhoto}
@@ -173,6 +175,7 @@ export default function CameraScreen({
           </Pressable>
 
           <Pressable
+            testID="camera-capture"
             accessibilityRole="button"
             accessibilityLabel={t('camera.capture')}
             accessibilityState={{ busy, disabled: captureDisabled }}
