@@ -39,7 +39,7 @@ function photoStatusFlags(state, photoExpected) {
 
 /**
  * Responds with the photo status of a report.
- * @param {import('hono').Context} c - Hono request context.
+ * @param {object} c - Hono-compatible request context.
  * @param {{reportId: string, photoExpected: boolean, state: string | null, rejectionCode: string | null}} status
  *   Photo status from the photo Service.
  * @param {number} [responseStatus=200] - HTTP status (201 after a newly approved upload).

@@ -4,7 +4,7 @@
  */
 /**
  * Responds with `{ error: { code, message, request_id, details? } }` and the `X-Request-Id` header.
- * @param {import('hono').Context} c - Hono request context.
+ * @param {object} c - Hono-compatible request context.
  * @param {number} status - HTTP status code.
  * @param {string} code - Stable machine-readable error code.
  * @param {string} message - Human-readable description.

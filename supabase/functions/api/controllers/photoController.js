@@ -136,8 +136,8 @@ function routeReportId(c) {
  * `photo_processing_conflict`, 413 `photo_too_large` / `image_too_large`, 415 `unsupported_photo_type`,
  * 503 `storage_unavailable` / `database_unavailable`. Unmapped errors are rethrown.
  * @param {ReturnType<typeof import('../services/photoService.js').createPhotoService>} [service] - Photo Service.
- * @returns {{status: (c: import('hono').Context) => Promise<Response>, upload: (c: import('hono').Context) => Promise<Response>,
- *   download: (c: import('hono').Context) => Promise<Response>}}
+ * @returns {{status: (c: object) => Promise<Response>, upload: (c: object) => Promise<Response>,
+ *   download: (c: object) => Promise<Response>}}
  */
 export function createPhotoController(service = photoService) {
   return {
