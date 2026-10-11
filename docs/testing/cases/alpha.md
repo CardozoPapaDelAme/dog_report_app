@@ -15,7 +15,7 @@ Tipos no aplicables: `mínimo`/`máximo`/`promedio` solo existen donde hay un ra
 numérico (cantidad de la manada, TC-ALPHA-08 a TC-ALPHA-11); en el resto se usa
 `normal` o `excepción`. RF21 (ocultar por denuncias de orígenes distintos) no se
 puede ejecutar con un solo teléfono y se cubre con la suite PostgreSQL
-`supabase/functions/api/tests/flag-postgres.test.js` (ver límites en `ALPHA.md`).
+`supabase/functions/api/tests/flag-postgres.test.js` (ver límites en `docs/testing/ALPHA.md`).
 
 ## Escenas y datos de entrada
 
@@ -38,7 +38,7 @@ ocultar o resolver duplicados; no actuar sobre reportes de otras personas.
 
 Cada caso cita el test automatizado más cercano solo como referencia: corre en
 navegador o con servicios simulados y **no sustituye** la ejecución en dispositivo.
-Evidencia manual: captura o video en `docs/testing/data/alpha/` (ver `ALPHA.md`).
+Evidencia manual: captura o video en `docs/testing/data/alpha/` (ver `docs/testing/ALPHA.md`).
 
 ### Arranque, cámara y validación de foto
 

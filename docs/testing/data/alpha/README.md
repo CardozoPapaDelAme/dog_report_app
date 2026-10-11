@@ -8,10 +8,10 @@ Aquí se guardan las capturas, videos y archivos exportados de las sesiones de
 
 ```text
 docs/testing/data/alpha/
-  2026-10-DD/
-    TC-ALPHA-03-foto-nitida.png
-    TC-ALPHA-16-sincronizacion.mp4
-    TC-ALPHA-27-export-csv.csv
+  2026-10-11/
+    TC-ALPHA-03-foto-nitida.jpg
+    TC-ALPHA-15-modo-avion-sync.mp4
+    TC-ALPHA-27-export-csv.jpg
 ```
 
 - Una carpeta por fecha de sesión; el nombre del archivo empieza por el ID del caso.
