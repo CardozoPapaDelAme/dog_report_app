@@ -322,8 +322,9 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   capturas o video; las ejecuciones están en `TEST_LOG.md`.
 - **Evidencia:** sesión alfa Android real documentada en `docs/testing/ALPHA.md`;
   evidencias en `docs/testing/data/alpha/2026-10-11/`; ejecuciones RUN-83 a
-  RUN-115. Resultado: 31 pasaron, 1 falló (`TC-ALPHA-14`, `INC-2`) y 1 quedó
-  bloqueado (`TC-ALPHA-32`, sin archivo GeoJSON/geofence de prueba).
+  RUN-116. Resultado efectivo: 32 pasaron y 1 falló (`TC-ALPHA-14`, `INC-2`).
+  TC-ALPHA-32 tuvo bloqueo inicial en RUN-114 y quedó aprobado en RUN-116 con
+  borrador guardado sin activar zona y rechazo de GeoJSON inválido.
 
 ### T8 · Pruebas con usuarios reales
 - **Persona:** P5 · **Estado:** pendiente · **Jira:** TD-121 · **Criterios:** C5 · **Requerimientos:** RNF04

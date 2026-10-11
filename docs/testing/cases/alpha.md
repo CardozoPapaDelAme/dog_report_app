@@ -1,10 +1,10 @@
 # Casos de prueba — módulo ALPHA (prueba alfa en dispositivo)
 
-Estado: casos definidos por T7 / TD-120; **sin ejecutar**. Las filas de ejecución
-(`RUN-n`) se agregan en `docs/testing/TEST_LOG.md` cuando el equipo los corra en el
-teléfono. Ningún caso de este archivo cuenta como aprobado hasta tener su fila.
-Convenciones: `docs/testing/README.md`. Procedimiento, preparación y registro de la
-sesión: `docs/testing/ALPHA.md`.
+Estado: casos definidos por T7 / TD-120 y ejecutados en Android real en la sesión
+documentada en `docs/testing/ALPHA.md`. Las filas `RUN-83` a `RUN-116` en
+`docs/testing/TEST_LOG.md` registran los resultados; este archivo conserva las
+entradas y resultados esperados. Convenciones: `docs/testing/README.md`.
+Procedimiento, preparación y registro de la sesión: `docs/testing/ALPHA.md`.
 
 Fuentes: `docs/product/ETAPA1-REQUERIMIENTOS-V2.md` (RF01–RF24, RNF04, RNF05,
 RNF08, RNF12), `docs/product/APPROVED-CLARIFICATIONS.md` (aclaración 5: zonas y
@@ -111,7 +111,7 @@ Se llega por «Acceso de personal» desde la cámara.
 | TC-ALPHA-29 | RF19, RF20 | normal | Reportes propios en la cola de moderación (los de TC-ALPHA-08 y TC-ALPHA-16) | Motivos de auditoría escritos en cada comando | 1. Abrir «Cola de moderación» y localizar el reporte por UUID; 2. «Aprobar» uno pendiente; 3. «Ocultar» otro con motivo; 4. «Restaurar» el oculto; 5. «Eliminar» uno con motivo | Cada comando exige motivo donde corresponde; ocultar lo retira del mapa pero lo deja en la cola; restaurar lo devuelve a pendiente (no público hasta aprobarse); eliminar es lógico y reversible; el contenido original no cambia | Evidencia manual: capturas por comando y del mapa antes y después. Referencia: `models/moderation.test.js`, `services/moderationApi.test.js` |
 | TC-ALPHA-30 | RF23 | normal | Al menos dos reportes propios cercanos en tiempo y distancia, para que el sistema los sugiera | Motivo `Prueba alfa` | 1. «Gestionar duplicados»; 2. Seleccionar dos reportes de una sugerencia; 3. Elegir el canónico; 4. «Confirmar resolución»; 5. «Revertir resolución» con motivo | Solo se marca el canónico y sus duplicados; no se borra ni combina nada; la reversión devuelve los candidatos a revisión | Evidencia manual: capturas. Referencia: `tests/ui/duplicateManagement.spec.js` |
 | TC-ALPHA-31 | Aclaración 5, RF21 | normal | Sesión de Administrator en **staging**; anotar los valores vigentes antes de cambiar | Cambiar «Denuncias para ocultar un reporte» al valor vigente más 1, con motivo `Prueba alfa`; después restaurar el valor original con motivo `Reversión de prueba alfa` | 1. «Configurar umbrales»; 2. Anotar versión y valores; 3. Publicar el cambio; 4. Volver a leer; 5. Publicar la restauración | La versión activa sube en cada publicación; los valores publicados se leen de vuelta; el motivo es obligatorio; al final los valores quedan como antes | Evidencia manual: capturas de las versiones. Referencia: `tests/ui/configuration.spec.js` |
-| TC-ALPHA-32 | Aclaración 5 | excepción | Sesión de Administrator en staging; archivo GeoJSON de prueba válido (`Polygon`, WGS84) y otro inválido | (a) GeoJSON válido; (b) contenido que no es un `Polygon` ni `MultiPolygon` | 1. «Gestionar zonas»; 2. Seleccionar el archivo; 3. «Calcular checksum»; 4. «Guardar borrador»; 5. Repetir con (b) | (a) «Borrador guardado. La carga por sí sola no activa la zona.» y la zona activa actual no cambia; (b) se rechaza sin enviar. **No activar** la zona en esta sesión salvo decisión expresa del equipo: reemplazar el geofence de staging puede dejar fuera la ubicación de prueba | Evidencia manual: capturas. Referencia: `tests/ui/zoneSet.spec.js` |
+| TC-ALPHA-32 | Aclaración 5 | excepción | Sesión de Administrator en staging; archivo GeoJSON de prueba válido (`Polygon`, WGS84) y otro inválido | (a) GeoJSON válido; (b) contenido que no es un `Polygon` ni `MultiPolygon` | 1. «Gestionar zonas»; 2. Seleccionar el archivo; 3. «Calcular checksum»; 4. «Guardar borrador»; 5. Repetir con (b) | (a) «Borrador guardado. La carga por sí sola no activa la zona.» y la zona activa actual no cambia; (b) se rechaza sin enviar. **No activar** la zona en esta sesión salvo decisión expresa del equipo: reemplazar el geofence de staging puede dejar fuera la ubicación de prueba | Evidencia manual: video/captura del borrador válido y del rechazo inválido; fixtures en `docs/testing/data/alpha/2026-10-11/`. Referencia: `tests/ui/zoneSet.spec.js` |
 | TC-ALPHA-33 | RF15, RF18 | normal | Sesión iniciada (Asociación o Administrator) | Ninguna | 1. «Cerrar sesión»; 2. Reabrir la app | Vuelve a la cámara; al reabrir no se conserva la sesión privada y hay que iniciar sesión otra vez | Evidencia manual: video. Referencia: `controllers/loginController.test.js` |
 
 Casos sin referencia automatizada propia dependen solo del teléfono real (permisos,

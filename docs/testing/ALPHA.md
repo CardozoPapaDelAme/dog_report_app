@@ -1,8 +1,8 @@
 # Prueba alfa en dispositivo
 
 Estado: ejecución alfa en Android real documentada para T7 / TD-120. La sesión
-cerró con 31 casos que pasaron, 1 falla registrada como `INC-2` y 1 caso
-bloqueado por falta de fixture GeoJSON.
+cerró con 32 casos que pasaron y 1 falla registrada como `INC-2`. TC-ALPHA-32
+tuvo un bloqueo inicial en RUN-114 y se reejecutó correctamente en RUN-116.
 Convenciones: `docs/testing/README.md`. Fuente: `docs/testing/BACKLOG.md`, T7.
 Casos con entradas, pasos y resultados esperados: `docs/testing/cases/alpha.md`
 (`TC-ALPHA-01` a `TC-ALPHA-33`).
@@ -18,7 +18,7 @@ Completar al ejecutar; una fila nueva de sesión por cada corrida (no sobrescrib
 | Dispositivo y versión Android | samsung SM-S918B; Android 16 (SDK 36) |
 | Tipo de build y API/entorno | Build nativo development/debug, no Expo Go; API de staging con servicios reales |
 | Configuración, idioma y red | Teléfono en español; red activa para flujos en línea; modo avión usado en TC-ALPHA-06, TC-ALPHA-15, TC-ALPHA-17 y TC-ALPHA-21 |
-| Datos y precondiciones | Cuentas de Asociación y Administrator sin credenciales documentadas; escenas ESC-A a ESC-D; geofence de staging vigente; TC-ALPHA-32 bloqueado por falta de archivo GeoJSON de prueba |
+| Datos y precondiciones | Cuentas de Asociación y Administrator sin credenciales documentadas; escenas ESC-A a ESC-D; geofence de staging vigente; TC-ALPHA-32 usó fixtures GeoJSON sintéticos válidos e inválidos sin activar zona |
 
 ## Preparación
 
@@ -100,7 +100,7 @@ de cada caso ejecutado.
 | TC-ALPHA-29 | Moderación | Aprobar, ocultar, restaurar y eliminar con motivo | pasó: comandos de moderación revisados | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-29-moderacion.jpg` |
 | TC-ALPHA-30 | Duplicados | Resolver y revertir sin borrar | pasó: duplicados resueltos/revertidos sin borrar reportes | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-30-duplicados.jpg` |
 | TC-ALPHA-31 | Configuración de umbrales | Versión sube; valores restaurados | pasó: umbral cambiado y restaurado | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-31-configuracion-umbrales.mp4` |
-| TC-ALPHA-32 | Zonas: borrador | Guarda sin activar | bloqueado: no se cuenta con archivo GeoJSON/geofence de prueba para validar guardado como borrador | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-zonas-sin-geojson.mp4` |
+| TC-ALPHA-32 | Zonas: borrador | Guarda sin activar | pasó en reejecución: el GeoJSON válido guardó borrador sin activar; el GeoJSON inválido tipo `Point` fue rechazado antes de enviar | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-valid-draft-saved.mp4`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-invalid-point-rejected.jpg`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-valid-draft-zone.geojson`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-invalid-point.geojson` |
 | TC-ALPHA-33 | Cerrar sesión | Vuelve a cámara | pasó: cerrar sesión y reabrir vuelve a cámara sin sesión privada | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-33-cierre-sesion.mp4` |
 
 ## Evidencia
@@ -137,8 +137,9 @@ de cada caso ejecutado.
   dispositivo). Mantener esa diferencia al reportar resultados.
 - **Sin iPhone.** Salvo que haya un build iOS compatible, RNF05 para iOS 13+ queda
   sin cubrir.
-- **Staging, no producción.** El geofence es el de prueba; la activación de zonas
-  queda fuera de la sesión (TC-ALPHA-32).
+- **Staging, no producción.** El geofence es el de prueba; TC-ALPHA-32 solo creó
+  un borrador y verificó rechazo local de geometría inválida. La activación de
+  zonas quedó fuera de la sesión.
 - **Rendimiento, seguridad y accesibilidad** pertenecen a T9; los tiempos de
   usuarios reales (RNF04) y los usuarios externos, a T8.
 - Un éxito en navegador o con servicios simulados no se traslada al teléfono: la
@@ -147,7 +148,8 @@ de cada caso ejecutado.
 ## Conclusiones y revisión
 
 Conclusión: T7 queda ejecutada en Android real con evidencia local versionada.
-Resultado: 31 casos pasaron, TC-ALPHA-14 falló por ausencia del aviso RF02 y
-queda registrado como `INC-2`, y TC-ALPHA-32 quedó bloqueado por falta de archivo
-GeoJSON/geofence de prueba. Pendiente operativo: abrir o vincular el ticket Jira
-de `INC-2` y repetir TC-ALPHA-14 cuando se corrija el aviso.
+Resultado efectivo por caso: 32 casos pasaron y TC-ALPHA-14 falló por ausencia
+del aviso RF02, registrado como `INC-2`. TC-ALPHA-32 conserva el bloqueo inicial
+en RUN-114 como histórico, pero quedó aprobado en RUN-116 con GeoJSON válido e
+inválido. Pendiente operativo: abrir o vincular el ticket Jira de `INC-2` y
+repetir TC-ALPHA-14 cuando se corrija el aviso.

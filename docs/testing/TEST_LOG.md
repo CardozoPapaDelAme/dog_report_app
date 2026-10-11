@@ -1,18 +1,19 @@
 # Test log — registro de ejecuciones
 
-Estado: plantilla de T1 con ejecuciones de casos de T6 y T7 (RUN-1 a RUN-115).
+Estado: plantilla de T1 con ejecuciones de casos de T6 y T7 (RUN-1 a RUN-116).
 Convenciones: `docs/testing/README.md`. Cada ejecutor agrega sus filas; T12 / TD-125
 consolida el resumen. Los ejemplos de formato no cuentan como ejecuciones.
 
 ## Resumen (T12)
 
 Pendiente de consolidación final por T12. Ya existen ejecuciones automatizadas y
-manuales registradas; T7 alfa Android aporta RUN-83 a RUN-115 con 31 casos que
-pasaron, 1 falla (`INC-2`) y 1 bloqueo. Informar totales por módulo
-(pasó/falló/bloqueado) y por suite CI (pasaron/fallaron/omitidos), cobertura de
-T4, alfa, usuarios, no funcionales, aceptación, conclusiones y pendientes. Los
-números deben coincidir con las filas y con la corrida final T10; no sumar casos y
-suites entre sí.
+manuales registradas; T7 alfa Android aporta RUN-83 a RUN-116. Resultado efectivo
+por caso: 32 pasaron y 1 falló (`INC-2`); RUN-114 conserva el bloqueo inicial de
+TC-ALPHA-32 y RUN-116 registra su reejecución aprobada. Informar totales por
+módulo (pasó/falló/bloqueado) y por suite CI (pasaron/fallaron/omitidos),
+cobertura de T4, alfa, usuarios, no funcionales, aceptación, conclusiones y
+pendientes. Los números deben coincidir con las filas y con la corrida final T10;
+no sumar casos y suites entre sí.
 
 ## Ejecuciones de casos
 
@@ -137,6 +138,7 @@ relevantes en entorno/notas. Resultado obtenido debe explicar qué se observó.
 | RUN-113 | 2026-10-08 17:57 America/Mexico_City | TC-ALPHA-31; docs/testing/cases/alpha.md | Erick Herrera — ejecución manual en Android real | Dispositivo Android real; staging con servicios reales; samsung SM-S918B Android 16 SDK 36; app 1.0.0 com.wildogscanner.app; build development/debug no Expo Go; cuenta Administrator sin credenciales documentadas | fe8da67d23862517ab5878228da5a15ca971b973 | pasó | El umbral se cambió, la versión subió y los valores se restauraron | no aplica | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-31-configuracion-umbrales.mp4` |
 | RUN-114 | 2026-10-11 00:05 America/Mexico_City | TC-ALPHA-32; docs/testing/cases/alpha.md | Erick Herrera — ejecución manual en Android real | Dispositivo Android real; staging con servicios reales; samsung SM-S918B Android 16 SDK 36; app 1.0.0 com.wildogscanner.app; build development/debug no Expo Go; cuenta Administrator sin credenciales documentadas | fe8da67d23862517ab5878228da5a15ca971b973 | bloqueado | No se pudo probar guardado de zona como borrador porque no se cuenta con archivo GeoJSON/geofence de prueba | no aplica | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-zonas-sin-geojson.mp4`; bloqueo responsable Erick Herrera |
 | RUN-115 | 2026-10-08 17:58 America/Mexico_City | TC-ALPHA-33; docs/testing/cases/alpha.md | Erick Herrera — ejecución manual en Android real | Dispositivo Android real; staging con servicios reales; samsung SM-S918B Android 16 SDK 36; app 1.0.0 com.wildogscanner.app; build development/debug no Expo Go | fe8da67d23862517ab5878228da5a15ca971b973 | pasó | Al cerrar sesión y reabrir, la app volvió a cámara sin sesión privada | no aplica | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-33-cierre-sesion.mp4` |
+| RUN-116 | 2026-10-11 01:10 America/Mexico_City | TC-ALPHA-32; docs/testing/cases/alpha.md | Erick Herrera — reejecución manual en Android real | Dispositivo Android real; staging con servicios reales; samsung SM-S918B Android 16 SDK 36; app 1.0.0 com.wildogscanner.app; build development/debug no Expo Go; cuenta Administrator sin credenciales documentadas | fe8da67d23862517ab5878228da5a15ca971b973 | pasó | GeoJSON válido guardó un borrador sin activar la zona; GeoJSON inválido tipo `Point` fue rechazado antes de enviar | no aplica | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-valid-draft-saved.mp4`; `docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-invalid-point-rejected.jpg`; fixtures: `docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-valid-draft-zone.geojson`, `docs/testing/data/alpha/2026-10-11/TC-ALPHA-32-invalid-point.geojson`; no se activó zona |
 
 Formato para copiar (reemplazar todos los marcadores antes de registrar):
 
