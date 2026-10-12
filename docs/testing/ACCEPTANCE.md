@@ -21,7 +21,7 @@ siguen pendientes y se anotan el día de la ejecución.
 | Campo | Valor |
 |---|---|
 | Fecha, hora y zona | <pendiente> |
-| Ejecutado por | Alan Ruiz (equipo) |
+| Ejecutado por | Erick Herrera (equipo), en dispositivo Android |
 | Lugar | Chihuahua, dentro del geofence de prueba de staging |
 | Commit/build de la app | <pendiente: build final de `main` en `8895099` o posterior (incluye `f18ba0b`); SHA completo (`git rev-parse HEAD`), versión, paquete y tipo de build> |
 | Dispositivo y versión del sistema | <pendiente> |
@@ -91,7 +91,7 @@ criterio; después usar el teléfono como lo haría una persona usuaria.
 
 1. **Resultado técnico por caso** (`pasó`, `falló` o `bloqueado`): una fila
    `RUN-<n>` nueva en `docs/testing/TEST_LOG.md` con fecha, hora y zona, commit/build,
-   dispositivo, ejecutado por «Alan Ruiz (equipo)», lo observado y la ruta de
+   dispositivo, ejecutado por «Erick Herrera (equipo)», lo observado y la ruta de
    evidencia. Anotar ese `RUN-<n>` en la columna de ejecución de la tabla.
 2. **Comentarios por caso:** en «Comentarios y evidencia», anotar observaciones
    del equipo y la ruta o enlace de la evidencia.

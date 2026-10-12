@@ -375,7 +375,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 
 ### T14 · Pruebas de aceptación con el socio formador
 - **Persona:** P4 · **Estado:** en curso · **Jira:** TD-127 · **Criterios:** C1 (visión del cliente)
-- **Decisión (2026-10-12):** los casos de aceptación los ejecuta el equipo (Alan Ruiz), no el socio formador; la conformidad registrada es el veredicto del equipo.
+- **Decisión (2026-10-12):** los casos de aceptación los ejecuta el equipo (Erick Herrera en dispositivo Android; responsable de la tarea: Alan Ruiz), no el socio formador; la conformidad registrada es el veredicto del equipo.
 - **Depende de:** T5, T6, T7 (el sistema ya probado por el equipo).
 - **Objetivo:** que el cliente pruebe la app y confirme que cumple lo que pidió.
 - **Alcance (`docs/testing/ACCEPTANCE.md`):**
