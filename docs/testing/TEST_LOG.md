@@ -186,6 +186,16 @@ inventar totales: anotar «sin ejecución» en los totales, la causa y el incide
 
 | Ejecución CI | Fecha y hora con zona | Rama y commit probado | Suite | Pasaron | Fallaron | Omitidos | Enlace a corrida | Incidente | Notas |
 |---|---|---|---|---|---|---|---|---|---|
+| CI-1 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | Documentación (rutas) | 1 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job npm test; corrida previa a T14, no final T10 |
+| CI-2 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | Deno (móvil + backend) | 368 | 0 | 6 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job npm test; los 6 omitidos son suites SQL sin base de datos en este job y se cubren en el job PostgreSQL suites; corrida previa a T14, no final T10 |
+| CI-3 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | node:test | 18 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job npm test; corrida previa a T14, no final T10 |
+| CI-4 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | Playwright (UI) | 88 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job npm test; corrida previa a T14, no final T10 |
+| CI-5 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | PostgreSQL · configuración (FAB-1) | 1 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job PostgreSQL suites; corrida previa a T14, no final T10 |
+| CI-6 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | PostgreSQL · zonas (FAB-2) | 1 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job PostgreSQL suites; corrida previa a T14, no final T10 |
+| CI-7 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | PostgreSQL · duplicados (FAB-3) | 1 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job PostgreSQL suites; corrida previa a T14, no final T10 |
+| CI-8 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | PostgreSQL · reportes (L2) | 1 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job PostgreSQL suites; corrida previa a T14, no final T10 |
+| CI-9 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | PostgreSQL · mapa público | 1 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job PostgreSQL suites; corrida previa a T14, no final T10 |
+| CI-10 | 2026-10-12 12:25 America/Chihuahua (18:25 UTC) | main; c8184af0b614f8b79c53c3578c9bbf4cfcf6568e | PostgreSQL · reportero público (T5) | 1 | 0 | 0 | https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873 | no aplica | job PostgreSQL suites; corrida previa a T14, no final T10 |
 
 Formato para copiar:
 
