@@ -1,6 +1,6 @@
 # Test log — registro de ejecuciones
 
-Estado: plantilla de T1 con ejecuciones de casos de T5, T6, T7 y T8 (RUN-1 a RUN-133).
+Estado: plantilla de T1 con ejecuciones de casos de T5, T6, T7, T8 y T9 (RUN-1 a RUN-136).
 Convenciones: `docs/testing/README.md`. Cada ejecutor agrega sus filas; T12 / TD-125
 consolida el resumen. Los ejemplos de formato no cuentan como ejecuciones.
 
@@ -164,6 +164,9 @@ relevantes en entorno/notas. Resultado obtenido debe explicar qué se observó.
 | RUN-131 | 2026-10-11; hora no registrada; America/Chihuahua | TC-UAT-02; docs/testing/cases/uat.md | Participante U02 (anónimo) | Simulador Xcode; iPhone 18 Pro; iOS 27; build y entorno no registrados | no registrado | pasó | Encontró el reporte público de prueba en 29 s. Recibió ayuda mínima sobre dónde estaba el reporte. | no aplica | Consentimiento verbal y encuesta registrados en `docs/testing/UAT.md`; conservar la ayuda como hallazgo de usabilidad. |
 | RUN-132 | 2026-10-11; hora no registrada; America/Chihuahua | TC-UAT-03; docs/testing/cases/uat.md | Participante U02 (anónimo) | Simulador Xcode; iPhone 18 Pro; iOS 27; build y entorno no registrados | no registrado | pasó | Presentó la denuncia y recibió confirmación en 65 s. Recibió ayuda mínima sobre cómo denunciar. | no aplica | Consentimiento verbal y encuesta registrados en `docs/testing/UAT.md`; conservar la ayuda como hallazgo de usabilidad. |
 | RUN-133 | 2026-10-11; hora no registrada; America/Chihuahua | TC-UAT-02; docs/testing/cases/uat.md | Participante U03 (anónimo) | Simulador iPhone 18 Pro; iOS 27; build y entorno no registrados | no registrado | pasó | En reejecución con reporte público de prueba, encontró el reporte en 176 s (02:56). Batalló, pero no recibió ayuda durante la tarea. | INC-3 | Consentimiento verbal confirmado. La ejecución verifica que el fixture público permite completar la tarea; conservar la dificultad como hallazgo de usabilidad. |
+| RUN-134 | 2026-10-11; hora no registrada; America/Chihuahua | TC-NF-01, 05, 06, 13–26, 31, 32, 34, 35; docs/testing/NON-FUNCTIONAL.md | Codex — ejecución local | macOS; Node v25.8.2; npm 11.11.1; pruebas locales, mocks donde aplica; sin DB/servicios reales | d47f023a7c562b2c970b5eee45ce91b36f9b0ab5 + working tree T8/T9 | pasó con omisiones | `npm test`: documentación 66 archivos/970 citas sin errores; Deno 368 pasó, 0 falló, 6 omitidos; node:test 18/0/0; Playwright 88/0/0. | no aplica | Las seis suites SQL requieren Docker; mediciones de teléfono, API real, k6 y TalkBack permanecen pendientes en NON-FUNCTIONAL.md. |
+| RUN-135 | 2026-10-12; hora no registrada; America/Chihuahua | TC-NF-02; docs/testing/NON-FUNCTIONAL.md | Ricardo Becerra Bitar — medición manual | Simulador Xcode, iPhone 18 Pro; iOS 27; Wi‑Fi | no registrado | pasó | Desde tocar “Mapa” hasta mostrar clusters públicos: 3.8 s, menor a 5 s. Los clusters mostrados corresponden a fixtures fuera del área de prueba. | no aplica | Sin ayuda. Evidencia de simulador; falta repetir en iPhone físico y medir el envío de reporte. |
+| RUN-136 | 2026-10-12; hora no registrada; America/Chihuahua | TC-NF-02; docs/testing/NON-FUNCTIONAL.md | Ricardo Becerra Bitar — medición manual | Simulador Xcode, iPhone 18 Pro; iOS 27; Wi‑Fi | no registrado | pasó | Desde tocar “Enviar reporte” hasta la confirmación: 2.38 s. Reporte de prueba sin foto y sin ayuda. | no aplica | Evidencia de simulador; falta repetir en iPhone físico. |
 
 Formato para copiar (reemplazar todos los marcadores antes de registrar):
 
