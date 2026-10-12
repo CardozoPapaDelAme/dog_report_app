@@ -1,5 +1,5 @@
 {
-  "purpose": "Entradas de la sesión de aceptación con el socio formador (T14): valores que el socio escribe o elige en la app para cada caso TC-ACEPTACION",
+  "purpose": "Entradas de los casos de aceptación de T14, ejecutados por el equipo (Alan Ruiz), no por el socio formador: valores que se escriben o eligen en la app para cada caso TC-ACEPTACION",
   "origin": "sintético; sin datos personales, credenciales ni ubicaciones reales de personas",
   "cases": [
     "TC-ACEPTACION-01",
@@ -17,9 +17,9 @@
   ],
   "contract": "Textos de pantalla en i18n/locales/es.json; validación del formulario en models/reportPayload.js (validateReportFormDraft); casos de origen en docs/testing/cases/alpha.md",
   "base_commit": "c8184af",
-  "build_under_test": "Build final de main en el commit 8895099 o posterior, que incluye la corrección de INC-2 (f18ba0b); el SHA exacto instalado se registra el día de la sesión en docs/testing/ACCEPTANCE.md. base_commit es solo el commit sobre el que se redactaron estos casos.",
-  "preparation": "Ver docs/testing/ACCEPTANCE.md, sección Sesión: build nativo instalado, entorno staging con geofence de prueba vigente, cuentas de Asociación y Administrator provisionadas (credenciales fuera de Git) y reportes sintéticos aprobados sembrados por el equipo antes de la sesión.",
-  "cleanup": "Los reportes creados en la sesión quedan en staging; los que se ocultan o eliminan en TC-ACEPTACION-11 se gestionan con los comandos de moderación de la propia app, sin SQL directo. No se cambian umbrales ni zonas.",
+  "build_under_test": "Build final de main en el commit 8895099 o posterior, que incluye la corrección de INC-2 (f18ba0b); el SHA exacto instalado se registra el día de la ejecución en docs/testing/ACCEPTANCE.md. base_commit es solo el commit sobre el que se redactaron estos casos.",
+  "preparation": "Ver docs/testing/ACCEPTANCE.md, sección Ejecución: build nativo instalado, entorno staging con geofence de prueba vigente, cuentas de Asociación y Administrator provisionadas (credenciales fuera de Git) y reportes sintéticos aprobados sembrados por el equipo antes de ejecutar.",
+  "cleanup": "Los reportes creados en la ejecución quedan en staging; los que se ocultan o eliminan en TC-ACEPTACION-11 se gestionan con los comandos de moderación de la propia app, sin SQL directo. No se cambian umbrales ni zonas.",
   "limitations": "Las escenas de foto son objetos frente a la cámara (la app toma fotos en vivo); este archivo describe la escena, no contiene imágenes. No sustituye los casos funcionales de T5, T6 y T7.",
   "entries": [
     {
@@ -99,7 +99,7 @@
         "restore": "Prueba de aceptación: restaurar",
         "delete": "Prueba de aceptación: eliminar"
       },
-      "targets": "Solo reportes creados en la sesión (UUID anotados en TC-ACEPTACION-01, 02 y 05)"
+      "targets": "Solo reportes creados en la ejecución (UUID anotados en TC-ACEPTACION-01, 02 y 05)"
     },
     {
       "key": "acept-12-motivo-vacio",
