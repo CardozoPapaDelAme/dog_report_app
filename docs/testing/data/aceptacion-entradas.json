@@ -1,0 +1,110 @@
+{
+  "purpose": "Entradas de la sesión de aceptación con el socio formador (T14): valores que el socio escribe o elige en la app para cada caso TC-ACEPTACION",
+  "origin": "sintético; sin datos personales, credenciales ni ubicaciones reales de personas",
+  "cases": [
+    "TC-ACEPTACION-01",
+    "TC-ACEPTACION-02",
+    "TC-ACEPTACION-03",
+    "TC-ACEPTACION-04",
+    "TC-ACEPTACION-05",
+    "TC-ACEPTACION-06",
+    "TC-ACEPTACION-07",
+    "TC-ACEPTACION-08",
+    "TC-ACEPTACION-09",
+    "TC-ACEPTACION-10",
+    "TC-ACEPTACION-11",
+    "TC-ACEPTACION-12"
+  ],
+  "contract": "Textos de pantalla en i18n/locales/es.json; validación del formulario en models/reportPayload.js (validateReportFormDraft); casos de origen en docs/testing/cases/alpha.md",
+  "base_commit": "c8184af",
+  "preparation": "Ver docs/testing/ACCEPTANCE.md, sección Sesión: build nativo instalado, entorno staging con geofence de prueba vigente, cuentas de Asociación y Administrator provisionadas (credenciales fuera de Git) y reportes sintéticos aprobados sembrados por el equipo antes de la sesión.",
+  "cleanup": "Los reportes creados en la sesión quedan en staging; los que se ocultan o eliminan en TC-ACEPTACION-11 se gestionan con los comandos de moderación de la propia app, sin SQL directo. No se cambian umbrales ni zonas.",
+  "limitations": "Las escenas de foto son objetos frente a la cámara (la app toma fotos en vivo); este archivo describe la escena, no contiene imágenes. No sustituye los casos funcionales de T5, T6 y T7.",
+  "entries": [
+    {
+      "key": "acept-01-reporte-con-foto",
+      "case": "TC-ACEPTACION-01",
+      "scene": "ESC-A de docs/testing/cases/alpha.md: un perro real, o su imagen impresa o en otra pantalla, nítido y con buena luz",
+      "form": {
+        "incident_type": "Avistamiento",
+        "sighting_type": "Solitario",
+        "descripcion": "Prueba de aceptación"
+      },
+      "expected": "Reporte enviado; se muestra un UUID"
+    },
+    {
+      "key": "acept-02-sin-foto-manada",
+      "case": "TC-ACEPTACION-02",
+      "scene": "ninguna (acceso «Reportar sin foto»)",
+      "form": {
+        "incident_type": "Avistamiento",
+        "sighting_type": "Manada",
+        "cantidad_aprox": "5"
+      },
+      "expected": "Reporte enviado sin foto y sin cuenta"
+    },
+    {
+      "key": "acept-03-cantidad-fuera-de-rango",
+      "case": "TC-ACEPTACION-03",
+      "form": {
+        "incident_type": "Avistamiento",
+        "sighting_type": "Manada",
+        "cantidad_aprox": "1001"
+      },
+      "expected": "Error «Escribe un número entero entre 2 y 1000.»; no se envía ni se guarda en la cola"
+    },
+    {
+      "key": "acept-04-foto-sin-perro",
+      "case": "TC-ACEPTACION-04",
+      "scene": "ESC-B de docs/testing/cases/alpha.md: una escena sin perro (pared, objeto o paisaje)",
+      "expected": "«No detectamos un perro en la foto.» con opción «Tomar otra»"
+    },
+    {
+      "key": "acept-05-sin-red",
+      "case": "TC-ACEPTACION-05",
+      "scene": "ESC-A o «Reportar sin foto»",
+      "network": "modo avión activado antes de enviar; desactivado después",
+      "form": {
+        "incident_type": "Avistamiento",
+        "sighting_type": "Solitario"
+      },
+      "expected": "«Reporte guardado para sincronizar» y después «Reportes sincronizados», con el mismo UUID"
+    },
+    {
+      "key": "acept-08-panel-periodo",
+      "case": "TC-ACEPTACION-08",
+      "period": "Últimos 7 días",
+      "expected": "Total, resumen por fecha de aceptación y tarjetas solo con datos de negocio"
+    },
+    {
+      "key": "acept-09-exportacion",
+      "case": "TC-ACEPTACION-09",
+      "formats": ["CSV", "XLSX"],
+      "expected": "Dos archivos con las mismas filas y columnas que la consulta mostrada"
+    },
+    {
+      "key": "acept-10-rangos",
+      "case": "TC-ACEPTACION-10",
+      "ranges": [
+        { "label": "sin resultados", "start": "2020-01-01", "end": "2020-01-02", "expected": "«No hay resultados en este rango.» y exportación deshabilitada" },
+        { "label": "final anterior a la inicial", "start": "2026-10-10", "end": "2026-10-01", "expected": "«La fecha final debe ser igual o posterior a la inicial.»" }
+      ]
+    },
+    {
+      "key": "acept-11-moderacion",
+      "case": "TC-ACEPTACION-11",
+      "reasons": {
+        "hide": "Prueba de aceptación: ocultar",
+        "restore": "Prueba de aceptación: restaurar",
+        "delete": "Prueba de aceptación: eliminar"
+      },
+      "targets": "Solo reportes creados en la sesión (UUID anotados en TC-ACEPTACION-01, 02 y 05)"
+    },
+    {
+      "key": "acept-12-motivo-vacio",
+      "case": "TC-ACEPTACION-12",
+      "reason": "",
+      "expected": "El botón de confirmar permanece deshabilitado; el reporte no cambia de estado"
+    }
+  ]
+}

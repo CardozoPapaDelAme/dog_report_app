@@ -374,7 +374,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 ## Fase 3 — Cierre
 
 ### T14 · Pruebas de aceptación con el socio formador
-- **Persona:** P4 · **Estado:** pendiente · **Jira:** TD-127 · **Criterios:** C1 (visión del cliente)
+- **Persona:** P4 · **Estado:** en curso · **Jira:** TD-127 · **Criterios:** C1 (visión del cliente)
 - **Depende de:** T5, T6, T7 (el sistema ya probado por el equipo).
 - **Objetivo:** que el cliente pruebe la app y confirme que cumple lo que pidió.
 - **Alcance (`docs/testing/ACCEPTANCE.md`):**
