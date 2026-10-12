@@ -327,15 +327,16 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   borrador guardado sin activar zona y rechazo de GeoJSON inválido.
 
 ### T8 · Pruebas con usuarios reales
-- **Persona:** P5 · **Estado:** en curso · **Jira:** TD-121 · **Criterios:** C5 · **Requerimientos:** RNF04
+- **Persona:** P5 · **Estado:** hecho · **Jira:** TD-121 · **Criterios:** C5 · **Requerimientos:** RNF04
 - **Depende de:** T1. Conviene hacerlo después de T7, pero no lo bloquea.
 - **Objetivo:** incluir a usuarios generales en el proceso de prueba.
 - **Alcance (`docs/testing/UAT.md`):** 3–5 participantes fuera del equipo;
   consentimiento; guion de tareas (hacer un reporte, consultar el mapa, denunciar
   un reporte); cronómetro por tarea (RNF04: reporte en menos de 5 min); encuesta
   corta; observaciones. Hallazgos a `INCIDENTS.md`.
-- **Preparación:** protocolo, consentimiento, casos, cronómetro, encuesta y registro
-  de hallazgos preparados en `docs/testing/UAT.md` y `docs/testing/cases/uat.md`.
+- **Evidencia:** tres participantes anónimos con consentimiento; 10 ejecuciones
+  `RUN-124` a `RUN-133`; encuestas y observaciones en `docs/testing/UAT.md`.
+  `INC-3` conserva el hallazgo de usabilidad de mapa y su reejecución aprobada.
 - **Aceptación:** participantes anónimos, tiempos, resultados y hallazgos registrados;
   las ejecuciones están en `TEST_LOG.md`.
 

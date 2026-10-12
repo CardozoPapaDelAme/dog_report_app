@@ -1,8 +1,9 @@
 # Pruebas con usuarios generales — T8
 
 T8 / TD-121 · Responsable: Ricardo Becerra Bitar (P5).
-Estado: **en curso**. Este documento prepara y registra las sesiones; no acredita
-su ejecución hasta que las filas reales estén en `docs/testing/TEST_LOG.md`.
+Estado: **completado**. Hay 10 ejecuciones reales registradas en
+`docs/testing/TEST_LOG.md` para tres participantes anónimos; se conservan el
+fallo y la reejecución de mapa de U03 como hallazgo.
 
 Fuentes: `docs/testing/BACKLOG.md` (T8),
 `docs/product/ETAPA1-REQUERIMIENTOS-V2.md` (RNF04),
@@ -40,9 +41,9 @@ Antes de empezar, leer este texto y registrar solo la respuesta y la fecha:
 
 | Participante | Consentimiento y fecha/hora con zona | Dispositivo y experiencia relevante | Sesión completada |
 |---|---|---|---|
-| U01 | pendiente | pendiente | pendiente |
-| U02 | pendiente | pendiente | pendiente |
-| U03 | pendiente | pendiente | pendiente |
+| U01 | confirmado verbalmente; 2026-10-11; hora no registrada; America/Chihuahua | iPhone 18 Pro; iOS 27; simulador Xcode para TC-UAT-02 y TC-UAT-03 | completó las tres tareas |
+| U02 | confirmado verbalmente; 2026-10-11; hora no registrada; America/Chihuahua | iPhone 18 Pro; iOS 27; simulador Xcode para TC-UAT-02 y TC-UAT-03 | completó las tres tareas |
+| U03 | confirmado verbalmente; 2026-10-11; hora no registrada; America/Chihuahua | iPhone 18 Pro; iOS 27; simulador | completó las tres tareas; TC-UAT-02 reejecutado |
 | U04 (opcional) | pendiente | pendiente | pendiente |
 | U05 (opcional) | pendiente | pendiente | pendiente |
 
@@ -87,25 +88,31 @@ duración en segundos, para comparar TC-UAT-01 con 300 s.
 
 | Participante | Caso | Inicio | Fin | Duración (s) | Resultado | Ayuda solicitada/intervención | Observación concreta | RUN en test log | INC/ticket si aplica |
 |---|---|---|---|---:|---|---|---|---|---|
-| U<n> | TC-UAT-01 | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente | no aplica |
-| U<n> | TC-UAT-02 | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente | no aplica |
-| U<n> | TC-UAT-03 | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente | no aplica |
+| U01 | TC-UAT-01 | hora no registrada | hora no registrada | 76.15 | pasó | sin ayuda | Reporte sin foto completado; sin evidencia personal registrada. | RUN-124 | no aplica |
+| U02 | TC-UAT-01 | hora no registrada | hora no registrada | 123.43 | pasó | poca ayuda | Reporte sin foto completado; la ayuda se conserva como hallazgo de usabilidad. | RUN-125 | no aplica |
+| U03 | TC-UAT-02 | hora no registrada | hora no registrada | 300 | falló | no registrada | No llegó al mapa para comprobar el reporte recién enviado. | RUN-126 | INC-3; Jira pendiente |
+| U03 | TC-UAT-01 | hora no registrada | hora no registrada | 10 | pasó | sin ayuda | Reporte de prueba completado sin dificultad en simulador iPhone 18 Pro con iOS 27. | RUN-127 | no aplica |
+| U03 | TC-UAT-03 | hora no registrada | hora no registrada | 112.12 | pasó | sin ayuda | Abrió un reporte de prueba y presentó la denuncia de forma sencilla y sin esfuerzo. | RUN-128 | no aplica |
+| U01 | TC-UAT-02 | hora no registrada | hora no registrada | 18 | pasó | sin ayuda; solo enunciado de la tarea | Encontró el reporte público de prueba en simulador Xcode. | RUN-129 | no aplica |
+| U01 | TC-UAT-03 | hora no registrada | hora no registrada | 47 | pasó | sin ayuda; solo enunciado de la tarea | Presentó denuncia y recibió confirmación en simulador Xcode. | RUN-130 | no aplica |
+| U02 | TC-UAT-02 | hora no registrada | hora no registrada | 29 | pasó | ayuda mínima para ubicar el reporte | Encontró el reporte público de prueba en simulador Xcode. | RUN-131 | no aplica |
+| U02 | TC-UAT-03 | hora no registrada | hora no registrada | 65 | pasó | ayuda mínima sobre cómo denunciar | Presentó denuncia y recibió confirmación en simulador Xcode. | RUN-132 | no aplica |
+| U03 | TC-UAT-02 (reejecución) | hora no registrada | hora no registrada | 176 | pasó | sin ayuda | Con reporte público de prueba, encontró el reporte; batalló para llegar a él. | RUN-133 | INC-3; hallazgo de usabilidad |
 
 ## Encuesta corta posterior
 
 Aplicar cuando terminen las tres tareas. Registrar solo el código anónimo y las
-respuestas, sin atributos que permitan reidentificar a la persona.
+respuestas, sin atributos que permitan reidentificar a la persona. Las respuestas
+de U01–U03 se obtuvieron al cierre de sus sesiones parciales y se conservarán al
+terminar las tareas pendientes.
 
 Escala: 1 = muy en desacuerdo / muy difícil; 5 = muy de acuerdo / muy fácil.
 
-| Pregunta | Respuesta (1–5 o texto breve) |
-|---|---|
-| P1. Me fue claro cómo iniciar un reporte. | pendiente |
-| P2. Me fue fácil completar el reporte. | pendiente |
-| P3. Me fue claro cómo consultar el mapa. | pendiente |
-| P4. Me fue claro cómo denunciar un reporte. | pendiente |
-| P5. ¿En qué momento dudaste, te detuviste o esperabas otra opción? | pendiente |
-| P6. ¿Qué cambiarías primero para que la app sea más fácil de usar? | pendiente |
+| Participante | P1. Iniciar reporte | P2. Completar reporte | P3. Consultar mapa | P4. Denunciar reporte | P5. Duda o detención | P6. Cambio prioritario |
+|---|---:|---:|---:|---:|---|---|
+| U01 | 5 | 5 | 4 | 5 | No | Hacer más visible cómo llegar al mapa. |
+| U02 | 5 | 5 | 3 | 4 | No | El mapa, sin duda. |
+| U03 | 3 | 4 | 1 | 1 | Después del reporte no supo cómo llegar al mapa. | Al terminar el reporte, dirigir directamente al mapa. |
 
 ## Registro de resultados y hallazgos
 
@@ -114,9 +121,9 @@ ocultar los abandonos, bloqueos ni fallas.
 
 | Participante | TC-UAT-01 <300 s | TC-UAT-02 | TC-UAT-03 | Encuesta completada | Hallazgo/INC | Estado |
 |---|---|---|---|---|---|---|
-| U01 | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente |
-| U02 | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente |
-| U03 | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente |
+| U01 | pasó; 76.15 s | pasó; 18 s | pasó; 47 s | sí | El acceso al mapa debe ser más visible | tareas completadas |
+| U02 | pasó; 123.43 s | pasó; 29 s | pasó; 65 s | sí | Mapa es el cambio prioritario; necesitó ayuda mínima para ubicar y denunciar el reporte | tareas completadas |
+| U03 | pasó; 10 s | falló; 300 s; reejecución pasó; 176 s | pasó; 112.12 s | sí | INC-3: la reejecución completó el mapa, aunque con dificultad | tareas completadas; conservar hallazgo de usabilidad |
 | U04 (opcional) | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente |
 | U05 (opcional) | pendiente | pendiente | pendiente | pendiente | pendiente | pendiente |
 

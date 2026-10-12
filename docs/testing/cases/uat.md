@@ -1,7 +1,9 @@
 # Casos de prueba — Usuarios generales (T8)
 
 T8 / TD-121 · Responsable: Ricardo Becerra Bitar (P5).
-Estado: preparados, sin ejecución. Convenciones:
+Estado: completado; RUN-124 a RUN-133 están registradas. INC-3 conserva el
+hallazgo de usabilidad de mapa y su reejecución aprobada.
+tareas, consentimiento y encuestas. Convenciones:
 `docs/testing/README.md`. Protocolo, consentimiento, cronómetro y encuesta:
 `docs/testing/UAT.md`.
 

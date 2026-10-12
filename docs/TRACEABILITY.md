@@ -66,7 +66,7 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 | RNF01 | Availability posture | Managed Free best effort; future 99.9% target | No current SLA/PITR claim; pause/readiness check |
 | RNF02 | Public map | Bounded queries, indexes, pagination | <5 s target under prototype load |
 | RNF03 | API/database | Bounded Hono queries, spatial/time indexes | Load test growth profile |
-| RNF04 | Report UX | Camera-first dynamic form; UAT con usuarios generales | `TC-UAT-01` en `docs/testing/cases/uat.md`: 3–5 participantes anónimos, reporte sin guía y duración <300 s; ejecuciones pendientes de T8 |
+| RNF04 | Report UX | Camera-first dynamic form; UAT con usuarios generales | `TC-UAT-01` en `docs/testing/cases/uat.md`: U01, U02 y U03 completaron reporte en 76.15 s, 123.43 s y 10 s respectivamente (`RUN-124`, `RUN-125`, `RUN-127`), bajo 300 s |
 | RNF05 | Mobile app | Expo development builds, iOS/Android | Supported-device smoke tests |
 | RNF06 | Localization | `react-i18next`; device-locale selection (`i18n/deviceLanguage.js`, es default); all role flows | ES/EN key parity (`i18n/locales.test.js`), language selection test, English Playwright spec; TalkBack/VoiceOver and layout manual |
 | RNF07 | Auth/navigation | Two sibling roles; profile checks | No public signup or role inheritance |
@@ -338,7 +338,7 @@ cierran la cobertura T5 con mínimo, máximo, promedio y excepción o justificac
 | RNF01 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: estado/operación Free y evidencia de mejor esfuerzo; 99.9% es meta futura (T9) |
 | RNF02 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: medición mapa <5 s en teléfono con carga objetivo (T9) |
 | RNF03 | TC-TRAZA-14 | `supabase/functions/api/repositories/publicMapRepository.test.js` | Disponible; sin cubrir: carga/p95 y crecimiento; consulta SQL solo inspeccionada por test (T9) |
-| RNF04 | TC-UAT-01; docs/testing/cases/uat.md | `docs/testing/UAT.md` y ejecuciones manuales por 3–5 participantes externos | pendiente de ejecución T8: consentimiento anónimo, duración <300 s, encuesta y hallazgos en TEST_LOG/INCIDENTS |
+| RNF04 | TC-UAT-01; docs/testing/cases/uat.md | `docs/testing/UAT.md`; `RUN-124`, `RUN-125`, `RUN-127` en `docs/testing/TEST_LOG.md` | Cubierto: tres participantes anónimos con consentimiento, reporte <300 s, encuesta y hallazgos. T8 conserva observación de usabilidad de mapa en `INC-3`. |
 | RNF05 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: Android 8+/iOS 13+ en builds reales; justificar plataforma ausente (T9) |
 | RNF06 | TC-TRAZA-36 | `i18n/locales.test.js` | Disponible; sin cubrir: todas las pantallas y accesibilidad es/en; claves iguales no prueban traducción (T9) |
 | RNF07 | TC-TRAZA-37, TC-TRAZA-18, TC-TRAZA-22 | `supabase/functions/api/services/associationService.test.js`; `controllers/loginController.test.js` | Disponible; Casos de roles simulados; T6 verifica provisión manual y ausencia de signup |
