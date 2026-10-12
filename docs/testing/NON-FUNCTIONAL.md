@@ -16,7 +16,7 @@ inspección y carga. No atribuir evidencia con mocks a un servicio real.
 | Caso | RNF | Método | Precondiciones y entrada | Pasos/herramienta | Criterio esperado y fuente | Métrica/unidad y resultado obtenido | Ejecución y evidencia | Límites y pendientes |
 |---|---|---|---|---|---|---|---|---|
 | TC-NF-01 | RNF01 | inspección | Supabase Free | `docs/product/ETAPA1-REQUERIMIENTOS.md` y `docs/DEPLOYMENT.md` | Mejor esfuerzo; 99.9% es meta futura | conforme a la postura declarada | RUN-134 | sin SLA/medición de disponibilidad |
-| TC-NF-02 | RNF02 | medición | Simulador Xcode, iPhone 18 Pro, iOS 27; Wi‑Fi | abrir Mapa y detener al aparecer clusters | mapa <5 s | 3.8 s; pasó. Los clusters visibles son fixtures fuera del área de prueba. | RUN-135 | simulador; falta confirmar en iPhone físico y medir envío de reporte |
+| TC-NF-02 | RNF02 | medición | Simulador Xcode, iPhone 18 Pro, iOS 27; Wi‑Fi | abrir Mapa y detener al aparecer clusters; enviar reporte sin foto y detener al confirmar | mapa <5 s | Mapa: 3.8 s, pasó. Envío de reporte sin foto: 2.38 s, pasó. Los clusters visibles son fixtures fuera del área de prueba. | RUN-135, RUN-136 | **Pendiente:** repetir ambas mediciones en iPhone físico; no hay dispositivo físico disponible por ahora. |
 | TC-NF-03 | RNF03 | carga | staging, lectura pública | `tests/load/public-read.js` con k6 | p95 y tasa de error registrados | pendiente; k6 no instalado | pendiente | nunca ejecutar escrituras |
 | TC-NF-05 | RNF05 | dispositivo | Android/iOS | build de desarrollo | Android 8+, iOS 13+ | Android real: evidencia T7; iOS 27 simulador: UAT, no dispositivo físico | RUN-83–116; RUN-124–133 | falta iPhone físico con iOS 13+ |
 | TC-NF-06 | RNF06 | automatizado | locales es/en | `i18n/*.test.js`, `tests/ui/language.spec.js` | claves y flujos bilingües | pasó | RUN-134 | falta TalkBack/VoiceOver |
@@ -49,4 +49,6 @@ El perfil predeterminado usa 2 usuarios virtuales por 60 s y solo `GET /health`,
 
 RUN-134 valida 368 pruebas Deno, 18 node:test, 88 Playwright y 66 rutas de
 documentación. Las seis suites PostgreSQL quedaron omitidas por requerir Docker.
-Faltan mediciones reales indicadas arriba; T9 no debe cerrarse hasta registrarlas.
+**Pendiente:** repetir las mediciones de RNF02 en iPhone físico; actualmente solo
+hay evidencia del simulador Xcode (RUN-135 y RUN-136). T9 no debe cerrarse hasta
+registrar las mediciones, API real, k6 y accesibilidad pendientes.
