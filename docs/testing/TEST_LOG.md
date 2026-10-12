@@ -14,14 +14,150 @@ registrar marcadores ni resultados simulados como ejecuciones.
 
 ## Resumen (T12)
 
-Pendiente de consolidación final por T12. Ya existen ejecuciones automatizadas y
-manuales registradas; T7 alfa Android aporta RUN-83 a RUN-116. Resultado efectivo
-por caso: 32 pasaron y 1 falló (`INC-2`); RUN-114 conserva el bloqueo inicial de
-TC-ALPHA-32 y RUN-116 registra su reejecución aprobada. Informar totales por
-módulo (pasó/falló/bloqueado) y por suite CI (pasaron/fallaron/omitidos),
-cobertura de T4, alfa, usuarios, no funcionales, aceptación, conclusiones y
-pendientes. Los números deben coincidir con las filas y con la corrida final T10;
-no sumar casos y suites entre sí.
+Consolidado por T12 / TD-125 el 2026-10-12 sobre RUN-1 a RUN-136 y CI-1 a CI-10.
+Es un resumen **provisional**: faltan la sesión de aceptación T14 y la corrida
+final T10; al registrarlas se actualizan las secciones correspondientes. Casos y
+suites de CI se informan por separado y no se suman entre sí.
+
+### Casos ejecutados por módulo
+
+| Módulo | Tarea | Filas RUN | Pasó | Falló | Bloqueado | Otro | Casos distintos | Resultado efectivo por caso (última ejecución) |
+|---|---|---|---|---|---|---|---|---|
+| MAPA | T6 | 21 (RUN-1–21) | 21 | 0 | 0 | 0 | 21 | 21 pasó |
+| SESION | T6 | 9 (RUN-22–30) | 9 | 0 | 0 | 0 | 9 | 9 pasó |
+| ASOCIACION | T6 | 11 (RUN-31–41) | 11 | 0 | 0 | 0 | 11 | 11 pasó |
+| MODERACION | T6 | 19 (RUN-42–59, RUN-82) | 18 | 1 | 0 | 0 | 18 | 18 pasó (TC-MODERACION-07 falló en RUN-48, `INC-1`, y pasó en RUN-82) |
+| CONFIGURACION | T6 | 6 (RUN-60–65) | 6 | 0 | 0 | 0 | 6 | 6 pasó |
+| ZONAS | T6 | 6 (RUN-66–71) | 6 | 0 | 0 | 0 | 6 | 6 pasó |
+| DUPLICADOS | T6 | 7 (RUN-72–78) | 7 | 0 | 0 | 0 | 7 | 7 pasó |
+| AUDITORIA | T6 | 3 (RUN-79–81) | 3 | 0 | 0 | 0 | 3 | 3 pasó |
+| ALPHA | T7 | 34 (RUN-83–116) | 32 | 1 | 1 | 0 | 33 | 32 pasó, 1 falló (TC-ALPHA-14, `INC-2`); TC-ALPHA-32 bloqueado en RUN-114 y pasó en RUN-116 |
+| REPORTE | T5 | 7 (RUN-117–123) | 6 | 0 | 1 | 0 | 21 | 19 pasó, 2 bloqueado (TC-REPORTE-15 y TC-REPORTE-16, RUN-123) |
+| UAT | T8 | 10 (RUN-124–133) | 9 | 1 | 0 | 0 | 3 (9 combinaciones participante–caso) | 9 combinaciones pasó (TC-UAT-02 de U03 falló en RUN-126, `INC-3`, y pasó en RUN-133) |
+| NF | T9 | 3 (RUN-134–136) | 2 | 0 | 0 | 1 | 22 | 1 pasó (TC-NF-02); 21 «pasó con omisiones» (RUN-134) |
+| **Total** | | **136** | **130** | **3** | **2** | **1** | **160** | 136 pasó, 1 falló, 2 bloqueado, 21 pasó con omisiones |
+
+Cómo se calculó: el módulo es el prefijo del primer ID de caso de cada fila
+(`TC-<módulo>-n`) y el resultado es la columna «Resultado» de la fila. Las filas
+RUN-117 a RUN-123 y RUN-134 agrupan varios casos: cuentan una vez como fila y
+cada ID de caso cuenta en «Casos distintos» (RUN-134 cubre TC-NF-01, 05, 06,
+13–26, 31, 32, 34 y 35: 21 IDs). El resultado efectivo toma la última ejecución
+de cada caso. «Otro» es el valor «pasó con omisiones» de RUN-134, que no está
+entre los resultados de `docs/testing/README.md`. Conteo hecho dos veces (awk por
+columnas y grep por módulo y resultado) con el mismo resultado.
+
+### Suites de CI (T10)
+
+La corrida final de T10 aún no se ha ejecutado: se repite sobre el `main`
+integrado después de T14 (ver T10 en `docs/testing/BACKLOG.md` y
+`docs/testing/PLAN.md`). La última corrida registrada es la previa sobre `main`
+`c8184af0b614f8b79c53c3578c9bbf4cfcf6568e`, el 2026-10-12 12:25 America/Chihuahua,
+[actions/runs/38290457873](https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38290457873)
+(CI-1 a CI-10), en verde:
+
+| Suite | Fila | Pasaron | Fallaron | Omitidos |
+|---|---|---|---|---|
+| Documentación (rutas) | CI-1 | 1 | 0 | 0 |
+| Deno (móvil + backend) | CI-2 | 368 | 0 | 6 |
+| node:test | CI-3 | 18 | 0 | 0 |
+| Playwright (UI) | CI-4 | 88 | 0 | 0 |
+| PostgreSQL (6 suites: configuración, zonas, duplicados, reportes, mapa público, reportero público) | CI-5 a CI-10 | 1 cada una | 0 | 0 |
+
+Los 6 omitidos de Deno son las suites SQL sin base de datos en el job `npm test`;
+se ejecutan en el job de PostgreSQL (CI-5 a CI-10). Totales copiados de las filas
+CI-1 a CI-10 de este archivo.
+
+### Cobertura por requerimiento (T4)
+
+Fuente: «Matriz de verificación de Etapa 4 (T4 / TD-117)» de
+`docs/TRACEABILITY.md`, estado vigente en este commit. Clasificación según el
+estado de cada fila: cubierto = «Cubierto»; parcial = «Disponible» (T4 define que
+existe el test, no que el requerimiento esté acreditado en todos los entornos);
+sin cubrir = la fila empieza con «sin cubrir» (no hay test).
+
+| Tipo | Total | Cubierto | Parcial (Disponible) | De ellos con brecha «sin cubrir» anotada | Sin cubrir |
+|---|---|---|---|---|---|
+| RF | 24 | 0 | 24 | 11 | 0 |
+| RNF | 36 | 1 (RNF04) | 22 | 11 | 13 |
+| HU | 24 | 0 | 24 | 11 | 0 |
+
+RNF sin cubrir: RNF01, RNF02, RNF05, RNF14–RNF18, RNF22–RNF25 y RNF35. La matriz
+no refleja todavía algunas ejecuciones posteriores (por ejemplo, RNF02 tiene
+mediciones en simulador en RUN-135 y RUN-136); T12 no cambia la matriz.
+
+### Alfa en dispositivo (T7)
+
+33 casos en Android real (samsung SM-S918B, Android 16, commit `fe8da67`, build
+development/debug, staging): 32 pasaron y 1 falló (TC-ALPHA-14, `INC-2`).
+TC-ALPHA-32 tuvo un bloqueo (RUN-114) y pasó en la reejecución (RUN-116).
+Detalle: `docs/testing/ALPHA.md`.
+
+### Usuarios reales (T8)
+
+3 participantes anónimos (U01–U03), 9 combinaciones participante–caso en 10
+ejecuciones. TC-UAT-01 (reporte, RNF04 <300 s): 76.15 s, 123.43 s y 10 s; los
+tres dentro del límite. TC-UAT-02 (mapa): 18 s y 29 s; U03 falló a los 300 s
+(`INC-3`) y en la reejecución lo completó en 176 s. TC-UAT-03 (denuncia): 47 s,
+65 s y 112.12 s. Hallazgo común: el acceso al mapa debe ser más visible.
+Detalle: `docs/testing/UAT.md`.
+
+### No funcionales y carga (T9)
+
+- RUN-134 (local, con mocks): Deno 368 pasó, 0 falló, 6 omitidos; node:test
+  18/0/0; Playwright 88/0/0; documentación 66 archivos y 970 citas sin errores.
+  Las seis suites SQL quedaron omitidas por requerir Docker.
+- RNF02 en simulador Xcode (iPhone 18 Pro, iOS 27): mapa en 3.8 s (RUN-135) y
+  envío de reporte en 2.38 s (RUN-136), menores a 5 s.
+- Carga (TC-NF-03, k6): pendiente, no ejecutada (k6 no instalado).
+- T9 sigue en curso. Detalle: `docs/testing/NON-FUNCTIONAL.md`.
+
+### Aceptación (T14)
+
+Pendiente: sesión con el socio formador no ejecutada. Sin resultados ni
+conformidad que informar. Plantilla: `docs/testing/ACCEPTANCE.md`.
+
+### Incidentes
+
+Fuente: `docs/testing/INCIDENTS.md`.
+
+| Incidente | Origen | Severidad | Jira | Estado |
+|---|---|---|---|---|
+| INC-1 | RUN-48, TC-MODERACION-07 | media | TD-129 | corregido (`313f045`); verificado en RUN-82 |
+| INC-2 | RUN-96, TC-ALPHA-14 | baja | TD-130 | pendiente de verificación: aviso RF02 verificado en RUN-117; falta repetir TC-ALPHA-14 en Android real |
+| INC-3 | RUN-126, TC-UAT-02 | media | no aplica (hallazgo UAT) | cerrado; RUN-133 pasó con fixture público |
+
+### Revisión del registro (T12)
+
+Comprobado: las 136 filas RUN tienen fecha, ejecutor, entorno y resultado; las 3
+filas «falló» (RUN-48, RUN-96, RUN-126) tienen su `INC-n`, cada uno existe en
+`docs/testing/INCIDENTS.md` y su ejecución de origen existe en este registro; las
+2 filas «bloqueado» (RUN-114, RUN-123) tienen motivo y responsable. Brechas que
+no se pueden completar con la evidencia del repositorio (no se corrigieron):
+
+- RUN-124 a RUN-136: hora no registrada. RUN-124 a RUN-133, RUN-135 y RUN-136:
+  commit no registrado; RUN-124 a RUN-133: build y entorno no registrados.
+- RUN-117 a RUN-123 y RUN-134: el commit probado incluye cambios sin commit
+  («working tree»), por lo que no es reproducible desde un SHA.
+- RUN-134: resultado «pasó con omisiones», fuera de los valores de la convención.
+- RUN-123 (TC-REPORTE-15 y TC-REPORTE-16, bloqueado): sin reejecución registrada;
+  la suite «PostgreSQL · reportero público (T5)» pasó en CI-10.
+- Casos especificados sin fila RUN: TC-ZONAS-07 (requiere PostgreSQL; la suite
+  «PostgreSQL · zonas (FAB-2)» pasó en CI-6) y TC-REPORTE-17 a TC-REPORTE-20,
+  TC-REPORTE-25, TC-REPORTE-26 y TC-REPORTE-28 a TC-REPORTE-32.
+- `docs/testing/ALPHA.md` fecha la sesión el 2026-10-11, pero la mayoría de las
+  filas RUN-83 a RUN-115 están fechadas el 2026-10-08.
+
+### Conclusiones y pendientes
+
+- De los 160 casos con ejecución registrada, el único con resultado efectivo
+  «falló» es TC-ALPHA-14 (`INC-2`, corrección verificada con test automatizado,
+  falta Android); 2 siguen bloqueados (TC-REPORTE-15 y TC-REPORTE-16).
+- La CI previa sobre `main` está en verde en todas sus suites.
+- Pendientes: sesión T14 y su registro; corrida final T10 sobre el `main`
+  integrado; reejecución de TC-ALPHA-14 en Android para cerrar `INC-2`;
+  reejecución o justificación de TC-REPORTE-15 y TC-REPORTE-16; carga k6, RNF02 en
+  iPhone físico, API real y accesibilidad de T9; 13 RNF sin cubrir en T4.
+- Al registrar T14 y T10, actualizar este resumen y sus totales.
 
 ## Ejecuciones de casos
 
