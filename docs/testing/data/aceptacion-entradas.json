@@ -17,6 +17,7 @@
   ],
   "contract": "Textos de pantalla en i18n/locales/es.json; validación del formulario en models/reportPayload.js (validateReportFormDraft); casos de origen en docs/testing/cases/alpha.md",
   "base_commit": "c8184af",
+  "build_under_test": "Build final de main en el commit 8895099 o posterior, que incluye la corrección de INC-2 (f18ba0b); el SHA exacto instalado se registra el día de la sesión en docs/testing/ACCEPTANCE.md. base_commit es solo el commit sobre el que se redactaron estos casos.",
   "preparation": "Ver docs/testing/ACCEPTANCE.md, sección Sesión: build nativo instalado, entorno staging con geofence de prueba vigente, cuentas de Asociación y Administrator provisionadas (credenciales fuera de Git) y reportes sintéticos aprobados sembrados por el equipo antes de la sesión.",
   "cleanup": "Los reportes creados en la sesión quedan en staging; los que se ocultan o eliminan en TC-ACEPTACION-11 se gestionan con los comandos de moderación de la propia app, sin SQL directo. No se cambian umbrales ni zonas.",
   "limitations": "Las escenas de foto son objetos frente a la cámara (la app toma fotos en vivo); este archivo describe la escena, no contiene imágenes. No sustituye los casos funcionales de T5, T6 y T7.",
@@ -68,7 +69,7 @@
         "incident_type": "Avistamiento",
         "sighting_type": "Solitario"
       },
-      "expected": "«Reporte guardado para sincronizar» y después «Reportes sincronizados», con el mismo UUID"
+      "expected": "«Reporte guardado para sincronizar» y después «Reportes sincronizados» con el aviso de pendientes en 0; en TC-ACEPTACION-11 la cola muestra un solo reporte con ese UUID"
     },
     {
       "key": "acept-08-panel-periodo",
@@ -80,7 +81,7 @@
       "key": "acept-09-exportacion",
       "case": "TC-ACEPTACION-09",
       "formats": ["CSV", "XLSX"],
-      "expected": "Dos archivos con las mismas filas y columnas que la consulta mostrada"
+      "expected": "Dos archivos con encabezado de 12 columnas (id, accepted_at, occurred_at, incident_type, sighting_type, details, predominant_color, size, has_collar, longitude, latitude, has_sanitized_photo) y tantas filas de datos como el «Total de reportes» del panel"
     },
     {
       "key": "acept-10-rangos",
