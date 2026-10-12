@@ -12,6 +12,7 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 |---|---|---|---|---|---|---|---|---|---|
 | INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | Pendiente (Alan Ruiz) | corregido | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
 | INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | Pendiente (Erick Herrera) | pendiente de verificación | Erick Herrera | Aviso RF02 agregado y verificado en RUN-117; cierre pendiente de repetir TC-ALPHA-14 en Android |
+| INC-3 | 2026-10-11 | TC-UAT-02 | RUN-126 | media | MAPA / UAT | No aplica: hallazgo UAT, sin defecto confirmado | cerrado | Ricardo Becerra Bitar | RUN-133 pasó con fixture público; se conserva la dificultad de navegación como hallazgo de usabilidad |
 
 ## Severidad y estado
 
@@ -99,6 +100,28 @@ que pruebe la corrección y deje evidencia vinculada.
 | Solución | Aviso visible agregado en el formulario público sin pedir nombre, teléfono, correo ni otros datos de identidad |
 | Commit o PR correctivo | Pendiente de commit T5 |
 | Verificación y cierre | RUN-117 pasó con `npm run test:report-form-ui` y cubrió `TC-REPORTE-03`; no cerrar hasta repetir `TC-ALPHA-14` en Android real y registrar la nueva RUN |
+
+### INC-3 — La persona no encontró el mapa para comprobar el reporte recién enviado
+
+| Campo | Detalle |
+|---|---|
+| Fecha y hora con zona | 2026-10-11; hora no registrada; America/Chihuahua |
+| Caso o suite CI | TC-UAT-02; docs/testing/cases/uat.md |
+| Ejecución que lo originó | RUN-126 en docs/testing/TEST_LOG.md |
+| Severidad y justificación | media: la persona no completó la tarea de consulta del mapa en cinco minutos. Aún no se confirma si la causa es navegación, expectativa de visibilidad inmediata o preparación del fixture. |
+| Módulo | MAPA / UAT (RF10–RF14, HU-10–HU-14) |
+| Entorno y commit | iPhone 18 Pro; versión de iOS, build, entorno y commit no registrados |
+| Precondiciones y datos | Participante anónimo U03. No quedó registrado el consentimiento ni un identificador de fixture público visible. La persona intentó comprobar el reporte que acababa de enviar. |
+| Pasos para reproducir | 1. Terminar TC-UAT-01 con un reporte de prueba; 2. pedir a la persona que consulte el mapa para comprobarlo; 3. observar si puede encontrar el acceso al mapa y el reporte sin indicar controles. |
+| Resultado esperado | La persona llega al mapa y localiza el fixture público sintético indicado, o describe un impedimento reproducible. |
+| Resultado obtenido | Tras 5 min, la persona no supo llegar al mapa para verificar que su reporte se había subido con éxito. |
+| Evidencia | Observación anónima proporcionada por el facilitador; no se adjuntó captura ni video. |
+| Ticket de bug en Jira | No aplica: la reejecución confirmó un problema de preparación/expectativa del fixture, no un defecto confirmado de producto. |
+| Estado y responsable | cerrado; Ricardo Becerra Bitar |
+| Diagnóstico | Confirmado en RUN-133: TC-UAT-02 se completa con un reporte público de prueba. El fallo inicial buscaba comprobar el reporte recién enviado, que puede requerir revisión antes de hacerse visible. La dificultad para llegar al mapa permanece como hallazgo de usabilidad en las encuestas de U01–U03. |
+| Solución | El guion de UAT conserva la instrucción de usar un fixture público, sintético y visible para TC-UAT-02. |
+| Commit o PR correctivo | No aplica: no se confirmó defecto de producto. |
+| Verificación y cierre | RUN-133 pasó el 2026-10-11 en 176 s sin ayuda, con un fixture público visible. Se cierra como incidente de preparación de la prueba; el hallazgo de usabilidad queda registrado en `docs/testing/UAT.md`. |
 
 ## Anexo histórico (T11)
 
