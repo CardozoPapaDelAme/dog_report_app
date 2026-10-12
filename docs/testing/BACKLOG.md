@@ -341,7 +341,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   las ejecuciones están en `TEST_LOG.md`.
 
 ### T9 · Pruebas no funcionales
-- **Persona:** P5 · **Estado:** pendiente · **Jira:** TD-122 · **Criterios:** C6
+- **Persona:** P5 · **Estado:** en curso · **Jira:** TD-122 · **Criterios:** C6
 - **Depende de:** T1.
 - **Requerimientos:** RNF01–RNF03, RNF05, RNF06, RNF13–RNF26, RNF31, RNF32
   (saneamiento), RNF34, RNF35.
