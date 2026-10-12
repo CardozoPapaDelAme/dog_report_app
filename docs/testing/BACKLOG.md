@@ -388,16 +388,16 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   resultado y conformidad registrados; sus ejecuciones están en `TEST_LOG.md`.
 
 ### T10 · Corrida final de regresión
-- **Persona:** P2 · **Estado:** en curso · **Jira:** TD-123 · **Criterios:** C2, C3
-- **Depende de:** T2, T4, T5, T6, T7, T8, T9, T14 (y las correcciones de sus incidentes
-  ya fusionadas, para que la corrida cubra el código que se entrega).
+- **Persona:** P2 · **Estado:** hecho · **Jira:** TD-123 · **Criterios:** C2, C3
+- **Depende de:** T2, T4, T5, T6, T7, T8, T9 (y las correcciones de sus incidentes ya
+  fusionadas). Decisión del equipo (2026-10-12): no espera a T14.
 - **Alcance:** correr la suite completa en la CI sobre `main` con todo integrado.
 - **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `TEST_LOG.md`.
-- **Avance:** corrida previa sobre `main` (`c8184af`) en verde, registrada en
-  `TEST_LOG.md` (CI-1 a CI-10; PRs de T5 #64, T8 #65 y T9 #66 ya fusionados). No es la
-  final: falta T14 (sesión con el socio formador el 15 oct 2026), la verificación de
-  INC-2 y las correcciones que resulten. La corrida final se repite sobre el `main`
-  integrado (16 oct, ver `PLAN.md`) y entonces T10 pasa a `hecho`.
+- **Avance:** corrida previa sobre `main` (`c8184af`) registrada como CI-1 a CI-10.
+  **Corrida final** sobre `main` integrado (`8895099`, tras T5, T6, T8, T9, T11 e
+  INC-1/TD-129) en verde: [corrida 38316070399](https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38316070399),
+  registrada como CI-11 a CI-20 en `TEST_LOG.md`. Si T14 o la verificación de INC-2
+  obligan a corregir código, la corrida se repite sobre el nuevo `main`.
 
 ### T11 · Reporte de incidentes de todo el repo
 - **Persona:** P3 · **Estado:** en curso · **Jira:** TD-124 · **Entregable:** Reporte de incidentes
