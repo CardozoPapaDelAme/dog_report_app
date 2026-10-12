@@ -10,7 +10,7 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 
 | ID | Fecha | Caso o suite CI | Ejecución del test log | Severidad | Módulo | Jira | Estado | Responsable | Corrección y verificación |
 |---|---|---|---|---|---|---|---|---|---|
-| INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | Pendiente (Alan Ruiz) | corregido | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
+| INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | TD-129 | corregido | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
 | INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | Pendiente (Erick Herrera) | pendiente de verificación | Erick Herrera | Aviso RF02 agregado y verificado en RUN-117; cierre pendiente de repetir TC-ALPHA-14 en Android |
 | INC-3 | 2026-10-11 | TC-UAT-02 | RUN-126 | media | MAPA / UAT | No aplica: hallazgo UAT, sin defecto confirmado | cerrado | Ricardo Becerra Bitar | RUN-133 pasó con fixture público; se conserva la dificultad de navegación como hallazgo de usabilidad |
 
@@ -72,12 +72,12 @@ que pruebe la corrección y deje evidencia vinculada.
 | Resultado esperado | `listQueue` rechaza con `forbidden` antes de obtener conexión, como `supabase/functions/api/services/duplicateService.test.js` (FAB-3 SERVICE: authorization and shape validation run before storage) |
 | Resultado obtenido | `association must be rejected with forbidden, received null`: `listQueue` intenta obtener la conexión sin revisar el rol. Los comandos approve/hide/restore/delete de `supabase/functions/api/services/moderationService.js` tienen el mismo patrón |
 | Evidencia | Salida de consola local de RUN-48 (falla) y RUN-82 (corrección verificada) |
-| Ticket de bug en Jira | Pendiente; responsable Alan Ruiz |
+| Ticket de bug en Jira | TD-129 (registro retroactivo; responsable Alan Ruiz) |
 | Estado y responsable | corregido; Alan Ruiz |
 | Diagnóstico | Confirmado por lectura de código: `listQueue` y `executeTransition` fijan contexto y llaman al repositorio sin autorizar al actor |
 | Solución | `supabase/functions/api/services/moderationService.js` autoriza al actor antes de obtener conexión (Administrator activo con perfil coincidente; si no, `forbidden`; sin sesión, `authentication_required`) en `listQueue` y en los cuatro comandos. `supabase/functions/api/controllers/moderationController.js` traduce esos errores a 403/401 |
 | Commit o PR correctivo | `313f0458ebc300cc39c2c8e15b45d80d0ffa7be4` en la rama `TD-119-fix-inc-1-rol-en-servicio-de-moderacion` |
-| Verificación y cierre | Test de brecha reemplazado por dos tests de regresión que corren en npm test; RUN-82 pasó. Pendiente solo el ticket de bug en Jira |
+| Verificación y cierre | Test de brecha reemplazado por dos tests de regresión que corren en npm test; RUN-82 pasó; tests 401/403 de los comandos de moderación en [#60](https://github.com/CardozoPapaDelAme/dog_report_app/pull/60). Ticket de bug en Jira: TD-129 |
 
 ### INC-2 — Falta aviso RF02 en el formulario público de reporte
 
