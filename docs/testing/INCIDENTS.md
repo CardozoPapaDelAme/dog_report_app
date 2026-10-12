@@ -77,7 +77,7 @@ que pruebe la corrección y deje evidencia vinculada.
 | Diagnóstico | Confirmado por lectura de código: `listQueue` y `executeTransition` fijan contexto y llaman al repositorio sin autorizar al actor |
 | Solución | `supabase/functions/api/services/moderationService.js` autoriza al actor antes de obtener conexión (Administrator activo con perfil coincidente; si no, `forbidden`; sin sesión, `authentication_required`) en `listQueue` y en los cuatro comandos. `supabase/functions/api/controllers/moderationController.js` traduce esos errores a 403/401 |
 | Commit o PR correctivo | `313f0458ebc300cc39c2c8e15b45d80d0ffa7be4` en la rama `TD-119-fix-inc-1-rol-en-servicio-de-moderacion` |
-| Verificación y cierre | Test de brecha reemplazado por dos tests de regresión que corren en npm test; RUN-82 pasó. PR de la corrección: #59 |
+| Verificación y cierre | Test de brecha reemplazado por dos tests de regresión que corren en npm test; RUN-82 pasó. PR de la corrección: #59; tests 401/403 de los comandos de moderación en [#60](https://github.com/CardozoPapaDelAme/dog_report_app/pull/60) |
 
 ### INC-2 — Falta aviso RF02 en el formulario público de reporte
 
