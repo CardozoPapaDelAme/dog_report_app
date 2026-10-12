@@ -1,6 +1,6 @@
 # Reporte de incidentes
 
-Estado: plantilla de T1 con incidentes registrados por los ejecutores.
+Estado: T11 consolidó los incidentes INC-1 a INC-3 (2026-10-12), cada uno con ticket de bug en Jira o su justificación, y el anexo histórico. La corrida final de T10 y T14 pueden agregar incidentes.
 Convenciones: `docs/testing/README.md`. Cada ejecutor abre el incidente y el ticket
 de bug en Jira al fallar un caso. T11 / TD-124 consolida; no esperar la regresión final.
 
@@ -11,8 +11,8 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 | ID | Fecha | Caso o suite CI | Ejecución del test log | Severidad | Módulo | Jira | Estado | Responsable | Corrección y verificación |
 |---|---|---|---|---|---|---|---|---|---|
 | INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | TD-129 | corregido | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
-| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | Pendiente (Erick Herrera) | pendiente de verificación | Erick Herrera | Aviso RF02 agregado y verificado en RUN-117; cierre pendiente de repetir TC-ALPHA-14 en Android |
 | INC-3 | 2026-10-11 | TC-UAT-02 | RUN-126 | media | MAPA / UAT | No aplica: hallazgo UAT, sin defecto confirmado | cerrado | Ricardo Becerra Bitar | RUN-133 pasó con fixture público; se conserva la dificultad de navegación como hallazgo de usabilidad |
+| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | TD-130 | pendiente de verificación | Erick Herrera | Aviso RF02 agregado y verificado en RUN-117; cierre pendiente de repetir TC-ALPHA-14 en Android |
 
 ## Severidad y estado
 
@@ -72,12 +72,12 @@ que pruebe la corrección y deje evidencia vinculada.
 | Resultado esperado | `listQueue` rechaza con `forbidden` antes de obtener conexión, como `supabase/functions/api/services/duplicateService.test.js` (FAB-3 SERVICE: authorization and shape validation run before storage) |
 | Resultado obtenido | `association must be rejected with forbidden, received null`: `listQueue` intenta obtener la conexión sin revisar el rol. Los comandos approve/hide/restore/delete de `supabase/functions/api/services/moderationService.js` tienen el mismo patrón |
 | Evidencia | Salida de consola local de RUN-48 (falla) y RUN-82 (corrección verificada) |
-| Ticket de bug en Jira | TD-129 (registro retroactivo; responsable Alan Ruiz) |
+| Ticket de bug en Jira | TD-129 (https://dog-reports-team3.atlassian.net/browse/TD-129), creado retroactivamente el 2026-10-12 en T11 |
 | Estado y responsable | corregido; Alan Ruiz |
 | Diagnóstico | Confirmado por lectura de código: `listQueue` y `executeTransition` fijan contexto y llaman al repositorio sin autorizar al actor |
 | Solución | `supabase/functions/api/services/moderationService.js` autoriza al actor antes de obtener conexión (Administrator activo con perfil coincidente; si no, `forbidden`; sin sesión, `authentication_required`) en `listQueue` y en los cuatro comandos. `supabase/functions/api/controllers/moderationController.js` traduce esos errores a 403/401 |
 | Commit o PR correctivo | `313f0458ebc300cc39c2c8e15b45d80d0ffa7be4` en la rama `TD-119-fix-inc-1-rol-en-servicio-de-moderacion` |
-| Verificación y cierre | Test de brecha reemplazado por dos tests de regresión que corren en npm test; RUN-82 pasó; tests 401/403 de los comandos de moderación en [#60](https://github.com/CardozoPapaDelAme/dog_report_app/pull/60). Ticket de bug en Jira: TD-129 |
+| Verificación y cierre | Test de brecha reemplazado por dos tests de regresión que corren en npm test; RUN-82 pasó. PR de la corrección: #59; tests 401/403 de los comandos de moderación en [#60](https://github.com/CardozoPapaDelAme/dog_report_app/pull/60) |
 
 ### INC-2 — Falta aviso RF02 en el formulario público de reporte
 
@@ -94,7 +94,7 @@ que pruebe la corrección y deje evidencia vinculada.
 | Resultado esperado | No hay campos que pidan identificadores personales y se muestra el aviso RF02 sobre información incidental |
 | Resultado obtenido | No se observaron campos de identidad, pero no apareció el aviso RF02 en las preguntas del reporte |
 | Evidencia | docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4 |
-| Ticket de bug en Jira | Pendiente; responsable Erick Herrera |
+| Ticket de bug en Jira | TD-130 (https://dog-reports-team3.atlassian.net/browse/TD-130), creado retroactivamente el 2026-10-12 en T11 |
 | Estado y responsable | pendiente de verificación; Erick Herrera |
 | Diagnóstico | Confirmado en ejecución manual alfa; la UI automatizada de T5 ya cubre el aviso RF02 y la ausencia de campos de identidad, pero la evidencia que abrió el incidente fue Android real y debe repetirse ahí |
 | Solución | Aviso visible agregado en el formulario público sin pedir nombre, teléfono, correo ni otros datos de identidad |
@@ -125,5 +125,35 @@ que pruebe la corrección y deje evidencia vinculada.
 
 ## Anexo histórico (T11)
 
-Pendiente: conservar separados los fixes históricos hasta `49290b0` según
-`docs/testing/BACKLOG.md`. No convertirlos en fallas recién ejecutadas.
+Los 12 commits `fix` desde el inicio del proyecto hasta `49290b0` (2026-10-05)
+se conservan separados: ocurrieron durante el desarrollo, antes de esta etapa de
+pruebas, y no son fallas de casos ejecutados, por lo que no tienen INC ni ticket
+de bug. Obtenidos con
+`git log --oneline 49290b0 | grep -E '^[0-9a-f]+ fix([(: !]|$)'`; los PRs, con
+`gh api repos/CardozoPapaDelAme/dog_report_app/commits/<sha>/pulls`.
+
+| Commit | Fecha | Autor | Mensaje | PR |
+|---|---|---|---|---|
+| `25d63d0` | 2026-10-03 | Alan Ruiz | fix(dev): keep the Windows Path when adding platform-tools | #47 |
+| `2c8df22` | 2026-10-02 | Alan Ruiz | fix(camera): keep slow model loads and re-arm retry wake-ups | #45 |
+| `b3d7718` | 2026-10-02 | Alan Ruiz | fix(queue): never drop auto-sync triggers and wake up due drafts | #45 |
+| `2eab713` | 2026-10-02 | Alan Ruiz | fix(camera): time out photo validation and colour detection | #43 |
+| `5db0506` | 2026-10-02 | Alan Ruiz | fix(flags): block double flag submits and pin the zone list zoom | #40 |
+| `ffa6a2c` | 2026-10-02 | Alan Ruiz | fix(map): reset pin photo state per report and clear location timer | #39 |
+| `107f58f` | 2026-10-01 | Uncensored290 | fix style update hero background color | #39 (fusionado con esa rama; el commit no tiene PR propio) |
+| `5703580` | 2026-10-01 | Alan Ruiz | fix(api): type cluster id parameters in public clusters query | #38 |
+| `e1695be` | 2026-10-01 | Alan Ruiz | fix(auth): disable public signup and harden policy tests | #33 |
+| `8976930` | 2026-10-01 | Alan Ruiz | fix(db): split backend mutate policies per command | #33 |
+| `964c3d8` | 2026-09-30 | jpDLG101 | fix: make admin hero buttons visible on dark header | #32 |
+| `038630a` | 2026-09-30 | jpDLG101 | fix: call /me instead of /api/me to avoid duplicated api prefix | #32 |
+
+## Correcciones posteriores a `49290b0`
+
+De los commits con "fix" entre `49290b0` y `main`, solo uno corrige un defecto
+hallado por un caso ejecutado:
+
+| Commit | Mensaje | PR | Tratamiento |
+|---|---|---|---|
+| `313f045` | T6: fix(moderation): authorize the Administrator actor inside the moderation Service | #59 | INC-1 (TD-129) |
+| `bceb201` | T5: Fix Playwright test runner | #64 | Ajuste de herramienta de pruebas; ninguna fila del test log falló por esto, sin incidente |
+| `63b4e9c` | T2: fix(testing): force the spec reporter so node:test totals parse on Node 22 | #56 | Ajuste de la CI de T2 (anterior a las ejecuciones de casos); sin incidente |

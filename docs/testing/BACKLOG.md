@@ -259,7 +259,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   "sin cubrir" con justificación; la comprobación automática de rutas pasa en la CI.
 
 ### T5 · Casos funcionales A — Reportero público
-- **Persona:** P3 · **Estado:** pendiente · **Jira:** TD-118 · **Criterios:** C4, C1 · **Entregable:** Casos y datos
+- **Persona:** P3 · **Estado:** hecho · **Jira:** TD-118 · **Criterios:** C4, C1 · **Entregable:** Casos y datos
 - **Depende de:** T1, T2 (los tests nuevos deben pasar en la CI), T7 (evidencia en
   dispositivo para cerrar RF09, RF22, RNF08 y RNF12).
 - **Requerimientos:** RF01–RF09, RF22, RF24 (y sus HU); RNF08, RNF09 (solo el
@@ -341,7 +341,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   las ejecuciones están en `TEST_LOG.md`.
 
 ### T9 · Pruebas no funcionales
-- **Persona:** P5 · **Estado:** en curso · **Jira:** TD-122 · **Criterios:** C6
+- **Persona:** P5 · **Estado:** hecho · **Jira:** TD-122 · **Criterios:** C6
 - **Depende de:** T1.
 - **Requerimientos:** RNF01–RNF03, RNF05, RNF06, RNF13–RNF26, RNF31, RNF32
   (saneamiento), RNF34, RNF35.
@@ -388,14 +388,19 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   resultado y conformidad registrados; sus ejecuciones están en `TEST_LOG.md`.
 
 ### T10 · Corrida final de regresión
-- **Persona:** P2 · **Estado:** pendiente · **Jira:** TD-123 · **Criterios:** C2, C3
+- **Persona:** P2 · **Estado:** en curso · **Jira:** TD-123 · **Criterios:** C2, C3
 - **Depende de:** T2, T4, T5, T6, T7, T8, T9, T14 (y las correcciones de sus incidentes
   ya fusionadas, para que la corrida cubra el código que se entrega).
 - **Alcance:** correr la suite completa en la CI sobre `main` con todo integrado.
 - **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `TEST_LOG.md`.
+- **Avance:** corrida previa sobre `main` (`c8184af`) en verde, registrada en
+  `TEST_LOG.md` (CI-1 a CI-10; PRs de T5 #64, T8 #65 y T9 #66 ya fusionados). No es la
+  final: falta T14 (sesión con el socio formador el 15 oct 2026), la verificación de
+  INC-2 y las correcciones que resulten. La corrida final se repite sobre el `main`
+  integrado (16 oct, ver `PLAN.md`) y entonces T10 pasa a `hecho`.
 
 ### T11 · Reporte de incidentes de todo el repo
-- **Persona:** P3 · **Estado:** pendiente · **Jira:** TD-124 · **Entregable:** Reporte de incidentes
+- **Persona:** P3 · **Estado:** en curso · **Jira:** TD-124 · **Entregable:** Reporte de incidentes
 - **Depende de:** T5, T6, T7, T8, T9, T10, T14 (reúne lo que registran, incluida la
   corrida final).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
@@ -412,6 +417,10 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Aceptación:** toda falla del test log tiene su incidente y su ticket de bug en
   Jira; cada incidente con severidad, estado y el commit o PR que lo corrigió (o
   "abierto" con responsable).
+- **Avance:** INC-1 (TD-129) e INC-2 (TD-130) tienen ticket de bug en Jira, INC-3 es
+  "no aplica" (hallazgo UAT); anexo histórico de los 12 `fix` hasta `49290b0` listo.
+  Pasa a `hecho` cuando la corrida final de T10 y T14 (15 oct) no agreguen incidentes
+  pendientes de registrar.
 
 ### T12 · Test log con resumen y resultados
 - **Persona:** P4 · **Estado:** pendiente · **Jira:** TD-125 · **Entregable:** Reporte con resumen y resultados
