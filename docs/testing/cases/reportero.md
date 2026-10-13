@@ -3,7 +3,9 @@
 Estado: casos especificados para T5 / TD-118. Este documento cubre los tests
 existentes y los tests nuevos de RF02, RF05, RF07, RF04, RNF10, RNF32 y RNF36.
 Las ejecuciones de T5 están registradas en `docs/testing/TEST_LOG.md` como RUN-117
-a RUN-123 (RUN-123 bloqueado: TC-REPORTE-15 y TC-REPORTE-16).
+a RUN-123 (RUN-123 bloqueado: TC-REPORTE-15 y TC-REPORTE-16). Después se
+registraron RUN-138 (TC-REPORTE-15 y TC-REPORTE-16 con PostgreSQL/PostGIS real,
+pasó) y RUN-140 a RUN-144 (TC-REPORTE-18, 25, 26, 28 y 29, pasó).
 Convenciones: `docs/testing/README.md`. Responsable: Erick Herrera Luna (P3).
 
 Fuentes: `docs/product/ETAPA1-REQUERIMIENTOS-V2.md`, `docs/API.md`,
@@ -96,6 +98,7 @@ casos de RF09, RF22, RNF08 y RNF12 enlazan la evidencia Android real de T7:
 - TC-REPORTE-15, TC-REPORTE-16 y TC-REPORTE-32 requieren Docker/PostGIS; si
   Docker no está disponible, la suite se omite o queda bloqueada hasta ejecutar
   `node scripts/test-postgres.mjs report` y `node scripts/test-postgres.mjs flag`.
+  TC-REPORTE-15 y TC-REPORTE-16 se ejecutaron con Docker en RUN-138.
 
 ## Resumen de cobertura
 
