@@ -89,9 +89,12 @@ sin cubrir = la fila empieza con «sin cubrir» (no hay test).
 | RNF | 36 | 1 (RNF04) | 22 | 11 | 13 |
 | HU | 24 | 0 | 24 | 11 | 0 |
 
-RNF sin cubrir: RNF01, RNF02, RNF05, RNF14–RNF18, RNF22–RNF25 y RNF35. La matriz
-no refleja todavía algunas ejecuciones posteriores (por ejemplo, RNF02 tiene
-mediciones en simulador en RUN-135 y RUN-136); T12 no cambia la matriz.
+RNF sin cubrir: RNF01, RNF02, RNF05, RNF14–RNF18, RNF22–RNF25 y RNF35. T12
+agregó a la matriz notas «Evidencia T7» con las ejecuciones alfa que ejercen cada
+brecha (por ejemplo, RNF05 tiene evidencia en Android 16 real en RUN-83 a RUN-116;
+Android 8 e iOS siguen sin evidencia), sin reclasificar estados: los conteos de
+esta tabla no cambian. RNF02 tiene mediciones en simulador (RUN-135 y RUN-136)
+que la matriz no refleja.
 
 ### Alfa en dispositivo (T7)
 
@@ -121,8 +124,8 @@ Detalle: `docs/testing/UAT.md`.
 - Carga (TC-NF-03, k6): pendiente, no ejecutada (k6 no instalado).
 - T9 está hecho (TD-122, PR #66, `docs/testing/BACKLOG.md`), con pendientes
   declarados como limitaciones: mediciones en dispositivo, TalkBack, API real
-  y k6. La línea de estado de `docs/testing/NON-FUNCTIONAL.md` todavía dice
-  «en curso» y está por actualizar. Detalle: `docs/testing/NON-FUNCTIONAL.md`.
+  y k6. La línea de estado de `docs/testing/NON-FUNCTIONAL.md` quedó alineada
+  (2026-10-13). Detalle: `docs/testing/NON-FUNCTIONAL.md`.
 
 ### Aceptación (T14)
 
@@ -133,8 +136,10 @@ final y sin filas RUN nuevas (decisión del equipo, 2026-10-13). Los 12 casos
 
 - Cubiertos por equivalencia: TC-ACEPTACION-03, 04, 06, 07, 08 y 10.
 - Cubiertos en parte (partes sin ejecución equivalente): 01 (descripción
-  escrita), 05 (aviso de pendientes en 0), 09 (12 columnas nombradas, filas
-  contra el total y cruce de ID), 11 (aviso de eliminar y desaparición de la
+  escrita), 05 (conteo numérico de pendientes en 0; la captura muestra la cola
+  al día sin aviso de pendientes), 09 (origen de la exportación en la misma
+  consulta, cruce de ID y fecha, y distinción CSV/XLSX; las capturas muestran 12
+  columnas y 8 filas, igual al total del panel), 11 (aviso de eliminar y desaparición de la
   cola al actualizar) y 12 («Confirmar ocultar» deshabilitado y cancelar sin
   cambio).
 - TC-ACEPTACION-02: cubierto solo en flujos separados.
@@ -148,8 +153,8 @@ Fuente: `docs/testing/INCIDENTS.md`.
 
 | Incidente | Origen | Severidad | Jira | Estado |
 |---|---|---|---|---|
-| INC-1 | RUN-48, TC-MODERACION-07 | media | TD-129 | corregido (`313f045`); verificado en RUN-82 |
-| INC-2 | RUN-96, TC-ALPHA-14 | baja | TD-130 | corregido (`f18ba0b`, PR #64); verificado en Android real en RUN-137 |
+| INC-1 | RUN-48, TC-MODERACION-07 | media | TD-129 | cerrado; corregido en `313f045` y verificado en RUN-82 |
+| INC-2 | RUN-96, TC-ALPHA-14 | baja | TD-130 | cerrado; corregido en `f18ba0b` (PR #64) y verificado en Android real en RUN-137 |
 | INC-3 | RUN-126, TC-UAT-02 | media | no aplica (hallazgo UAT) | cerrado; RUN-133 pasó con fixture público |
 
 ### Revisión del registro (T12)
@@ -167,22 +172,36 @@ no se pueden completar con la evidencia del repositorio (no se corrigieron):
 - RUN-134: resultado «pasó con omisiones», fuera de los valores de la convención.
 - RUN-123 (TC-REPORTE-15 y TC-REPORTE-16, bloqueado): sin reejecución registrada;
   la suite «PostgreSQL · reportero público (T5)» pasó en CI-10 y CI-20.
-- Casos especificados sin fila RUN: TC-ZONAS-07 (requiere PostgreSQL; la suite
-  «PostgreSQL · zonas (FAB-2)» pasó en CI-6 y CI-16) y TC-REPORTE-17 a TC-REPORTE-20,
-  TC-REPORTE-25, TC-REPORTE-26 y TC-REPORTE-28 a TC-REPORTE-32.
-- `docs/testing/ALPHA.md` fecha la sesión el 2026-10-11, pero la mayoría de las
-  filas RUN-83 a RUN-115 están fechadas el 2026-10-08.
+- Casos especificados sin fila RUN propia: TC-ZONAS-07 (requiere PostgreSQL; la
+  suite «PostgreSQL · zonas (FAB-2)» pasó en CI-6 y CI-16), TC-REPORTE-18,
+  TC-REPORTE-25, TC-REPORTE-26, TC-REPORTE-28 y TC-REPORTE-29.
+- Casos sin fila RUN propia cuyo comportamiento se ejerció en otra ejecución:
+  TC-REPORTE-17 en Android real por TC-ALPHA-13 (RUN-95); TC-REPORTE-19 por
+  TC-ALPHA-03 (RUN-85) y TC-ALPHA-06 (RUN-88); TC-REPORTE-20 en parte por
+  TC-ALPHA-04 (RUN-86, `no_dog`) y TC-ALPHA-05 (RUN-87, `blurry`), sin cubrir
+  modelo no disponible ni timeout; TC-REPORTE-30 por TC-ALPHA-22 (RUN-104), sin
+  inspeccionar el cuerpo de la solicitud; TC-REPORTE-31 en parte por TC-ALPHA-23
+  (RUN-105, sin motivo y denuncia repetida), sin cubrir 404 ni 429; TC-REPORTE-32
+  por la suite «PostgreSQL · reportes (L2)»
+  (`supabase/functions/api/tests/flag-postgres.test.js`), que pasó en CI-8 y CI-18.
+- Fechas de la sesión alfa: las filas RUN-83 a RUN-116 van del 2026-10-08 al
+  2026-10-11 (la mayoría el 2026-10-08; RUN-90 y RUN-102 el 2026-10-10; RUN-96,
+  RUN-114 y RUN-116 el 2026-10-11, America/Mexico_City). `docs/testing/ALPHA.md`
+  fechaba la sesión solo el 2026-10-11 y quedó alineado (2026-10-13).
 
 ### Conclusiones y pendientes
 
 - De los 160 casos con ejecución registrada, ninguno tiene resultado efectivo
   «falló»: 137 pasaron, 21 «pasó con omisiones» (RUN-134) y 2 siguen bloqueados
-  (TC-REPORTE-15 y TC-REPORTE-16). Los 3 incidentes están corregidos o cerrados.
+  (TC-REPORTE-15 y TC-REPORTE-16). Los 3 incidentes están cerrados y T11 está
+  hecho, sin incidentes nuevos tras T10 y T14.
 - La corrida final T10 (CI-11 a CI-20, `8895099`) está en verde en las 10 suites.
 - Aceptación T14: aceptado con observaciones, por equivalencia con la alfa y como
   veredicto del equipo; no hubo ejecución separada en la build final.
 - Pendientes (de otros responsables): reejecución o justificación de
-  TC-REPORTE-15 y TC-REPORTE-16; casos especificados sin fila RUN (ver Revisión);
+  TC-REPORTE-15 y TC-REPORTE-16; casos sin fila RUN propia ni ejecución
+  equivalente (TC-REPORTE-18, 25, 26, 28 y 29, y las partes no cubiertas de
+  TC-REPORTE-20 y 31; ver Revisión);
   carga k6, RNF02 en iPhone físico, API real y accesibilidad de T9; 13 RNF sin
   cubrir en la matriz de T4; brechas de hora, commit y entorno anotadas en
   Revisión; partes de aceptación sin ejecución equivalente.

@@ -28,7 +28,10 @@ interpretados según `docs/product/APPROVED-CLARIFICATIONS.md` y
 - Transversales: integridad, RLS y privilegios, privacidad, saneamiento de imágenes,
   límites de tasa, auditoría, retención, idiomas, accesibilidad, rendimiento y
   compatibilidad. T7 verifica la app en Android; T8 incorpora usuarios; T9 reúne
-  evidencia RNF; T14 recoge la visión y conformidad del socio formador.
+  evidencia RNF; T14 se planeó para recoger la visión y conformidad del socio
+  formador; por decisión del equipo (2026-10-12 y 2026-10-13) la ejecutó el
+  equipo y la registró por equivalencia con la alfa T7, sin conformidad del socio
+  (`docs/testing/ACCEPTANCE.md`).
 
 Fuera de alcance: implementar embeddings/pgvector o GPU de Fase 2 (RNF35 se
 verifica por inspección), certificación de un SLA productivo sobre Free, carga
@@ -51,7 +54,9 @@ que desarrollan. Para esta etapa, la distribución operativa sigue el backlog:
 
 QA operativo: P2, P3, P4 y P5; P1 coordina documentación y trazabilidad.
 En alfa participa todo el equipo, coordinado por P2. Los usuarios externos ejecutan
-T8 y el socio formador ejecuta T14; sus facilitadores registran las evidencias.
+T8; sus facilitadores registran las evidencias. T14 la ejecutó el equipo y quedó
+registrada por equivalencia con T7 (decisiones 2026-10-12 y 2026-10-13,
+`docs/testing/ACCEPTANCE.md`).
 
 ## Tabla del plan
 
@@ -66,11 +71,11 @@ la tarea y registrar el bloqueo, sin darla por terminada por calendario.
 | Pruebas unitarias | Móvil: `models/`, `services/`, `controllers/`, `hooks/`, `i18n/`, `scripts/`; API: `supabase/functions/api/domain/` y `supabase/functions/api/services/` | Automatizada; límites, valores representativos y excepciones | Developers P1–P5; P3/T5 y P4/T6 incorporan los casos | 10 sep–9 oct 2026 (profesor) | Deno test y node:test |
 | Pruebas de integración | HTTP Hono en `supabase/functions/api/controllers/` y `supabase/functions/api/tests/`; adaptadores en `services/`; PostgreSQL/PostGIS local aislado | Automatizada; distinguir repositorio/sesión simulados de SQL y JWT reales | Developers P1–P5; P2 mantiene la ejecución común en T2 | 10 sep–9 oct 2026 (profesor) | Deno test, node:test, PostgreSQL/PostGIS |
 | Pruebas de sistema | UI en `tests/ui/`; app completa en Android con API staging | Automatizada en navegador y manual alfa de flujos completos | QA P3/T5 y P4/T6; P2/T7 coordina alfa con todo el equipo | 6–10 oct 2026 (profesor) | Playwright, build nativo y casos en `docs/testing/ALPHA.md` |
-| Pruebas de regresión | Todo el repo; PR y main; corrida final sobre main | Suite automática por PR/main al integrar T2; repetir tras correcciones; final T10 | CI mantenida por P2/T2; P2 ejecuta y registra T10 | Continua en cada PR/main; final 16 oct 2026 (propuesta, después de T14 y sus correcciones) | GitHub Actions y npm test previstos por T2; comandos actuales de `docs/testing/BACKLOG.md` mientras T2 no esté integrado |
+| Pruebas de regresión | Todo el repo; PR y main; corrida final sobre main | Suite automática por PR/main al integrar T2; repetir tras correcciones; final T10 | CI mantenida por P2/T2; P2 ejecuta y registra T10 | Continua en cada PR/main; final 16 oct 2026 (propuesta, después de T14 y sus correcciones); por decisión del equipo (2026-10-12) T10 no esperó a T14 y corrió el 12 oct (CI-11 a CI-20, `docs/testing/TEST_LOG.md`) | GitHub Actions y npm test previstos por T2; comandos actuales de `docs/testing/BACKLOG.md` mientras T2 no esté integrado |
 | Pruebas de carga | API staging: GET /health, GET /public/clusters, GET /public/reports | Automatizada, ligera y corta, solo lectura; peticiones, p95 y tasa de error | QA P5/T9 | 6–10 oct 2026 (profesor) | k6; scripts previstos en `tests/load/`; evidencia en `docs/testing/NON-FUNCTIONAL.md` |
 | Otras no funcionales | Móvil y API: rendimiento, compatibilidad, accesibilidad, seguridad y operaciones | Mixta: tests, medición en teléfono e inspección documental | QA P5/T9; Developers apoyan con tests y datos | 8–10 oct 2026 (propuesta) | Cronómetro, TalkBack, tests existentes e inspección; `docs/testing/NON-FUNCTIONAL.md` |
 | Pruebas con usuarios | App móvil en entorno de prueba; reporte, mapa y denuncia | Manual con 3–5 personas externas, consentimiento, tiempos y encuesta | Usuarios generales; QA P5/T8 facilita | 12–13 oct 2026 (propuesta; preferentemente tras alfa T7) | Guion, cronómetro y encuesta en `docs/testing/UAT.md` |
-| Pruebas de aceptación | App móvil con datos de prueba revisados; flujos de negocio seleccionados | Manual, ejecutada por el socio; registrar conformidad explícita | Socio formador; QA P4/T14 facilita | 15 oct 2026 (profesor; requiere T5, T6 y T7) | Casos y conformidad en `docs/testing/ACCEPTANCE.md` |
+| Pruebas de aceptación | App móvil con datos de prueba revisados; flujos de negocio seleccionados | Manual, ejecutada por el socio; registrar conformidad explícita. Por decisión del equipo (2026-10-12 y 2026-10-13) la ejecutó el equipo y se registró por equivalencia con T7, sin conformidad del socio | Equipo de desarrollo; QA P4/T14 responsable | 15 oct 2026 (profesor; requiere T5, T6 y T7); registrada el 13 oct 2026 por equivalencia | Casos y conformidad en `docs/testing/ACCEPTANCE.md` |
 
 ## Gantt por fases y niveles
 
@@ -97,7 +102,7 @@ gantt
     Usuarios generales             :usuarios, 2026-10-12, 2026-10-14
     Regresion continua tras T2      :regresion, 2026-10-09, 2026-10-17
     section Fase 3 - Cierre
-    Aceptacion socio T14            :aceptacion, 2026-10-15, 1d
+    Aceptacion T14 por equivalencia :aceptacion, 2026-10-15, 1d
     Regresion final T10             :regresionFinal, 2026-10-16, 1d
     Consolidacion T11 T12 y T13     :cierre, 2026-10-17, 1d
 ```

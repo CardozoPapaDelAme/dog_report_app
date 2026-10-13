@@ -324,7 +324,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   evidencias en `docs/testing/data/alpha/2026-10-11/`; ejecuciones RUN-83 a
   RUN-116. Resultado de la corrida inicial: 32 pasaron y 1 falló
   (`TC-ALPHA-14`, `INC-2`). `INC-2` quedó corregido y verificado en Android real
-  en RUN-137, con evidencia en `docs/testing/data/alpha/2026-10-12/`.
+  en RUN-137 (hoy `cerrado`), con evidencia en `docs/testing/data/alpha/2026-10-12/`.
   TC-ALPHA-32 tuvo bloqueo inicial en RUN-114 y quedó aprobado en RUN-116 con
   borrador guardado sin activar zona y rechazo de GeoJSON inválido.
 
@@ -405,10 +405,12 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   **Corrida final** sobre `main` integrado (`8895099`, tras T5, T6, T8, T9, T11 e
   INC-1/TD-129) en verde: [corrida 38316070399](https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38316070399),
   registrada como CI-11 a CI-20 en `TEST_LOG.md`. Si T14 o la verificación de INC-2
-  obligan a corregir código, la corrida se repite sobre el nuevo `main`.
+  obligan a corregir código, la corrida se repite sobre el nuevo `main`. Resuelto:
+  RUN-137 verificó INC-2 sobre `8895099`, el mismo SHA de CI-11 a CI-20, y T14 se
+  registró por equivalencia sin cambios de código; no hace falta repetir la corrida.
 
 ### T11 · Reporte de incidentes de todo el repo
-- **Persona:** P3 · **Estado:** en curso · **Jira:** TD-124 · **Entregable:** Reporte de incidentes
+- **Persona:** P3 · **Estado:** hecho · **Jira:** TD-124 · **Entregable:** Reporte de incidentes
 - **Depende de:** T5, T6, T7, T8, T9, T10, T14 (reúne lo que registran, incluida la
   corrida final).
 - **Alcance (`docs/testing/INCIDENTS.md`):**
@@ -426,10 +428,11 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   Jira; cada incidente con severidad, estado y el commit o PR que lo corrigió (o
   "abierto" con responsable).
 - **Avance:** INC-1 (TD-129) e INC-2 (TD-130) tienen ticket de bug en Jira; INC-2
-  quedó corregido y verificado en RUN-137. INC-3 es
+  quedó corregido y verificado en RUN-137 (INC-1 e INC-2 hoy `cerrado`). INC-3 es
   "no aplica" (hallazgo UAT); anexo histórico de los 12 `fix` hasta `49290b0` listo.
   Pasa a `hecho` cuando la corrida final de T10 y T14 (15 oct) no agreguen incidentes
-  pendientes de registrar.
+  pendientes de registrar. Cumplido: la corrida final T10 (CI-11 a CI-20) quedó en
+  verde y T14 (PR #70) se registró por equivalencia, ambas sin incidentes nuevos.
 
 ### T12 · Test log con resumen y resultados
 - **Persona:** P4 · **Estado:** hecho · **Jira:** TD-125 · **Entregable:** Reporte con resumen y resultados
@@ -482,7 +485,7 @@ T4 traza **todos** los IDs; esta tabla dice qué tarea los **prueba**.
 | ID (HU-nn = RF-nn) | Nombre | Tarea | Tests existentes (verificados) |
 |---|---|---|---|
 | RF01 | Reporte anónimo sin cuenta, offline | T5 | `B/controllers/reportController.test.js`, `B/services/reportService.test.js`, `B/repositories/reportRepository.test.js`, `services/reportApi.test.js`, `models/reportDraft.test.js`, `hooks/reportDraftQueueController.test.js`, `tests/ui/reportForm.spec.js` |
-| RF02 | Sin datos personales del reportante | T5 | Parcial: `models/reportPayload.test.js`, `B/controllers/reportController.test.js`. Falta el aviso |
+| RF02 | Sin datos personales del reportante | T5 | `models/reportPayload.test.js`, `B/controllers/reportController.test.js`, `tests/ui/reportForm.spec.js`. El aviso se agregó en `f18ba0b` (PR #64) y se verificó en RUN-117 (UI) y RUN-137 (Android real) |
 | RF03 | Foto opcional única, reporte primero | T5 | `B/controllers/photoController.test.js`, `B/services/photoService.test.js`, `B/domain/photoImage.test.js`, `B/repositories/storageRepository.test.js`, `hooks/useReportPhotoUpload.test.js`, `models/photoState.test.js`, `services/reportApi.test.js` |
 | RF04 | Perro solitario o manada | T5 | `models/reportPayload.test.js`, `tests/ui/reportForm.spec.js` |
 | RF05 | Acceso rápido sin foto | T5 | Ninguno dedicado |

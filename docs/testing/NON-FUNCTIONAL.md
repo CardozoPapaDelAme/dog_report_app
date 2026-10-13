@@ -1,14 +1,17 @@
 # Pruebas no funcionales
 
-Estado: en curso. La evidencia automatizada e inspecciones se ejecutó el 2026-10-11;
-las mediciones en dispositivo, TalkBack, API real y k6 siguen pendientes.
+Estado: hecho (TD-122, PR #66), con pendientes declarados como limitaciones:
+iPhone físico, TalkBack, API real y k6. La evidencia automatizada e inspecciones
+se ejecutó el 2026-10-11 (RUN-134); RNF02 se midió en simulador el 2026-10-12
+(RUN-135 y RUN-136).
 Fuente de alcance: `docs/testing/BACKLOG.md`, T9. Estrategia: `docs/TESTING.md`.
 Convenciones: `docs/testing/README.md`.
 
 ## Entorno y método
 
 Fecha, responsable, commit/build, dispositivo/OS, versiones de API/base/herramientas,
-red y configuración: pendientes. Distinguir test automatizado, medición en teléfono,
+red y configuración: registrados por ejecución en las filas RUN-134 a RUN-136 de
+`docs/testing/TEST_LOG.md` (RUN-135 y RUN-136 sin commit/build registrado). Distinguir test automatizado, medición en teléfono,
 inspección y carga. No atribuir evidencia con mocks a un servicio real.
 
 ## Registro por requerimiento
@@ -50,5 +53,6 @@ El perfil predeterminado usa 2 usuarios virtuales por 60 s y solo `GET /health`,
 RUN-134 valida 368 pruebas Deno, 18 node:test, 88 Playwright y 66 rutas de
 documentación. Las seis suites PostgreSQL quedaron omitidas por requerir Docker.
 **Pendiente:** repetir las mediciones de RNF02 en iPhone físico; actualmente solo
-hay evidencia del simulador Xcode (RUN-135 y RUN-136). T9 no debe cerrarse hasta
-registrar las mediciones, API real, k6 y accesibilidad pendientes.
+hay evidencia del simulador Xcode (RUN-135 y RUN-136). T9 se cerró (TD-122,
+PR #66) con iPhone físico, API real, k6 y accesibilidad (TalkBack) declarados como
+limitaciones pendientes, no como evidencia.

@@ -1,6 +1,6 @@
 # Reporte de incidentes
 
-Estado: T11 consolidó los incidentes INC-1 a INC-3 (2026-10-12), cada uno con ticket de bug en Jira o su justificación, y el anexo histórico. La corrida final de T10 y T14 pueden agregar incidentes.
+Estado: T11 consolidó los incidentes INC-1 a INC-3 (2026-10-12), cada uno con ticket de bug en Jira o su justificación, y el anexo histórico. La corrida final de T10 (CI-11 a CI-20) y la aceptación T14 (`docs/testing/ACCEPTANCE.md`, PR #70) terminaron sin incidentes nuevos. INC-1 e INC-2 pasaron a `cerrado` el 2026-10-13 (T12) porque su verificación quedó registrada en RUN-82 y RUN-137.
 Convenciones: `docs/testing/README.md`. Cada ejecutor abre el incidente y el ticket
 de bug en Jira al fallar un caso. T11 / TD-124 consolida; no esperar la regresión final.
 
@@ -10,9 +10,9 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 
 | ID | Fecha | Caso o suite CI | Ejecución del test log | Severidad | Módulo | Jira | Estado | Responsable | Corrección y verificación |
 |---|---|---|---|---|---|---|---|---|---|
-| INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | TD-129 | corregido | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
+| INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | TD-129 | cerrado | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
 | INC-3 | 2026-10-11 | TC-UAT-02 | RUN-126 | media | MAPA / UAT | No aplica: hallazgo UAT, sin defecto confirmado | cerrado | Ricardo Becerra Bitar | RUN-133 pasó con fixture público; se conserva la dificultad de navegación como hallazgo de usabilidad |
-| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | TD-130 | corregido | Erick Herrera | Correctivo `f18ba0b` (PR #64); verificado en Android real en RUN-137 |
+| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | TD-130 | cerrado | Erick Herrera | Correctivo `f18ba0b` (PR #64); verificado en Android real en RUN-137 |
 
 ## Severidad y estado
 
@@ -73,7 +73,7 @@ que pruebe la corrección y deje evidencia vinculada.
 | Resultado obtenido | `association must be rejected with forbidden, received null`: `listQueue` intenta obtener la conexión sin revisar el rol. Los comandos approve/hide/restore/delete de `supabase/functions/api/services/moderationService.js` tienen el mismo patrón |
 | Evidencia | Salida de consola local de RUN-48 (falla) y RUN-82 (corrección verificada) |
 | Ticket de bug en Jira | TD-129 (https://dog-reports-team3.atlassian.net/browse/TD-129), creado retroactivamente el 2026-10-12 en T11 |
-| Estado y responsable | corregido; Alan Ruiz |
+| Estado y responsable | cerrado (2026-10-13; verificado en RUN-82); Alan Ruiz |
 | Diagnóstico | Confirmado por lectura de código: `listQueue` y `executeTransition` fijan contexto y llaman al repositorio sin autorizar al actor |
 | Solución | `supabase/functions/api/services/moderationService.js` autoriza al actor antes de obtener conexión (Administrator activo con perfil coincidente; si no, `forbidden`; sin sesión, `authentication_required`) en `listQueue` y en los cuatro comandos. `supabase/functions/api/controllers/moderationController.js` traduce esos errores a 403/401 |
 | Commit o PR correctivo | `313f0458ebc300cc39c2c8e15b45d80d0ffa7be4` en la rama `TD-119-fix-inc-1-rol-en-servicio-de-moderacion` |
@@ -95,7 +95,7 @@ que pruebe la corrección y deje evidencia vinculada.
 | Resultado obtenido | No se observaron campos de identidad, pero no apareció el aviso RF02 en las preguntas del reporte |
 | Evidencia | docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4 |
 | Ticket de bug en Jira | TD-130 (https://dog-reports-team3.atlassian.net/browse/TD-130), creado retroactivamente el 2026-10-12 en T11 |
-| Estado y responsable | corregido; Erick Herrera |
+| Estado y responsable | cerrado (2026-10-13; verificado en RUN-137); Erick Herrera |
 | Diagnóstico | Confirmado en ejecución manual alfa; la UI automatizada de T5 ya cubre el aviso RF02 y la ausencia de campos de identidad, pero la evidencia que abrió el incidente fue Android real y debe repetirse ahí |
 | Solución | Aviso visible agregado en el formulario público sin pedir nombre, teléfono, correo ni otros datos de identidad |
 | Commit o PR correctivo | `f18ba0b` (PR #64) |
