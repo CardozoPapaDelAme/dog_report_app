@@ -192,9 +192,9 @@ function ExpoGoFallbackScreen({ onBack }) {
           <RecentReportsList onSelect={setSelectedReport} t={t} />
         </ScrollView>
         {selectedReport ? (
-          <PinSheet key={selectedReport.report_id} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
+          <PinSheet key={`pin-${selectedReport.report_id}`} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
         ) : null}
-        {flagReport ? <ReportFlagSheet key={flagReport.report_id} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
+        {flagReport ? <ReportFlagSheet key={`flag-${flagReport.report_id}`} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
       </View>
     </SafeAreaView>
   );
@@ -288,9 +288,9 @@ function NativeMapScreen({ onBack }) {
           />
         ) : null}
         {selectedReport ? (
-          <PinSheet key={selectedReport.report_id} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
+          <PinSheet key={`pin-${selectedReport.report_id}`} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
         ) : null}
-        {flagReport ? <ReportFlagSheet key={flagReport.report_id} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
+        {flagReport ? <ReportFlagSheet key={`flag-${flagReport.report_id}`} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
       </View>
     </SafeAreaView>
   );
