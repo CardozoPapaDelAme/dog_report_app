@@ -2,7 +2,8 @@
 
 Aquí se guardan las capturas, videos y archivos exportados de las sesiones de
 `docs/testing/ALPHA.md`. La sesión alfa Android de T7 quedó registrada en
-`2026-10-11/` con evidencias para TC-ALPHA-01 a TC-ALPHA-33.
+`2026-10-11/` con evidencias para TC-ALPHA-01 a TC-ALPHA-33. La reejecución de
+`TC-ALPHA-14` para verificar `INC-2` quedó registrada en `2026-10-12/`.
 
 ## Estructura y nombres
 
@@ -10,6 +11,7 @@ Aquí se guardan las capturas, videos y archivos exportados de las sesiones de
 docs/testing/data/alpha/2026-10-11/TC-ALPHA-03-foto-nitida.jpg
 docs/testing/data/alpha/2026-10-11/TC-ALPHA-15-modo-avion-sync.mp4
 docs/testing/data/alpha/2026-10-11/TC-ALPHA-27-export-csv.jpg
+docs/testing/data/alpha/2026-10-12/TC-ALPHA-14-aviso-rf02-visible.jpg
 ```
 
 - Una carpeta por fecha de sesión; el nombre del archivo empieza por el ID del caso.

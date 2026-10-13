@@ -1,8 +1,10 @@
 # Prueba alfa en dispositivo
 
 Estado: ejecución alfa en Android real documentada para T7 / TD-120. La sesión
-cerró con 32 casos que pasaron y 1 falla registrada como `INC-2`. TC-ALPHA-32
-tuvo un bloqueo inicial en RUN-114 y se reejecutó correctamente en RUN-116.
+inicial cerró con 32 casos que pasaron y 1 falla registrada como `INC-2`;
+`TC-ALPHA-14` se reejecutó en Android real en RUN-137 y verificó la corrección.
+TC-ALPHA-32 tuvo un bloqueo inicial en RUN-114 y se reejecutó correctamente en
+RUN-116.
 Convenciones: `docs/testing/README.md`. Fuente: `docs/testing/BACKLOG.md`, T7.
 Casos con entradas, pasos y resultados esperados: `docs/testing/cases/alpha.md`
 (`TC-ALPHA-01` a `TC-ALPHA-33`).
@@ -10,6 +12,8 @@ Casos con entradas, pasos y resultados esperados: `docs/testing/cases/alpha.md`
 ## Sesión
 
 Completar al ejecutar; una fila nueva de sesión por cada corrida (no sobrescribir).
+
+### Sesión T7 inicial
 
 | Campo | Valor |
 |---|---|
@@ -19,6 +23,18 @@ Completar al ejecutar; una fila nueva de sesión por cada corrida (no sobrescrib
 | Tipo de build y API/entorno | Build nativo development/debug, no Expo Go; API de staging con servicios reales |
 | Configuración, idioma y red | Teléfono en español; red activa para flujos en línea; modo avión usado en TC-ALPHA-06, TC-ALPHA-15, TC-ALPHA-17 y TC-ALPHA-21 |
 | Datos y precondiciones | Cuentas de Asociación y Administrator sin credenciales documentadas; escenas ESC-A a ESC-D; geofence de staging vigente; TC-ALPHA-32 usó fixtures GeoJSON sintéticos válidos e inválidos sin activar zona |
+
+### Reejecución de TC-ALPHA-14 / INC-2
+
+| Campo | Valor |
+|---|---|
+| Fecha y responsable | 2026-10-12 18:12 America/Mexico_City; Erick Herrera |
+| Commit/build de la app | `88950993dfb3c60f5a5262357b9ec1de695af307`; app `1.0.0`; paquete `com.wildogscanner.app`; build development/debug; incluye correctivo `f18ba0b` (PR #64) |
+| Dispositivo y versión Android | samsung SM-S918B; Android 16 (SDK 36) |
+| Tipo de build y API/entorno | Build nativo development/debug, no Expo Go; API de staging con servicios reales |
+| Configuración, idioma y red | Teléfono en inglés; red activa; formulario público abierto sin sesión ni credenciales |
+| Material usado | Formulario de reporte público con acceso «Reportar sin foto»; revisión visual de ausencia de campos de nombre, teléfono o correo; captura `docs/testing/data/alpha/2026-10-12/TC-ALPHA-14-aviso-rf02-visible.jpg` |
+| Resultado | RUN-137 pasó: el aviso RF02 aparece visible en el formulario público y no se observan campos de identidad del reportante |
 
 ## Preparación
 
@@ -82,7 +98,7 @@ de cada caso ejecutado.
 | TC-ALPHA-11 | Manada, cantidad 1 | Error de rango 2 a 1000 | pasó: 1 se rechaza por rango | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-11-manada-1-error.jpg` |
 | TC-ALPHA-12 | Solitario y preguntas por categoría | Solo las preguntas de la categoría | pasó: solitario no pide cantidad y muestra preguntas por categoría | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-12-solitario-categorias.jpg` |
 | TC-ALPHA-13 | Reporte sin foto | Se envía y se acepta | pasó: reporte sin foto enviado | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-13-reporte-sin-foto.jpg` |
-| TC-ALPHA-14 | Sin datos personales y aviso de RF02 | Sin campos de identidad; aviso visible | falló: no hay campos de identidad, pero no aparece el aviso RF02 sobre información incidental | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4` |
+| TC-ALPHA-14 | Sin datos personales y aviso de RF02 | Sin campos de identidad; aviso visible | RUN-96 falló: no hay campos de identidad, pero no aparece el aviso RF02 sobre información incidental. RUN-137 pasó en reejecución: el aviso RF02 aparece visible y no se observan campos de identidad | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4`<br>`docs/testing/data/alpha/2026-10-12/TC-ALPHA-14-aviso-rf02-visible.jpg` |
 | TC-ALPHA-15 | Reporte en modo avión | «Reporte guardado para sincronizar» | pasó: reporte offline queda guardado para sincronizar | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-15-reporte-modo-avion.jpg`<br>`docs/testing/data/alpha/2026-10-11/TC-ALPHA-15-modo-avion-sync.mp4` |
 | TC-ALPHA-16 | Sincronizar al volver la red | «Reportes sincronizados»; un solo UUID | pasó: sincronización confirmada a las 5:39 pm, sin duplicar | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-16-sincronizacion.jpg` |
 | TC-ALPHA-17 | Cola tras cerrar la app | Cola intacta; se sincroniza | pasó: cola persiste tras cierre y sincroniza al recuperar red | `docs/testing/data/alpha/2026-10-11/TC-ALPHA-17-cola-tras-cierre.jpg` |
@@ -148,8 +164,9 @@ de cada caso ejecutado.
 ## Conclusiones y revisión
 
 Conclusión: T7 queda ejecutada en Android real con evidencia local versionada.
-Resultado efectivo por caso: 32 casos pasaron y TC-ALPHA-14 falló por ausencia
-del aviso RF02, registrado como `INC-2`. TC-ALPHA-32 conserva el bloqueo inicial
-en RUN-114 como histórico, pero quedó aprobado en RUN-116 con GeoJSON válido e
-inválido. Pendiente operativo: abrir o vincular el ticket Jira de `INC-2` y
-repetir TC-ALPHA-14 cuando se corrija el aviso.
+La corrida inicial dejó 32 casos aprobados y TC-ALPHA-14 falló por ausencia del
+aviso RF02, registrado como `INC-2`. La reejecución RUN-137 verificó en Android
+real la build corregida y dejó `INC-2` como corregido; RUN-96 se conserva como
+histórico de la falla original. TC-ALPHA-32 conserva el bloqueo inicial en
+RUN-114 como histórico, pero quedó aprobado en RUN-116 con GeoJSON válido e
+inválido.

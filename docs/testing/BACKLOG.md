@@ -322,7 +322,9 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   capturas o video; las ejecuciones están en `TEST_LOG.md`.
 - **Evidencia:** sesión alfa Android real documentada en `docs/testing/ALPHA.md`;
   evidencias en `docs/testing/data/alpha/2026-10-11/`; ejecuciones RUN-83 a
-  RUN-116. Resultado efectivo: 32 pasaron y 1 falló (`TC-ALPHA-14`, `INC-2`).
+  RUN-116. Resultado de la corrida inicial: 32 pasaron y 1 falló
+  (`TC-ALPHA-14`, `INC-2`). `INC-2` quedó corregido y verificado en Android real
+  en RUN-137, con evidencia en `docs/testing/data/alpha/2026-10-12/`.
   TC-ALPHA-32 tuvo bloqueo inicial en RUN-114 y quedó aprobado en RUN-116 con
   borrador guardado sin activar zona y rechazo de GeoJSON inválido.
 
@@ -373,31 +375,37 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 
 ## Fase 3 — Cierre
 
-### T14 · Pruebas de aceptación con el socio formador
-- **Persona:** P4 · **Estado:** pendiente · **Jira:** TD-127 · **Criterios:** C1 (visión del cliente)
+### T14 · Pruebas de aceptación ejecutadas por el equipo
+- **Persona:** P4 · **Estado:** hecho · **Jira:** TD-127 · **Criterios:** C1 (visión del cliente)
+- **Decisión (2026-10-12):** los casos de aceptación los ejecuta el equipo (Erick Herrera en dispositivo Android; responsable de la tarea: Alan Ruiz), no el socio formador; la conformidad registrada es el veredicto del equipo.
 - **Depende de:** T5, T6, T7 (el sistema ya probado por el equipo).
-- **Objetivo:** que el cliente pruebe la app y confirme que cumple lo que pidió.
+- **Objetivo:** que el equipo ejecute los flujos de aceptación representativos y
+  registre su veredicto técnico sobre lo que pidió el socio formador.
 - **Alcance (`docs/testing/ACCEPTANCE.md`):**
   - Elegir los casos de aceptación: los flujos de las historias de usuario que le
     importan al socio formador (reportar, ver el mapa, panel y exportación de la
     Asociación, moderación).
-  - Sesión con el socio formador en un teléfono con la app; él ejecuta los casos.
-  - Registrar cada ejecución en `TEST_LOG.md`, sus comentarios y su conformidad
-    (aceptado / aceptado con observaciones / rechazado). Fallas a `INCIDENTS.md`.
-- **Aceptación:** casos de aceptación ejecutados por el socio formador, con su
-  resultado y conformidad registrados; sus ejecuciones están en `TEST_LOG.md`.
+  - Ejecución por Erick Herrera en un dispositivo Android real, dentro del
+    geofence de staging de Chihuahua, con las credenciales de Asociación y
+    Administrator fuera de Git.
+  - Registrar cada ejecución en `TEST_LOG.md`, sus comentarios y el veredicto del
+    equipo (aceptado / aceptado con observaciones / rechazado). Fallas a
+    `INCIDENTS.md`.
+- **Aceptación:** casos de aceptación ejecutados por el equipo, con su resultado
+  y veredicto registrados; sus ejecuciones están en `TEST_LOG.md`.
+- **Decisión (2026-10-13):** sin ejecución separada de aceptación en la build final; los resultados se registran por equivalencia con la sesión alfa T7 (RUN-83 a RUN-116) y RUN-137, sin filas nuevas en `TEST_LOG.md`. Veredicto del equipo: aceptado con observaciones (`docs/testing/ACCEPTANCE.md`).
 
 ### T10 · Corrida final de regresión
-- **Persona:** P2 · **Estado:** en curso · **Jira:** TD-123 · **Criterios:** C2, C3
-- **Depende de:** T2, T4, T5, T6, T7, T8, T9, T14 (y las correcciones de sus incidentes
-  ya fusionadas, para que la corrida cubra el código que se entrega).
+- **Persona:** P2 · **Estado:** hecho · **Jira:** TD-123 · **Criterios:** C2, C3
+- **Depende de:** T2, T4, T5, T6, T7, T8, T9 (y las correcciones de sus incidentes ya
+  fusionadas). Decisión del equipo (2026-10-12): no espera a T14.
 - **Alcance:** correr la suite completa en la CI sobre `main` con todo integrado.
 - **Aceptación:** enlace a la corrida en verde y totales por suite, anotados en `TEST_LOG.md`.
-- **Avance:** corrida previa sobre `main` (`c8184af`) en verde, registrada en
-  `TEST_LOG.md` (CI-1 a CI-10; PRs de T5 #64, T8 #65 y T9 #66 ya fusionados). No es la
-  final: falta T14 (sesión con el socio formador el 15 oct 2026), la verificación de
-  INC-2 y las correcciones que resulten. La corrida final se repite sobre el `main`
-  integrado (16 oct, ver `PLAN.md`) y entonces T10 pasa a `hecho`.
+- **Avance:** corrida previa sobre `main` (`c8184af`) registrada como CI-1 a CI-10.
+  **Corrida final** sobre `main` integrado (`8895099`, tras T5, T6, T8, T9, T11 e
+  INC-1/TD-129) en verde: [corrida 38316070399](https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/38316070399),
+  registrada como CI-11 a CI-20 en `TEST_LOG.md`. Si T14 o la verificación de INC-2
+  obligan a corregir código, la corrida se repite sobre el nuevo `main`.
 
 ### T11 · Reporte de incidentes de todo el repo
 - **Persona:** P3 · **Estado:** en curso · **Jira:** TD-124 · **Entregable:** Reporte de incidentes
@@ -417,7 +425,8 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Aceptación:** toda falla del test log tiene su incidente y su ticket de bug en
   Jira; cada incidente con severidad, estado y el commit o PR que lo corrigió (o
   "abierto" con responsable).
-- **Avance:** INC-1 (TD-129) e INC-2 (TD-130) tienen ticket de bug en Jira, INC-3 es
+- **Avance:** INC-1 (TD-129) e INC-2 (TD-130) tienen ticket de bug en Jira; INC-2
+  quedó corregido y verificado en RUN-137. INC-3 es
   "no aplica" (hallazgo UAT); anexo histórico de los 12 `fix` hasta `49290b0` listo.
   Pasa a `hecho` cuando la corrida final de T10 y T14 (15 oct) no agreguen incidentes
   pendientes de registrar.
