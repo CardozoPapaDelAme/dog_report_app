@@ -19,11 +19,16 @@ import { summarizeReportDraftQueue } from '../../models/reportDraft.js';
 import { buildReportPayload } from '../../models/reportPayload.js';
 import regular from '@expo-google-fonts/plus-jakarta-sans/400Regular/PlusJakartaSans_400Regular.ttf';
 import bold from '@expo-google-fonts/plus-jakarta-sans/700Bold/PlusJakartaSans_700Bold.ttf';
+import semibold from '@expo-google-fonts/plus-jakarta-sans/600SemiBold/PlusJakartaSans_600SemiBold.ttf';
+import workMedium from '@expo-google-fonts/work-sans/500Medium/WorkSans_500Medium.ttf';
+import workSemibold from '@expo-google-fonts/work-sans/600SemiBold/WorkSans_600SemiBold.ttf';
+import workBold from '@expo-google-fonts/work-sans/700Bold/WorkSans_700Bold.ttf';
+import UiKitFixture from './ui-kit-fixture.jsx';
 
 if (new URLSearchParams(location.search).has('association-preview')) i18n.changeLanguage('es');
 
 const fonts = document.createElement('style');
-fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})}`;
+fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})} @font-face{font-family:PlusJakartaSans_600SemiBold;src:url(${semibold})} @font-face{font-family:WorkSans_500Medium;src:url(${workMedium})} @font-face{font-family:WorkSans_600SemiBold;src:url(${workSemibold})} @font-face{font-family:WorkSans_700Bold;src:url(${workBold})}`;
 document.head.appendChild(fonts);
 
 const previewReport = (id, incident, sighting, details, color, size, collar, acceptedAt) => ({
@@ -310,6 +315,7 @@ function NativeClusterFixture() {
 
 function Fixture() {
   const params = new URLSearchParams(location.search);
+  if (params.has('ui-kit')) return <UiKitFixture />;
   if (params.has('native-map-clusters')) return <div style={{height:'100dvh',overflow:'auto'}}><NativeClusterFixture /></div>;
   if (params.has('camera')) return <div style={{height:'100dvh',display:'flex'}}>
     <SafeAreaProvider style={{flex:1}}><CameraFixture /></SafeAreaProvider>
