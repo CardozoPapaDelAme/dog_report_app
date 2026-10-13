@@ -1,8 +1,8 @@
 # Casos de prueba — Mapa y roles autenticados (T6)
 
 Estado: casos especificados para T6 / TD-119; ejecutados RUN-1 a RUN-81 en
-`docs/testing/TEST_LOG.md` (TC-ZONAS-07 no ejecutado: requiere PostgreSQL;
-TC-MODERACION-07 falló y abrió INC-1 en `docs/testing/INCIDENTS.md`; tras la
+`docs/testing/TEST_LOG.md` (TC-ZONAS-07, que requiere PostgreSQL, quedó sin
+ejecutar en T6 y se ejecutó después en RUN-139, que pasó; TC-MODERACION-07 falló y abrió INC-1 en `docs/testing/INCIDENTS.md`; tras la
 corrección, RUN-82 pasó y INC-1 quedó corregido). Convenciones: `docs/testing/README.md`.
 Responsable: Alan Ruiz Silva (P4).
 
@@ -129,7 +129,7 @@ dispositivo; la comprobación visual del mapa en teléfono pertenece a T7
 | TC-ZONAS-04 | RNF09 | excepción | Deno | Claves `point` y `ring-open-4`; checksum ajeno; URI relativa | 1. Validar la creación | Rechazo en `geometry`, `source_sha256` o `source_uri` | `supabase/functions/api/domain/zoneSet.test.js` — FAB-2 DOMAIN: geometry and checksum reject malformed or mismatched evidence |
 | TC-ZONAS-05 | RNF09, RNF33 | promedio | Deno; dobles en memoria | Activación con checksum almacenado | 1. Activar | Valida checksum y reemplaza la zona activa de forma atómica | `supabase/functions/api/services/zoneService.test.js` — FAB-2 SERVICE: activation validates stored checksum then atomically replaces the active set |
 | TC-ZONAS-06 | RNF09 | excepción | Deno | Varias zonas activas o borrador sin checksum coincidente | 1. Activar | Se rechaza; como máximo una zona activa | `supabase/functions/api/domain/zoneSet.test.js` — FAB-2 DOMAIN: activation permits at most one active zone and only a checksum-matched draft |
-| TC-ZONAS-07 | RNF09, RNF19, RNF33 | normal | PostgreSQL/PostGIS aislado; `npm run test:postgres` | Geometrías válidas, vacías y autointersectadas; activaciones concurrentes | 1. Ejecutar la suite SQL | PostGIS rechaza inválidas; una zona activa y auditoría atómica | `supabase/functions/api/tests/zonePostgres.test.js` — FAB-2 SQL: PostGIS zone creation, replacement, rollback and concurrency (mismo test que TC-TRAZA-49; no ejecutado sin base) |
+| TC-ZONAS-07 | RNF09, RNF19, RNF33 | normal | PostgreSQL/PostGIS aislado; `npm run test:postgres` | Geometrías válidas, vacías y autointersectadas; activaciones concurrentes | 1. Ejecutar la suite SQL | PostGIS rechaza inválidas; una zona activa y auditoría atómica | `supabase/functions/api/tests/zonePostgres.test.js` — FAB-2 SQL: PostGIS zone creation, replacement, rollback and concurrency (mismo test que TC-TRAZA-49; requiere base PostgreSQL/PostGIS; ejecutado en RUN-139) |
 
 ### Duplicados (RF23, RNF30)
 
@@ -180,7 +180,8 @@ dispositivo; la comprobación visual del mapa en teléfono pertenece a T7
 - RNF07, mínimo/máximo/promedio: es una regla de autorización (dos roles
   hermanos), no un valor; aplica normal y excepción (TC-SESION-01/02/07/08,
   TC-MODERACION-06/07, TC-AUDITORIA-03, TC-DUPLICADOS-05).
-- TC-ZONAS-07 requiere PostgreSQL/PostGIS y no se ejecuta en `npm test`.
+- TC-ZONAS-07 requiere PostgreSQL/PostGIS y no se ejecuta en `npm test`; se
+  ejecutó con `npm run test:postgres -- zone` en RUN-139.
 - RF12 en teléfono: TC-MAPA-05 a TC-MAPA-07 miden el componente del dispositivo
   con MapLibre sustituido por `tests/ui/maplibre-stub.js`; el dibujo sobre el
   mapa real corresponde a T7.
