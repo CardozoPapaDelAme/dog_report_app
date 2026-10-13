@@ -19,6 +19,11 @@ export const colors = {
   primaryContainer: '#1b5e20',
   onPrimary: '#ffffff',
   primarySoft: '#d9f2d4',
+  signal: '#e9e600', // DESIGN.md secondary-container: hi-vis action color on forest green (11:1 against forestDeep text)
+  forestDeep: '#06300b',
+  forestField: '#0a3a12',
+  onForest: '#c9e6c4', // secondary text on primary, 8.4:1
+  onForestSubtle: '#a9cfa5', // placeholders on forestField
   primaryFixed: '#91d78a', // eyebrow on primary, 6.4:1
   onPrimarySoft: '#00450d',
   danger: '#ba1a1a', // 6.5:1 on white

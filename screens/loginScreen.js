@@ -8,8 +8,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppButton, AppTextField, Banner, Icon, StateView } from "../components/ui/index.js";
-import { colors, layout, radius, spacing, type } from "../theme/index.js";
+import { AppButton, AppTextField, Banner, ContourBackdrop, Icon, StateView } from "../components/ui/index.js";
+import { colors, fontFamily, layout, spacing, type } from "../theme/index.js";
 
 /**
  * @param {object} props
@@ -42,30 +42,40 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
+      <ContourBackdrop />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.container}>
-        {keyboardOpen ? null : <View pointerEvents="none" style={styles.watermark}><Icon name="dog" size={220} color={colors.onPrimary} strokeWidth={1.5} /></View>}
-        <View style={[styles.hero, keyboardOpen && styles.heroCompact]}>
-          {onBack && !loading ? (
-            <AppButton title={t("login.back")} variant="glass" disabled={pending} onPress={onBack} style={styles.back} />
-          ) : null}
-          {keyboardOpen ? null : <View style={styles.brandMark}><Icon name="dog" size={30} color={colors.primary} /></View>}
-          <Text style={[type.labelCaps, styles.eyebrow]}>{t("login.eyebrow")}</Text>
-          <Text accessibilityRole="header" style={styles.title}>{t("login.title")}</Text>
-          {keyboardOpen ? null : <Text style={[type.body, styles.subtitle]}>{t("login.subtitle")}</Text>}
-        </View>
+        {onBack && !loading ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("login.back")}
+            accessibilityState={{ disabled: !!pending }}
+            disabled={pending}
+            onPress={onBack}
+            hitSlop={8}
+            style={({ pressed }) => [styles.back, pressed && styles.pressed, pending && styles.disabled]}
+          >
+            <Icon name="back" size={22} color={colors.onPrimary} />
+            <Text style={styles.backText}>{t("login.back")}</Text>
+          </Pressable>
+        ) : null}
 
         <ScrollView
-          style={styles.sheet}
-          contentContainerStyle={styles.sheetContent}
+          contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           showsVerticalScrollIndicator={false}
         >
+          <View style={styles.heading}>
+            <Text accessibilityRole="header" style={[styles.title, keyboardOpen && styles.titleCompact]}>{t("login.title")}</Text>
+            {keyboardOpen ? null : <Text style={styles.subtitle}>{t("login.subtitle")}</Text>}
+          </View>
+
           {loading ? (
-            <StateView kind="loading" title={t("login.checking")} />
+            <StateView kind="loading" tone="dark" title={t("login.checking")} style={styles.loading} />
           ) : (
             <View style={styles.form}>
               <AppTextField
+                tone="dark"
                 label={t("login.email")}
                 accessibilityLabel={t("login.email")}
                 autoCapitalize="none"
@@ -80,6 +90,7 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
                 value={email}
               />
               <AppTextField
+                tone="dark"
                 label={t("login.password")}
                 accessibilityLabel={t("login.password")}
                 autoCapitalize="none"
@@ -104,8 +115,8 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
                 }
               />
               {error ? <Banner tone="error" message={t("login.error")} /> : null}
-              <AppButton title={t("login.submit")} size="lg" loading={pending} disabled={blocked && !pending} onPress={submit} />
-              <Text style={[type.caption, styles.footer]}>{t("login.footer")}</Text>
+              <AppButton title={t("login.submit")} variant="signal" size="lg" loading={pending} disabled={blocked && !pending} onPress={submit} style={styles.submit} />
+              <Text style={styles.footer}>{t("login.footer")}</Text>
             </View>
           )}
         </ScrollView>
@@ -116,19 +127,20 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.primary },
-  container: { flex: 1, alignSelf: "center", width: "100%", maxWidth: 520 },
-  watermark: { position: "absolute", top: 40, right: -50, opacity: 0.1 },
-  hero: { paddingHorizontal: layout.margin, paddingTop: spacing.sm, paddingBottom: spacing.xxxl },
-  heroCompact: { paddingBottom: spacing.lg },
-  back: { alignSelf: "flex-start", marginBottom: spacing.xxl },
-  brandMark: { width: 56, height: 56, borderRadius: radius.pill, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", marginBottom: spacing.xl },
-  eyebrow: { color: colors.primaryFixed },
-  title: { ...type.display, fontSize: 40, lineHeight: 46, color: colors.onPrimary, marginTop: spacing.xs },
-  subtitle: { color: colors.primarySoft, marginTop: spacing.sm },
-  sheet: { flex: 1, backgroundColor: colors.background, borderTopLeftRadius: radius.xl + 8, borderTopRightRadius: radius.xl + 8 },
-  sheetContent: { flexGrow: 1, padding: layout.margin, paddingTop: spacing.xxxl, paddingBottom: spacing.xxxl },
+  container: { flex: 1, alignSelf: "center", width: "100%", maxWidth: 520, paddingHorizontal: layout.margin },
+  back: { alignSelf: "flex-start", minHeight: layout.minTouch, flexDirection: "row", alignItems: "center", gap: spacing.xs, marginLeft: -spacing.xs },
+  backText: { ...type.button, fontSize: 15, color: colors.onPrimary },
+  pressed: { opacity: 0.7 },
+  disabled: { opacity: 0.45 },
+  content: { flexGrow: 1, justifyContent: "flex-start", gap: spacing.xxl, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
+  heading: { gap: spacing.md, paddingTop: spacing.lg },
+  title: { fontFamily: fontFamily.display, fontSize: 76, lineHeight: 72, letterSpacing: -0.5, color: colors.onPrimary },
+  titleCompact: { fontSize: 48, lineHeight: 48 },
+  subtitle: { ...type.body, color: colors.onForest, maxWidth: 320 },
   form: { gap: spacing.xl },
   toggle: { minHeight: layout.minTouch, justifyContent: "center", paddingLeft: spacing.sm },
-  toggleText: { color: colors.primary, fontSize: 14 },
-  footer: { textAlign: "center" },
+  toggleText: { color: colors.signal, fontSize: 14 },
+  submit: { marginTop: spacing.xs },
+  footer: { ...type.caption, color: colors.onForest, textAlign: "left" },
+  loading: { alignItems: "flex-start", paddingHorizontal: 0 },
 });

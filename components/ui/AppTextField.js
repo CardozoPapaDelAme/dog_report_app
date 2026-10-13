@@ -7,17 +7,18 @@ import { forwardRef } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors, layout, radius, spacing, type } from '../../theme/index.js';
 
-const AppTextField = forwardRef(function AppTextField({ label, error, helper, trailing, style, containerStyle, multiline, ...inputProps }, ref) {
+const AppTextField = forwardRef(function AppTextField({ label, error, helper, trailing, tone = 'light', style, containerStyle, multiline, ...inputProps }, ref) {
+  const dark = tone === 'dark';
   return (
     <View style={[styles.container, containerStyle]}>
-      {label ? <Text style={type.label}>{label}</Text> : null}
-      <View style={trailing ? [styles.input, styles.row, error && styles.inputError] : null}>
+      {label ? <Text style={[type.label, dark && styles.labelDark]}>{label}</Text> : null}
+      <View style={trailing ? [styles.input, styles.row, dark && styles.inputDark, error && styles.inputError] : null}>
         <TextInput
           ref={ref}
           multiline={multiline}
-          placeholderTextColor={colors.inkSubtle}
+          placeholderTextColor={dark ? colors.onForestSubtle : colors.inkSubtle}
           accessibilityLabel={inputProps.accessibilityLabel ?? label}
-          style={trailing ? styles.bare : [styles.input, multiline && styles.multiline, error && styles.inputError, style]}
+          style={trailing ? [styles.bare, dark && styles.textDark] : [styles.input, multiline && styles.multiline, dark && styles.inputDark, dark && styles.textDark, error && styles.inputError, style]}
           {...inputProps}
         />
         {trailing}
@@ -35,6 +36,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 0 },
   bare: { ...type.body, flex: 1, minHeight: layout.minTouch - 2, paddingVertical: spacing.sm },
   multiline: { minHeight: 96, textAlignVertical: 'top' },
+  labelDark: { color: colors.onForest },
+  inputDark: { backgroundColor: colors.forestField, borderColor: 'rgba(201,230,196,0.45)' },
+  textDark: { color: colors.onPrimary },
   inputError: { borderColor: colors.danger },
   error: { color: colors.danger },
 });

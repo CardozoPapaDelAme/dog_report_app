@@ -5,12 +5,12 @@ import Icon from './Icon.js';
 
 const icons = { empty: 'dog', error: 'alert', offline: 'info' };
 
-export default function StateView({ kind = 'empty', title, message, children, style, testID }) {
+export default function StateView({ kind = 'empty', tone = 'light', title, message, children, style, testID }) {
   return (
     <View testID={testID} style={[styles.base, style]} accessibilityLiveRegion="polite">
-      {kind === 'loading' ? <ActivityIndicator color={colors.primary} /> : <Icon name={icons[kind]} size={32} color={kind === 'error' ? colors.danger : colors.inkSubtle} />}
-      {title ? <Text style={[type.title, styles.center]}>{title}</Text> : null}
-      {message ? <Text style={[type.bodySmall, styles.center]}>{message}</Text> : null}
+      {kind === 'loading' ? <ActivityIndicator color={tone === 'dark' ? colors.signal : colors.primary} /> : <Icon name={icons[kind]} size={32} color={kind === 'error' ? colors.danger : colors.inkSubtle} />}
+      {title ? <Text style={[type.title, styles.center, tone === 'dark' && { color: colors.onPrimary }]}>{title}</Text> : null}
+      {message ? <Text style={[type.bodySmall, styles.center, tone === 'dark' && { color: colors.onForest }]}>{message}</Text> : null}
       {children}
     </View>
   );
