@@ -162,6 +162,14 @@ say "requires rebuild".
 **7 days**; run `npm run app:ios` again to renew. A paid Apple
 Developer account (99 USD/year) lasts one year.
 
+*Xcode 27 / iOS 27 note*: iOS 27 closes apps at launch that do not use the
+UIScene lifecycle. The app enables it with the `expo-build-properties` plugin
+(`ios.enableSceneSupport` in `app.json`), following Expo's
+[UIScene lifecycle guide](https://github.com/expo/fyi/blob/main/ios-scene-lifecycle.md).
+If you already have a local `ios/` folder from an older build, regenerate it once:
+`npx expo prebuild --platform ios --clean`, then `npm run app:ios` (phone) or
+`npx expo run:ios` (simulator).
+
 *No Mac for iPhone or no Android Studio?* Use option A (Expo Go) for everything
 except the interactive map and photo validation, or ask a teammate for an
 option B build link.
