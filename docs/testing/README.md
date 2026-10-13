@@ -17,6 +17,7 @@ esas rutas desde la raíz, no desde el directorio del documento.
 | `docs/testing/ACCEPTANCE.md` | Conformidad del socio formador | T14 |
 | `docs/testing/NON-FUNCTIONAL.md` | Mediciones e inspecciones RNF | T9 |
 | `docs/testing/TEST_LOG.md` | Ejecuciones y resumen | Cada ejecutor; T12 consolida |
+| `docs/testing/TEST_LOG_CONSOLIDADO.md` | Test log en tabla única con el formato del curso | T12 / T13 |
 | `docs/testing/INCIDENTS.md` | Fallas y correcciones | Cada ejecutor; T11 consolida |
 
 T4 completa la trazabilidad en `docs/TRACEABILITY.md`; T13 reúne los entregables.
