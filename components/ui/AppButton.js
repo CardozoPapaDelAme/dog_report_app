@@ -10,6 +10,7 @@ const variants = {
   primary: { bg: colors.primary, fg: colors.onPrimary, border: colors.primary },
   secondary: { bg: colors.surface, fg: colors.primary, border: colors.outlineSoft },
   ghost: { bg: colors.transparent, fg: colors.primary, border: colors.transparent },
+  glass: { bg: 'rgba(255,255,255,0.14)', fg: colors.onPrimary, border: 'rgba(255,255,255,0.45)' },
   destructive: { bg: colors.surface, fg: colors.danger, border: colors.danger },
 };
 
@@ -17,7 +18,7 @@ const variants = {
  * @param {object} props
  * @param {string} props.title - Visible label; also the accessibility name unless `accessibilityLabel` is set.
  * @param {() => void} [props.onPress]
- * @param {'primary'|'secondary'|'ghost'|'destructive'} [props.variant]
+ * @param {'primary'|'secondary'|'ghost'|'destructive'|'glass'} [props.variant]
  * @param {'md'|'lg'} [props.size]
  * @param {boolean} [props.loading]
  * @param {boolean} [props.disabled]

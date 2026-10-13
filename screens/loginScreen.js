@@ -4,9 +4,9 @@
  * holds the form fields and the password visibility toggle. The back button sits outside the scrolling
  * form so the on-screen keyboard can never push it out of reach.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppButton, AppTextField, Banner, Icon, StateView } from "../components/ui/index.js";
 import { colors, layout, radius, spacing, type } from "../theme/index.js";
@@ -25,7 +25,15 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const blocked = !email.trim() || !password || pending;
+
+  // The hero collapses while typing so the fields never end up squeezed under the keyboard.
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow", () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide", () => setKeyboardOpen(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   async function submit() {
     if (!email.trim() || !password || pending) return;
@@ -33,22 +41,26 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.container}>
-        {onBack && !loading ? (
-          <AppButton title={t("login.back")} variant="secondary" disabled={pending} onPress={onBack} style={styles.back} />
-        ) : null}
+        {keyboardOpen ? null : <View pointerEvents="none" style={styles.watermark}><Icon name="dog" size={220} color={colors.onPrimary} strokeWidth={1.5} /></View>}
+        <View style={[styles.hero, keyboardOpen && styles.heroCompact]}>
+          {onBack && !loading ? (
+            <AppButton title={t("login.back")} variant="glass" disabled={pending} onPress={onBack} style={styles.back} />
+          ) : null}
+          {keyboardOpen ? null : <View style={styles.brandMark}><Icon name="dog" size={30} color={colors.primary} /></View>}
+          <Text style={[type.labelCaps, styles.eyebrow]}>{t("login.eyebrow")}</Text>
+          <Text accessibilityRole="header" style={styles.title}>{t("login.title")}</Text>
+          {keyboardOpen ? null : <Text style={[type.body, styles.subtitle]}>{t("login.subtitle")}</Text>}
+        </View>
+
         <ScrollView
-          contentContainerStyle={styles.content}
+          style={styles.sheet}
+          contentContainerStyle={styles.sheetContent}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.brandMark}><Icon name="dog" size={28} color={colors.onPrimary} /></View>
-          <Text style={[type.labelCaps, styles.eyebrow]}>{t("login.eyebrow")}</Text>
-          <Text accessibilityRole="header" style={styles.title}>{t("login.title")}</Text>
-          <Text style={[type.body, styles.subtitle]}>{t("login.subtitle")}</Text>
-
           {loading ? (
             <StateView kind="loading" title={t("login.checking")} />
           ) : (
@@ -103,15 +115,19 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  container: { flex: 1, alignSelf: "center", width: "100%", maxWidth: 480, paddingHorizontal: layout.margin, paddingTop: spacing.lg },
-  back: { alignSelf: "flex-start", marginBottom: spacing.sm },
-  content: { flexGrow: 1, justifyContent: "center", paddingVertical: spacing.xxl },
-  brandMark: { width: 56, height: 56, borderRadius: radius.lg, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", marginBottom: spacing.xxl },
-  eyebrow: { color: colors.primary },
-  title: { ...type.display, fontSize: 34, lineHeight: 40, marginTop: spacing.sm },
-  subtitle: { color: colors.inkMuted, marginTop: spacing.sm, marginBottom: spacing.xxl },
-  form: { gap: spacing.lg },
+  safeArea: { flex: 1, backgroundColor: colors.primary },
+  container: { flex: 1, alignSelf: "center", width: "100%", maxWidth: 520 },
+  watermark: { position: "absolute", top: 40, right: -50, opacity: 0.1 },
+  hero: { paddingHorizontal: layout.margin, paddingTop: spacing.sm, paddingBottom: spacing.xxxl },
+  heroCompact: { paddingBottom: spacing.lg },
+  back: { alignSelf: "flex-start", marginBottom: spacing.xxl },
+  brandMark: { width: 56, height: 56, borderRadius: radius.pill, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", marginBottom: spacing.xl },
+  eyebrow: { color: colors.primaryFixed },
+  title: { ...type.display, fontSize: 40, lineHeight: 46, color: colors.onPrimary, marginTop: spacing.xs },
+  subtitle: { color: colors.primarySoft, marginTop: spacing.sm },
+  sheet: { flex: 1, backgroundColor: colors.background, borderTopLeftRadius: radius.xl + 8, borderTopRightRadius: radius.xl + 8 },
+  sheetContent: { flexGrow: 1, padding: layout.margin, paddingTop: spacing.xxxl, paddingBottom: spacing.xxxl },
+  form: { gap: spacing.xl },
   toggle: { minHeight: layout.minTouch, justifyContent: "center", paddingLeft: spacing.sm },
   toggleText: { color: colors.primary, fontSize: 14 },
   footer: { textAlign: "center" },

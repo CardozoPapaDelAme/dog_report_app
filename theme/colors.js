@@ -19,6 +19,7 @@ export const colors = {
   primaryContainer: '#1b5e20',
   onPrimary: '#ffffff',
   primarySoft: '#d9f2d4',
+  primaryFixed: '#91d78a', // eyebrow on primary, 6.4:1
   onPrimarySoft: '#00450d',
   danger: '#ba1a1a', // 6.5:1 on white
   dangerAlert: '#d32f2f', // attacks and immediate threats only
