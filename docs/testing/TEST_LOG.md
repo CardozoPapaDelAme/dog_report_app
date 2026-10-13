@@ -119,10 +119,10 @@ Detalle: `docs/testing/UAT.md`.
 - RNF02 en simulador Xcode (iPhone 18 Pro, iOS 27): mapa en 3.8 s (RUN-135) y
   envío de reporte en 2.38 s (RUN-136), menores a 5 s.
 - Carga (TC-NF-03, k6): pendiente, no ejecutada (k6 no instalado).
-- `docs/testing/BACKLOG.md` marca T9 como hecho, pero
-  `docs/testing/NON-FUNCTIONAL.md` sigue «en curso» con mediciones en
-  dispositivo, TalkBack, API real y k6 pendientes. Detalle:
-  `docs/testing/NON-FUNCTIONAL.md`.
+- T9 está hecho (TD-122, PR #66, `docs/testing/BACKLOG.md`), con pendientes
+  declarados como limitaciones: mediciones en dispositivo, TalkBack, API real
+  y k6. La línea de estado de `docs/testing/NON-FUNCTIONAL.md` todavía dice
+  «en curso» y está por actualizar. Detalle: `docs/testing/NON-FUNCTIONAL.md`.
 
 ### Aceptación (T14)
 
