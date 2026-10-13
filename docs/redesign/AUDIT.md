@@ -12,9 +12,9 @@ Fecha: 2026-10-13. Solo auditoría y plan: **no se cambió código ni se instal�
 
 | Tema | Detalle |
 |---|---|
-| Capturas faltantes | **16, 17, 18 (Android) y 20 (cámara en inglés)** no están en `before/manual/`. Android no se auditó visualmente. |
+| Android fuera de alcance | **Decisión del usuario: no se capturará Android** (filas 16, 17, 18 descartadas). Alcance de dispositivo = solo iPhone; Android queda como riesgo aceptado. |
 | Captura 14 | `14_formulario_texto_grande_ios_es.PNG` es **idéntica byte a byte a la 13** (teclado, tamaño normal). **Texto grande NO verificado**; la app no define `allowFontScaling`/`maxFontSizeMultiplier`. |
-| Idioma | El iPhone estaba en **inglés**: todas las "_es" muestran UI en inglés. Cubre longitud de textos en `en`; **no se vio `es` en dispositivo**. |
+| Idioma | **Todas las capturas manuales están en inglés** (los sufijos "_es" del nombre son solo del plan). Cubre longitud de textos en `en` y hace innecesaria la captura 20. El español solo se vio en web (`before/web/es/`); **no se vio `es` en dispositivo** (textos más largos: riesgo). |
 | Artefactos de dev build | El engranaje gris flotante (esquina sup. der.) es el dev menu de Expo, no la app; tapa "Staff login" en cámara. El toast "MapLibre Native [ERROR]…" en la 19 es de desarrollo. No son hallazgos. |
 | Captura 05 | Se tomó **antes de TD-133**: el teclado tapaba "Details". Ya corregido (web verificado; falta confirmar en dispositivo). |
 | Login + teclado | No hay captura; se infiere del código (ver F-03). Falta reproducir. |
@@ -68,9 +68,9 @@ Cumplen: la mayoría de botones (≥ 44), Approve/Hide/Delete, obturador, `backB
 | Pantalla | Estados vistos | Falta ver |
 |---|---|---|
 | Login | default, loading, pending, no-back (web) | error de credenciales; teclado |
-| Cámara | permiso, en vivo, validando, 2 rechazos, banner cola (dispositivo) | modelo no disponible (08b), inglés (20), Android (16) |
-| Mapa | clusters, pines, zona, pin, denuncia, offline (dispositivo); vacío/500 (web) | Android (17), modal de cluster en dispositivo |
-| Formulario | con foto, teclado (dispositivo); errores 400/500, cola (web) | texto grande (14), Android (18) |
+| Cámara | permiso, en vivo, validando, 2 rechazos, banner cola (dispositivo) | modelo no disponible (08b) |
+| Mapa | clusters, pines, zona, pin, denuncia, offline (dispositivo); vacío/500 (web) | modal de cluster en dispositivo |
+| Formulario | con foto, teclado (dispositivo); errores 400/500, cola (web) | texto grande (14) |
 | Command Center | cola real (dispositivo); vacío/403/500 (web) | — |
 | Configuración, Zonas, Duplicados, Asociación | todos los estados vía web | dispositivo real |
 
@@ -152,9 +152,9 @@ Ya presentes, no instalar: `expo-camera`, `@expo-google-fonts/plus-jakarta-sans`
 1. **Compatibilidad SDK**: Expo SDK 57, RN 0.86, React 19.2, react-native-web 0.21. Toda librería nueva debe ser compatible con New Architecture y React 19; pinear versiones con `expo install`. Probar `react-native-svg` y `expo-blur` en dev build antes de generalizar.
 2. **Pruebas en web (Playwright)**: el bundle usa esbuild con alias; módulos nativos (svg, blur, linear-gradient, haptics) necesitan alias/stub en `tests/ui/serve-configuration.mjs` y `configuration-entry.jsx` (cambios en `tests/`, requieren aprobación). Sin `.ts/.tsx`. Cualquier `pageerror` falla la suite. El fixture solo registra Jakarta 400/700.
 3. **Contrato de roles/estructura**: reemplazar `Pressable` por componentes que pierdan `accessibilityRole`, o añadir un `<input>` (p. ej. buscador decorativo) rompe pruebas. Los nuevos botones deben conservar `Cerrar` único; backdrops invisibles a accesibilidad.
-4. **Mapa nativo y cámara solo verificables en dispositivo**: MapLibre no renderiza en web; contraste de vidrio no medible sin captura; Android sin ninguna captura (16–18 pendientes). Riesgo de regresión visual no detectada por las pruebas.
+4. **Mapa nativo y cámara solo verificables en dispositivo**: MapLibre no renderiza en web; contraste de vidrio no medible sin captura; Android fuera de alcance por decisión del usuario (sin capturas ni verificación). Riesgo de regresión visual no detectada por las pruebas.
 5. **Texto grande/Dynamic Type**: no verificado (captura 14 vacía); el rediseño puede romper la rejilla de chips y botones. Verificar antes de empezar el formulario.
-6. **Teclado**: `ReportForm` hoy funciona bien en iOS (13); el rediseño no debe tocar la estructura `KeyboardAvoidingView` + botón fijo. En Android (`padding` solo en iOS) sin verificar; `ReportFlagSheet` (TD-133) pendiente de comprobar en dispositivo.
+6. **Teclado**: `ReportForm` hoy funciona bien en iOS (13); el rediseño no debe tocar la estructura `KeyboardAvoidingView` + botón fijo. Android (`padding` solo en iOS) no se verificará; `ReportFlagSheet` (TD-133) pendiente de comprobar en iPhone.
 7. **Estado del árbol**: `docs/redesign/` y los cambios de TD-133 siguen sin commit en la misma rama de trabajo (`TD-133-JP-fix-sheets-mapa`); conviene commitear TD-133 y crear la rama de implementación del rediseño desde `main` + TD-133.
 8. **Alcance**: tentación de arreglar datos/i18n (p. ej. `dorado`, `title: Command Center`) que están fuera de presentación o rompen specs.
 9. **Fecha/locale**: formatos de fecha mixtos (`30–sep`, `8/10/2026`) vienen de `Intl`/locale; cualquier cambio de formato debe hacerse en la capa de presentación, no en `models/`.
@@ -163,10 +163,10 @@ Ya presentes, no instalar: `expo-camera`, `@expo-google-fonts/plus-jakarta-sans`
 
 1. ¿Adoptar **Work Sans** como en DESIGN.md (requiere tocar el fixture de pruebas)?
 2. ¿Se aprueban cambios mínimos en `tests/ui/configuration-entry.jsx` y `serve-configuration.mjs` (fuentes, stubs de svg/blur/gradient) como parte del Paso 0?
-3. Capturas pendientes: **16, 17, 18, 20**, la **14 real** (texto grande al máximo), y reproducir **login con teclado** (F-03).
+3. Capturas pendientes (Android 16–18 y 20 descartadas): la **14 real** (texto grande al máximo) y reproducir **login con teclado** (F-03).
 4. ¿`expo-blur` sí/no? ¿Sheets con gesto real (`@gorhom/bottom-sheet`) o solo mejorados?
 5. ¿Dark mode dentro o fuera de alcance? ¿Borrar `ReportDraftScreen`? ¿Cambiar `title` de `es.json` (rompe specs)?
-6. Confirmar en dispositivo TD-133 (cierre al tocar fuera de denuncia/zona, teclado en Android).
+6. Confirmar en iPhone TD-133 (cierre al tocar fuera de denuncia/zona y teclado).
 
 ---
 **Estado:** auditoría terminada. No se ha iniciado el rediseño. Espero aprobación.
