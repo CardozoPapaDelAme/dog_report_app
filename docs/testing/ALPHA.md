@@ -1,10 +1,11 @@
 # Prueba alfa en dispositivo
 
 Estado: ejecución alfa en Android real documentada para T7 / TD-120. La sesión
-inicial cerró con 32 casos que pasaron y 1 falla registrada como `INC-2`;
-`TC-ALPHA-14` se reejecutó en Android real en RUN-137 y verificó la corrección.
-TC-ALPHA-32 tuvo un bloqueo inicial en RUN-114 y se reejecutó correctamente en
-RUN-116.
+inicial (2026-10-08 a 2026-10-11, RUN-83 a RUN-116) cerró con 32 casos que
+pasaron y 1 falla registrada como `INC-2`; `TC-ALPHA-14` se reejecutó en Android
+real en RUN-137, verificó la corrección y `INC-2` quedó `cerrado`
+(`docs/testing/INCIDENTS.md`). TC-ALPHA-32 tuvo un bloqueo inicial en RUN-114 y
+se reejecutó correctamente en RUN-116.
 Convenciones: `docs/testing/README.md`. Fuente: `docs/testing/BACKLOG.md`, T7.
 Casos con entradas, pasos y resultados esperados: `docs/testing/cases/alpha.md`
 (`TC-ALPHA-01` a `TC-ALPHA-33`).
@@ -17,7 +18,7 @@ Completar al ejecutar; una fila nueva de sesión por cada corrida (no sobrescrib
 
 | Campo | Valor |
 |---|---|
-| Fecha y responsable | 2026-10-11; Erick Herrera |
+| Fecha y responsable | 2026-10-08 a 2026-10-11, America/Mexico_City, según las filas RUN: la mayoría el 2026-10-08; RUN-90 y RUN-102 el 2026-10-10; RUN-96, RUN-114 y RUN-116 el 2026-10-11. Evidencia agrupada en `docs/testing/data/alpha/2026-10-11/`; Erick Herrera |
 | Commit/build de la app | `fe8da67d23862517ab5878228da5a15ca971b973`; app `1.0.0`; paquete `com.wildogscanner.app`; build development/debug |
 | Dispositivo y versión Android | samsung SM-S918B; Android 16 (SDK 36) |
 | Tipo de build y API/entorno | Build nativo development/debug, no Expo Go; API de staging con servicios reales |
@@ -166,7 +167,7 @@ de cada caso ejecutado.
 Conclusión: T7 queda ejecutada en Android real con evidencia local versionada.
 La corrida inicial dejó 32 casos aprobados y TC-ALPHA-14 falló por ausencia del
 aviso RF02, registrado como `INC-2`. La reejecución RUN-137 verificó en Android
-real la build corregida y dejó `INC-2` como corregido; RUN-96 se conserva como
+real la build corregida y `INC-2` quedó `cerrado`; RUN-96 se conserva como
 histórico de la falla original. TC-ALPHA-32 conserva el bloqueo inicial en
 RUN-114 como histórico, pero quedó aprobado en RUN-116 con GeoJSON válido e
 inválido.

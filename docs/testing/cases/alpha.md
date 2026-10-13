@@ -1,9 +1,9 @@
 # Casos de prueba — módulo ALPHA (prueba alfa en dispositivo)
 
 Estado: casos definidos por T7 / TD-120 y ejecutados en Android real en la sesión
-documentada en `docs/testing/ALPHA.md`. Las filas `RUN-83` a `RUN-116` en
-`docs/testing/TEST_LOG.md` registran los resultados; este archivo conserva las
-entradas y resultados esperados. Convenciones: `docs/testing/README.md`.
+documentada en `docs/testing/ALPHA.md`. Las filas `RUN-83` a `RUN-116` y `RUN-137`
+(reejecución de TC-ALPHA-14) en `docs/testing/TEST_LOG.md` registran los
+resultados; este archivo conserva las entradas y resultados esperados. Convenciones: `docs/testing/README.md`.
 Procedimiento, preparación y registro de la sesión: `docs/testing/ALPHA.md`.
 
 Fuentes: `docs/product/ETAPA1-REQUERIMIENTOS-V2.md` (RF01–RF24, RNF04, RNF05,
