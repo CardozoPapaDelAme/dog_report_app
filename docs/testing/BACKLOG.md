@@ -376,7 +376,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 ## Fase 3 — Cierre
 
 ### T14 · Pruebas de aceptación ejecutadas por el equipo
-- **Persona:** P4 · **Estado:** en curso · **Jira:** TD-127 · **Criterios:** C1 (visión del cliente)
+- **Persona:** P4 · **Estado:** hecho · **Jira:** TD-127 · **Criterios:** C1 (visión del cliente)
 - **Decisión (2026-10-12):** los casos de aceptación los ejecuta el equipo (Erick Herrera en dispositivo Android; responsable de la tarea: Alan Ruiz), no el socio formador; la conformidad registrada es el veredicto del equipo.
 - **Depende de:** T5, T6, T7 (el sistema ya probado por el equipo).
 - **Objetivo:** que el equipo ejecute los flujos de aceptación representativos y
@@ -393,6 +393,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
     `INCIDENTS.md`.
 - **Aceptación:** casos de aceptación ejecutados por el equipo, con su resultado
   y veredicto registrados; sus ejecuciones están en `TEST_LOG.md`.
+- **Decisión (2026-10-13):** sin ejecución separada de aceptación en la build final; los resultados se registran por equivalencia con la sesión alfa T7 (RUN-83 a RUN-116) y RUN-137, sin filas nuevas en `TEST_LOG.md`. Veredicto del equipo: aceptado con observaciones (`docs/testing/ACCEPTANCE.md`).
 
 ### T10 · Corrida final de regresión
 - **Persona:** P2 · **Estado:** hecho · **Jira:** TD-123 · **Criterios:** C2, C3
