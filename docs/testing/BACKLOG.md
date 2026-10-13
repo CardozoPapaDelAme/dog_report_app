@@ -448,11 +448,18 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
 - **Aceptación:** los números del resumen coinciden con el registro y con la corrida de T10.
 
 ### T13 · Google Docs del entregable
-- **Persona:** P1 · **Estado:** pendiente · **Jira:** TD-126 · **Criterios:** todos
+- **Persona:** P1 · **Estado:** hecho · **Jira:** TD-126 · **Criterios:** todos
 - **Depende de:** T3, T11, T12.
 - **Alcance:** sintetizar los 4 entregables (plan, casos y datos, resultados,
   incidentes) con enlaces a `docs/testing/`, PRs y corridas de la CI.
 - **Aceptación:** cada criterio de la rúbrica tiene su sección con evidencia enlazada.
+- **Avance:** entregable publicado el 2026-10-13 como Google Doc «Plan y resultados
+  de pruebas · App de reportes de perros callejeros en Creel»
+  (https://docs.google.com/document/d/1bt_ddfR51-FGqW1LW4zBBV4bH1icPDwXqGXMixsmpRs/edit),
+  redactado por el equipo (Alan Ruiz) a partir del resumen de T12. Tiene una sección
+  por criterio de la rúbrica (C1 a C6), con enlaces a `docs/testing/`, los PRs de
+  cada tarea y las corridas de la CI, y un anexo con los identificadores. Acceso
+  restringido: requiere permiso en el Doc y en el repositorio.
 
 ---
 
