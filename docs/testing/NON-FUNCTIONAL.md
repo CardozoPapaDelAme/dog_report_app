@@ -1,16 +1,17 @@
 # Pruebas no funcionales
 
 Estado: hecho (TD-122, PR #66), con pendientes declarados como limitaciones:
-iPhone físico, TalkBack, API real y k6. La evidencia automatizada e inspecciones
-se ejecutó el 2026-10-11 (RUN-134); RNF02 se midió en simulador el 2026-10-12
-(RUN-135 y RUN-136).
+iPhone físico, TalkBack y mediciones desde teléfono contra la API real. La
+evidencia automatizada e inspecciones se ejecutó el 2026-10-11 (RUN-134); RNF02
+se midió en simulador el 2026-10-12 (RUN-135 y RUN-136); la carga k6 (TC-NF-03)
+se ejecutó contra staging real el 2026-10-12 (RUN-145) y pasó.
 Fuente de alcance: `docs/testing/BACKLOG.md`, T9. Estrategia: `docs/TESTING.md`.
 Convenciones: `docs/testing/README.md`.
 
 ## Entorno y método
 
 Fecha, responsable, commit/build, dispositivo/OS, versiones de API/base/herramientas,
-red y configuración: registrados por ejecución en las filas RUN-134 a RUN-136 de
+red y configuración: registrados por ejecución en las filas RUN-134 a RUN-136 y RUN-145 de
 `docs/testing/TEST_LOG.md` (RUN-135 y RUN-136 sin commit/build registrado). Distinguir test automatizado, medición en teléfono,
 inspección y carga. No atribuir evidencia con mocks a un servicio real.
 
@@ -20,7 +21,7 @@ inspección y carga. No atribuir evidencia con mocks a un servicio real.
 |---|---|---|---|---|---|---|---|---|
 | TC-NF-01 | RNF01 | inspección | Supabase Free | `docs/product/ETAPA1-REQUERIMIENTOS.md` y `docs/DEPLOYMENT.md` | Mejor esfuerzo; 99.9% es meta futura | conforme a la postura declarada | RUN-134 | sin SLA/medición de disponibilidad |
 | TC-NF-02 | RNF02 | medición | Simulador Xcode, iPhone 18 Pro, iOS 27; Wi‑Fi | abrir Mapa y detener al aparecer clusters; enviar reporte sin foto y detener al confirmar | mapa <5 s | Mapa: 3.8 s, pasó. Envío de reporte sin foto: 2.38 s, pasó. Los clusters visibles son fixtures fuera del área de prueba. | RUN-135, RUN-136 | **Pendiente:** repetir ambas mediciones en iPhone físico; no hay dispositivo físico disponible por ahora. |
-| TC-NF-03 | RNF03 | carga | staging, lectura pública | `tests/load/public-read.js` con k6 | p95 y tasa de error registrados | pendiente; k6 no instalado | pendiente | nunca ejecutar escrituras |
+| TC-NF-03 | RNF03 | carga | staging, lectura pública | `tests/load/public-read.js` con k6 | p95 y tasa de error registrados | k6 v2.3.0, 2 VUs, 60 s, API de staging real: 83 peticiones (1.36 req/s); errores 0.00 % (0/83, umbral `rate<0.01` cumplido); checks 83/83 2xx; p95 1.07 s, p90 995.66 ms, mediana 428.58 ms, máx. 1.31 s; pasó | RUN-145 | nunca ejecutar escrituras; carga ligera por diseño (plan Free): no muestra el comportamiento con alta concurrencia; latencia medida desde la VPS, no desde un teléfono |
 | TC-NF-05 | RNF05 | dispositivo | Android/iOS | build de desarrollo | Android 8+, iOS 13+ | Android real: evidencia T7; iOS 27 simulador: UAT, no dispositivo físico | RUN-83–116; RUN-124–133 | falta iPhone físico con iOS 13+ |
 | TC-NF-06 | RNF06 | automatizado | locales es/en | `i18n/*.test.js`, `tests/ui/language.spec.js` | claves y flujos bilingües | pasó | RUN-134 | falta TalkBack/VoiceOver |
 | TC-NF-13 | RNF13 | automatizado/inspección | proyecciones públicas | tests de mapa, foto y `docs/SECURITY.md` | sin PII solicitada ni coordenada exacta pública | pasó en mocks y tests | RUN-134 | no auditoría de producción |
@@ -55,4 +56,7 @@ documentación. Las seis suites PostgreSQL quedaron omitidas por requerir Docker
 **Pendiente:** repetir las mediciones de RNF02 en iPhone físico; actualmente solo
 hay evidencia del simulador Xcode (RUN-135 y RUN-136). T9 se cerró (TD-122,
 PR #66) con iPhone físico, API real, k6 y accesibilidad (TalkBack) declarados como
-limitaciones pendientes, no como evidencia.
+limitaciones pendientes, no como evidencia. Después del cierre, la carga k6
+(TC-NF-03) se ejecutó contra la API de staging real en RUN-145 y pasó: 83
+peticiones, 0 % de errores y p95 1.07 s con 2 usuarios virtuales por 60 s. Siguen
+pendientes iPhone físico, TalkBack y mediciones desde teléfono contra la API real.
