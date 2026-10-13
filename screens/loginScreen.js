@@ -146,6 +146,6 @@ const styles = StyleSheet.create({
   toggleText: { color: colors.signal, fontSize: 14 },
   submit: { marginTop: spacing.xs, borderRadius: 12 },
   footer: { ...type.caption, color: colors.onForest, textAlign: "left" },
-  trail: { flex: 1, minHeight: 120 },
+  trail: { flex: 1, minHeight: 120, marginTop: -spacing.xxl },
   loading: { alignItems: "flex-start", paddingHorizontal: 0 },
 });
