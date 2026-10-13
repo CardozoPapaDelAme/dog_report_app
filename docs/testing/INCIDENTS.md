@@ -12,7 +12,7 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 |---|---|---|---|---|---|---|---|---|---|
 | INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | TD-129 | corregido | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
 | INC-3 | 2026-10-11 | TC-UAT-02 | RUN-126 | media | MAPA / UAT | No aplica: hallazgo UAT, sin defecto confirmado | cerrado | Ricardo Becerra Bitar | RUN-133 pasó con fixture público; se conserva la dificultad de navegación como hallazgo de usabilidad |
-| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | TD-130 | pendiente de verificación | Erick Herrera | Aviso RF02 agregado y verificado en RUN-117; cierre pendiente de repetir TC-ALPHA-14 en Android |
+| INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | TD-130 | corregido | Erick Herrera | Correctivo `f18ba0b` (PR #64); verificado en Android real en RUN-137 |
 
 ## Severidad y estado
 
@@ -22,7 +22,7 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 - baja: defecto menor de presentación o documentación sin bloqueo del flujo.
 
 Estados: `abierto`, `en análisis`, `en corrección`, `pendiente de verificación`,
-`cerrado`. Responsable obligatorio mientras no esté cerrado. Si es duplicado,
+`corregido`, `cerrado`. Responsable obligatorio mientras no esté cerrado. Si es duplicado,
 referir el incidente principal y explicar la relación. Si no es un defecto del
 producto, documentar la causa de entorno/fixture y su resolución verificada.
 
@@ -95,11 +95,11 @@ que pruebe la corrección y deje evidencia vinculada.
 | Resultado obtenido | No se observaron campos de identidad, pero no apareció el aviso RF02 en las preguntas del reporte |
 | Evidencia | docs/testing/data/alpha/2026-10-11/TC-ALPHA-14-sin-aviso-rf02.mp4 |
 | Ticket de bug en Jira | TD-130 (https://dog-reports-team3.atlassian.net/browse/TD-130), creado retroactivamente el 2026-10-12 en T11 |
-| Estado y responsable | pendiente de verificación; Erick Herrera |
+| Estado y responsable | corregido; Erick Herrera |
 | Diagnóstico | Confirmado en ejecución manual alfa; la UI automatizada de T5 ya cubre el aviso RF02 y la ausencia de campos de identidad, pero la evidencia que abrió el incidente fue Android real y debe repetirse ahí |
 | Solución | Aviso visible agregado en el formulario público sin pedir nombre, teléfono, correo ni otros datos de identidad |
-| Commit o PR correctivo | Pendiente de commit T5 |
-| Verificación y cierre | RUN-117 pasó con `npm run test:report-form-ui` y cubrió `TC-REPORTE-03`; no cerrar hasta repetir `TC-ALPHA-14` en Android real y registrar la nueva RUN |
+| Commit o PR correctivo | `f18ba0b` (PR #64) |
+| Verificación y cierre | RUN-117 pasó con `npm run test:report-form-ui` y cubrió `TC-REPORTE-03`. RUN-137 pasó el 2026-10-12 en Android real con build `88950993dfb3c60f5a5262357b9ec1de695af307`; la evidencia `docs/testing/data/alpha/2026-10-12/TC-ALPHA-14-aviso-rf02-visible.jpg` muestra el aviso RF02 visible en el formulario público y cierra la verificación |
 
 ### INC-3 — La persona no encontró el mapa para comprobar el reporte recién enviado
 
