@@ -4,13 +4,13 @@
  * Loading and disabled block presses immediately (the double-tap guard the screens rely on).
  */
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors, layout, radius, spacing, type } from '../../theme/index.js';
+import { colors, fontFamily, layout, radius, spacing, type } from '../../theme/index.js';
 
 const variants = {
   primary: { bg: colors.primary, fg: colors.onPrimary, border: colors.primary },
   secondary: { bg: colors.surface, fg: colors.primary, border: colors.outlineSoft },
   ghost: { bg: colors.transparent, fg: colors.primary, border: colors.transparent },
-  signal: { bg: colors.signal, fg: colors.forestDeep, border: colors.signal, offBg: 'rgba(201,230,196,0.14)', offFg: colors.onForestSubtle, offBorder: 'rgba(201,230,196,0.3)' },
+  signal: { display: true, bg: colors.signal, fg: colors.forestDeep, border: colors.signal, offBg: 'rgba(201,230,196,0.14)', offFg: colors.onForestSubtle, offBorder: 'rgba(201,230,196,0.3)' },
   glass: { bg: 'rgba(255,255,255,0.14)', fg: colors.onPrimary, border: 'rgba(255,255,255,0.45)' },
   destructive: { bg: colors.surface, fg: colors.danger, border: colors.danger },
 };
@@ -45,7 +45,7 @@ export default function AppButton({ title, onPress, variant = 'primary', size = 
         style,
       ]}
     >
-      {loading ? <ActivityIndicator color={tone.fg} /> : <Text style={[type.button, { color: blocked && tone.offFg ? tone.offFg : tone.fg }]}>{title}</Text>}
+      {loading ? <ActivityIndicator color={tone.fg} /> : <Text style={[type.button, tone.display && { fontFamily: fontFamily.displayMedium, fontSize: 19 }, { color: blocked && tone.offFg ? tone.offFg : tone.fg }]}>{title}</Text>}
     </Pressable>
   );
 }

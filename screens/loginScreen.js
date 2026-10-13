@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppButton, AppTextField, Banner, ContourBackdrop, Icon, StateView } from "../components/ui/index.js";
+import { AppButton, AppTextField, Banner, Icon, PawTrail, StateView } from "../components/ui/index.js";
 import { colors, fontFamily, layout, spacing, type } from "../theme/index.js";
 
 /**
@@ -42,7 +42,6 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
-      <ContourBackdrop />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.container}>
         {onBack && !loading ? (
           <Pressable
@@ -119,6 +118,11 @@ export default function LoginScreen({ onLogin, onBack, error, pending, loading }
               <Text style={styles.footer}>{t("login.footer")}</Text>
             </View>
           )}
+          {keyboardOpen ? null : (
+            <View style={styles.trail}>
+              <PawTrail />
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -132,15 +136,16 @@ const styles = StyleSheet.create({
   backText: { ...type.button, fontSize: 15, color: colors.onPrimary },
   pressed: { opacity: 0.7 },
   disabled: { opacity: 0.45 },
-  content: { flexGrow: 1, justifyContent: "flex-start", gap: spacing.xxxl + spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl },
+  content: { flexGrow: 1, justifyContent: "flex-start", gap: spacing.xxxl, paddingTop: spacing.xxl, paddingBottom: spacing.xxl },
   heading: { gap: spacing.xs, paddingTop: spacing.xl },
-  title: { fontFamily: fontFamily.display, fontSize: 76, lineHeight: 92, letterSpacing: -0.5, color: colors.onPrimary },
-  titleCompact: { fontSize: 48, lineHeight: 60 },
+  title: { fontFamily: fontFamily.display, fontSize: 52, lineHeight: 62, letterSpacing: -0.5, color: colors.onPrimary },
+  titleCompact: { fontSize: 36, lineHeight: 44 },
   subtitle: { ...type.body, color: colors.onForest, maxWidth: 320 },
   form: { gap: spacing.xl },
   toggle: { minHeight: layout.minTouch, justifyContent: "center", paddingLeft: spacing.sm },
   toggleText: { color: colors.signal, fontSize: 14 },
-  submit: { marginTop: spacing.xs },
+  submit: { marginTop: spacing.xs, borderRadius: 12 },
   footer: { ...type.caption, color: colors.onForest, textAlign: "left" },
+  trail: { flex: 1, minHeight: 120 },
   loading: { alignItems: "flex-start", paddingHorizontal: 0 },
 });

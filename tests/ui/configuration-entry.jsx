@@ -23,13 +23,14 @@ import semibold from '@expo-google-fonts/plus-jakarta-sans/600SemiBold/PlusJakar
 import workMedium from '@expo-google-fonts/work-sans/500Medium/WorkSans_500Medium.ttf';
 import workSemibold from '@expo-google-fonts/work-sans/600SemiBold/WorkSans_600SemiBold.ttf';
 import workBold from '@expo-google-fonts/work-sans/700Bold/WorkSans_700Bold.ttf';
-import bigShoulders from '@expo-google-fonts/big-shoulders-display/BigShouldersDisplay_800ExtraBold.ttf';
+import fredokaMedium from '@expo-google-fonts/fredoka/500Medium/Fredoka_500Medium.ttf';
+import fredokaSemibold from '@expo-google-fonts/fredoka/600SemiBold/Fredoka_600SemiBold.ttf';
 import UiKitFixture from './ui-kit-fixture.jsx';
 
 if (new URLSearchParams(location.search).has('association-preview')) i18n.changeLanguage('es');
 
 const fonts = document.createElement('style');
-fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})} @font-face{font-family:PlusJakartaSans_600SemiBold;src:url(${semibold})} @font-face{font-family:WorkSans_500Medium;src:url(${workMedium})} @font-face{font-family:WorkSans_600SemiBold;src:url(${workSemibold})} @font-face{font-family:WorkSans_700Bold;src:url(${workBold})} @font-face{font-family:BigShouldersDisplay_800ExtraBold;src:url(${bigShoulders})}`;
+fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})} @font-face{font-family:PlusJakartaSans_600SemiBold;src:url(${semibold})} @font-face{font-family:WorkSans_500Medium;src:url(${workMedium})} @font-face{font-family:WorkSans_600SemiBold;src:url(${workSemibold})} @font-face{font-family:WorkSans_700Bold;src:url(${workBold})} @font-face{font-family:Fredoka_500Medium;src:url(${fredokaMedium})} @font-face{font-family:Fredoka_600SemiBold;src:url(${fredokaSemibold})}`;
 document.head.appendChild(fonts);
 
 const previewReport = (id, incident, sighting, details, color, size, collar, acceptedAt) => ({

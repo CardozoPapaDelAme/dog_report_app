@@ -30,7 +30,7 @@
     "test:docs": "node scripts/check-doc-paths.mjs"
   },
   "dependencies": {
-    "@expo-google-fonts/big-shoulders-display": "^0.2.3",
+    "@expo-google-fonts/fredoka": "^0.4.1",
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo-google-fonts/work-sans": "^0.4.2",
     "@expo/metro-runtime": "~57.0.15",

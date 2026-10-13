@@ -9,7 +9,8 @@ import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/70
 import { WorkSans_500Medium } from '@expo-google-fonts/work-sans/500Medium';
 import { WorkSans_600SemiBold } from '@expo-google-fonts/work-sans/600SemiBold';
 import { WorkSans_700Bold } from '@expo-google-fonts/work-sans/700Bold';
-import BigShouldersDisplay_800ExtraBold from '@expo-google-fonts/big-shoulders-display/BigShouldersDisplay_800ExtraBold.ttf';
+import { Fredoka_500Medium } from '@expo-google-fonts/fredoka/500Medium';
+import { Fredoka_600SemiBold } from '@expo-google-fonts/fredoka/600SemiBold';
 
 export const fontAssets = {
   PlusJakartaSans_400Regular,
@@ -18,7 +19,8 @@ export const fontAssets = {
   WorkSans_500Medium,
   WorkSans_600SemiBold,
   WorkSans_700Bold,
-  BigShouldersDisplay_800ExtraBold,
+  Fredoka_500Medium,
+  Fredoka_600SemiBold,
 };
 
 export const fontFamily = {
@@ -28,5 +30,6 @@ export const fontFamily = {
   labelMedium: 'WorkSans_500Medium',
   label: 'WorkSans_600SemiBold',
   number: 'WorkSans_700Bold',
-  display: 'BigShouldersDisplay_800ExtraBold', // signage-style condensed display, titles only
+  display: 'Fredoka_600SemiBold', // friendly rounded display: titles
+  displayMedium: 'Fredoka_500Medium', // friendly rounded display: key buttons
 };
