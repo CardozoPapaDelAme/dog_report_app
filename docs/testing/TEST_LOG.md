@@ -1,6 +1,7 @@
 # Test log — registro de ejecuciones
 
-Estado: plantilla de T1 con ejecuciones de casos de T5, T6, T7, T8 y T9 (RUN-1 a RUN-137).
+Estado: plantilla de T1 con ejecuciones de casos de T5, T6, T7, T8 y T9 (RUN-1 a RUN-137)
+y ejecuciones automatizadas de casos pendientes (RUN-138 a RUN-144).
 Convenciones: `docs/testing/README.md`. Cada ejecutor agrega sus filas; T12 / TD-125
 consolida el resumen. Los ejemplos de formato no cuentan como ejecuciones.
 
@@ -14,7 +15,10 @@ registrar marcadores ni resultados simulados como ejecuciones.
 
 ## Resumen (T12)
 
-Consolidado por T12 / TD-125 el 2026-10-13 sobre RUN-1 a RUN-137 y CI-1 a CI-20.
+Consolidado por T12 / TD-125 el 2026-10-13 sobre RUN-1 a RUN-137 y CI-1 a CI-20,
+y actualizado con RUN-138 a RUN-144 (ejecución automatizada local del 2026-10-12,
+America/Chihuahua, en el commit `5ca21a4ec8e0e568222762f87d31f56b5d57ff14` con
+árbol limpio), que ejecutan los casos que estaban bloqueados o sin fila RUN propia.
 Incluye la corrida final T10 (CI-11 a CI-20) y la aceptación T14 registrada por
 equivalencia (`docs/testing/ACCEPTANCE.md`), que no agrega filas RUN. Casos y
 suites de CI se informan por separado y no se suman entre sí.
@@ -28,18 +32,18 @@ suites de CI se informan por separado y no se suman entre sí.
 | ASOCIACION | T6 | 11 (RUN-31–41) | 11 | 0 | 0 | 0 | 11 | 11 pasó |
 | MODERACION | T6 | 19 (RUN-42–59, RUN-82) | 18 | 1 | 0 | 0 | 18 | 18 pasó (TC-MODERACION-07 falló en RUN-48, `INC-1`, y pasó en RUN-82) |
 | CONFIGURACION | T6 | 6 (RUN-60–65) | 6 | 0 | 0 | 0 | 6 | 6 pasó |
-| ZONAS | T6 | 6 (RUN-66–71) | 6 | 0 | 0 | 0 | 6 | 6 pasó |
+| ZONAS | T6 | 7 (RUN-66–71, RUN-139) | 7 | 0 | 0 | 0 | 7 | 7 pasó (TC-ZONAS-07 en RUN-139) |
 | DUPLICADOS | T6 | 7 (RUN-72–78) | 7 | 0 | 0 | 0 | 7 | 7 pasó |
 | AUDITORIA | T6 | 3 (RUN-79–81) | 3 | 0 | 0 | 0 | 3 | 3 pasó |
 | ALPHA | T7 | 35 (RUN-83–116, RUN-137) | 33 | 1 | 1 | 0 | 33 | 33 pasó (TC-ALPHA-14 falló en RUN-96, `INC-2`, y pasó en RUN-137; TC-ALPHA-32 bloqueado en RUN-114 y pasó en RUN-116) |
-| REPORTE | T5 | 7 (RUN-117–123) | 6 | 0 | 1 | 0 | 21 | 19 pasó, 2 bloqueado (TC-REPORTE-15 y TC-REPORTE-16, RUN-123) |
+| REPORTE | T5 | 13 (RUN-117–123, RUN-138, RUN-140–144) | 12 | 0 | 1 | 0 | 26 | 26 pasó (TC-REPORTE-15 y TC-REPORTE-16 bloqueados en RUN-123 y pasaron en RUN-138) |
 | UAT | T8 | 10 (RUN-124–133) | 9 | 1 | 0 | 0 | 3 (9 combinaciones participante–caso) | 9 combinaciones pasó (TC-UAT-02 de U03 falló en RUN-126, `INC-3`, y pasó en RUN-133) |
 | NF | T9 | 3 (RUN-134–136) | 2 | 0 | 0 | 1 | 22 | 1 pasó (TC-NF-02); 21 «pasó con omisiones» (RUN-134) |
-| **Total** | | **137** | **131** | **3** | **2** | **1** | **160** | 137 pasó, 0 falló, 2 bloqueado, 21 pasó con omisiones |
+| **Total** | | **144** | **138** | **3** | **2** | **1** | **166** | 145 pasó, 0 falló, 0 bloqueado, 21 pasó con omisiones |
 
 Cómo se calculó: el módulo es el prefijo del primer ID de caso de cada fila
 (`TC-<módulo>-n`) y el resultado es la columna «Resultado» de la fila. Las filas
-RUN-117 a RUN-123 y RUN-134 agrupan varios casos: cuentan una vez como fila y
+RUN-117 a RUN-123, RUN-134 y RUN-138 agrupan varios casos: cuentan una vez como fila y
 cada ID de caso cuenta en «Casos distintos» (RUN-134 cubre TC-NF-01, 05, 06,
 13–26, 31, 32, 34 y 35: 21 IDs). El resultado efectivo toma la última ejecución
 de cada caso. «Otro» es el valor «pasó con omisiones» de RUN-134, que no está
@@ -159,10 +163,11 @@ Fuente: `docs/testing/INCIDENTS.md`.
 
 ### Revisión del registro (T12)
 
-Comprobado: las 137 filas RUN tienen fecha, ejecutor, entorno y resultado; las 3
+Comprobado: las 144 filas RUN tienen fecha, ejecutor, entorno y resultado; las 3
 filas «falló» (RUN-48, RUN-96, RUN-126) tienen su `INC-n`, cada uno existe en
 `docs/testing/INCIDENTS.md` y su ejecución de origen existe en este registro; las
-2 filas «bloqueado» (RUN-114, RUN-123) tienen motivo y responsable. Brechas que
+2 filas «bloqueado» (RUN-114, RUN-123) tienen motivo y responsable, y ambos
+casos tienen una ejecución posterior que pasó (RUN-116 y RUN-138). Brechas que
 no se pueden completar con la evidencia del repositorio (no se corrigieron):
 
 - RUN-124 a RUN-136: hora no registrada. RUN-124 a RUN-133, RUN-135 y RUN-136:
@@ -170,11 +175,16 @@ no se pueden completar con la evidencia del repositorio (no se corrigieron):
 - RUN-117 a RUN-123 y RUN-134: el commit probado incluye cambios sin commit
   («working tree»), por lo que no es reproducible desde un SHA.
 - RUN-134: resultado «pasó con omisiones», fuera de los valores de la convención.
-- RUN-123 (TC-REPORTE-15 y TC-REPORTE-16, bloqueado): sin reejecución registrada;
-  la suite «PostgreSQL · reportero público (T5)» pasó en CI-10 y CI-20.
-- Casos especificados sin fila RUN propia: TC-ZONAS-07 (requiere PostgreSQL; la
-  suite «PostgreSQL · zonas (FAB-2)» pasó en CI-6 y CI-16), TC-REPORTE-18,
-  TC-REPORTE-25, TC-REPORTE-26, TC-REPORTE-28 y TC-REPORTE-29.
+- RUN-123 (TC-REPORTE-15 y TC-REPORTE-16, bloqueado): la suite «PostgreSQL ·
+  reportero público (T5)» pasó en CI-10 y CI-20; reejecutado localmente con
+  PostgreSQL/PostGIS real en RUN-138, que pasó.
+- Casos que no tenían fila RUN propia en la consolidación de T12 y ya la tienen:
+  TC-ZONAS-07 (RUN-139, PostgreSQL/PostGIS real; la suite «PostgreSQL · zonas
+  (FAB-2)» ya había pasado en CI-6 y CI-16), TC-REPORTE-18 (RUN-140),
+  TC-REPORTE-25 (RUN-141), TC-REPORTE-26 (RUN-142), TC-REPORTE-28 (RUN-143) y
+  TC-REPORTE-29 (RUN-144), todos con pasó. Son ejecuciones locales con dobles
+  (salvo RUN-138 y RUN-139) y no cubren dispositivo, API desplegada ni JWT real;
+  RUN-143 no verifica la versión de configuración asociada al motivo.
 - Casos sin fila RUN propia cuyo comportamiento se ejerció en otra ejecución:
   TC-REPORTE-17 en Android real por TC-ALPHA-13 (RUN-95); TC-REPORTE-19 por
   TC-ALPHA-03 (RUN-85) y TC-ALPHA-06 (RUN-88); TC-REPORTE-20 en parte por
@@ -191,17 +201,16 @@ no se pueden completar con la evidencia del repositorio (no se corrigieron):
 
 ### Conclusiones y pendientes
 
-- De los 160 casos con ejecución registrada, ninguno tiene resultado efectivo
-  «falló»: 137 pasaron, 21 «pasó con omisiones» (RUN-134) y 2 siguen bloqueados
-  (TC-REPORTE-15 y TC-REPORTE-16). Los 3 incidentes están cerrados y T11 está
-  hecho, sin incidentes nuevos tras T10 y T14.
+- De los 166 casos con ejecución registrada, ninguno tiene resultado efectivo
+  «falló» ni «bloqueado»: 145 pasaron y 21 «pasó con omisiones» (RUN-134).
+  TC-REPORTE-15 y TC-REPORTE-16, bloqueados en RUN-123, pasaron en RUN-138.
+  Los 3 incidentes están cerrados y T11 está hecho, sin incidentes nuevos tras
+  T10 y T14 ni en RUN-138 a RUN-144.
 - La corrida final T10 (CI-11 a CI-20, `8895099`) está en verde en las 10 suites.
 - Aceptación T14: aceptado con observaciones, por equivalencia con la alfa y como
   veredicto del equipo; no hubo ejecución separada en la build final.
-- Pendientes (de otros responsables): reejecución o justificación de
-  TC-REPORTE-15 y TC-REPORTE-16; casos sin fila RUN propia ni ejecución
-  equivalente (TC-REPORTE-18, 25, 26, 28 y 29, y las partes no cubiertas de
-  TC-REPORTE-20 y 31; ver Revisión);
+- Pendientes (de otros responsables): partes no cubiertas de TC-REPORTE-20 y
+  TC-REPORTE-31 (ver Revisión);
   carga k6, RNF02 en iPhone físico, API real y accesibilidad de T9; 13 RNF sin
   cubrir en la matriz de T4; brechas de hora, commit y entorno anotadas en
   Revisión; partes de aceptación sin ejecución equivalente.
@@ -351,6 +360,13 @@ relevantes en entorno/notas. Resultado obtenido debe explicar qué se observó.
 | RUN-135 | 2026-10-12; hora no registrada; America/Chihuahua | TC-NF-02; docs/testing/NON-FUNCTIONAL.md | Ricardo Becerra Bitar — medición manual | Simulador Xcode, iPhone 18 Pro; iOS 27; Wi‑Fi | no registrado | pasó | Desde tocar “Mapa” hasta mostrar clusters públicos: 3.8 s, menor a 5 s. Los clusters mostrados corresponden a fixtures fuera del área de prueba. | no aplica | Sin ayuda. Evidencia de simulador; falta repetir en iPhone físico y medir el envío de reporte. |
 | RUN-136 | 2026-10-12; hora no registrada; America/Chihuahua | TC-NF-02; docs/testing/NON-FUNCTIONAL.md | Ricardo Becerra Bitar — medición manual | Simulador Xcode, iPhone 18 Pro; iOS 27; Wi‑Fi | no registrado | pasó | Desde tocar “Enviar reporte” hasta la confirmación: 2.38 s. Reporte de prueba sin foto y sin ayuda. | no aplica | Evidencia de simulador; falta repetir en iPhone físico. |
 | RUN-137 | 2026-10-12 18:12 America/Mexico_City | TC-ALPHA-14; docs/testing/cases/alpha.md | Erick Herrera — reejecución manual en Android real | Dispositivo Android real; staging con servicios reales; samsung SM-S918B Android 16 SDK 36; app 1.0.0 com.wildogscanner.app; build development/debug no Expo Go; verificación de INC-2 | 88950993dfb3c60f5a5262357b9ec1de695af307 | pasó | Al recorrer el formulario público se observó el aviso RF02 visible y no se observaron campos de nombre, teléfono ni correo | INC-2 | `docs/testing/data/alpha/2026-10-12/TC-ALPHA-14-aviso-rf02-visible.jpg`; correctivo `f18ba0b` (PR #64) |
+| RUN-138 | 2026-10-12 20:32:28–20:32:55 America/Chihuahua (2026-10-13 02:32:28–02:32:55 UTC) | TC-REPORTE-15, TC-REPORTE-16; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; Docker 29.2.1 con `postgis/postgis:17-3.5` (contenedor desechable en loopback creado por `scripts/test-postgres.mjs`, migraciones de `supabase/migrations`); PostgreSQL/PostGIS real; sin API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `npm run test:postgres -- report`: suite «PostgreSQL · reportero público (T5)» 1 passed (2 steps), 0 failed, 0 omitidos. Test `supabase/functions/api/tests/reportPostgres.test.js` — RNF36 SQL: report details are validated by the real PostgreSQL trigger; paso «accepts valid details for minima, maxima and representative averages» ok (TC-REPORTE-15) y paso «rejects invalid details with trigger messages» ok (TC-REPORTE-16). Reejecución del bloqueo de RUN-123 | no aplica | `npm run test:postgres -- report` en el commit probado con árbol limpio; salida de consola local sin artefacto persistente |
+| RUN-139 | 2026-10-12 20:32:59–20:33:10 America/Chihuahua (2026-10-13 02:32:59–02:33:10 UTC) | TC-ZONAS-07; docs/testing/cases/mapa-y-roles.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; Docker 29.2.1 con `postgis/postgis:17-3.5` (contenedor desechable en loopback creado por `scripts/test-postgres.mjs`, migraciones de `supabase/migrations`); PostgreSQL/PostGIS real; sin API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `npm run test:postgres -- zone`: suite «PostgreSQL · zonas (FAB-2)» 1 passed (10 steps), 0 failed, 0 omitidos. Test `supabase/functions/api/tests/zonePostgres.test.js` — FAB-2 SQL: PostGIS zone creation, replacement, rollback and concurrency; pasos ok, entre ellos el rechazo de geometría vacía y autointersectada por PostGIS real, rollback de retiro, activación y auditoría juntos, y reemplazos concurrentes con exactamente una zona activa | no aplica | `npm run test:postgres -- zone` en el commit probado con árbol limpio; salida de consola local sin artefacto persistente |
+| RUN-140 | 2026-10-12 20:33:17–20:33:32 America/Chihuahua (2026-10-13 02:33:17–02:33:32 UTC) | TC-REPORTE-18; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0, Playwright 1.63.0 con Chromium headless shell 1243; repositorio en memoria, dobles de envío y subida, y API interceptada; sin PostgreSQL, API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | Deno: `hooks/reportDraftQueueController.test.js` — L8 queue controller sends photo only after L7 receipt and uses receipt report id: 1 passed, 0 failed, 4 filtered out (la subida ocurre después del envío y usa el `report_id` del recibo). Playwright: `tests/ui/reportForm.spec.js` — sets honeypot signal when a hidden field is filled and surfaces pending photo state: 1 passed (se muestra el estado de foto pendiente). No se ejercitó la foto real del dispositivo ni la subida a Storage real | no aplica | `deno test --no-lock --allow-env --config supabase/functions/api/deno.json hooks/reportDraftQueueController.test.js --filter "L8 queue controller sends photo only after L7 receipt and uses receipt report id"`; `npx playwright test tests/ui/reportForm.spec.js -g "sets honeypot signal when a hidden field is filled and surfaces pending photo state"`; salida de consola local sin artefacto persistente |
+| RUN-141 | 2026-10-12 20:33:32 America/Chihuahua (2026-10-13 02:33:32 UTC) | TC-REPORTE-25; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; geofence y repositorio simulados con dobles; sin PostgreSQL, API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `supabase/functions/api/services/reportService.test.js` — temporary missing-geofence flag does not bypass an active geofence miss: 1 passed, 0 failed, 14 filtered out. Con zona activa y punto fuera se rechaza `outside_geofence` y no hay llamada `insertReport`, aun con la bandera temporal activada | no aplica | `deno test --no-lock --allow-env --config supabase/functions/api/deno.json supabase/functions/api/services/reportService.test.js --filter "temporary missing-geofence flag does not bypass an active geofence miss"`; salida de consola local sin artefacto persistente |
+| RUN-142 | 2026-10-12 20:33:32–20:33:33 America/Chihuahua (2026-10-13 02:33:32–02:33:33 UTC) | TC-REPORTE-26; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; geofence y repositorio simulados con dobles; sin PostgreSQL, API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `supabase/functions/api/services/reportService.test.js` — missing active geofence still fails closed by default y temporary missing-geofence flag allows report creation without removing geofence checks: 2 passed, 0 failed, 13 filtered out. Sin zona activa falla `geofence_not_configured` antes de cuota, confianza o inserción; solo con la bandera temporal explícita se inserta | no aplica | `deno test --no-lock --allow-env --config supabase/functions/api/deno.json supabase/functions/api/services/reportService.test.js --filter "/^(missing active geofence still fails closed by default\|temporary missing-geofence flag allows report creation without removing geofence checks)$/"`; salida de consola local sin artefacto persistente |
+| RUN-143 | 2026-10-12 20:33:33 America/Chihuahua (2026-10-13 02:33:33 UTC) | TC-REPORTE-28; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; configuración de confianza y cliente SQL simulados con dobles; sin PostgreSQL, API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `supabase/functions/api/services/trustService.test.js` — high trust can auto-publish when GPS and fingerprint signals are clean y `supabase/functions/api/repositories/reportRepository.test.js` — report insert binds details with the driver's jsonb helper: 2 passed, 0 failed, 1 filtered out. Con señales limpias el nivel es `high`, el estado `visible` y el motivo `high_trust_auto_publish`; el test no verifica la versión de la configuración asociada al motivo | no aplica | `deno test --no-lock --allow-env --config supabase/functions/api/deno.json supabase/functions/api/services/trustService.test.js supabase/functions/api/repositories/reportRepository.test.js --filter "/^(high trust can auto-publish when GPS and fingerprint signals are clean\|report insert binds details with the driver's jsonb helper)$/"`; salida de consola local sin artefacto persistente |
+| RUN-144 | 2026-10-12 20:33:33 America/Chihuahua (2026-10-13 02:33:33 UTC) | TC-REPORTE-29; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; configuración de confianza simulada; sin PostgreSQL, API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `supabase/functions/api/services/trustService.test.js` — mock and imprecise locations stay pending even with otherwise high scores: 1 passed, 0 failed, 1 filtered out. GPS simulado queda en `pending_review` con motivo `mock_location`; GPS impreciso (100 m) queda en `pending_review` con motivo `imprecise_gps` | no aplica | `deno test --no-lock --allow-env --config supabase/functions/api/deno.json supabase/functions/api/services/trustService.test.js --filter "mock and imprecise locations stay pending even with otherwise high scores"`; salida de consola local sin artefacto persistente |
 
 Formato para copiar (reemplazar todos los marcadores antes de registrar):
 
