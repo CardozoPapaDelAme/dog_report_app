@@ -432,7 +432,7 @@ Cómo los espera el profesor (adaptado a lo que ya tiene el repo):
   pendientes de registrar.
 
 ### T12 · Test log con resumen y resultados
-- **Persona:** P4 · **Estado:** en curso · **Jira:** TD-125 · **Entregable:** Reporte con resumen y resultados
+- **Persona:** P4 · **Estado:** hecho · **Jira:** TD-125 · **Entregable:** Reporte con resumen y resultados
 - **Depende de:** T4, T7, T8, T9, T10, T14 (resume sus resultados).
 - **Alcance (`docs/testing/TEST_LOG.md`):**
   - Revisar que el registro de ejecuciones esté completo (cada caso ejecutado tiene
