@@ -344,3 +344,25 @@ test('Expo Go fallback retries after an error', async ({ page }) => {
   await page.getByRole('button', { name: 'Reintentar' }).click();
   await expect(page.getByRole('button', { name: /Ataque a mascota/ })).toBeVisible();
 });
+
+// TD-133: sheets close when the area outside them is tapped (a click on the map strip above the sheet).
+test('tapping outside closes the flag sheet and the zone sheet', async ({ page }) => {
+  await mockPublic(page);
+  const sheet = await openFlagSheet(page);
+  await expect(sheet).toBeVisible();
+  await page.mouse.click(195, 70);
+  await expect(page.getByTestId('flag-sheet')).toHaveCount(0);
+  await page.getByTestId('pin-sheet').getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await expect(page.getByTestId('zone-sheet')).toBeVisible();
+  await page.mouse.click(195, 70);
+  await expect(page.getByTestId('zone-sheet')).toHaveCount(0);
+});
+
+// TD-133: pin and flag sheets of the same report are siblings and must not share a React key.
+test('opening the pin and flag sheets of one report logs no duplicate-key error', async ({ page }) => {
+  const logged = [];
+  page.on('console', (message) => { if (message.type() === 'error') logged.push(message.text()); });
+  await mockPublic(page);
+  await openFlagSheet(page);
+  expect(logged.filter((text) => /same key/.test(text))).toEqual([]);
+});

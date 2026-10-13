@@ -4,7 +4,7 @@
  * counter, and a neutral outcome message.
  */
 import { useState, useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { FINAL_FLAG_OUTCOMES, sendReportFlag } from '../hooks/reportFlagSubmit.js';
 import { getOrCreateDeviceFingerprint } from '../hooks/deviceFingerprint';
@@ -51,71 +51,82 @@ export default function ReportFlagSheet({ report, onClose, t, send = sendReportF
   const message = outcome ? t(`flag.outcome.${outcome.key}`, { minutes: outcome.retryAfterMinutes }) : null;
   const success = outcome?.key === 'submitted';
   return (
-    <View style={styles.sheet} testID="flag-sheet">
-      <View style={styles.grabber} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text accessibilityRole="header" style={styles.title}>{t('flag.title')}</Text>
-        {message ? (
-          <View accessibilityRole="alert" style={[styles.notice, success && styles.noticeOk]}>
-            <Text style={styles.noticeText}>{message}</Text>
-          </View>
-        ) : null}
-        {done ? null : (
-          <>
-            <Text style={styles.label}>{t('flag.reasonLabel')}</Text>
-            <View accessibilityRole="radiogroup" style={styles.reasons}>
-              {FLAG_REASONS.map((value) => {
-                const checked = reason === value;
-                return (
-                  <Pressable
-                    key={value}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked, disabled: submitting }}
-                    aria-checked={checked}
-                    disabled={submitting}
-                    onPress={() => setReason(value)}
-                    style={[styles.reason, checked && styles.reasonChecked]}
-                  >
-                    <View style={[styles.radio, checked && styles.radioChecked]} />
-                    <Text style={styles.reasonText}>{t(`flag.reasons.${value}`)}</Text>
-                  </Pressable>
-                );
-              })}
+    <KeyboardAvoidingView pointerEvents="box-none" style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Tap outside the sheet to dismiss; hidden from assistive tech so it adds no second "close" button. */}
+      <Pressable
+        accessible={false}
+        aria-hidden
+        importantForAccessibility="no"
+        onPress={submitting ? undefined : onClose}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.sheet} testID="flag-sheet">
+        <View style={styles.grabber} />
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <Text accessibilityRole="header" style={styles.title}>{t('flag.title')}</Text>
+          {message ? (
+            <View accessibilityRole="alert" style={[styles.notice, success && styles.noticeOk]}>
+              <Text style={styles.noticeText}>{message}</Text>
             </View>
-            <Text style={styles.label}>{t('flag.detailLabel')}</Text>
-            <TextInput
-              accessibilityLabel={t('flag.detailLabel')}
-              editable={!submitting}
-              multiline
-              onChangeText={setDetail}
-              style={styles.input}
-              value={detail}
-            />
-            <Text style={[styles.counter, tooLong && styles.counterError]}>
-              {t('flag.counter', { count: length, max: FLAG_DETAIL_MAX })}
-            </Text>
-            {tooLong ? <Text accessibilityRole="alert" style={styles.counterError}>{t('flag.tooLong', { max: FLAG_DETAIL_MAX })}</Text> : null}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !canSubmit }}
-              disabled={!canSubmit}
-              onPress={submit}
-              style={[styles.submit, !canSubmit && styles.submitDisabled]}
-            >
-              <Text style={styles.submitText}>{t(submitting ? 'flag.sending' : 'flag.submit')}</Text>
-            </Pressable>
-          </>
-        )}
-        <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-          <Text style={styles.closeText}>{t(done ? 'map.close' : 'flag.cancel')}</Text>
-        </Pressable>
-      </ScrollView>
-    </View>
+          ) : null}
+          {done ? null : (
+            <>
+              <Text style={styles.label}>{t('flag.reasonLabel')}</Text>
+              <View accessibilityRole="radiogroup" style={styles.reasons}>
+                {FLAG_REASONS.map((value) => {
+                  const checked = reason === value;
+                  return (
+                    <Pressable
+                      key={value}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked, disabled: submitting }}
+                      aria-checked={checked}
+                      disabled={submitting}
+                      onPress={() => setReason(value)}
+                      style={[styles.reason, checked && styles.reasonChecked]}
+                    >
+                      <View style={[styles.radio, checked && styles.radioChecked]} />
+                      <Text style={styles.reasonText}>{t(`flag.reasons.${value}`)}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={styles.label}>{t('flag.detailLabel')}</Text>
+              <TextInput
+                accessibilityLabel={t('flag.detailLabel')}
+                editable={!submitting}
+                multiline
+                onChangeText={setDetail}
+                style={styles.input}
+                value={detail}
+              />
+              <Text style={[styles.counter, tooLong && styles.counterError]}>
+                {t('flag.counter', { count: length, max: FLAG_DETAIL_MAX })}
+              </Text>
+              {tooLong ? <Text accessibilityRole="alert" style={styles.counterError}>{t('flag.tooLong', { max: FLAG_DETAIL_MAX })}</Text> : null}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !canSubmit }}
+                disabled={!canSubmit}
+                onPress={submit}
+                style={[styles.submit, !canSubmit && styles.submitDisabled]}
+              >
+                <Text style={styles.submitText}>{t(submitting ? 'flag.sending' : 'flag.submit')}</Text>
+              </Pressable>
+            </>
+          )}
+          <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeText}>{t(done ? 'map.close' : 'flag.cancel')}</Text>
+          </Pressable>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '90%', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, elevation: 12 },
+  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end' },
+  sheet: { maxHeight: '90%', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, elevation: 12 },
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginTop: 10 },
   content: { padding: 20, gap: 8 },
   title: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 20 },

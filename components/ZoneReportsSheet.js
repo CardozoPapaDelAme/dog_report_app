@@ -34,35 +34,45 @@ export default function ZoneReportsSheet({ cluster, zoom, onSelect, onClose, t, 
 
   const retry = () => setAttempt((value) => value + 1);
   return (
-    <View style={styles.sheet} testID="zone-sheet">
-      <View style={styles.grabber} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text accessibilityRole="header" style={styles.title}>{t('zone.title')}</Text>
-        {state.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('zone.loading')} color={colors.primary} /> : null}
-        {state.phase === 'empty' ? <Text style={styles.message}>{t('zone.empty')}</Text> : null}
-        {state.phase === 'offline' || state.phase === 'error' ? (
-          <View accessibilityRole="alert" style={styles.errorBox}>
-            <Text style={styles.message}>{t(state.phase === 'offline' ? 'zone.offline' : 'zone.error')}</Text>
-            <Pressable accessibilityRole="button" onPress={retry} style={styles.retryButton}>
-              <Text style={styles.retryText}>{t('map.retry')}</Text>
+    <>
+      {/* Tap outside the sheet to dismiss; hidden from assistive tech so it adds no second "close" button. */}
+      <Pressable
+        accessible={false}
+        aria-hidden
+        importantForAccessibility="no"
+        onPress={onClose}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.sheet} testID="zone-sheet">
+        <View style={styles.grabber} />
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text accessibilityRole="header" style={styles.title}>{t('zone.title')}</Text>
+          {state.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('zone.loading')} color={colors.primary} /> : null}
+          {state.phase === 'empty' ? <Text style={styles.message}>{t('zone.empty')}</Text> : null}
+          {state.phase === 'offline' || state.phase === 'error' ? (
+            <View accessibilityRole="alert" style={styles.errorBox}>
+              <Text style={styles.message}>{t(state.phase === 'offline' ? 'zone.offline' : 'zone.error')}</Text>
+              <Pressable accessibilityRole="button" onPress={retry} style={styles.retryButton}>
+                <Text style={styles.retryText}>{t('map.retry')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {state.reports.map((report) => (
+            <Pressable key={report.report_id} accessibilityRole="button" onPress={() => onSelect(report)} style={styles.row}>
+              <Text style={styles.rowTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
+              <Text style={styles.rowMeta}>
+                {`${t(`reportForm.sighting.${report.sighting_type}`)} · ${new Date(report.occurred_at).toLocaleDateString('es-MX')}`}
+              </Text>
+              {report.has_flags ? <Text style={styles.flagText}>{`⚑ ${t('map.pin.flagged')}`}</Text> : null}
             </Pressable>
-          </View>
-        ) : null}
-        {state.reports.map((report) => (
-          <Pressable key={report.report_id} accessibilityRole="button" onPress={() => onSelect(report)} style={styles.row}>
-            <Text style={styles.rowTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
-            <Text style={styles.rowMeta}>
-              {`${t(`reportForm.sighting.${report.sighting_type}`)} · ${new Date(report.occurred_at).toLocaleDateString('es-MX')}`}
-            </Text>
-            {report.has_flags ? <Text style={styles.flagText}>{`⚑ ${t('map.pin.flagged')}`}</Text> : null}
+          ))}
+          {state.phase === 'ready' ? <Text style={styles.note}>{t('zone.approximate')}</Text> : null}
+          <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeText}>{t('map.close')}</Text>
           </Pressable>
-        ))}
-        {state.phase === 'ready' ? <Text style={styles.note}>{t('zone.approximate')}</Text> : null}
-        <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-          <Text style={styles.closeText}>{t('map.close')}</Text>
-        </Pressable>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </>
   );
 }
 
