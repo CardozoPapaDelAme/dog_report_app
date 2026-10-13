@@ -1,7 +1,8 @@
 # Test log — registro de ejecuciones
 
-Estado: plantilla de T1 con ejecuciones de casos de T5, T6, T7, T8 y T9 (RUN-1 a RUN-137)
-y ejecuciones automatizadas de casos pendientes (RUN-138 a RUN-144).
+Estado: plantilla de T1 con ejecuciones de casos de T5, T6, T7, T8 y T9 (RUN-1 a RUN-137),
+ejecuciones automatizadas de casos pendientes (RUN-138 a RUN-144) y la prueba de
+carga k6 contra staging (RUN-145).
 Convenciones: `docs/testing/README.md`. Cada ejecutor agrega sus filas; T12 / TD-125
 consolida el resumen. Los ejemplos de formato no cuentan como ejecuciones.
 La versión en tabla única con el formato del curso, una fila por caso ejecutado,
@@ -20,7 +21,10 @@ registrar marcadores ni resultados simulados como ejecuciones.
 Consolidado por T12 / TD-125 el 2026-10-13 sobre RUN-1 a RUN-137 y CI-1 a CI-20,
 y actualizado con RUN-138 a RUN-144 (ejecución automatizada local del 2026-10-12,
 America/Chihuahua, en el commit `5ca21a4ec8e0e568222762f87d31f56b5d57ff14` con
-árbol limpio), que ejecutan los casos que estaban bloqueados o sin fila RUN propia.
+árbol limpio), que ejecutan los casos que estaban bloqueados o sin fila RUN propia,
+y con RUN-145 (prueba de carga k6 de solo lectura contra la API de staging, el
+2026-10-12 America/Chihuahua, script del commit
+`b95d4e8b21c30da3b472c9f18224d7d162f97358`).
 Incluye la corrida final T10 (CI-11 a CI-20) y la aceptación T14 registrada por
 equivalencia (`docs/testing/ACCEPTANCE.md`), que no agrega filas RUN. Casos y
 suites de CI se informan por separado y no se suman entre sí.
@@ -40,8 +44,8 @@ suites de CI se informan por separado y no se suman entre sí.
 | ALPHA | T7 | 35 (RUN-83–116, RUN-137) | 33 | 1 | 1 | 0 | 33 | 33 pasó (TC-ALPHA-14 falló en RUN-96, `INC-2`, y pasó en RUN-137; TC-ALPHA-32 bloqueado en RUN-114 y pasó en RUN-116) |
 | REPORTE | T5 | 13 (RUN-117–123, RUN-138, RUN-140–144) | 12 | 0 | 1 | 0 | 26 | 26 pasó (TC-REPORTE-15 y TC-REPORTE-16 bloqueados en RUN-123 y pasaron en RUN-138) |
 | UAT | T8 | 10 (RUN-124–133) | 9 | 1 | 0 | 0 | 3 (9 combinaciones participante–caso) | 9 combinaciones pasó (TC-UAT-02 de U03 falló en RUN-126, `INC-3`, y pasó en RUN-133) |
-| NF | T9 | 3 (RUN-134–136) | 2 | 0 | 0 | 1 | 22 | 1 pasó (TC-NF-02); 21 «pasó con omisiones» (RUN-134) |
-| **Total** | | **144** | **138** | **3** | **2** | **1** | **166** | 145 pasó, 0 falló, 0 bloqueado, 21 pasó con omisiones |
+| NF | T9 | 4 (RUN-134–136, RUN-145) | 3 | 0 | 0 | 1 | 23 | 2 pasó (TC-NF-02; TC-NF-03 en RUN-145); 21 «pasó con omisiones» (RUN-134) |
+| **Total** | | **145** | **139** | **3** | **2** | **1** | **167** | 146 pasó, 0 falló, 0 bloqueado, 21 pasó con omisiones |
 
 Cómo se calculó: el módulo es el prefijo del primer ID de caso de cada fila
 (`TC-<módulo>-n`) y el resultado es la columna «Resultado» de la fila. Las filas
@@ -127,10 +131,14 @@ Detalle: `docs/testing/UAT.md`.
   Las seis suites SQL quedaron omitidas por requerir Docker.
 - RNF02 en simulador Xcode (iPhone 18 Pro, iOS 27): mapa en 3.8 s (RUN-135) y
   envío de reporte en 2.38 s (RUN-136), menores a 5 s.
-- Carga (TC-NF-03, k6): pendiente, no ejecutada (k6 no instalado).
+- Carga (TC-NF-03, k6 v2.3.0): RUN-145, pasó. 2 usuarios virtuales por 60 s
+  contra la API de staging real (solo lectura: `/health`, `/public/clusters`,
+  `/public/reports`): 83 peticiones, 0 % de errores (umbral `rate<0.01`), p95
+  1.07 s. Carga ligera por diseño (plan Free); no muestra el comportamiento con
+  alta concurrencia y la latencia se midió desde la VPS, no desde un teléfono.
 - T9 está hecho (TD-122, PR #66, `docs/testing/BACKLOG.md`), con pendientes
-  declarados como limitaciones: mediciones en dispositivo, TalkBack, API real
-  y k6. La línea de estado de `docs/testing/NON-FUNCTIONAL.md` quedó alineada
+  declarados como limitaciones: mediciones en dispositivo, TalkBack y API real
+  (k6 se ejecutó después, en RUN-145). La línea de estado de `docs/testing/NON-FUNCTIONAL.md` quedó alineada
   (2026-10-13). Detalle: `docs/testing/NON-FUNCTIONAL.md`.
 
 ### Aceptación (T14)
@@ -165,7 +173,7 @@ Fuente: `docs/testing/INCIDENTS.md`.
 
 ### Revisión del registro (T12)
 
-Comprobado: las 144 filas RUN tienen fecha, ejecutor, entorno y resultado; las 3
+Comprobado: las 145 filas RUN tienen fecha, ejecutor, entorno y resultado; las 3
 filas «falló» (RUN-48, RUN-96, RUN-126) tienen su `INC-n`, cada uno existe en
 `docs/testing/INCIDENTS.md` y su ejecución de origen existe en este registro; las
 2 filas «bloqueado» (RUN-114, RUN-123) tienen motivo y responsable, y ambos
@@ -203,17 +211,21 @@ no se pueden completar con la evidencia del repositorio (no se corrigieron):
 
 ### Conclusiones y pendientes
 
-- De los 166 casos con ejecución registrada, ninguno tiene resultado efectivo
-  «falló» ni «bloqueado»: 145 pasaron y 21 «pasó con omisiones» (RUN-134).
+- De los 167 casos con ejecución registrada, ninguno tiene resultado efectivo
+  «falló» ni «bloqueado»: 146 pasaron y 21 «pasó con omisiones» (RUN-134).
   TC-REPORTE-15 y TC-REPORTE-16, bloqueados en RUN-123, pasaron en RUN-138.
   Los 3 incidentes están cerrados y T11 está hecho, sin incidentes nuevos tras
-  T10 y T14 ni en RUN-138 a RUN-144.
+  T10 y T14 ni en RUN-138 a RUN-145.
+- Carga k6 (TC-NF-03, RUN-145): pasó contra staging real con 0 % de errores y
+  p95 1.07 s (2 usuarios virtuales, 60 s, solo lectura).
 - La corrida final T10 (CI-11 a CI-20, `8895099`) está en verde en las 10 suites.
 - Aceptación T14: aceptado con observaciones, por equivalencia con la alfa y como
   veredicto del equipo; no hubo ejecución separada en la build final.
 - Pendientes (de otros responsables): partes no cubiertas de TC-REPORTE-20 y
   TC-REPORTE-31 (ver Revisión);
-  carga k6, RNF02 en iPhone físico, API real y accesibilidad de T9; 13 RNF sin
+  RNF02 en iPhone físico, mediciones desde teléfono contra la API real (la
+  carga y latencia de lectura ya se midieron desde la VPS en RUN-145),
+  accesibilidad de T9 (TalkBack) y compatibilidad Android 8/iOS 13; 13 RNF sin
   cubrir en la matriz de T4; brechas de hora, commit y entorno anotadas en
   Revisión; partes de aceptación sin ejecución equivalente.
 
@@ -369,6 +381,7 @@ relevantes en entorno/notas. Resultado obtenido debe explicar qué se observó.
 | RUN-142 | 2026-10-12 20:33:32–20:33:33 America/Chihuahua (2026-10-13 02:33:32–02:33:33 UTC) | TC-REPORTE-26; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; geofence y repositorio simulados con dobles; sin PostgreSQL, API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `supabase/functions/api/services/reportService.test.js` — missing active geofence still fails closed by default y temporary missing-geofence flag allows report creation without removing geofence checks: 2 passed, 0 failed, 13 filtered out. Sin zona activa falla `geofence_not_configured` antes de cuota, confianza o inserción; solo con la bandera temporal explícita se inserta | no aplica | `deno test --no-lock --allow-env --config supabase/functions/api/deno.json supabase/functions/api/services/reportService.test.js --filter "/^(missing active geofence still fails closed by default\|temporary missing-geofence flag allows report creation without removing geofence checks)$/"`; salida de consola local sin artefacto persistente |
 | RUN-143 | 2026-10-12 20:33:33 America/Chihuahua (2026-10-13 02:33:33 UTC) | TC-REPORTE-28; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; configuración de confianza y cliente SQL simulados con dobles; sin PostgreSQL, API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `supabase/functions/api/services/trustService.test.js` — high trust can auto-publish when GPS and fingerprint signals are clean y `supabase/functions/api/repositories/reportRepository.test.js` — report insert binds details with the driver's jsonb helper: 2 passed, 0 failed, 1 filtered out. Con señales limpias el nivel es `high`, el estado `visible` y el motivo `high_trust_auto_publish`; el test no verifica la versión de la configuración asociada al motivo | no aplica | `deno test --no-lock --allow-env --config supabase/functions/api/deno.json supabase/functions/api/services/trustService.test.js supabase/functions/api/repositories/reportRepository.test.js --filter "/^(high trust can auto-publish when GPS and fingerprint signals are clean\|report insert binds details with the driver's jsonb helper)$/"`; salida de consola local sin artefacto persistente |
 | RUN-144 | 2026-10-12 20:33:33 America/Chihuahua (2026-10-13 02:33:33 UTC) | TC-REPORTE-29; docs/testing/cases/reportero.md | Alan Ruiz (P4) — ejecución automatizada local | Local (VPS de desarrollo); Deno 2.9.6, Node v24.20.0; configuración de confianza simulada; sin PostgreSQL, API desplegada, JWT real ni dispositivo | 5ca21a4ec8e0e568222762f87d31f56b5d57ff14 | pasó | `supabase/functions/api/services/trustService.test.js` — mock and imprecise locations stay pending even with otherwise high scores: 1 passed, 0 failed, 1 filtered out. GPS simulado queda en `pending_review` con motivo `mock_location`; GPS impreciso (100 m) queda en `pending_review` con motivo `imprecise_gps` | no aplica | `deno test --no-lock --allow-env --config supabase/functions/api/deno.json supabase/functions/api/services/trustService.test.js --filter "mock and imprecise locations stay pending even with otherwise high scores"`; salida de consola local sin artefacto persistente |
+| RUN-145 | 2026-10-12 21:57–21:58 America/Chihuahua (2026-10-13 03:57:34–03:58:36 UTC) | TC-NF-03; docs/testing/NON-FUNCTIONAL.md | Alan Ruiz (P4) — ejecución automatizada desde la VPS de desarrollo | VPS de desarrollo (cliente de carga); k6 v2.3.0 (linux/amd64, binario oficial con checksum verificado); API de staging real (Supabase Edge Function `api`, proyecto `dcvihomkxkutkckmjvmp`, plan Free); solo lectura: `GET /health`, `GET /public/clusters` (bbox de Creel) y `GET /public/reports?limit=20`; 2 usuarios virtuales, 60 s, pausa de 1 s; sin escrituras, JWT ni dispositivo | b95d4e8b21c30da3b472c9f18224d7d162f97358 | pasó | 83 peticiones en 61.2 s (1.36 req/s); `http_req_failed` 0.00 % (0/83), umbral `rate<0.01` cumplido; checks 83/83 «lectura responde 2xx»; `http_req_duration` promedio 462.89 ms, mín. 105.78 ms, mediana 428.58 ms, p90 995.66 ms, p95 1.07 s, máx. 1.31 s; 230 kB recibidos | no aplica | `API_BASE_URL=https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api k6 run tests/load/public-read.js` (script `tests/load/public-read.js` idéntico al del commit probado); salida de consola de k6, sin artefacto persistente. Carga ligera por diseño (plan Free, 2 VUs, 60 s): no muestra el comportamiento con alta concurrencia; latencia medida desde la VPS, no desde un teléfono. |
 
 Formato para copiar (reemplazar todos los marcadores antes de registrar):
 

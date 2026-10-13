@@ -343,7 +343,7 @@ cierran la cobertura T5 con mínimo, máximo, promedio y excepción o justificac
 |---|---|---|---|
 | RNF01 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: estado/operación Free y evidencia de mejor esfuerzo; 99.9% es meta futura (T9) |
 | RNF02 | — | Sin test/evidencia; pendiente de la tarea indicada | sin cubrir: medición mapa <5 s en teléfono con carga objetivo (T9) |
-| RNF03 | TC-TRAZA-14 | `supabase/functions/api/repositories/publicMapRepository.test.js` | Disponible; sin cubrir: carga/p95 y crecimiento; consulta SQL solo inspeccionada por test (T9) |
+| RNF03 | TC-TRAZA-14 | `supabase/functions/api/repositories/publicMapRepository.test.js` | Disponible; sin cubrir: carga/p95 y crecimiento; consulta SQL solo inspeccionada por test (T9). Evidencia: TC-NF-03 RUN-145 (k6, staging real, 2 VUs/60 s, 0 % errores, p95 1.07 s); no cubre alta concurrencia ni crecimiento |
 | RNF04 | TC-UAT-01; docs/testing/cases/uat.md | `docs/testing/UAT.md`; `RUN-124`, `RUN-125`, `RUN-127` en `docs/testing/TEST_LOG.md` | Cubierto: tres participantes anónimos con consentimiento, reporte <300 s, encuesta y hallazgos. T8 conserva observación de usabilidad de mapa en `INC-3`. |
 | RNF05 | TC-ALPHA-01 | Sin test automatizado; evidencia manual T7 en `docs/testing/ALPHA.md` | sin cubrir: Android 8+/iOS 13+ en builds reales; justificar plataforma ausente (T9). Evidencia T7: Android 16 real (samsung SM-S918B) en RUN-83 a RUN-116 y RUN-137; Android 8 mínimo e iOS siguen sin evidencia |
 | RNF06 | TC-TRAZA-36 | `i18n/locales.test.js` | Disponible; sin cubrir: todas las pantallas y accesibilidad es/en; claves iguales no prueban traducción (T9) |

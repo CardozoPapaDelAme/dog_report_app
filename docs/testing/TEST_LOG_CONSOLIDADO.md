@@ -2,7 +2,7 @@
 
 Tabla única con el formato del curso: una fila por ejecución de cada caso. Una
 ejecución que agrupa varios casos (por ejemplo, RUN-118 o RUN-134) produce una fila
-por caso. Fuentes: `docs/testing/TEST_LOG.md` (RUN-1 a RUN-144), los casos de
+por caso. Fuentes: `docs/testing/TEST_LOG.md` (RUN-1 a RUN-145), los casos de
 `docs/testing/cases/` y `docs/testing/NON-FUNCTIONAL.md`, y `docs/testing/INCIDENTS.md`.
 Consolidado el 2026-10-13. La severidad de las fallas proviene de
 `docs/testing/INCIDENTS.md`; el tipo y la prioridad los asignó el equipo al consolidar.
@@ -14,7 +14,7 @@ número de RUN y luego por ID de caso; el RUN está en «Comentarios».
 
 | Total de filas | P | F | B | P* | Casos distintos |
 |---|---|---|---|---|---|
-| 179 | 152 | 3 | 3 | 21 | 166 |
+| 180 | 153 | 3 | 3 | 21 | 167 |
 
 | ID | Nombre | Entrada | Salida esperada | Salida obtenida | P/F | Comentarios | Tipo | Severidad | Prioridad |
 |---|---|---|---|---|---|---|---|---|---|
@@ -197,3 +197,4 @@ número de RUN y luego por ID de caso; el RUN está en «Comentarios».
 | TC-REPORTE-26 | Geofence ausente falla cerrado | Geofence ausente | Falla cerrado con geofence_not_configured salvo bandera temporal explícita de pruebas | Sin zona activa falla geofence_not_configured; solo con bandera temporal se inserta; 2/0 | P | RUN-142; automatizado local (Deno) | — | — | — |
 | TC-REPORTE-28 | Autopublicación por alta confianza | GPS limpio, bucket de tasa bajo | El reporte de alta confianza se autopublica con motivo versionado | Señales limpias: nivel high, estado visible, motivo high_trust_auto_publish; 2/0 | P | RUN-143; Deno; no verifica la versión de configuración del motivo | — | — | — |
 | TC-REPORTE-29 | GPS simulado o impreciso en revisión | GPS simulado o impreciso | El reporte permanece en revisión con razón explícita | GPS simulado (mock_location) e impreciso (imprecise_gps) quedan en pending_review; 1/0 | P | RUN-144; automatizado local (Deno) | — | — | — |
+| TC-NF-03 | Prueba de carga de lectura pública | k6: 2 VUs, 60 s, /health, /public/clusters, /public/reports | p95 y tasa de error registrados | 83 peticiones, 0 % errores, p95 1.07 s | P | RUN-145; staging real; k6 v2.3.0 | — | — | — |
