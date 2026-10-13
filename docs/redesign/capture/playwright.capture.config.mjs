@@ -9,7 +9,7 @@
  */
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
-  testDir: '.', testMatch: 'capture.spec.js', fullyParallel: false, workers: 1,
+  testDir: '.', testMatch: process.env.CAPTURE_SPEC ?? 'capture.spec.js', fullyParallel: false, workers: 1,
   outputDir: '../../../test-results/redesign-capture',
   reporter: 'list',
   use: { baseURL: 'http://127.0.0.1:4174', viewport: { width: 390, height: 844 }, headless: true },
