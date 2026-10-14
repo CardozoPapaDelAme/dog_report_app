@@ -179,19 +179,17 @@ export default function CameraScreen({
       {hasPermission ? (
         <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
           <Text style={styles.helper}>{t('camera.helper')}</Text>
-          <View style={styles.shutterRing}>
-            <Pressable
-              testID="camera-capture"
-              accessibilityRole="button"
-              accessibilityLabel={t('camera.capture')}
-              accessibilityState={{ busy, disabled: captureDisabled }}
-              disabled={captureDisabled}
-              onPress={capture.capture}
-              style={({ pressed }) => [styles.captureButton, pressed && styles.captureActive, captureDisabled && styles.captureDisabled]}
-            >
-              {busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /> : <View style={styles.captureInner} />}
-            </Pressable>
-          </View>
+          <Pressable
+            testID="camera-capture"
+            accessibilityRole="button"
+            accessibilityLabel={t('camera.capture')}
+            accessibilityState={{ busy, disabled: captureDisabled }}
+            disabled={captureDisabled}
+            onPress={capture.capture}
+            style={({ pressed }) => [styles.captureButton, pressed && styles.captureActive, captureDisabled && styles.captureDisabled]}
+          >
+            {busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /> : null}
+          </Pressable>
           <CameraLink testID="camera-without-photo" icon="pencil" label={t('camera.withoutPhoto')} disabled={busy} onPress={onReportWithoutPhoto} />
         </View>
       ) : null}
@@ -221,9 +219,7 @@ const styles = StyleSheet.create({
   validatingText: { fontFamily: fontFamily.displayMedium, fontSize: 17, color: colors.onPrimary },
   bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', gap: spacing.md, paddingHorizontal: layout.margin },
   helper: { fontFamily: fontFamily.label, fontSize: 14, textAlign: 'center', color: colors.onPrimary, textShadowColor: 'rgba(0,0,0,0.55)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
-  shutterRing: { width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: 'rgba(255,255,255,0.85)', alignItems: 'center', justifyContent: 'center' },
-  captureButton: { width: 82, height: 82, borderRadius: 41, borderWidth: 7, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  captureInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.surface, borderColor: colors.outlineSoft, borderWidth: 1 },
+  captureButton: { width: 76, height: 76, borderRadius: 38, borderWidth: 5, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   queueBannerPosition: { position: 'absolute', left: spacing.lg, right: spacing.lg },
   captureDisabled: { opacity: 0.62 }, captureActive: { transform: [{ scale: 0.96 }] },
   pressed: { opacity: 0.7 }, disabled: { opacity: 0.5 },
