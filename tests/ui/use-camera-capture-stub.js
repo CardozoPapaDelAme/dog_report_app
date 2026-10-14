@@ -11,13 +11,14 @@ function fixtureState() {
 export function useCameraCapture({ onPhotoAccepted } = {}) {
   const cameraRef = useRef(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [captureState, setCaptureState] = useState(fixtureState);
   return {
     cameraRef,
     cameraReady,
     setCameraReady,
     // `?camera&rejected` / `&validating` render those feedback states in the web fixture.
-    captureState: fixtureState(),
-    clearFeedback() {},
+    captureState,
+    clearFeedback() { setCaptureState({ phase: 'idle', reasons: [], error: null }); },
     async capture() {
       onPhotoAccepted?.({
         photoUri: 'file:///private/ui-camera-stub.jpg',

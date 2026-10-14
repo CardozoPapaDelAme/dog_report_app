@@ -6,7 +6,7 @@
  */
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTranslation } from 'react-i18next';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -51,6 +51,9 @@ function CameraLink({ icon, label, onPress, testID, disabled }) {
   );
 }
 
+/** How long a rejection notice stays on screen. */
+const NOTICE_MS = 5000;
+
 /** Joins translated rejection reasons, or returns a capture error message; `null` when none. */
 function reasonText(t, state) {
   if (state.error) return t('camera.errors.capture');
@@ -91,6 +94,13 @@ export default function CameraScreen({
   const feedback = reasonText(t, capture.captureState);
   const hasPermission = Boolean(permission?.granted);
   const validating = capture.captureState.phase === 'validating';
+  const { clearFeedback } = capture;
+  // Rejection notices dismiss themselves after five seconds.
+  useEffect(() => {
+    if (!feedback || !hasPermission) return undefined;
+    const timer = setTimeout(clearFeedback, NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [capture.captureState, feedback, hasPermission, clearFeedback]);
   const busy = capture.captureState.phase === 'capturing' || validating;
   const captureDisabled = busy || !capture.cameraReady || !hasPermission;
 
