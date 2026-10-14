@@ -63,6 +63,19 @@ Segundo intento (aprobado: "perfecto"), commit `48c404c`:
 17. **Los botones de acción principal caben en una línea** (verificar con el texto más largo en español).
 18. **Revisar cada estado en captura** (cargando, sin acceso, error, campo inválido, escritorio) antes de dar la pantalla por buena.
 
+## ZoneSet (aprobada, commits `2d6b16c` y `7d74a9d`)
+
+- **Flujo en pasos = ruta con línea vertical y puntos** (rellenos en el paso en curso, atenuado el que espera). La numeración "01 · / 02 ·" solo se usa porque es una secuencia real.
+- **Datos técnicos largos (URI, ID, huella digital) en lista agrupada y plegados detrás de "Ver detalles"**; a la vista solo lo esencial en una línea. El contenido plegado sigue en el DOM (display none), por el contrato.
+- **Una acción amarilla en la barra inferior que cambia con el paso** (Guardar borrador, luego Activar esta versión).
+- Mismo encabezado verde con una huella grande recortada que Configuración.
+
+### Reglas añadidas (19 a 21)
+
+19. **Plegar lo secundario:** si un bloque informativo empuja la tarea principal fuera del primer vistazo, se resume en una línea con un control "Ver detalles".
+20. **Pasos reales = ruta con puntos y línea;** pasos inexistentes no se numeran.
+21. **La barra inferior verde lleva la acción principal de la pantalla** y cambia de texto según el estado, en lugar de repetir botones dentro del contenido.
+
 ## Cómo se trabaja con las skills
 
 `frontend-design` ayudó más que el resto: obliga a planear con una paleta, roles de tipografía y un wireframe, a revisar el plan contra los defaults de plantilla y a gastar el riesgo estético en un solo lugar. `design-taste-frontend` sirve como lista de verificación (contraste, estados, etiquetas arriba del campo). `mobile-redesign-screen` da el método (auditar, proponer, arreglar). Para cada pantalla nueva: invocar `frontend-design` primero para el plan.
