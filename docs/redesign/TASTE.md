@@ -119,6 +119,19 @@ Segundo intento: **una bandeja, no tarjetas.**
 29. **Separar elementos de una lista con huecos de fondo y bordes finos, no con color de cabecera ni esquinas redondeadas.**
 30. **Todo elemento repetido lleva un identificador corto visible** (número, nombre), no solo posición.
 
+## Formulario (rehecho tres veces)
+
+- **v1:** foto como encabezado grande con el título encima. Rechazado: título apretado, foto recortada y desenfocada, "muy ai-slop".
+- **v2:** foto limpia con el título debajo. Rechazado: la foto sigue gastando casi 300 px y todo sigue siendo filas de botones iguales.
+- **v3 (vigente):** encabezado compacto con el título y la **foto como miniatura a la derecha que se abre a pantalla completa** (idea del usuario). Preguntas cortas como **control segmentado** (una sola pieza), color como **fila de círculos con el color real del pelaje** (el nombre del elegido junto a la etiqueta), tamaño con huellas crecientes. Sin título de sección para una sola pregunta.
+
+### Reglas añadidas (31 a 34)
+
+31. **Una foto de evidencia es una miniatura que se abre completa**, no un encabezado enorme.
+32. **Dos o tres opciones cortas = control segmentado**, no botones sueltos.
+33. **Un atributo visual (color, tamaño) se elige mirando el atributo**, no leyendo una palabra.
+34. **No usar el modal del sistema para hojas propias:** anima un fondo oscuro que sube y no cierra al tocar fuera; usar `Sheet` dentro de la pantalla.
+
 ## Cómo se trabaja con las skills
 
 `frontend-design` ayudó más que el resto: obliga a planear con una paleta, roles de tipografía y un wireframe, a revisar el plan contra los defaults de plantilla y a gastar el riesgo estético en un solo lugar. `design-taste-frontend` sirve como lista de verificación (contraste, estados, etiquetas arriba del campo). `mobile-redesign-screen` da el método (auditar, proponer, arreglar). Para cada pantalla nueva: invocar `frontend-design` primero para el plan.

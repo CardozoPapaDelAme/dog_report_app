@@ -33,6 +33,19 @@ const fonts = document.createElement('style');
 fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})} @font-face{font-family:PlusJakartaSans_600SemiBold;src:url(${semibold})} @font-face{font-family:WorkSans_500Medium;src:url(${workMedium})} @font-face{font-family:WorkSans_600SemiBold;src:url(${workSemibold})} @font-face{font-family:WorkSans_700Bold;src:url(${workBold})} @font-face{font-family:Fredoka_500Medium;src:url(${fredokaMedium})} @font-face{font-family:Fredoka_600SemiBold;src:url(${fredokaSemibold})}`;
 document.head.appendChild(fonts);
 
+// `?report&photo=sample` loads this picture so the preview and full-photo viewer can be seen on the web fixture.
+const sampleDogPhoto = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 480;
+  canvas.height = 640;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#d9a441'; ctx.fillRect(0, 0, 480, 640);
+  ctx.fillStyle = '#6b4226'; ctx.beginPath(); ctx.arc(240, 260, 150, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(190, 230, 22, 0, Math.PI * 2); ctx.arc(290, 230, 22, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#222'; ctx.beginPath(); ctx.ellipse(240, 320, 46, 32, 0, 0, Math.PI * 2); ctx.fill();
+  return canvas.toDataURL('image/png');
+})();
+
 const previewReport = (id, incident, sighting, details, color, size, collar, acceptedAt) => ({
   id: `00000000-0000-4000-8000-${String(id).padStart(12, '0')}`,
   location: { longitude: Number((-106.0802 - id * 0.004).toFixed(4)), latitude: Number((28.6304 + id * 0.003).toFixed(4)) },
@@ -60,7 +73,7 @@ const reportDraft = {
   updated_at: '2026-09-28T20:01:00.000Z',
   queued_at: null,
   payload_json: null,
-  photo_file_uri: new URLSearchParams(location.search).has('photo') ? 'file:///private/report.jpg' : null,
+  photo_file_uri: new URLSearchParams(location.search).has('photo') ? (new URLSearchParams(location.search).get('photo') === 'sample' ? sampleDogPhoto : 'file:///private/report.jpg') : null,
   photo_validation: {
     dogProbability: 0.91,
     blurVariance: 200,

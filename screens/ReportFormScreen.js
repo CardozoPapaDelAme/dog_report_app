@@ -36,7 +36,7 @@ import {
   DOG_SIZES,
   INJURED_DOG_SITUATIONS,
 } from '../models/reportPayload.js';
-import { AppButton, Banner, Icon, Scrim, Sheet } from '../components/ui/index.js';
+import { AppButton, Banner, Icon, Sheet } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 /** Translates a field validation error (`{key, values}`) or returns a string error as is. */
@@ -109,22 +109,105 @@ function textInputIdentity(id, name) {
 const COAT_COLORS = { negro: '#222622', blanco: '#f6f4ee', 'café': '#6b4226', gris: '#8c918c', dorado: '#d9a441' };
 
 /** Round color sample for a dog color option. */
-function CoatDot({ value }) {
+function CoatDot({ value, large = false }) {
+  const dotStyle = large ? [styles.dot, styles.dotLarge] : styles.dot;
   if (value === 'mixto') {
     return (
-      <View style={styles.dot}>
+      <View style={dotStyle}>
         <View style={[styles.dotHalf, { backgroundColor: '#222622' }]} />
         <View style={[styles.dotHalf, { backgroundColor: '#f6f4ee' }]} />
       </View>
     );
   }
-  return <View style={[styles.dot, { backgroundColor: COAT_COLORS[value] ?? colors.outline }]} />;
+  return <View style={[dotStyle, { backgroundColor: COAT_COLORS[value] ?? colors.outline }]} />;
 }
 
 /** Paw that grows with the dog size, so the options read at a glance. */
 function SizePaw({ value, selected }) {
   const size = { chico: 15, mediano: 21, grande: 27 }[value];
   return size ? <Icon name="dog" size={size} color={selected ? colors.onPrimary : colors.primary} /> : null;
+}
+
+/** Segmented control for short lists (two or three options): one piece, selected segment filled. */
+function Segmented({ label, field, value, options, disabled, error, t, onChange, allowDeselect = false, adornment }) {
+  const message = fieldErrorText(error, t);
+  return (
+    <View style={styles.fieldGroup}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.segmented}>
+        {options.map((option, index) => {
+          const selected = value === option.value;
+          return (
+            <Pressable
+              key={String(option.value)}
+              testID={`report-${field}-${option.value}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected, disabled: Boolean(disabled) }}
+              disabled={disabled}
+              onPress={() => onChange(allowDeselect && selected ? '' : option.value)}
+              style={({ pressed }) => [
+                styles.segment,
+                index > 0 && styles.segmentDivider,
+                selected && styles.segmentSelected,
+                disabled && styles.disabled,
+                pressed && !disabled && styles.pressed,
+              ]}
+            >
+              {adornment ? adornment(option.value, selected) : null}
+              <Text numberOfLines={2} style={[styles.segmentText, selected && styles.segmentTextSelected]}>{option.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {message ? <Text style={styles.fieldError}>{message}</Text> : null}
+    </View>
+  );
+}
+
+/** Single row of coat-color circles; the chosen color's name sits next to the label. */
+function CoatSwatches({ label, field, value, options, disabled, error, t, onChange }) {
+  const message = fieldErrorText(error, t);
+  const chosen = options.find((option) => option.value === value);
+  return (
+    <View style={styles.fieldGroup}>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>{label}</Text>
+        {chosen ? <Text style={styles.chosenName}>{chosen.label}</Text> : null}
+      </View>
+      <View style={styles.swatchRow}>
+        {options.map((option) => {
+          const selected = value === option.value;
+          return (
+            <Pressable
+              key={option.value}
+              testID={`report-${field}-${option.value}`}
+              accessibilityRole="button"
+              accessibilityLabel={option.label}
+              accessibilityState={{ selected, disabled: Boolean(disabled) }}
+              disabled={disabled}
+              onPress={() => onChange(selected ? '' : option.value)}
+              style={({ pressed }) => [styles.swatchHit, disabled && styles.disabled, pressed && !disabled && styles.pressed]}
+            >
+              <View style={[styles.swatchRing, selected && styles.swatchRingSelected]}>
+                <CoatDot value={option.value} large />
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+      {message ? <Text style={styles.fieldError}>{message}</Text> : null}
+    </View>
+  );
+}
+
+/** Full-screen view of the report photo, closed by tapping anywhere. */
+function PhotoViewer({ uri, label, closeLabel, onClose }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={closeLabel} onPress={onClose} style={styles.viewer}>
+      <Image accessibilityRole="image" accessibilityLabel={label} source={{ uri }} style={styles.viewerImage} resizeMode="contain" />
+      <View style={styles.viewerClose}><Icon name="close" size={22} color={colors.onPrimary} /></View>
+    </Pressable>
+  );
 }
 
 /** Group of option chips; `allowDeselect` lets a second tap clear the value. */
@@ -231,6 +314,7 @@ export default function ReportFormScreen({
   const insets = useSafeAreaInsets();
   const [form, setForm] = useState(() => createEmptyReportFormDraft());
   const [picker, setPicker] = useState(null);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
   const submit = useSubmitReport({
     draft,
@@ -340,29 +424,38 @@ export default function ReportFormScreen({
     <View style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-          <View style={[styles.hero, { height: (showPhoto ? 280 : 130) + insets.top }]}>
-            {showPhoto ? (
-              <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" onError={() => setPhotoFailed(true)} />
-            ) : (
-              <View testID={draft ? 'report-no-photo' : undefined} style={styles.noPhoto}>
-                <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.noPhotoPaw}>
-                  <Icon name="dog" size={170} color={colors.onPrimary} strokeWidth={1.4} />
-                </View>
-                {draft ? <Text style={styles.noPhotoText}>{t('reportForm.noPhoto')}</Text> : null}
-              </View>
-            )}
-            {showPhoto ? <Scrim edge="top" height={90 + insets.top} strength={0.4} /> : null}
+          <View style={[styles.topRow, { paddingTop: insets.top + spacing.sm }]}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('reportForm.close')}
               disabled={submit.submitting}
               onPress={onBackToCamera}
-              style={({ pressed }) => [styles.closeButton, { top: insets.top + 8 }, pressed && !submit.submitting && styles.pressed]}
+              style={({ pressed }) => [styles.closeButton, pressed && !submit.submitting && styles.pressed]}
             >
-              <Icon name="close" size={22} color={colors.onPrimary} />
+              <Icon name="close" size={22} color={colors.primary} />
             </Pressable>
           </View>
-          <Text accessibilityRole="header" style={styles.title}>{t('reportForm.title')}</Text>
+          <View style={styles.titleRow}>
+            <View style={styles.titleText}>
+              <Text accessibilityRole="header" style={styles.title}>{t('reportForm.title')}</Text>
+              {showPhoto ? <Text style={styles.photoHint}>{t('reportForm.viewPhoto')}</Text> : null}
+            </View>
+            {showPhoto ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('reportForm.photoPreview')}
+                onPress={() => setViewingPhoto(true)}
+                style={({ pressed }) => [styles.thumb, pressed && styles.pressed]}
+              >
+                <Image accessible={false} source={{ uri: photoUri }} style={styles.thumbImage} resizeMode="cover" onError={() => setPhotoFailed(true)} />
+              </Pressable>
+            ) : draft ? (
+              <View testID="report-no-photo" style={[styles.thumb, styles.thumbEmpty]}>
+                <Icon name="dog" size={26} color={colors.primary} />
+                <Text style={styles.thumbEmptyText}>{t('reportForm.noPhoto')}</Text>
+              </View>
+            ) : null}
+          </View>
 
           <View style={styles.body}>
             {loading ? (
@@ -408,7 +501,7 @@ export default function ReportFormScreen({
                     onOpen={() => setPicker({ field: 'incident_type', label: t('reportForm.fields.incident_type'), options: incidentOptions, onChange: (value) => updateField('incident_type', value) })}
                   />
                   {form.incident_type === 'ataque_humano' ? (
-                    <ChoiceGroup
+                    <Segmented
                       label={t('reportForm.fields.hubo_mordida')}
                       field="hubo_mordida"
                       value={form.hubo_mordida}
@@ -431,7 +524,7 @@ export default function ReportFormScreen({
                     />
                   ) : null}
                   {form.incident_type === 'ataque_mascota' ? (
-                    <ChoiceGroup
+                    <Segmented
                       label={t('reportForm.fields.resulto_herido')}
                       field="resulto_herido"
                       value={form.resulto_herido}
@@ -472,7 +565,7 @@ export default function ReportFormScreen({
                   {form.incident_type === 'otro' ? (
                     <Text style={styles.caption}>{t('reportForm.onlyDescription')}</Text>
                   ) : null}
-                  <ChoiceGroup
+                  <Segmented
                     label={t('reportForm.fields.sighting_type')}
                     field="sighting_type"
                     value={form.sighting_type}
@@ -497,8 +590,7 @@ export default function ReportFormScreen({
                 </View>
 
                 <View style={styles.section}>
-                  <Text accessibilityRole="header" style={styles.sectionTitle}>{t('reportForm.sections.dog')}</Text>
-                  <ChoiceGroup
+                  <Segmented
                     label={t('reportForm.fields.dog_size')}
                     field="dog_size"
                     value={form.dog_size}
@@ -510,7 +602,7 @@ export default function ReportFormScreen({
                     allowDeselect
                     adornment={(value, selected) => <SizePaw value={value} selected={selected} />}
                   />
-                  <ChoiceGroup
+                  <CoatSwatches
                     label={t('reportForm.fields.dog_color')}
                     field="dog_color"
                     value={form.dog_color}
@@ -519,16 +611,13 @@ export default function ReportFormScreen({
                     error={submit.fieldErrors.dog_color}
                     t={t}
                     onChange={(value) => updateField('dog_color', value)}
-                    allowDeselect
-                    soft
-                    adornment={(value) => <CoatDot value={value} />}
                   />
                   {detectedColor ? (
                     <Text testID="report-dog_color-detected" style={styles.colorHint}>
                       {t('reportForm.dogColorDetected', { color: t(`reportForm.dogColor.${detectedColor}`) })}
                     </Text>
                   ) : null}
-                  <ChoiceGroup
+                  <Segmented
                     label={t('reportForm.fields.has_collar')}
                     field="has_collar"
                     value={form.has_collar}
@@ -629,6 +718,8 @@ export default function ReportFormScreen({
         </View>
       </Modal>
 
+      {viewingPhoto && showPhoto ? <PhotoViewer uri={photoUri} label={t('reportForm.photoPreview')} closeLabel={t('reportForm.close')} onClose={() => setViewingPhoto(false)} /> : null}
+
       {picker ? (
         <Sheet onClose={() => setPicker(null)} maxHeight="80%" style={styles.pickerSheet}>
           <Text accessibilityRole="header" style={styles.selectSheetTitle}>{picker.label}</Text>
@@ -668,21 +759,40 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   safeArea: { flex: 1, backgroundColor: colors.primary },
   content: { flexGrow: 1, backgroundColor: colors.background },
-  hero: { width: '100%', backgroundColor: colors.primary },
-  preview: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  noPhoto: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.primary, alignItems: 'flex-end', justifyContent: 'flex-start', overflow: 'hidden' },
-  noPhotoPaw: { position: 'absolute', right: -40, top: 20, opacity: 0.12, transform: [{ rotate: '-18deg' }] },
-  noPhotoText: { position: 'absolute', right: layout.margin, bottom: spacing.lg, fontFamily: fontFamily.label, fontSize: 14, color: colors.onForest },
-  closeButton: { position: 'absolute', left: layout.margin, width: layout.minTouch, height: layout.minTouch, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.38)', alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: fontFamily.display, fontSize: 36, lineHeight: 44, letterSpacing: -0.3, color: colors.primary, paddingHorizontal: layout.margin, paddingTop: spacing.xl },
-  body: { width: '100%', maxWidth: 920, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xxl },
+  topRow: { paddingHorizontal: layout.margin },
+  closeButton: { width: layout.minTouch, height: layout.minTouch, marginLeft: -spacing.sm, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg, paddingHorizontal: layout.margin, paddingTop: spacing.xs },
+  titleText: { flex: 1, gap: spacing.xs },
+  title: { fontFamily: fontFamily.display, fontSize: 34, lineHeight: 40, letterSpacing: -0.3, color: colors.primary },
+  photoHint: { ...type.caption, color: colors.inkMuted },
+  thumb: { width: 92, height: 92, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.primarySoft },
+  thumbImage: { width: '100%', height: '100%' },
+  thumbEmpty: { alignItems: 'center', justifyContent: 'center', gap: spacing.xs, borderWidth: 1, borderColor: colors.outlineSoft, borderStyle: 'dashed', backgroundColor: colors.surface },
+  thumbEmptyText: { fontFamily: fontFamily.label, fontSize: 13, color: colors.primary },
+  viewer: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
+  viewerImage: { width: '100%', height: '100%' },
+  viewerClose: { position: 'absolute', top: 56, left: layout.margin, width: layout.minTouch, height: layout.minTouch, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  labelRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.md },
+  chosenName: { fontFamily: fontFamily.label, fontSize: 14, color: colors.primary },
+  segmented: { flexDirection: 'row', borderRadius: radius.md, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, overflow: 'hidden' },
+  segment: { flex: 1, minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm },
+  segmentDivider: { borderLeftWidth: 1, borderLeftColor: colors.outline },
+  segmentSelected: { backgroundColor: colors.primary },
+  segmentText: { flexShrink: 1, fontFamily: fontFamily.labelMedium, fontSize: 15, lineHeight: 19, color: colors.ink, textAlign: 'center' },
+  segmentTextSelected: { fontFamily: fontFamily.label, color: colors.onPrimary },
+  swatchRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  swatchHit: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  swatchRing: { width: 44, height: 44, borderRadius: 22, borderWidth: 3, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  swatchRingSelected: { borderColor: colors.primary },
+  dotLarge: { width: 32, height: 32, borderRadius: 16 },
+  body: { width: '100%', maxWidth: 920, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.xl, paddingBottom: spacing.xxl, gap: spacing.xl },
   subtitle: { ...type.body, color: colors.inkMuted },
   state: { paddingVertical: spacing.xxl, alignItems: 'center' },
-  section: { gap: spacing.lg },
+  section: { gap: spacing.xl },
   sectionTitle: { fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.primary },
   fieldGroup: { gap: spacing.sm },
   dropdownGroup: {},
-  label: { fontFamily: fontFamily.label, fontSize: 15, lineHeight: 21, color: colors.ink },
+  label: { fontFamily: fontFamily.label, fontSize: 14, lineHeight: 20, color: colors.inkMuted },
   select: { minHeight: 52, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   selectText: { ...type.body, color: colors.ink, flexShrink: 1 },
   selectBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
