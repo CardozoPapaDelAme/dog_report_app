@@ -132,6 +132,11 @@ Segundo intento: **una bandeja, no tarjetas.**
 33. **Un atributo visual (color, tamaño) se elige mirando el atributo**, no leyendo una palabra.
 34. **No usar el modal del sistema para hojas propias:** anima un fondo oscuro que sube y no cierra al tocar fuera; usar `Sheet` dentro de la pantalla.
 
+### Lección técnica: hojas y toques en iPhone (reglas 35 y 36)
+
+35. **La zona de cierre de una hoja es el propio fondo difuminado**, una sola vista visible y `collapsable={false}`. Una vista transparente aparte, un `Pressable` con `aria-hidden` o un fondo con los toques desactivados dejaron de recibir el toque exterior en el iPhone aunque funcionaran en la web.
+36. **La animación de una hoja arranca en el componente que se monta con el contenido**, nunca antes; si no, la hoja se queda a mitad de subida y sin fundido. Para cubrir siempre toda la pantalla, `Sheet modal`.
+
 ## Cómo se trabaja con las skills
 
 `frontend-design` ayudó más que el resto: obliga a planear con una paleta, roles de tipografía y un wireframe, a revisar el plan contra los defaults de plantilla y a gastar el riesgo estético en un solo lugar. `design-taste-frontend` sirve como lista de verificación (contraste, estados, etiquetas arriba del campo). `mobile-redesign-screen` da el método (auditar, proponer, arreglar). Para cada pantalla nueva: invocar `frontend-design` primero para el plan.
