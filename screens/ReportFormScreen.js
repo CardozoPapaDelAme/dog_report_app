@@ -141,8 +141,30 @@ function textInputIdentity(id, name) {
   return { id, name, nativeID: id };
 }
 
+/** Pelt colors drawn on the color chips; `mixto` is split in two tones. */
+const COAT_COLORS = { negro: '#222622', blanco: '#f6f4ee', 'café': '#6b4226', gris: '#8c918c', dorado: '#d9a441' };
+
+/** Round color sample for a dog color option. */
+function CoatDot({ value }) {
+  if (value === 'mixto') {
+    return (
+      <View style={styles.dot}>
+        <View style={[styles.dotHalf, { backgroundColor: '#222622' }]} />
+        <View style={[styles.dotHalf, { backgroundColor: '#f6f4ee' }]} />
+      </View>
+    );
+  }
+  return <View style={[styles.dot, { backgroundColor: COAT_COLORS[value] ?? colors.outline }]} />;
+}
+
+/** Paw that grows with the dog size, so the options read at a glance. */
+function SizePaw({ value, selected }) {
+  const size = { chico: 15, mediano: 21, grande: 27 }[value];
+  return size ? <Icon name="dog" size={size} color={selected ? colors.onPrimary : colors.primary} /> : null;
+}
+
 /** Group of option chips; `allowDeselect` lets a second tap clear the value. */
-function ChoiceGroup({ label, field, value, options, disabled, error, t, onChange, allowDeselect = false }) {
+function ChoiceGroup({ label, field, value, options, disabled, error, t, onChange, allowDeselect = false, adornment, soft = false }) {
   const message = fieldErrorText(error, t);
   return (
     <View style={styles.fieldGroup}>
@@ -160,12 +182,14 @@ function ChoiceGroup({ label, field, value, options, disabled, error, t, onChang
               onPress={() => onChange(allowDeselect && selected ? '' : option.value)}
               style={({ pressed }) => [
                 styles.choice,
-                selected && styles.choiceSelected,
+                adornment && styles.choiceWithAdornment,
+                selected && (soft ? styles.choiceSoftSelected : styles.choiceSelected),
                 disabled && styles.disabled,
                 pressed && !disabled && styles.pressed,
               ]}
             >
-              <Text style={[styles.choiceText, selected && styles.choiceTextSelected]}>
+              {adornment ? adornment(option.value, selected) : null}
+              <Text style={[styles.choiceText, selected && (soft ? styles.choiceTextSoftSelected : styles.choiceTextSelected)]}>
                 {option.label}
               </Text>
             </Pressable>
@@ -521,6 +545,7 @@ export default function ReportFormScreen({
                     t={t}
                     onChange={(value) => updateField('dog_size', value)}
                     allowDeselect
+                    adornment={(value, selected) => <SizePaw value={value} selected={selected} />}
                   />
                   <ChoiceGroup
                     label={t('reportForm.fields.dog_color')}
@@ -532,6 +557,8 @@ export default function ReportFormScreen({
                     t={t}
                     onChange={(value) => updateField('dog_color', value)}
                     allowDeselect
+                    soft
+                    adornment={(value) => <CoatDot value={value} />}
                   />
                   {detectedColor ? (
                     <Text testID="report-dog_color-detected" style={styles.colorHint}>
@@ -701,6 +728,11 @@ const styles = StyleSheet.create({
   selectOptionTextSelected: { fontFamily: fontFamily.label, color: colors.primary },
   choiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   choice: { flexGrow: 1, flexBasis: 92, minHeight: layout.minTouch, borderRadius: radius.md, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  choiceWithAdornment: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center' },
+  choiceSoftSelected: { backgroundColor: colors.primarySoft, borderColor: colors.primary, borderWidth: 2 },
+  choiceTextSoftSelected: { fontFamily: fontFamily.label, color: colors.primary },
+  dot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: colors.outline, overflow: 'hidden', flexDirection: 'row' },
+  dotHalf: { flex: 1 },
   choiceSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   choiceText: { fontFamily: fontFamily.labelMedium, fontSize: 15, lineHeight: 20, color: colors.ink, textAlign: 'center' },
   choiceTextSelected: { fontFamily: fontFamily.label, color: colors.onPrimary },
