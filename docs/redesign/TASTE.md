@@ -141,6 +141,15 @@ Segundo intento: **una bandeja, no tarjetas.**
 
 37. **Usar solo `StyleSheet.absoluteFill`** (en `style={[StyleSheet.absoluteFill, ...]}` o `{ ...StyleSheet.absoluteFill, ... }`). `absoluteFillObject` ya no existe en RN 0.86: el spread queda vacío y los elementos "superpuestos" caen en el flujo normal de la pantalla (hojas arriba o debajo, fondo difuminado ausente, tarjetas que no cierran, botón de enviar a media pantalla). react-native-web sí lo tiene, por eso las pruebas web no lo ven; `tests/ui/noRemovedStyleApis.spec.js` lo vigila.
 
+### Madurez en pantallas de administrador (reglas 38 a 41)
+
+El usuario sintió Command Center "poco maduro" pese a haber mejorado. Diagnóstico con `frontend-design`: tipografía juguetona (Fredoka) en todo, cabecera tipo plantilla (huella decorativa, tres cajas iguales con íconos amarillos, tres números grandes) y demasiado color a la vez.
+
+38. **En pantallas de operación, Fredoka solo en el título de la pantalla;** títulos de sección, nombres y acciones en Plus Jakarta Sans con jerarquía por peso. Fredoka a todo tamaño se lee infantil en herramientas de trabajo.
+39. **Sin decoración en pantallas operativas:** nada de huella de fondo, subtítulos largos ni cajas de accesos; los destinos van como **barra de herramientas** (ícono blanco y etiqueta, separados por líneas finas).
+40. **Un color con significado por acción:** aprobar en verde, eliminar en rojo, lo demás en tinta neutra; el amarillo queda para la acción principal y no para íconos.
+41. **Densidad:** cabecera de unos 200 px, métricas pequeñas (24 px) y que el primer elemento de la cola quepa completo en la primera pantalla.
+
 ## Cómo se trabaja con las skills
 
 `frontend-design` ayudó más que el resto: obliga a planear con una paleta, roles de tipografía y un wireframe, a revisar el plan contra los defaults de plantilla y a gastar el riesgo estético en un solo lugar. `design-taste-frontend` sirve como lista de verificación (contraste, estados, etiquetas arriba del campo). `mobile-redesign-screen` da el método (auditar, proponer, arreglar). Para cada pantalla nueva: invocar `frontend-design` primero para el plan.

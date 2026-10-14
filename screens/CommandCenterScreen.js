@@ -56,11 +56,11 @@ function Metric({ label, value, alert, last }) {
   );
 }
 
-/** Tool entry in the header: icon over a label, one per destination. */
-function Tool({ icon, label, onPress }) {
+/** Destination in the header toolbar: white icon and label, separated from its neighbours by a hairline. */
+function Tool({ icon, label, onPress, last }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.tool, pressed && styles.pressed]}>
-      <Icon name={icon} size={22} color={colors.signal} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.tool, !last && styles.toolDivider, pressed && styles.pressed]}>
+      <Icon name={icon} size={20} color={colors.onPrimary} />
       <Text style={styles.toolText}>{label}</Text>
     </Pressable>
   );
@@ -74,7 +74,7 @@ function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t })
   const hidden = report.status === 'hidden';
   const actions = [
     can('approve') && { key: 'approve', label: t('moderation.approve'), color: colors.primary, onPress: () => onApprove(report.id), busy },
-    can('hide') && { key: 'hide', label: t('moderation.hide'), color: colors.warning, onPress: () => onHide(report) },
+    can('hide') && { key: 'hide', label: t('moderation.hide'), color: colors.ink, onPress: () => onHide(report) },
     can('restore') && { key: 'restore', label: t('moderation.restore'), color: colors.primary, onPress: () => onRestore(report) },
     can('delete') && { key: 'delete', label: t('moderation.delete'), color: colors.danger, onPress: () => onDelete(report) },
   ].filter(Boolean);
@@ -157,27 +157,31 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
     if (succeeded) closeNoteModal();
   }
 
+  const toolItems = [
+    onOpenDuplicates && { icon: 'copy', label: t('duplicates.open'), onPress: onOpenDuplicates },
+    onOpenZoneSets && { icon: 'map', label: t('zoneSets.open'), onPress: onOpenZoneSets },
+    onOpenConfiguration && { icon: 'gauge', label: t('configuration.open'), onPress: onOpenConfiguration },
+  ].filter(Boolean);
+
   const header = (
     <View>
       <View style={styles.hero}>
-        <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.bigPaw}><Icon name="dog" size={210} color={colors.onPrimary} strokeWidth={1.4} /></View>
         <View style={styles.heroInner}>
           <View style={styles.titleRow}>
             <Text accessibilityRole="header" style={styles.title}>{t('commandCenter.title')}</Text>
             {onLogout ? (
               <Pressable accessibilityRole="button" accessibilityLabel={t('login.logout')} disabled={logoutPending} onPress={onLogout} hitSlop={6} style={({ pressed }) => [styles.logout, pressed && styles.pressed, logoutPending && styles.disabled]}>
-                <Icon name="logout" size={22} color={colors.onPrimary} />
+                <Icon name="logout" size={20} color={colors.onPrimary} />
               </Pressable>
             ) : null}
           </View>
-          <Text style={styles.subtitle}>{t('commandCenter.subtitle')}</Text>
-          {onOpenDuplicates || onOpenZoneSets || onOpenConfiguration ? (
-            <View style={styles.tools}>
-              {onOpenDuplicates ? <Tool icon="copy" label={t('duplicates.open')} onPress={onOpenDuplicates} /> : null}
-              {onOpenZoneSets ? <Tool icon="map" label={t('zoneSets.open')} onPress={onOpenZoneSets} /> : null}
-              {onOpenConfiguration ? <Tool icon="gauge" label={t('configuration.open')} onPress={onOpenConfiguration} /> : null}
-            </View>
-          ) : null}
+        </View>
+        {toolItems.length ? (
+          <View style={styles.tools}>
+            {toolItems.map((tool, index) => <Tool key={tool.icon} {...tool} last={index === toolItems.length - 1} />)}
+          </View>
+        ) : null}
+        <View style={styles.heroInner}>
           <View style={styles.metricsRow}>
             <Metric label={t('moderation.onPage')} value={summary.total} />
             <Metric label={t('moderation.flagged')} value={summary.flagged} alert />
@@ -275,38 +279,36 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.primary },
   list: { backgroundColor: colors.background },
   content: { flexGrow: 1, backgroundColor: colors.background, paddingBottom: 32 },
-  hero: { backgroundColor: colors.primary, overflow: 'hidden' },
-  bigPaw: { position: 'absolute', right: -48, top: 120, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
-  heroInner: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.sm },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginTop: spacing.lg },
-  logout: { width: layout.minTouch, height: layout.minTouch, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,230,196,0.45)' },
-  title: { flex: 1, fontFamily: fontFamily.display, fontSize: 35, lineHeight: 42, letterSpacing: -0.4, color: colors.onPrimary },
-  subtitle: { ...type.body, fontSize: 15, lineHeight: 22, color: colors.onForest, maxWidth: 520 },
-  tools: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  tool: { flex: 1, minHeight: 84, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(201,230,196,0.4)', backgroundColor: colors.forestField, padding: spacing.md, gap: spacing.sm, justifyContent: 'space-between' },
-  toolText: { fontFamily: fontFamily.label, fontSize: 13, lineHeight: 17, color: colors.onPrimary },
-  metricsRow: { flexDirection: 'row', marginTop: spacing.xl, borderTopWidth: 1, borderTopColor: 'rgba(201,230,196,0.3)' },
-  metric: { flex: 1, gap: 2, paddingTop: spacing.lg, paddingRight: spacing.md },
-  metricDivider: { borderRightWidth: 1, borderRightColor: 'rgba(201,230,196,0.3)', marginRight: spacing.md },
-  metricValue: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 34, lineHeight: 40, color: colors.onPrimary },
+  hero: { backgroundColor: colors.primary },
+  heroInner: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, paddingTop: spacing.xs, paddingBottom: spacing.md },
+  logout: { width: layout.minTouch, height: layout.minTouch, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  title: { flex: 1, fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.onPrimary },
+  tools: { flexDirection: 'row', borderTopWidth: 1, borderBottomWidth: 1, borderColor: 'rgba(201,230,196,0.22)' },
+  tool: { flex: 1, minHeight: 64, alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm },
+  toolText: { fontFamily: fontFamily.semibold, fontSize: 12, lineHeight: 16, color: colors.onForest, textAlign: 'center' }, toolDivider: { borderRightWidth: 1, borderRightColor: 'rgba(201,230,196,0.22)' },
+  metricsRow: { flexDirection: 'row' },
+  metric: { flex: 1, paddingVertical: spacing.md, paddingRight: spacing.md, gap: 0 },
+  metricDivider: { borderRightWidth: 1, borderRightColor: 'rgba(201,230,196,0.22)', marginRight: spacing.md },
+  metricValue: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 24, lineHeight: 28, color: colors.onPrimary },
   metricValueHot: { color: '#ffb4ab' },
-  metricLabel: { fontFamily: fontFamily.label, fontSize: 13, lineHeight: 17, color: colors.onForest },
-  queueIntro: { marginHorizontal: layout.margin, marginTop: spacing.xxl, marginBottom: spacing.xl, gap: spacing.sm },
-  queueTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
-  pageScope: { ...type.caption, color: colors.inkMuted },
+  metricLabel: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 16, color: colors.onForest },
+  queueIntro: { marginHorizontal: layout.margin, marginTop: spacing.xl, marginBottom: spacing.md, gap: 2 },
+  queueTitle: { fontFamily: fontFamily.bold, fontSize: 18, lineHeight: 24, color: colors.ink },
+  pageScope: { ...type.caption, fontSize: 12, color: colors.inkMuted },
   gridRow: { gap: spacing.md },
   gridItem: { flex: 1, maxWidth: '50%' },
   item: { backgroundColor: colors.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.outlineSoft, marginBottom: spacing.md },
-  stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 6, backgroundColor: colors.primary },
+  stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: colors.outlineSoft },
   stripeSevere: { backgroundColor: colors.dangerAlert }, stripeHidden: { backgroundColor: colors.outline },
-  itemBody: { paddingLeft: layout.margin + 6, paddingRight: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
+  itemBody: { paddingLeft: layout.margin + 4, paddingRight: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
   itemTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   itemTitleBlock: { flex: 1, gap: 2 },
-  incident: { fontFamily: fontFamily.displayMedium, fontSize: 21, lineHeight: 27, color: colors.ink },
+  incident: { fontFamily: fontFamily.bold, fontSize: 17, lineHeight: 23, color: colors.ink },
   timeRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.md },
   timestamp: { ...type.caption, color: colors.inkMuted, fontVariant: ['tabular-nums'] },
   reportNumber: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 12, color: colors.inkSubtle },
-  status: { fontFamily: fontFamily.label, fontSize: 14, color: colors.primary, marginTop: 2 }, statusSevere: { color: colors.danger }, statusHidden: { color: colors.inkMuted },
+  status: { fontFamily: fontFamily.label, fontSize: 13, color: colors.inkMuted, marginTop: 2 }, statusSevere: { color: colors.danger }, statusHidden: { color: colors.inkSubtle },
   description: { ...type.body, fontSize: 15, lineHeight: 22, color: colors.ink },
   meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
   metaText: { fontFamily: fontFamily.labelMedium, fontSize: 13, color: colors.inkMuted }, metaHot: { fontFamily: fontFamily.label, color: colors.danger },
@@ -316,7 +318,7 @@ const styles = StyleSheet.create({
   warningText: { ...type.caption, fontSize: 13, color: colors.danger },
   actionBar: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
   actionCell: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center' }, actionDivider: { borderLeftWidth: 1, borderLeftColor: colors.border },
-  actionText: { fontFamily: fontFamily.displayMedium, fontSize: 17 },
+  actionText: { fontFamily: fontFamily.semibold, fontSize: 15 },
   pressed: { opacity: 0.78 }, disabled: { opacity: 0.42 },
   loader: { padding: 30 }, empty: { ...type.body, color: colors.inkMuted, textAlign: 'center', padding: 40 },
   moreButton: { alignSelf: 'center', borderColor: colors.primary, borderWidth: 1, borderRadius: 12, minWidth: 160, minHeight: layout.minTouch, padding: spacing.md, alignItems: 'center', justifyContent: 'center', marginTop: spacing.xs },
