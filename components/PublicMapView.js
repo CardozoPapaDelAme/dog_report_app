@@ -8,7 +8,9 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Camera, Map, ViewAnnotation } from '@maplibre/maplibre-react-native';
 
-import { INCIDENT_TYPES, clusterRadiusPx, severityColor, severityLevel } from '../models/publicMap.js';
+import { INCIDENT_TYPES, clusterRadiusPx, severityLevel } from '../models/publicMap.js';
+import { colors, fontFamily } from '../theme/index.js';
+import { Icon } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
 
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
@@ -74,19 +76,21 @@ export default function PublicMapView({
             lngLat={[longitude, latitude]}
             onPress={() => onSelectCluster?.(cluster)}
           >
-            <View
-              accessible
-              accessibilityRole="button"
-              accessibilityLabel={t('map.clusterItem', {
-                count: cluster.report_count,
-                severity: t(`map.severity.${severityLevel(cluster.highest_severity)}`),
-              })}
-              style={[styles.cluster, {
-                width: radius * 2, height: radius * 2, borderRadius: radius,
-                backgroundColor: severityColor(cluster.highest_severity),
-              }]}
-            >
-              <Text style={styles.clusterText}>{cluster.report_count}</Text>
+            <View style={[styles.halo, { width: radius * 2 + 14, height: radius * 2 + 14, borderRadius: radius + 7, backgroundColor: `${colors.severity[severityLevel(cluster.highest_severity)]}33` }]}>
+              <View
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('map.clusterItem', {
+                  count: cluster.report_count,
+                  severity: t(`map.severity.${severityLevel(cluster.highest_severity)}`),
+                })}
+                style={[styles.cluster, {
+                  width: radius * 2, height: radius * 2, borderRadius: radius,
+                  backgroundColor: colors.severity[severityLevel(cluster.highest_severity)],
+                }]}
+              >
+                <Text style={styles.clusterText}>{cluster.report_count}</Text>
+              </View>
             </View>
           </ViewAnnotation>
         );
@@ -107,10 +111,10 @@ export default function PublicMapView({
               accessibilityLabel={t('map.pinItem', { type: t(`reportForm.incidents.${INCIDENT_TYPES.includes(report.incident_type) ? report.incident_type : 'otro'}`) })}
               style={styles.pinWrap}
             >
-              <View style={[styles.pinHead, { backgroundColor: severityColor(report.incident_type) }]}>
-                <View style={styles.pinDot} />
+              <View style={[styles.pinHead, { backgroundColor: colors.severity[severityLevel(report.incident_type)] }]}>
+                <Icon name="dog" size={18} color={colors.onPrimary} strokeWidth={2.4} />
               </View>
-              <View style={[styles.pinTip, { borderTopColor: severityColor(report.incident_type) }]} />
+              <View style={[styles.pinTip, { borderTopColor: colors.severity[severityLevel(report.incident_type)] }]} />
             </View>
           </ViewAnnotation>
         );
@@ -121,10 +125,10 @@ export default function PublicMapView({
 
 const styles = StyleSheet.create({
   map: { flex: 1 },
-  cluster: { alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#ffffff', opacity: 0.92 },
-  clusterText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
+  halo: { alignItems: 'center', justifyContent: 'center' },
+  cluster: { alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 5 },
+  clusterText: { color: '#ffffff', fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 15 },
   pinWrap: { alignItems: 'center' },
-  pinHead: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center' },
-  pinDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#ffffff' },
-  pinTip: { width: 0, height: 0, marginTop: -2, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
+  pinHead: { width: 36, height: 36, borderRadius: 18, borderWidth: 3, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 5 },
+  pinTip: { width: 0, height: 0, marginTop: -3, borderLeftWidth: 7, borderRightWidth: 7, borderTopWidth: 12, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
 });

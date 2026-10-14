@@ -37,6 +37,8 @@ export const colors = {
   infoSoft: '#e3f2fd',
   /** Map clusters/pins by severity. White text on every one of these is >= 4.5:1. */
   cluster: { high: '#b71c1c', med: '#a64b00', low: '#2e7d32' },
+  /** Fill by `severityLevel()` ('high' | 'medium' | 'low') for map markers and tags; white text passes 4.5:1 on all three. */
+  severity: { high: '#b71c1c', medium: '#a64b00', low: '#2e7d32' },
   scrim: 'rgba(17, 25, 15, 0.55)',
   glass: 'rgba(18, 18, 18, 0.56)',
   onGlass: '#ffffff',

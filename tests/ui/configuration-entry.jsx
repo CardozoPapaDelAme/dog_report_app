@@ -341,7 +341,7 @@ function Fixture() {
   if (params.has('offline-queue')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><OfflineQueueFixture /></SafeAreaProvider>
   </div>;
-  if (params.has('map')) return <div style={{height:'100dvh'}}>
+  if (params.has('map')) return <div style={{height:'100dvh',display:'flex'}}>
     <SafeAreaProvider><PublicMapScreen onBack={() => {}} mapAvailable={params.has('expo-go') ? false : undefined} /></SafeAreaProvider>
   </div>;
   if (params.has('association-preview')) return <div style={{height:'100dvh'}}>

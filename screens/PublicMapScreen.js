@@ -11,19 +11,18 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppButton, Banner, Icon, Sheet } from '../components/ui/index.js';
+import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
+
 import RecentReportsList from '../components/RecentReportsList';
 import ReportFlagSheet from '../components/ReportFlagSheet';
 import ZoneReportsSheet from '../components/ZoneReportsSheet';
 import { usePublicMap } from '../hooks/usePublicMap.js';
-import { INCIDENT_TYPES, MAX_ZOOM, isInViewport, severityColor } from '../models/publicMap.js';
+import { INCIDENT_TYPES, MAX_ZOOM, isInViewport, severityLevel } from '../models/publicMap.js';
 import { getApiBaseUrl } from '../services/apiClient.js';
 import { CREEL_CENTER, INITIAL_ZOOM, MAP_ATTRIBUTION_TEXT } from '../services/mapConfig.js';
 import { isNativeMapAvailableAtRuntime } from '../services/mapRuntime.js';
 
-const colors = {
-  ink: '#191d17', primary: '#00450d', surface: '#f7fbf1', muted: '#5d6859', line: '#e0e0e0',
-  danger: '#ba1a1a', dangerSoft: '#ffdad6', warningSoft: '#fff0c2', warning: '#8a5700',
-};
 const LOCATION_TIMEOUT_MS = 3000;
 const CLUSTER_ZOOM_STEP = 2;
 const DETAIL_KEYS = ['descripcion', 'cantidad_aprox', 'hubo_mordida', 'tipo_animal', 'resulto_herido', 'cantidad_afectada', 'situacion'];
@@ -72,34 +71,29 @@ function photoUrl(reportId) {
   try { return `${getApiBaseUrl()}/reports/${encodeURIComponent(reportId)}/photo`; } catch { return null; }
 }
 
-/** Overlay for a selected cluster with zoom-in and view-reports actions. */
+/** Bottom sheet for a selected cluster: severity, a count per incident type, and the zoom-in / view-reports actions. */
 function ClusterModal({ cluster, onClose, onZoomIn, onViewReports, t }) {
+  const level = severityLevel(cluster.highest_severity);
   return (
-    <View style={styles.backdrop}>
-      <View accessibilityRole="alert" style={styles.modal} testID="cluster-modal">
-        <Text style={styles.modalTitle}>{t('map.cluster.title', { count: cluster.report_count })}</Text>
-        <Text style={[styles.severityTag, { backgroundColor: severityColor(cluster.highest_severity) }]}>
-          {t('map.cluster.highest', { type: t(`reportForm.incidents.${cluster.highest_severity}`) })}
-        </Text>
+    <Sheet testID="cluster-modal" onClose={onClose} maxHeight="85%">
+      <Text accessibilityRole="alert" style={styles.modalTitle}>{t('map.cluster.title', { count: cluster.report_count })}</Text>
+      <Text style={[styles.severityTag, { backgroundColor: colors.severity[level] }]}>
+        {t('map.cluster.highest', { type: t(`reportForm.incidents.${cluster.highest_severity}`) })}
+      </Text>
+      <View style={styles.counts}>
         {INCIDENT_TYPES.map((type) => (
-          <View key={type} style={styles.countRow}>
+          <View key={type} style={styles.countCell}>
             <Text style={styles.rowLabel}>{t(`reportForm.incidents.${type}`)}</Text>
-            <Text style={styles.rowValue}>{cluster.type_counts[type]}</Text>
+            <Text style={[styles.rowValue, cluster.type_counts[type] === 0 && styles.rowValueZero]}>{cluster.type_counts[type]}</Text>
           </View>
         ))}
-        <Pressable accessibilityRole="button" onPress={onViewReports} style={styles.primaryButton}>
-          <Text style={styles.primaryText}>{t('map.cluster.viewReports')}</Text>
-        </Pressable>
-        <View style={styles.actions}>
-          <Pressable accessibilityRole="button" onPress={onZoomIn} style={styles.primaryButton}>
-            <Text style={styles.primaryText}>{t('map.zoomIn')}</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={onClose} style={styles.secondaryButton}>
-            <Text style={styles.secondaryText}>{t('map.close')}</Text>
-          </Pressable>
-        </View>
       </View>
-    </View>
+      <AppButton title={t('map.cluster.viewReports')} onPress={onViewReports} />
+      <View style={styles.actions}>
+        <AppButton title={t('map.zoomIn')} variant="secondary" onPress={onZoomIn} style={styles.actionHalf} />
+        <AppButton title={t('map.close')} variant="secondary" onPress={onClose} style={styles.actionHalf} />
+      </View>
+    </Sheet>
   );
 }
 
@@ -126,12 +120,11 @@ function PinSheet({ report, onClose, onFlag, t }) {
     [t('map.pin.occurredAt'), new Date(report.occurred_at).toLocaleString('es-MX')],
   ].filter(Boolean);
   return (
-    <View style={styles.sheet} testID="pin-sheet">
-      <View style={styles.grabber} />
+    <Sheet testID="pin-sheet" onClose={onClose} maxHeight="88%">
       <ScrollView contentContainerStyle={styles.sheetContent}>
-        <Text style={styles.modalTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
+        <Text accessibilityRole="header" style={styles.modalTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
         {report.has_flags ? (
-          <View style={styles.flagNotice}><Text style={styles.flagText}>{t('map.pin.flagged')}</Text></View>
+          <View style={styles.flagNotice}><Icon name="flag" size={18} color={colors.warning} /><Text style={styles.flagText}>{t('map.pin.flagged')}</Text></View>
         ) : null}
         {uri && !photoFailed ? (
           <Image
@@ -141,20 +134,18 @@ function PinSheet({ report, onClose, onFlag, t }) {
             onError={() => setPhotoFailed(true)}
           />
         ) : null}
-        {rows.map(([label, value]) => (
-          <View key={label} style={styles.countRow}>
-            <Text style={styles.rowLabel}>{label}</Text>
-            <Text style={[styles.rowValue, styles.rowValueWrap]}>{value}</Text>
-          </View>
-        ))}
-        <Pressable accessibilityRole="button" onPress={onFlag} style={styles.flagButton}>
-          <Text style={styles.flagButtonText}>{t('flag.open')}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" onPress={onClose} style={styles.secondaryButton}>
-          <Text style={styles.secondaryText}>{t('map.close')}</Text>
-        </Pressable>
+        <View style={styles.facts}>
+          {rows.map(([label, value]) => (
+            <View key={label} style={styles.countRow}>
+              <Text style={styles.rowLabel}>{label}</Text>
+              <Text style={[styles.rowValue, styles.rowValueWrap]}>{value}</Text>
+            </View>
+          ))}
+        </View>
+        <AppButton title={t('flag.open')} variant="destructive" onPress={onFlag} />
+        <AppButton title={t('map.close')} variant="secondary" onPress={onClose} />
       </ScrollView>
-    </View>
+    </Sheet>
   );
 }
 
@@ -178,16 +169,16 @@ function ExpoGoFallbackScreen({ onBack }) {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" onPress={onBack} style={styles.backButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('map.back')} onPress={onBack} hitSlop={6} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+          <Icon name="back" size={22} color={colors.onPrimary} />
           <Text style={styles.backText}>{t('map.back')}</Text>
         </Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>{t('map.title')}</Text>
+        <Text accessibilityRole="header" numberOfLines={1} style={styles.headerTitle}>{t('map.title')}</Text>
       </View>
       <View style={styles.mapArea}>
         <ScrollView contentContainerStyle={styles.fallbackContent}>
-          <View accessibilityRole="alert" style={styles.noticeCard} testID="expo-go-notice">
-            <Text style={styles.bannerText}>{t('map.expoGo.notice')}</Text>
-            <Text style={styles.bannerHint}>{t('map.expoGo.hint')}</Text>
+          <View accessibilityRole="alert" testID="expo-go-notice">
+            <Banner tone="warning" title={t('map.expoGo.notice')} message={t('map.expoGo.hint')} />
           </View>
           <RecentReportsList onSelect={setSelectedReport} t={t} />
         </ScrollView>
@@ -231,10 +222,11 @@ function NativeMapScreen({ onBack }) {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" onPress={onBack} style={styles.backButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('map.back')} onPress={onBack} hitSlop={6} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+          <Icon name="back" size={22} color={colors.onPrimary} />
           <Text style={styles.backText}>{t('map.back')}</Text>
         </Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>{t('map.title')}</Text>
+        <Text accessibilityRole="header" numberOfLines={1} style={styles.headerTitle}>{t('map.title')}</Text>
       </View>
       <View style={styles.mapArea}>
         {initialCenter ? (
@@ -258,14 +250,19 @@ function NativeMapScreen({ onBack }) {
           </View>
         ) : null}
         {banner ? (
-          <View style={[styles.banner, banner.danger && styles.bannerDanger]} accessibilityRole="alert">
-            <Text style={styles.bannerText}>{banner.text}</Text>
-            {banner.retry ? (
-              <Pressable accessibilityRole="button" onPress={map.retry} style={styles.retryButton}>
-                <Text style={styles.retryText}>{t('map.retry')}</Text>
-              </Pressable>
-            ) : null}
-            {map.phase === 'offline' ? <Text style={styles.bannerHint}>{t('map.offlineReporting')}</Text> : null}
+          <View style={styles.bannerSlot} accessibilityRole="alert">
+            <View style={styles.banner}>
+              <Icon name="alert" size={20} color={banner.danger ? '#ffb4ab' : colors.warningAmber} />
+              <View style={styles.bannerText}>
+                <Text style={styles.bannerTitle}>{banner.text}</Text>
+                {map.phase === 'offline' ? <Text style={styles.bannerHint}>{t('map.offlineReporting')}</Text> : null}
+              </View>
+              {banner.retry ? (
+                <Pressable accessibilityRole="button" onPress={map.retry} hitSlop={8} style={styles.retryButton}>
+                  <Text style={styles.retryText}>{t('map.retry')}</Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         ) : null}
         <Text style={styles.attribution}>{MAP_ATTRIBUTION_TEXT}</Text>
@@ -297,42 +294,38 @@ function NativeMapScreen({ onBack }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
-  backButton: { minHeight: 44, justifyContent: 'center', borderRadius: 999, borderColor: colors.line, borderWidth: 1, backgroundColor: '#ffffff', paddingHorizontal: 16 },
-  backText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13 },
-  headerTitle: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 20 },
-  mapArea: { flex: 1 },
+  root: { flex: 1, backgroundColor: colors.primary },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: colors.primary },
+  backButton: { minHeight: layout.minTouch, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  backText: { fontFamily: fontFamily.label, fontSize: 15, color: colors.onPrimary },
+  headerTitle: { flex: 1, flexShrink: 1, textAlign: 'right', fontFamily: fontFamily.display, fontSize: 22, lineHeight: 28, color: colors.onPrimary },
+  pressed: { opacity: 0.7 },
+  mapArea: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loading: { position: 'absolute', top: 12, alignSelf: 'center', borderRadius: 999, backgroundColor: '#ffffff', padding: 8 },
-  fallbackContent: { padding: 16, gap: 16 },
-  noticeCard: { borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14, gap: 8 },
-  banner: { position: 'absolute', top: 12, left: 16, right: 16, borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14, gap: 8 },
-  bannerDanger: { borderColor: colors.danger, backgroundColor: colors.dangerSoft },
-  bannerText: { color: colors.ink, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 14 },
-  bannerHint: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12 },
-  retryButton: { minHeight: 40, alignSelf: 'flex-start', justifyContent: 'center', borderRadius: 12, backgroundColor: colors.primary, paddingHorizontal: 16 },
-  retryText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13 },
-  attribution: { position: 'absolute', left: 8, bottom: 6, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.85)', paddingHorizontal: 6, paddingVertical: 2, color: colors.ink, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 10 },
-  backdrop: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.25)', padding: 24 },
-  modal: { width: '100%', maxWidth: 380, borderRadius: 16, backgroundColor: '#ffffff', padding: 20, gap: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
-  modalTitle: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 20 },
-  severityTag: { alignSelf: 'flex-start', overflow: 'hidden', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12 },
-  countRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, borderBottomColor: colors.line, borderBottomWidth: 1, paddingVertical: 8 },
-  rowLabel: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14 },
-  rowValue: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
-  rowValueWrap: { flexShrink: 1, textAlign: 'right' },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 6 },
-  primaryButton: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.primary },
-  primaryText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
-  secondaryButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 16, marginTop: 6 },
-  secondaryText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '70%', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, elevation: 10 },
-  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginTop: 10 },
-  sheetContent: { padding: 20, gap: 6 },
-  flagNotice: { borderRadius: 12, backgroundColor: colors.warningSoft, padding: 10 },
-  flagText: { color: colors.warning, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13 },
-  flagButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderColor: colors.danger, borderWidth: 1, paddingHorizontal: 16, marginTop: 6 },
-  flagButtonText: { color: colors.danger, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
-  photo: { width: '100%', height: 200, borderRadius: 12, backgroundColor: '#d8dbd2' },
+  loading: { position: 'absolute', top: spacing.md, alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
+  fallbackContent: { padding: spacing.lg, gap: spacing.xl },
+  bannerSlot: { position: 'absolute', top: spacing.md, left: spacing.lg, right: spacing.lg },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.lg, backgroundColor: 'rgba(2,26,6,0.9)', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  bannerText: { flex: 1, gap: 2 },
+  bannerTitle: { fontFamily: fontFamily.label, fontSize: 15, lineHeight: 20, color: colors.onPrimary },
+  bannerHint: { ...type.caption, color: colors.onForest },
+  retryButton: { minHeight: layout.minTouch, justifyContent: 'center' },
+  retryText: { fontFamily: fontFamily.displayMedium, fontSize: 16, color: colors.signal },
+  attribution: { position: 'absolute', left: spacing.sm, bottom: spacing.sm, borderRadius: radius.xs, backgroundColor: 'rgba(255,255,255,0.88)', paddingHorizontal: 6, paddingVertical: 2, color: colors.ink, fontFamily: fontFamily.regular, fontSize: 10 },
+  modalTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.ink },
+  severityTag: { flexShrink: 0, alignSelf: 'flex-start', overflow: 'hidden', borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, color: '#ffffff', fontFamily: fontFamily.label, fontSize: 13 },
+  counts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginVertical: spacing.sm },
+  countCell: { flexBasis: '47%', flexGrow: 1, flexDirection: 'column-reverse', gap: 2, borderRadius: radius.md, backgroundColor: colors.surfaceLow, paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  countRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md, borderBottomColor: colors.border, borderBottomWidth: 1, paddingVertical: spacing.md },
+  rowLabel: { fontFamily: fontFamily.label, fontSize: 13, color: colors.inkMuted },
+  rowValue: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 22, lineHeight: 26, color: colors.primary },
+  rowValueZero: { color: colors.inkSubtle },
+  rowValueWrap: { flexShrink: 1, textAlign: 'right', fontFamily: fontFamily.labelMedium, fontSize: 15, lineHeight: 21, color: colors.ink },
+  actions: { flexDirection: 'row', gap: spacing.md },
+  actionHalf: { flex: 1 },
+  sheetContent: { gap: spacing.md },
+  facts: { borderTopWidth: 1, borderTopColor: colors.border },
+  flagNotice: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radius.md, backgroundColor: colors.warningSoft, padding: spacing.md },
+  flagText: { fontFamily: fontFamily.label, fontSize: 14, color: colors.warning, flexShrink: 1 },
+  photo: { width: '100%', height: 200, borderRadius: radius.lg, backgroundColor: colors.surfaceHigh },
 });

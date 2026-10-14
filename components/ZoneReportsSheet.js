@@ -7,8 +7,9 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { loadZoneReports } from '../hooks/zoneReports.js';
-
-const colors = { ink: '#191d17', primary: '#00450d', muted: '#5d6859', line: '#e0e0e0', warningSoft: '#fff0c2', warning: '#8a5700' };
+import { severityLevel } from '../models/publicMap.js';
+import { colors, fontFamily, spacing, type } from '../theme/index.js';
+import { AppButton, Icon, Sheet } from './ui/index.js';
 
 // Bottom sheet listing the public reports of a tapped cluster area (approximate, locally filtered).
 /**
@@ -34,62 +35,52 @@ export default function ZoneReportsSheet({ cluster, zoom, onSelect, onClose, t, 
 
   const retry = () => setAttempt((value) => value + 1);
   return (
-    <>
-      {/* Tap outside the sheet to dismiss; hidden from assistive tech so it adds no second "close" button. */}
-      <Pressable
-        accessible={false}
-        aria-hidden
-        importantForAccessibility="no"
-        onPress={onClose}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.sheet} testID="zone-sheet">
-        <View style={styles.grabber} />
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text accessibilityRole="header" style={styles.title}>{t('zone.title')}</Text>
-          {state.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('zone.loading')} color={colors.primary} /> : null}
-          {state.phase === 'empty' ? <Text style={styles.message}>{t('zone.empty')}</Text> : null}
-          {state.phase === 'offline' || state.phase === 'error' ? (
-            <View accessibilityRole="alert" style={styles.errorBox}>
-              <Text style={styles.message}>{t(state.phase === 'offline' ? 'zone.offline' : 'zone.error')}</Text>
-              <Pressable accessibilityRole="button" onPress={retry} style={styles.retryButton}>
-                <Text style={styles.retryText}>{t('map.retry')}</Text>
-              </Pressable>
-            </View>
-          ) : null}
+    <Sheet testID="zone-sheet" onClose={onClose} maxHeight="85%">
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text accessibilityRole="header" style={styles.title}>{t('zone.title')}</Text>
+        {state.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('zone.loading')} color={colors.primary} style={styles.loader} /> : null}
+        {state.phase === 'empty' ? <Text style={styles.message}>{t('zone.empty')}</Text> : null}
+        {state.phase === 'offline' || state.phase === 'error' ? (
+          <View accessibilityRole="alert" style={styles.errorBox}>
+            <Text style={styles.message}>{t(state.phase === 'offline' ? 'zone.offline' : 'zone.error')}</Text>
+            <AppButton title={t('map.retry')} variant="secondary" onPress={retry} />
+          </View>
+        ) : null}
+        <View style={styles.list}>
           {state.reports.map((report) => (
-            <Pressable key={report.report_id} accessibilityRole="button" onPress={() => onSelect(report)} style={styles.row}>
-              <Text style={styles.rowTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
-              <Text style={styles.rowMeta}>
-                {`${t(`reportForm.sighting.${report.sighting_type}`)} · ${new Date(report.occurred_at).toLocaleDateString('es-MX')}`}
-              </Text>
-              {report.has_flags ? <Text style={styles.flagText}>{`⚑ ${t('map.pin.flagged')}`}</Text> : null}
+            <Pressable key={report.report_id} accessibilityRole="button" onPress={() => onSelect(report)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+              <View style={[styles.stripe, { backgroundColor: colors.severity[severityLevel(report.incident_type)] }]} />
+              <View style={styles.rowText}>
+                <Text style={styles.rowTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
+                <Text style={styles.rowMeta}>
+                  {`${t(`reportForm.sighting.${report.sighting_type}`)} · ${new Date(report.occurred_at).toLocaleDateString('es-MX')}`}
+                </Text>
+                {report.has_flags ? <Text style={styles.flagText}>{`⚑ ${t('map.pin.flagged')}`}</Text> : null}
+              </View>
+              <Icon name="forward" size={20} color={colors.inkSubtle} />
             </Pressable>
           ))}
-          {state.phase === 'ready' ? <Text style={styles.note}>{t('zone.approximate')}</Text> : null}
-          <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>{t('map.close')}</Text>
-          </Pressable>
-        </ScrollView>
-      </View>
-    </>
+        </View>
+        {state.phase === 'ready' ? <Text style={styles.note}>{t('zone.approximate')}</Text> : null}
+        <AppButton title={t('map.close')} variant="secondary" onPress={onClose} />
+      </ScrollView>
+    </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '90%', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, elevation: 10 },
-  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginTop: 10 },
-  content: { padding: 20, gap: 8 },
-  title: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 20 },
-  message: { color: colors.ink, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14 },
-  errorBox: { gap: 8 },
-  retryButton: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', borderRadius: 12, backgroundColor: colors.primary, paddingHorizontal: 16 },
-  retryText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13 },
-  row: { minHeight: 56, borderBottomColor: colors.line, borderBottomWidth: 1, paddingVertical: 10, gap: 2 },
-  rowTitle: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 15 },
-  rowMeta: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13 },
-  flagText: { color: colors.warning, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 12 },
-  note: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12 },
-  closeButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderColor: colors.line, borderWidth: 1, marginTop: 6 },
-  closeText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
+  content: { gap: spacing.md },
+  title: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.ink },
+  loader: { paddingVertical: spacing.lg },
+  message: { ...type.body, fontSize: 15, color: colors.ink },
+  errorBox: { gap: spacing.md },
+  list: { borderTopWidth: 1, borderTopColor: colors.border },
+  row: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: spacing.md },
+  pressed: { opacity: 0.7 },
+  stripe: { width: 5, alignSelf: 'stretch', borderRadius: 3 },
+  rowText: { flex: 1, gap: 2 },
+  rowTitle: { fontFamily: fontFamily.displayMedium, fontSize: 18, lineHeight: 24, color: colors.ink },
+  rowMeta: { ...type.caption, color: colors.inkMuted, fontVariant: ['tabular-nums'] },
+  flagText: { fontFamily: fontFamily.label, fontSize: 13, color: colors.warning },
+  note: { ...type.caption, color: colors.inkMuted },
 });
