@@ -8,7 +8,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   AccessibilityInfo,
-  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -20,7 +19,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { useSubmitReport } from '../hooks/useSubmitReport.js';
@@ -37,23 +36,8 @@ import {
   DOG_SIZES,
   INJURED_DOG_SITUATIONS,
 } from '../models/reportPayload.js';
-
-const colors = {
-  background: '#ffffff',
-  surface: '#ffffff',
-  ink: '#191d17',
-  muted: '#5d6859',
-  outline: '#c0c9bb',
-  primary: '#00450d',
-  soft: '#eef3e9',
-  danger: '#a51e1e',
-  dangerSoft: '#fff0ee',
-  warning: '#735500',
-  warningSoft: '#fff3cd',
-};
-const bodyFont = 'PlusJakartaSans_400Regular';
-const semiBoldFont = 'PlusJakartaSans_600SemiBold';
-const boldFont = 'PlusJakartaSans_700Bold';
+import { AppButton, Banner, Icon, Scrim } from '../components/ui/index.js';
+import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 /** Translates a field validation error (`{key, values}`) or returns a string error as is. */
 function fieldErrorText(error, t) {
@@ -62,7 +46,7 @@ function fieldErrorText(error, t) {
   return t(`reportForm.validation.${error.key}`, error.values);
 }
 
-/** Single-choice field that opens a modal option list. */
+/** Single-choice field that opens a bottom sheet with the option list. */
 function SelectField({ label, field, value, options, disabled, error, t, onChange }) {
   const [open, setOpen] = useState(false);
   const message = fieldErrorText(error, t);
@@ -84,18 +68,18 @@ function SelectField({ label, field, value, options, disabled, error, t, onChang
         ]}
       >
         <Text numberOfLines={1} style={styles.selectText}>{selected?.label ?? t('reportForm.selectPlaceholder')}</Text>
-        <Text style={styles.selectChevron}>{open ? '▲' : '▼'}</Text>
+        <Icon name="down" size={20} color={colors.primary} />
       </Pressable>
       <Modal
         visible={open}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setOpen(false)}
       >
         <View style={styles.selectBackdrop}>
-          <Pressable style={styles.selectDismissArea} onPress={() => setOpen(false)} />
+          <Pressable accessible={false} aria-hidden importantForAccessibility="no" style={styles.selectDismissArea} onPress={() => setOpen(false)} />
           <View style={styles.selectSheet}>
-            <Text style={styles.selectSheetTitle}>{label}</Text>
+            <Text accessibilityRole="header" style={styles.selectSheetTitle}>{label}</Text>
             {options.map((option) => (
               <Pressable
                 key={option.value}
@@ -115,6 +99,7 @@ function SelectField({ label, field, value, options, disabled, error, t, onChang
                 <Text style={[styles.selectOptionText, value === option.value && styles.selectOptionTextSelected]}>
                   {option.label}
                 </Text>
+                {value === option.value ? <Icon name="check" size={20} color={colors.primary} strokeWidth={3} /> : null}
               </Pressable>
             ))}
           </View>
@@ -154,27 +139,6 @@ function textInputIdentity(id, name) {
     return { nativeID: id };
   }
   return { id, name, nativeID: id };
-}
-
-function Button({ title, onPress, disabled, busy, secondary, testID }) {
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: Boolean(disabled), busy: Boolean(busy) }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        secondary && styles.secondaryButton,
-        disabled && styles.disabled,
-        pressed && !disabled && styles.pressed,
-      ]}
-    >
-      {busy ? <ActivityIndicator color={secondary ? colors.primary : '#fff'} /> : null}
-      <Text style={[styles.buttonText, secondary && styles.secondaryButtonText]}>{title}</Text>
-    </Pressable>
-  );
 }
 
 /** Group of option chips; `allowDeselect` lets a second tap clear the value. */
@@ -276,6 +240,7 @@ export default function ReportFormScreen({
   submitDependencies = {},
 }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [form, setForm] = useState(() => createEmptyReportFormDraft());
   const submit = useSubmitReport({
     draft,
@@ -377,260 +342,269 @@ export default function ReportFormScreen({
     void submit.submit(form);
   }
 
+  const dialogOpen = showSuccessDialog || showQueuedDialog || showErrorDialog;
+  const fullScreenResult = showSuccessDialog || showQueuedDialog;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-          <View style={styles.header}>
+          <View style={[styles.hero, { height: 200 + insets.top }]}>
+            {draft && photoUri ? (
+              <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
+            ) : (
+              <View testID={draft ? 'report-no-photo' : undefined} style={styles.noPhoto}>
+                <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.noPhotoPaw}>
+                  <Icon name="dog" size={190} color={colors.onPrimary} strokeWidth={1.4} />
+                </View>
+                {draft ? <Text style={styles.noPhotoText}>{t('reportForm.noPhoto')}</Text> : null}
+              </View>
+            )}
+            {draft && photoUri ? <Scrim edge="top" height={110 + insets.top} strength={0.5} /> : null}
+            <Scrim edge="bottom" height={130} strength={0.7} />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('reportForm.close')}
               disabled={submit.submitting}
               onPress={onBackToCamera}
-              style={({ pressed }) => [styles.closeButton, pressed && !submit.submitting && styles.pressed]}
+              style={({ pressed }) => [styles.closeButton, { top: insets.top + 8 }, pressed && !submit.submitting && styles.pressed]}
             >
-              <Text style={styles.closeText}>×</Text>
+              <Icon name="close" size={22} color={colors.onPrimary} />
             </Pressable>
             <Text accessibilityRole="header" style={styles.title}>{t('reportForm.title')}</Text>
-            <View style={styles.headerSpacer} />
           </View>
 
-          {loading ? (
-            <View style={styles.state}>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={styles.subtitle}>{t('reportForm.loading')}</Text>
-            </View>
-          ) : null}
-
-          {error && !draft ? (
-            <View style={styles.errorBanner} accessibilityRole="alert">
-              <Text style={styles.errorTitle}>{t('reportForm.draftErrorTitle')}</Text>
-              <Text style={styles.errorBody}>{generalError}</Text>
-            </View>
-          ) : null}
-
-          {draft ? (
-            <>
-              <View testID="report-privacy-warning" style={styles.privacyWarning}>
-                <Text style={styles.privacyTitle}>{t('reportForm.privacyTitle')}</Text>
-                <Text style={styles.privacyBody}>{t('reportForm.privacyBody')}</Text>
+          <View style={styles.body}>
+            {loading ? (
+              <View style={styles.state}>
+                <Text style={styles.subtitle}>{t('reportForm.loading')}</Text>
               </View>
+            ) : null}
 
-              <View style={styles.photoCard}>
-                {photoUri ? (
-                  <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
-                ) : (
-                  <View testID="report-no-photo" style={styles.noPhoto}>
-                    <Text style={styles.noPhotoText}>{t('reportForm.noPhoto')}</Text>
+            {error && !draft ? (
+              <View accessibilityRole="alert">
+                <Banner tone="error" title={t('reportForm.draftErrorTitle')} message={generalError} />
+              </View>
+            ) : null}
+
+            {draft ? (
+              <>
+                {submit.phase === 'photo_pending' ? (
+                  <View testID="report-photo-pending" accessibilityRole="alert">
+                    <Banner tone="warning" title={t('reportForm.photoPendingTitle')} message={t('reportForm.photoPendingBody')} />
                   </View>
-                )}
-              </View>
+                ) : null}
 
-              {submit.phase === 'photo_pending' ? (
-                <View testID="report-photo-pending" style={styles.notice} accessibilityRole="alert">
-                  <Text style={styles.noticeTitle}>{t('reportForm.photoPendingTitle')}</Text>
-                  <Text style={styles.noticeText}>{t('reportForm.photoPendingBody')}</Text>
+                {submit.phase === 'photo_rejected' || photoRejection ? (
+                  <View testID="report-photo-rejected" accessibilityRole="alert">
+                    <Banner
+                      tone="warning"
+                      title={t('reportForm.photoRejectedTitle')}
+                      message={t('reportForm.photoRejectedBody', { code: photoRejection?.code ?? 'photo_not_uploaded' })}
+                    />
+                  </View>
+                ) : null}
+
+                <View style={styles.section}>
+                  <SelectField
+                    label={t('reportForm.fields.incident_type')}
+                    field="incident_type"
+                    value={form.incident_type}
+                    options={incidentOptions}
+                    disabled={!canEdit}
+                    error={submit.fieldErrors.incident_type}
+                    t={t}
+                    onChange={(value) => updateField('incident_type', value)}
+                  />
+                  {form.incident_type === 'ataque_humano' ? (
+                    <ChoiceGroup
+                      label={t('reportForm.fields.hubo_mordida')}
+                      field="hubo_mordida"
+                      value={form.hubo_mordida}
+                      options={yesNoOptions}
+                      disabled={!canEdit}
+                      error={submit.fieldErrors.hubo_mordida}
+                      t={t}
+                      onChange={(value) => updateField('hubo_mordida', value)}
+                    />
+                  ) : null}
+                  {form.incident_type === 'ataque_mascota' || form.incident_type === 'ataque_ganado' ? (
+                    <TextField
+                      label={t('reportForm.fields.tipo_animal')}
+                      field="tipo_animal"
+                      value={form.tipo_animal}
+                      disabled={!canEdit}
+                      error={submit.fieldErrors.tipo_animal}
+                      t={t}
+                      onChange={(value) => updateField('tipo_animal', value)}
+                    />
+                  ) : null}
+                  {form.incident_type === 'ataque_mascota' ? (
+                    <ChoiceGroup
+                      label={t('reportForm.fields.resulto_herido')}
+                      field="resulto_herido"
+                      value={form.resulto_herido}
+                      options={[
+                        { value: null, label: t('reportForm.boolean.no_se') },
+                        ...yesNoOptions,
+                      ]}
+                      disabled={!canEdit}
+                      error={submit.fieldErrors.resulto_herido}
+                      t={t}
+                      onChange={(value) => updateField('resulto_herido', value)}
+                    />
+                  ) : null}
+                  {form.incident_type === 'ataque_ganado' ? (
+                    <TextField
+                      label={t('reportForm.fields.cantidad_afectada')}
+                      field="cantidad_afectada"
+                      value={form.cantidad_afectada}
+                      disabled={!canEdit}
+                      error={submit.fieldErrors.cantidad_afectada}
+                      t={t}
+                      keyboardType="number-pad"
+                      onChange={(value) => updateField('cantidad_afectada', value)}
+                    />
+                  ) : null}
+                  {form.incident_type === 'perro_lastimado' ? (
+                    <ChoiceGroup
+                      label={t('reportForm.fields.situacion')}
+                      field="situacion"
+                      value={form.situacion}
+                      options={injuredDogOptions}
+                      disabled={!canEdit}
+                      error={submit.fieldErrors.situacion}
+                      t={t}
+                      onChange={(value) => updateField('situacion', value)}
+                    />
+                  ) : null}
+                  {form.incident_type === 'otro' ? (
+                    <Text style={styles.caption}>{t('reportForm.onlyDescription')}</Text>
+                  ) : null}
                 </View>
-              ) : null}
 
-              {submit.phase === 'photo_rejected' || photoRejection ? (
-                <View testID="report-photo-rejected" style={styles.notice} accessibilityRole="alert">
-                  <Text style={styles.noticeTitle}>{t('reportForm.photoRejectedTitle')}</Text>
-                  <Text style={styles.noticeText}>
-                    {t('reportForm.photoRejectedBody', { code: photoRejection?.code ?? 'photo_not_uploaded' })}
-                  </Text>
+                <View style={styles.section}>
+                  <Text accessibilityRole="header" style={styles.sectionTitle}>{t('reportForm.sections.details')}</Text>
+                  <ChoiceGroup
+                    label={t('reportForm.fields.sighting_type')}
+                    field="sighting_type"
+                    value={form.sighting_type}
+                    options={sightingOptions}
+                    disabled={!canEdit}
+                    error={submit.fieldErrors.sighting_type}
+                    t={t}
+                    onChange={(value) => updateField('sighting_type', value)}
+                  />
+                  {form.incident_type === 'avistamiento_simple' && form.sighting_type === 'manada' ? (
+                    <TextField
+                      label={t('reportForm.fields.cantidad_aprox')}
+                      field="cantidad_aprox"
+                      value={form.cantidad_aprox}
+                      disabled={!canEdit}
+                      error={submit.fieldErrors.cantidad_aprox}
+                      t={t}
+                      keyboardType="number-pad"
+                      onChange={(value) => updateField('cantidad_aprox', value)}
+                    />
+                  ) : null}
                 </View>
-              ) : null}
 
-              <View style={[styles.section, styles.incidentSection]}>
-                <SelectField
-                  label={t('reportForm.fields.incident_type')}
-                  field="incident_type"
-                  value={form.incident_type}
-                  options={incidentOptions}
-                  disabled={!canEdit}
-                  error={submit.fieldErrors.incident_type}
-                  t={t}
-                  onChange={(value) => updateField('incident_type', value)}
-                />
-                {form.incident_type === 'ataque_humano' ? (
+                <View style={styles.section}>
+                  <Text accessibilityRole="header" style={styles.sectionTitle}>{t('reportForm.sections.dog')}</Text>
                   <ChoiceGroup
-                    label={t('reportForm.fields.hubo_mordida')}
-                    field="hubo_mordida"
-                    value={form.hubo_mordida}
-                    options={yesNoOptions}
+                    label={t('reportForm.fields.dog_size')}
+                    field="dog_size"
+                    value={form.dog_size}
+                    options={sizeOptions}
                     disabled={!canEdit}
-                    error={submit.fieldErrors.hubo_mordida}
+                    error={submit.fieldErrors.dog_size}
                     t={t}
-                    onChange={(value) => updateField('hubo_mordida', value)}
+                    onChange={(value) => updateField('dog_size', value)}
+                    allowDeselect
                   />
-                ) : null}
-                {form.incident_type === 'ataque_mascota' || form.incident_type === 'ataque_ganado' ? (
-                  <TextField
-                    label={t('reportForm.fields.tipo_animal')}
-                    field="tipo_animal"
-                    value={form.tipo_animal}
-                    disabled={!canEdit}
-                    error={submit.fieldErrors.tipo_animal}
-                    t={t}
-                    onChange={(value) => updateField('tipo_animal', value)}
-                  />
-                ) : null}
-                {form.incident_type === 'ataque_mascota' ? (
                   <ChoiceGroup
-                    label={t('reportForm.fields.resulto_herido')}
-                    field="resulto_herido"
-                    value={form.resulto_herido}
-                    options={[
-                      { value: null, label: t('reportForm.boolean.no_se') },
-                      ...yesNoOptions,
-                    ]}
+                    label={t('reportForm.fields.dog_color')}
+                    field="dog_color"
+                    value={form.dog_color}
+                    options={colorOptions}
                     disabled={!canEdit}
-                    error={submit.fieldErrors.resulto_herido}
+                    error={submit.fieldErrors.dog_color}
                     t={t}
-                    onChange={(value) => updateField('resulto_herido', value)}
+                    onChange={(value) => updateField('dog_color', value)}
+                    allowDeselect
                   />
-                ) : null}
-                {form.incident_type === 'ataque_ganado' ? (
-                  <TextField
-                    label={t('reportForm.fields.cantidad_afectada')}
-                    field="cantidad_afectada"
-                    value={form.cantidad_afectada}
-                    disabled={!canEdit}
-                    error={submit.fieldErrors.cantidad_afectada}
-                    t={t}
-                    keyboardType="number-pad"
-                    onChange={(value) => updateField('cantidad_afectada', value)}
-                  />
-                ) : null}
-                {form.incident_type === 'perro_lastimado' ? (
+                  {detectedColor ? (
+                    <Text testID="report-dog_color-detected" style={styles.colorHint}>
+                      {t('reportForm.dogColorDetected', { color: t(`reportForm.dogColor.${detectedColor}`) })}
+                    </Text>
+                  ) : null}
                   <ChoiceGroup
-                    label={t('reportForm.fields.situacion')}
-                    field="situacion"
-                    value={form.situacion}
-                    options={injuredDogOptions}
+                    label={t('reportForm.fields.has_collar')}
+                    field="has_collar"
+                    value={form.has_collar}
+                    options={collarOptions}
                     disabled={!canEdit}
-                    error={submit.fieldErrors.situacion}
+                    error={submit.fieldErrors.has_collar}
                     t={t}
-                    onChange={(value) => updateField('situacion', value)}
+                    onChange={(value) => updateField('has_collar', value)}
                   />
-                ) : null}
-                {form.incident_type === 'otro' ? (
-                  <Text style={styles.caption}>{t('reportForm.onlyDescription')}</Text>
-                ) : null}
-              </View>
+                </View>
 
-              <View style={styles.section}>
-                <Text accessibilityRole="header" style={styles.sectionTitle}>{t('reportForm.sections.details')}</Text>
-                <ChoiceGroup
-                  label={t('reportForm.fields.sighting_type')}
-                  field="sighting_type"
-                  value={form.sighting_type}
-                  options={sightingOptions}
-                  disabled={!canEdit}
-                  error={submit.fieldErrors.sighting_type}
-                  t={t}
-                  onChange={(value) => updateField('sighting_type', value)}
-                />
-                {form.incident_type === 'avistamiento_simple' && form.sighting_type === 'manada' ? (
+                <View style={styles.section}>
                   <TextField
-                    label={t('reportForm.fields.cantidad_aprox')}
-                    field="cantidad_aprox"
-                    value={form.cantidad_aprox}
+                    label={t('reportForm.fields.descripcion')}
+                    field="descripcion"
+                    value={form.descripcion}
                     disabled={!canEdit}
-                    error={submit.fieldErrors.cantidad_aprox}
+                    error={submit.fieldErrors.descripcion}
                     t={t}
-                    keyboardType="number-pad"
-                    onChange={(value) => updateField('cantidad_aprox', value)}
+                    multiline
+                    onChange={(value) => updateField('descripcion', value)}
                   />
-                ) : null}
-              </View>
+                  <View testID="report-privacy-warning" style={styles.privacy}>
+                    <Icon name="shield" size={20} color={colors.primary} />
+                    <View style={styles.privacyText}>
+                      <Text style={styles.privacyTitle}>{t('reportForm.privacyTitle')}</Text>
+                      <Text style={styles.privacyBody}>{t('reportForm.privacyBody')}</Text>
+                    </View>
+                  </View>
+                </View>
 
-              <View style={styles.section}>
-                <Text accessibilityRole="header" style={styles.sectionTitle}>{t('reportForm.sections.dog')}</Text>
-                <ChoiceGroup
-                  label={t('reportForm.fields.dog_size')}
-                  field="dog_size"
-                  value={form.dog_size}
-                  options={sizeOptions}
-                  disabled={!canEdit}
-                  error={submit.fieldErrors.dog_size}
-                  t={t}
-                  onChange={(value) => updateField('dog_size', value)}
-                  allowDeselect
-                />
-                <ChoiceGroup
-                  label={t('reportForm.fields.dog_color')}
-                  field="dog_color"
-                  value={form.dog_color}
-                  options={colorOptions}
-                  disabled={!canEdit}
-                  error={submit.fieldErrors.dog_color}
-                  t={t}
-                  onChange={(value) => updateField('dog_color', value)}
-                  allowDeselect
-                />
-                {detectedColor ? (
-                  <Text testID="report-dog_color-detected" style={styles.colorHint}>
-                    {t('reportForm.dogColorDetected', { color: t(`reportForm.dogColor.${detectedColor}`) })}
-                  </Text>
-                ) : null}
-                <ChoiceGroup
-                  label={t('reportForm.fields.has_collar')}
-                  field="has_collar"
-                  value={form.has_collar}
-                  options={collarOptions}
-                  disabled={!canEdit}
-                  error={submit.fieldErrors.has_collar}
-                  t={t}
-                  onChange={(value) => updateField('has_collar', value)}
-                />
-              </View>
-
-              <View style={styles.section}>
-                <TextField
-                  label={t('reportForm.fields.descripcion')}
-                  field="descripcion"
-                  value={form.descripcion}
-                  disabled={!canEdit}
-                  error={submit.fieldErrors.descripcion}
-                  t={t}
-                  multiline
-                  onChange={(value) => updateField('descripcion', value)}
-                />
-              </View>
-
-              <View style={styles.honeypot} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-                <TextInput
-                  testID="report-honeypot-website"
-                  {...textInputIdentity('report-honeypot-website', 'honeypot_website')}
-                  value={form.honeypot_website}
-                  onChangeText={(value) => updateField('honeypot_website', value)}
-                  editable={canEdit}
-                  autoComplete="url"
-                />
-                <TextInput
-                  testID="report-honeypot-contact"
-                  {...textInputIdentity('report-honeypot-contact', 'honeypot_contact')}
-                  value={form.honeypot_contact}
-                  onChangeText={(value) => updateField('honeypot_contact', value)}
-                  editable={canEdit}
-                  autoComplete="email"
-                />
-              </View>
-            </>
-          ) : null}
+                <View style={styles.honeypot} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+                  <TextInput
+                    testID="report-honeypot-website"
+                    {...textInputIdentity('report-honeypot-website', 'honeypot_website')}
+                    value={form.honeypot_website}
+                    onChangeText={(value) => updateField('honeypot_website', value)}
+                    editable={canEdit}
+                    autoComplete="url"
+                  />
+                  <TextInput
+                    testID="report-honeypot-contact"
+                    {...textInputIdentity('report-honeypot-contact', 'honeypot_contact')}
+                    value={form.honeypot_contact}
+                    onChangeText={(value) => updateField('honeypot_contact', value)}
+                    editable={canEdit}
+                    autoComplete="email"
+                  />
+                </View>
+              </>
+            ) : null}
+          </View>
         </ScrollView>
 
         {draft ? (
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
             <View style={styles.footerInner}>
-              <Button
+              <AppButton
                 testID="report-submit"
+                variant="signal"
+                size="lg"
                 title={submit.submitting ? t('reportForm.submitting') : frozen ? t('reportForm.retrySubmit') : t('reportForm.submit')}
-                busy={submit.submitting}
+                loading={submit.submitting}
                 disabled={submit.submitting || draft.local_state === REPORT_DRAFT_STATE.SYNCED || draft.local_state === REPORT_DRAFT_STATE.TERMINAL_ERROR}
                 onPress={submitForm}
+                style={styles.submit}
               />
             </View>
           </View>
@@ -638,125 +612,124 @@ export default function ReportFormScreen({
       </KeyboardAvoidingView>
 
       <Modal
-        visible={showSuccessDialog || showQueuedDialog || showErrorDialog}
+        visible={dialogOpen}
         transparent
-        animationType="fade"
+        animationType={fullScreenResult ? 'fade' : 'slide'}
         onRequestClose={onBackToCamera}
       >
-        <View style={styles.resultBackdrop}>
+        <View style={fullScreenResult ? styles.resultFull : styles.resultBackdrop}>
           <View
             testID={showSuccessDialog ? 'report-success' : showQueuedDialog ? 'report-queued' : 'report-error'}
-            style={styles.resultDialog}
+            style={fullScreenResult ? styles.resultFullBody : styles.resultSheet}
             accessibilityViewIsModal
             accessibilityRole="alert"
           >
-            <Text style={[styles.resultTitle, showErrorDialog && styles.resultTitleError]}>
-              {showSuccessDialog
-                ? t('reportForm.successTitle')
-                : showQueuedDialog
-                  ? t('reportForm.queuedTitle')
-                  : t('reportForm.errorTitle')}
-            </Text>
-            <Text style={styles.resultBody}>
-              {showSuccessDialog
-                ? t('reportForm.successBody')
-                : showQueuedDialog
-                  ? t('reportForm.queuedBody')
-                  : t('reportForm.errorCode', { code: reportErrorCode(statusError) })}
-            </Text>
+            {fullScreenResult ? (
+              <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.resultPaw}>
+                <Icon name="dog" size={240} color={colors.onPrimary} strokeWidth={1.3} />
+              </View>
+            ) : null}
+            <View style={styles.resultText}>
+              <Text style={[styles.resultTitle, showErrorDialog && styles.resultTitleError]}>
+                {showSuccessDialog
+                  ? t('reportForm.successTitle')
+                  : showQueuedDialog
+                    ? t('reportForm.queuedTitle')
+                    : t('reportForm.errorTitle')}
+              </Text>
+              <Text style={[styles.resultBody, showErrorDialog && styles.resultBodyError]}>
+                {showSuccessDialog
+                  ? t('reportForm.successBody')
+                  : showQueuedDialog
+                    ? t('reportForm.queuedBody')
+                    : t('reportForm.errorCode', { code: reportErrorCode(statusError) })}
+              </Text>
+            </View>
             <View style={styles.resultActions}>
-              <Button
-                testID={showSuccessDialog ? 'report-success-back' : showQueuedDialog ? 'report-queued-back' : 'report-error-back'}
-                title={t('reportForm.resultBack')}
-                secondary={showErrorDialog}
-                onPress={onBackToCamera}
-              />
               {showErrorDialog ? (
-                <Button
+                <AppButton
                   testID="report-error-retry"
                   title={t('reportForm.resultRetry')}
-                  busy={submit.submitting}
+                  loading={submit.submitting}
                   disabled={submit.submitting}
                   onPress={retrySubmit}
                 />
               ) : null}
+              <AppButton
+                testID={showSuccessDialog ? 'report-success-back' : showQueuedDialog ? 'report-queued-back' : 'report-error-back'}
+                title={t('reportForm.resultBack')}
+                variant={showErrorDialog ? 'secondary' : 'signal'}
+                size="lg"
+                onPress={onBackToCamera}
+              />
             </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  content: { width: '100%', maxWidth: 920, alignSelf: 'center', padding: 22, paddingBottom: 24, gap: 16, backgroundColor: colors.background },
-  header: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  closeButton: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
-  closeText: { color: '#363d33', fontFamily: bodyFont, fontSize: 32, lineHeight: 36 },
-  headerSpacer: { width: 44, height: 44 },
-  title: { color: colors.ink, fontFamily: boldFont, fontSize: 21, lineHeight: 28, textAlign: 'center' },
-  subtitle: { color: colors.muted, fontFamily: bodyFont, fontSize: 14, lineHeight: 22 },
-  state: { paddingVertical: 28, gap: 14, alignItems: 'center' },
-  photoCard: { height: 136, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  preview: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.74, zIndex: 0 },
-  noPhoto: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', zIndex: 0, alignItems: 'center', justifyContent: 'center' },
-  noPhotoText: { color: '#5d6859', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13, lineHeight: 18 },
-  section: { backgroundColor: colors.surface, borderWidth: 1, borderColor: '#dde4d8', borderRadius: 12, padding: 16, gap: 16, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  incidentSection: {},
-  sectionTitle: { color: colors.ink, fontFamily: semiBoldFont, fontSize: 18, lineHeight: 24 },
-  fieldGroup: { gap: 8 },
+  safeArea: { flex: 1, backgroundColor: colors.primary },
+  content: { flexGrow: 1, backgroundColor: colors.background },
+  hero: { width: '100%', backgroundColor: colors.primary, justifyContent: 'flex-end' },
+  preview: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  noPhoto: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.primary, alignItems: 'flex-end', justifyContent: 'flex-start', overflow: 'hidden' },
+  noPhotoPaw: { position: 'absolute', right: -40, top: 20, opacity: 0.12, transform: [{ rotate: '-18deg' }] },
+  noPhotoText: { position: 'absolute', right: layout.margin, bottom: spacing.xl, fontFamily: fontFamily.label, fontSize: 14, color: colors.onForest },
+  closeButton: { position: 'absolute', left: layout.margin, width: layout.minTouch, height: layout.minTouch, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.38)', alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: fontFamily.display, fontSize: 34, lineHeight: 40, letterSpacing: -0.3, color: colors.onPrimary, paddingHorizontal: layout.margin, paddingBottom: spacing.lg },
+  body: { width: '100%', maxWidth: 920, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.xl, paddingBottom: spacing.xxl, gap: spacing.xxl },
+  subtitle: { ...type.body, color: colors.inkMuted },
+  state: { paddingVertical: spacing.xxl, alignItems: 'center' },
+  section: { gap: spacing.lg },
+  sectionTitle: { fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.primary },
+  fieldGroup: { gap: spacing.sm },
   dropdownGroup: {},
-  label: { color: colors.ink, fontFamily: semiBoldFont, fontSize: 14, lineHeight: 20 },
-  select: { minHeight: 52, borderRadius: 8, borderWidth: 1, borderColor: colors.outline, backgroundColor: '#f8fbf3', paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  selectText: { color: colors.ink, fontFamily: bodyFont, fontSize: 16, lineHeight: 24, flexShrink: 1 },
-  selectChevron: { color: colors.muted, fontFamily: bodyFont, fontSize: 13 },
-  selectBackdrop: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(25,29,23,0.16)' },
+  label: { fontFamily: fontFamily.label, fontSize: 15, lineHeight: 21, color: colors.ink },
+  select: { minHeight: 52, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  selectText: { ...type.body, color: colors.ink, flexShrink: 1 },
+  selectBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
   selectDismissArea: { ...StyleSheet.absoluteFillObject },
-  selectSheet: { width: '100%', maxWidth: 420, alignSelf: 'center', borderRadius: 14, borderWidth: 1, borderColor: '#e0e6db', backgroundColor: colors.surface, overflow: 'hidden' },
-  selectSheetTitle: { color: colors.ink, fontFamily: boldFont, fontSize: 15, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#edf1e9' },
-  selectOption: { minHeight: 46, justifyContent: 'center', paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: '#edf1e9' },
-  selectOptionSelected: { backgroundColor: colors.soft },
-  selectOptionText: { color: colors.ink, fontFamily: bodyFont, fontSize: 14 },
-  selectOptionTextSelected: { color: colors.primary, fontFamily: semiBoldFont },
-  choiceGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  choice: { flexGrow: 1, flexBasis: 92, maxWidth: 160, minHeight: 38, borderRadius: 8, borderWidth: 1, borderColor: colors.outline, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 8 },
-  choiceSelected: { backgroundColor: colors.soft, borderColor: colors.primary },
-  choiceText: { color: colors.ink, fontFamily: bodyFont, fontSize: 16, lineHeight: 24, textAlign: 'center' },
-  choiceTextSelected: { color: colors.primary, fontFamily: semiBoldFont },
-  input: { borderWidth: 1, borderColor: colors.outline, borderRadius: 8, backgroundColor: '#fff', color: colors.ink, paddingHorizontal: 13, paddingVertical: 12, minHeight: 48, fontFamily: bodyFont, fontSize: 16, lineHeight: 24 },
-  textArea: { minHeight: 104 },
+  selectSheet: { width: '100%', maxWidth: 520, alignSelf: 'center', borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface, paddingTop: spacing.xl, paddingBottom: spacing.xxl, overflow: 'hidden' },
+  selectSheetTitle: { fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.ink, paddingHorizontal: layout.margin, paddingBottom: spacing.md },
+  selectOption: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: layout.margin, borderTopWidth: 1, borderTopColor: colors.border },
+  selectOptionSelected: { backgroundColor: colors.primarySoft },
+  selectOptionText: { ...type.body, color: colors.ink },
+  selectOptionTextSelected: { fontFamily: fontFamily.label, color: colors.primary },
+  choiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  choice: { flexGrow: 1, flexBasis: 92, minHeight: layout.minTouch, borderRadius: radius.md, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  choiceSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  choiceText: { fontFamily: fontFamily.labelMedium, fontSize: 15, lineHeight: 20, color: colors.ink, textAlign: 'center' },
+  choiceTextSelected: { fontFamily: fontFamily.label, color: colors.onPrimary },
+  input: { ...type.body, borderWidth: 1, borderColor: colors.outline, borderRadius: radius.sm, backgroundColor: colors.surface, color: colors.ink, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, minHeight: 48 },
+  textArea: { minHeight: 112 },
   inputError: { borderColor: colors.danger, borderWidth: 2, backgroundColor: '#fffaf9' },
   inputDisabled: { opacity: 0.65 },
-  colorHint: { color: colors.muted, fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
-  fieldError: { color: colors.danger, fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
-  caption: { color: colors.muted, fontFamily: bodyFont, fontSize: 12, lineHeight: 18 },
-  errorBanner: { backgroundColor: colors.dangerSoft, borderColor: '#f3b3ad', borderWidth: 1, borderRadius: 12, padding: 14, gap: 5 },
-  errorTitle: { color: colors.danger, fontFamily: boldFont, fontSize: 15 },
-  errorBody: { color: '#5f1414', fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
-  privacyWarning: { backgroundColor: colors.soft, borderColor: '#cfdac7', borderWidth: 1, borderRadius: 12, padding: 14, gap: 4 },
-  privacyTitle: { color: colors.primary, fontFamily: boldFont, fontSize: 15, lineHeight: 20 },
-  privacyBody: { color: '#364233', fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
-  success: { backgroundColor: colors.soft, borderRadius: 12, padding: 14, gap: 4 },
-  successTitle: { color: colors.primary, fontFamily: boldFont, fontSize: 15 },
-  successText: { color: colors.primary, fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
-  notice: { backgroundColor: colors.warningSoft, borderColor: '#e8cf8e', borderWidth: 1, borderRadius: 12, padding: 14, gap: 4 },
-  noticeTitle: { color: colors.warning, fontFamily: boldFont, fontSize: 15 },
-  noticeText: { color: '#4b3a12', fontFamily: bodyFont, fontSize: 13, lineHeight: 19 },
-  footer: { borderTopWidth: 1, borderColor: '#eef2ea', backgroundColor: colors.background, padding: 14 },
-  footerInner: { width: '100%', maxWidth: 880, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  button: { flexGrow: 1, minHeight: 48, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
-  buttonText: { color: '#fff', fontFamily: semiBoldFont, fontSize: 18, lineHeight: 24, textAlign: 'center' },
-  secondaryButton: { backgroundColor: '#fff', borderColor: colors.outline, borderWidth: 1 },
-  secondaryButtonText: { color: colors.primary },
-  disabled: { opacity: 0.5 },
+  colorHint: { ...type.caption, color: colors.inkMuted },
+  fieldError: { ...type.caption, fontSize: 13, color: colors.danger },
+  caption: { ...type.caption, color: colors.inkMuted },
+  privacy: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  privacyText: { flex: 1, gap: 2 },
+  privacyTitle: { fontFamily: fontFamily.label, fontSize: 14, lineHeight: 19, color: colors.primary },
+  privacyBody: { ...type.caption, color: colors.inkMuted },
+  footer: { backgroundColor: colors.primary, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  footerInner: { width: '100%', maxWidth: 880, alignSelf: 'center' },
+  submit: { borderRadius: 12 },
   pressed: { opacity: 0.8 },
+  disabled: { opacity: 0.5 },
   honeypot: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, left: -9999, top: -9999 },
-  resultBackdrop: { flex: 1, backgroundColor: 'rgba(25,29,23,0.28)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  resultDialog: { width: '100%', maxWidth: 420, borderRadius: 14, backgroundColor: '#fff', padding: 20, gap: 14, borderWidth: 1, borderColor: '#e1e6dc', shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
-  resultTitle: { color: colors.primary, fontFamily: boldFont, fontSize: 22, lineHeight: 28, textAlign: 'center' },
-  resultTitleError: { color: colors.danger },
-  resultBody: { color: colors.ink, fontFamily: bodyFont, fontSize: 15, lineHeight: 22, textAlign: 'center' },
-  resultActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
+  resultFull: { flex: 1, backgroundColor: colors.primary },
+  resultFullBody: { flex: 1, justifyContent: 'space-between', padding: layout.margin, paddingTop: spacing.xxxl * 2, paddingBottom: spacing.xxxl, overflow: 'hidden' },
+  resultPaw: { position: 'absolute', right: -60, top: '30%', opacity: 0.1, transform: [{ rotate: '-18deg' }] },
+  resultBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
+  resultSheet: { width: '100%', maxWidth: 520, alignSelf: 'center', borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface, padding: layout.margin, paddingBottom: spacing.xxxl, gap: spacing.xl },
+  resultText: { gap: spacing.md, justifyContent: 'center', flexGrow: 1 },
+  resultTitle: { fontFamily: fontFamily.display, fontSize: 44, lineHeight: 50, letterSpacing: -0.5, color: colors.onPrimary },
+  resultTitleError: { fontSize: 30, lineHeight: 36, letterSpacing: 0, color: colors.danger },
+  resultBody: { ...type.body, fontSize: 17, lineHeight: 25, color: colors.onForest, maxWidth: 420 },
+  resultBodyError: { color: colors.ink },
+  resultActions: { gap: spacing.md },
 });
