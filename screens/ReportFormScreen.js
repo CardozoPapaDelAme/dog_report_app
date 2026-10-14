@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   AccessibilityInfo,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -422,7 +423,7 @@ export default function ReportFormScreen({
 
   return (
     <View style={styles.safeArea}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.flex} enabled={!picker && !viewingPhoto} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
           <View style={[styles.topRow, { paddingTop: insets.top + spacing.sm }]}>
             <Pressable
@@ -444,7 +445,7 @@ export default function ReportFormScreen({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('reportForm.photoPreview')}
-                onPress={() => setViewingPhoto(true)}
+                onPress={() => { Keyboard.dismiss(); setViewingPhoto(true); }}
                 style={({ pressed }) => [styles.thumb, pressed && styles.pressed]}
               >
                 <Image accessible={false} source={{ uri: photoUri }} style={styles.thumbImage} resizeMode="cover" onError={() => setPhotoFailed(true)} />
@@ -498,7 +499,7 @@ export default function ReportFormScreen({
                     error={submit.fieldErrors.incident_type}
                     t={t}
                     expanded={picker?.field === 'incident_type'}
-                    onOpen={() => setPicker({ field: 'incident_type', label: t('reportForm.fields.incident_type'), options: incidentOptions, onChange: (value) => updateField('incident_type', value) })}
+                    onOpen={() => { Keyboard.dismiss(); setPicker({ field: 'incident_type', label: t('reportForm.fields.incident_type'), options: incidentOptions, onChange: (value) => updateField('incident_type', value) }); }}
                   />
                   {form.incident_type === 'ataque_humano' ? (
                     <Segmented
