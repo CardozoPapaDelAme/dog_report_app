@@ -51,7 +51,7 @@ export default function ReportFlagSheet({ report, onClose, t, send = sendReportF
   const message = outcome ? t(`flag.outcome.${outcome.key}`, { minutes: outcome.retryAfterMinutes }) : null;
   const success = outcome?.key === 'submitted';
   return (
-    <Sheet keyboardAware testID="flag-sheet" onClose={onClose} dismissable={!submitting} maxHeight="92%">
+    <Sheet bottomInset keyboardAware testID="flag-sheet" onClose={onClose} dismissable={!submitting} maxHeight="92%">
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text accessibilityRole="header" style={styles.title}>{t('flag.title')}</Text>
         {message ? (

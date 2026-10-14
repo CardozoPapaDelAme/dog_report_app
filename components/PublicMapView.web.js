@@ -85,7 +85,7 @@ export default function PublicMapView({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#e9eee4', padding: 16, gap: 8 },
+  root: { flex: 1, backgroundColor: '#e9eee4', padding: 16, paddingTop: 84, gap: 8 },
   controls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   button: { minHeight: 44, justifyContent: 'center', borderRadius: 12, backgroundColor: '#00450d', paddingHorizontal: 16 },
   buttonText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13 },

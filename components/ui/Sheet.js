@@ -8,12 +8,15 @@
  * By default the sheet is drawn inside the current screen. `modal` draws it in the system window instead,
  * which always covers the whole screen whatever the size of the parent layout.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, KeyboardAvoidingView, Modal, Platform, StyleSheet, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { colors, motion, radius, shadows, spacing } from '../../theme/index.js';
 
 /** The sheet itself; its animation starts when it mounts, so it must mount together with its content. */
-function SheetBody({ children, onClose, dismissable, dim, keyboardAware, modal, maxHeight, style, testID }) {
+function SheetBody({ children, onClose, dismissable, dim, keyboardAware, modal, bottomInset, maxHeight, style, testID }) {
+  // Tolerant read: a sheet outside a SafeAreaProvider (tests, previews) simply has no bottom inset.
+  const insets = useContext(SafeAreaInsetsContext) ?? { bottom: 0 };
   const progress = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +44,7 @@ function SheetBody({ children, onClose, dismissable, dim, keyboardAware, modal, 
       />
       <Animated.View
         testID={testID}
-        style={[styles.sheet, { maxHeight }, { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [260, 0] }) }] }, style]}
+        style={[styles.sheet, bottomInset && { paddingBottom: spacing.xl + insets.bottom }, { maxHeight }, { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [260, 0] }) }] }, style]}
       >
         {children}
       </Animated.View>
@@ -49,12 +52,12 @@ function SheetBody({ children, onClose, dismissable, dim, keyboardAware, modal, 
   );
 }
 
-export default function Sheet({ children, onClose, dismissable = true, dim = true, keyboardAware = false, modal = false, maxHeight = '90%', style, testID }) {
+export default function Sheet({ children, onClose, dismissable = true, dim = true, keyboardAware = false, modal = false, bottomInset = false, maxHeight = '90%', style, testID }) {
   // The system modal is switched on after the first render (react-native-web drops a modal that mounts already visible).
   const [shown, setShown] = useState(!modal);
   useEffect(() => { if (modal) setShown(true); }, [modal]);
   const body = (
-    <SheetBody onClose={onClose} dismissable={dismissable} dim={dim} keyboardAware={keyboardAware} modal={modal} maxHeight={maxHeight} style={style} testID={testID}>
+    <SheetBody onClose={onClose} dismissable={dismissable} dim={dim} keyboardAware={keyboardAware} modal={modal} bottomInset={bottomInset} maxHeight={maxHeight} style={style} testID={testID}>
       {children}
     </SheetBody>
   );

@@ -50,7 +50,7 @@ export default function PublicMapView({
   // Programmatic zoom requests (cluster expansion) arrive as a new `focus` object.
   useEffect(() => {
     if (!focus) return;
-    cameraRef.current?.easeTo({ center: [focus.longitude, focus.latitude], zoom: focus.zoom, duration: 500 });
+    cameraRef.current?.easeTo({ center: [focus.longitude, focus.latitude], zoom: focus.zoom, duration: 600, ...(focus.padding ? { padding: focus.padding } : {}) });
   }, [focus]);
 
   return (
