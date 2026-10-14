@@ -91,6 +91,24 @@ Segundo intento (aprobado: "perfecto"), commit `48c404c`:
 24. **Los datos crudos se resumen y se pliegan;** el detalle se despliega a demanda, en columnas alineadas con cifras tabulares.
 25. **Las cantidades llevan plural correcto** ("1 conexión", "2 conexiones") con las formas `_one` y `_other` de i18n.
 
+## Command Center (cola de moderación)
+
+Primer intento (rechazado: "las tarjetas se siguen viendo muy ai-slop; la posición de sign out no me convence"): cada reporte en una tarjeta con borde, chips de colores, bloque azul de ubicación y tres botones con marco; "Cerrar sesión" suelto arriba a la derecha.
+
+Segundo intento: **una bandeja, no tarjetas.**
+- Cada reporte es una **fila a todo el ancho** sobre blanco, separada por líneas finas, con **barra lateral de gravedad** (roja si es alta).
+- **Señales como texto plano** en una línea (Confianza | Banderas | Foto); solo las banderas se pintan de rojo si hay. Sin chips.
+- **Ubicación como línea de tabla:** etiqueta a la izquierda, coordenadas a la derecha. Sin bloque azul.
+- **Acciones como barra plana al pie de la fila:** "Aprobar | Ocultar | Eliminar" separadas por líneas, sin marco; verde, ámbar y rojo.
+- **Cerrar sesión como botón de ícono en la misma línea del título.**
+- Las **herramientas** (duplicados, zonas, umbrales) como tres mosaicos en una fila.
+
+### Reglas añadidas (26 a 28)
+
+26. **Las listas de elementos de decisión van como filas de bandeja** (a todo el ancho, con separadores) y no como tarjetas apiladas.
+27. **Las acciones por fila van como barra plana con texto de color,** no como botones con marco.
+28. **Las acciones globales (cerrar sesión) viven en la barra del título,** no flotando solas.
+
 ## Cómo se trabaja con las skills
 
 `frontend-design` ayudó más que el resto: obliga a planear con una paleta, roles de tipografía y un wireframe, a revisar el plan contra los defaults de plantilla y a gastar el riesgo estético en un solo lugar. `design-taste-frontend` sirve como lista de verificación (contraste, estados, etiquetas arriba del campo). `mobile-redesign-screen` da el método (auditar, proponer, arreglar). Para cada pantalla nueva: invocar `frontend-design` primero para el plan.

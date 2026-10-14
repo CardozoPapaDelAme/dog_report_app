@@ -66,41 +66,57 @@ function Tool({ icon, label, onPress }) {
   );
 }
 
-/** Moderation queue entry offering only the commands listed in `report.allowed_commands`. */
+/** Moderation queue entry as an inbox row: severity bar, plain-text signals, and a flat action bar with only the allowed commands. */
 function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t }) {
   const can = (command) => report.allowed_commands?.includes(command);
   const incident = t(`moderation.incidents.${report.incident_type}`, report.incident_type);
   const suspicious = report.location.mock_suspected || report.honeypot_suspected;
+  const hidden = report.status === 'hidden';
+  const actions = [
+    can('approve') && { key: 'approve', label: t('moderation.approve'), color: colors.primary, onPress: () => onApprove(report.id), busy },
+    can('hide') && { key: 'hide', label: t('moderation.hide'), color: colors.warning, onPress: () => onHide(report) },
+    can('restore') && { key: 'restore', label: t('moderation.restore'), color: colors.primary, onPress: () => onRestore(report) },
+    can('delete') && { key: 'delete', label: t('moderation.delete'), color: colors.danger, onPress: () => onDelete(report) },
+  ].filter(Boolean);
   return (
-    <View style={[styles.card, report.isHighSeverity && styles.cardSevere]}>
-      <View style={styles.cardTop}>
-        <View style={styles.cardTitleBlock}>
-          <Text style={styles.incident}>{incident}</Text>
-          <Text style={styles.timestamp}>{formatObservedAt(report.client_created_at)}</Text>
+    <View style={styles.item}>
+      <View style={[styles.stripe, report.isHighSeverity && styles.stripeSevere]} />
+      <View style={styles.itemBody}>
+        <View style={styles.itemTop}>
+          <View style={styles.itemTitleBlock}>
+            <Text style={styles.incident}>{incident}</Text>
+            <Text style={styles.timestamp}>{formatObservedAt(report.client_created_at)}</Text>
+          </View>
+          <Text style={[styles.status, hidden && styles.statusHidden]}>{t(`moderation.status.${report.status}`)}</Text>
         </View>
-        <Chip label={t(`moderation.status.${report.status}`)} tone={report.status === 'hidden' ? 'danger' : 'warning'} />
-      </View>
 
-      {report.description ? <Text style={styles.description}>{report.description}</Text> : null}
-      <View style={styles.signalRow}>
-        <Chip label={`${t('moderation.trust')}: ${report.trust?.tier ?? '-'}`} />
-        <Chip label={`${t('moderation.flags')}: ${report.flagCount}`} tone={report.flagCount > 0 ? 'danger' : 'neutral'} />
-        <Chip label={`${t('moderation.photo')}: ${report.photo_available ? t('common.yes') : t('common.no')}`} />
-      </View>
-      <View style={styles.locationBox}>
-        <Icon name="map" size={18} color={colors.info} />
-        <View style={styles.locationText}>
-          <Text style={styles.locationLabel}>{t('moderation.exactLocation')}</Text>
+        {report.description ? <Text style={styles.description}>{report.description}</Text> : null}
+        <View style={styles.meta}>
+          <Text style={styles.metaText}>{t('moderation.trust')}: {report.trust?.tier ?? '-'}</Text>
+          <Text style={styles.metaBar}>|</Text>
+          <Text style={[styles.metaText, report.flagCount > 0 && styles.metaHot]}>{`${t('moderation.flags')}: ${report.flagCount}`}</Text>
+          <Text style={styles.metaBar}>|</Text>
+          <Text style={styles.metaText}>{`${t('moderation.photo')}: ${report.photo_available ? t('common.yes') : t('common.no')}`}</Text>
+        </View>
+        <View style={styles.place}>
+          <Text style={styles.placeLabel}>{t('moderation.exactLocation')}</Text>
           <Text style={styles.coordinates}>{report.location.latitude.toFixed(5)}, {report.location.longitude.toFixed(5)}</Text>
         </View>
+        {suspicious ? <Text style={styles.warningText}>{t('moderation.suspiciousSignals')}</Text> : null}
       </View>
-      {suspicious ? <Text style={styles.warningText}>{t('moderation.suspiciousSignals')}</Text> : null}
 
-      <View style={styles.actions}>
-        {can('approve') ? <AppButton title={t('moderation.approve')} loading={busy} disabled={busy} onPress={() => onApprove(report.id)} style={styles.actionMain} /> : null}
-        {can('hide') ? <AppButton title={t('moderation.hide')} variant="secondary" disabled={busy} onPress={() => onHide(report)} style={styles.action} /> : null}
-        {can('restore') ? <AppButton title={t('moderation.restore')} variant="secondary" disabled={busy} onPress={() => onRestore(report)} style={styles.action} /> : null}
-        {can('delete') ? <AppButton title={t('moderation.delete')} variant="destructive" disabled={busy} onPress={() => onDelete(report)} style={styles.action} /> : null}
+      <View style={styles.actionBar}>
+        {actions.map((action, index) => (
+          <Pressable
+            key={action.key}
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={action.onPress}
+            style={({ pressed }) => [styles.actionCell, index > 0 && styles.actionDivider, pressed && styles.pressed, busy && styles.disabled]}
+          >
+            {action.busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={action.color} /> : <Text style={[styles.actionText, { color: action.color }]}>{action.label}</Text>}
+          </Pressable>
+        ))}
       </View>
     </View>
   );
@@ -143,12 +159,14 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
       <View style={styles.hero}>
         <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.bigPaw}><Icon name="dog" size={210} color={colors.onPrimary} strokeWidth={1.4} /></View>
         <View style={styles.heroInner}>
-          {onLogout ? (
-            <Pressable accessibilityRole="button" disabled={logoutPending} onPress={onLogout} hitSlop={8} style={[styles.logout, logoutPending && styles.disabled]}>
-              <Icon name="logout" size={18} color={colors.onPrimary} /><Text style={styles.logoutText}>{t('login.logout')}</Text>
-            </Pressable>
-          ) : null}
-          <Text accessibilityRole="header" style={styles.title}>{t('commandCenter.title')}</Text>
+          <View style={styles.titleRow}>
+            <Text accessibilityRole="header" style={styles.title}>{t('commandCenter.title')}</Text>
+            {onLogout ? (
+              <Pressable accessibilityRole="button" accessibilityLabel={t('login.logout')} disabled={logoutPending} onPress={onLogout} hitSlop={6} style={({ pressed }) => [styles.logout, pressed && styles.pressed, logoutPending && styles.disabled]}>
+                <Icon name="logout" size={22} color={colors.onPrimary} />
+              </Pressable>
+            ) : null}
+          </View>
           <Text style={styles.subtitle}>{t('commandCenter.subtitle')}</Text>
           {onOpenDuplicates || onOpenZoneSets || onOpenConfiguration ? (
             <View style={styles.tools}>
@@ -257,9 +275,9 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.primary, overflow: 'hidden' },
   bigPaw: { position: 'absolute', right: -44, top: 56, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
   heroInner: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.sm, paddingBottom: spacing.xxl, gap: spacing.sm },
-  logout: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: layout.minTouch, alignSelf: 'flex-end' },
-  logoutText: { ...type.button, fontSize: 14, color: colors.onPrimary },
-  title: { fontFamily: fontFamily.display, fontSize: 40, lineHeight: 48, letterSpacing: -0.4, color: colors.onPrimary },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginTop: spacing.lg },
+  logout: { width: layout.minTouch, height: layout.minTouch, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,230,196,0.45)' },
+  title: { flex: 1, fontFamily: fontFamily.display, fontSize: 35, lineHeight: 42, letterSpacing: -0.4, color: colors.onPrimary },
   subtitle: { ...type.body, fontSize: 15, lineHeight: 22, color: colors.onForest, maxWidth: 520 },
   tools: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
   tool: { flex: 1, minHeight: 84, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(201,230,196,0.4)', backgroundColor: colors.forestField, padding: spacing.md, gap: spacing.sm, justifyContent: 'space-between' },
@@ -272,24 +290,28 @@ const styles = StyleSheet.create({
   queueIntro: { marginHorizontal: layout.margin, marginBottom: spacing.lg, gap: spacing.xs },
   queueTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
   pageScope: { ...type.caption, color: colors.inkMuted },
-  gridRow: { paddingHorizontal: spacing.md, gap: spacing.md },
+  gridRow: { gap: 1 },
   gridItem: { flex: 1, maxWidth: '50%' },
-  card: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderLeftWidth: 4, borderLeftColor: colors.outlineSoft, borderRadius: radius.lg, marginHorizontal: layout.margin, marginBottom: spacing.md, padding: spacing.lg, gap: spacing.md },
-  cardSevere: { borderLeftColor: colors.dangerAlert },
-  cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  cardTitleBlock: { flex: 1, gap: 2 },
-  incident: { fontFamily: fontFamily.displayMedium, fontSize: 20, lineHeight: 26, color: colors.ink },
+  item: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: colors.outlineSoft },
+  stripeSevere: { backgroundColor: colors.dangerAlert },
+  itemBody: { paddingHorizontal: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
+  itemTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  itemTitleBlock: { flex: 1, gap: 2 },
+  incident: { fontFamily: fontFamily.displayMedium, fontSize: 21, lineHeight: 27, color: colors.ink },
   timestamp: { ...type.caption, color: colors.inkMuted, fontVariant: ['tabular-nums'] },
+  status: { fontFamily: fontFamily.label, fontSize: 14, color: colors.warning, marginTop: 2 }, statusHidden: { color: colors.danger },
   description: { ...type.body, fontSize: 15, lineHeight: 22, color: colors.ink },
-  signalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  locationBox: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.infoSoft, borderRadius: radius.md, padding: spacing.md },
-  locationText: { flex: 1, gap: 1 },
-  locationLabel: { fontFamily: fontFamily.label, fontSize: 12, color: colors.inkMuted },
-  coordinates: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 15, color: colors.ink },
+  meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+  metaText: { fontFamily: fontFamily.labelMedium, fontSize: 13, color: colors.inkMuted }, metaHot: { fontFamily: fontFamily.label, color: colors.danger },
+  metaBar: { fontSize: 13, color: colors.outlineSoft },
+  place: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
+  placeLabel: { fontFamily: fontFamily.label, fontSize: 13, color: colors.inkMuted },
+  coordinates: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 14, color: colors.ink },
   warningText: { ...type.caption, fontSize: 13, color: colors.danger },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.xs },
-  actionMain: { flexGrow: 2, flexBasis: 96, borderRadius: 12 },
-  action: { flexGrow: 1, flexBasis: 72, borderRadius: 12, paddingHorizontal: spacing.sm },
+  actionBar: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border },
+  actionCell: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center' }, actionDivider: { borderLeftWidth: 1, borderLeftColor: colors.border },
+  actionText: { fontFamily: fontFamily.displayMedium, fontSize: 17 },
   pressed: { opacity: 0.78 }, disabled: { opacity: 0.42 },
   loader: { padding: 30 }, empty: { ...type.body, color: colors.inkMuted, textAlign: 'center', padding: 40 },
   moreButton: { alignSelf: 'center', borderColor: colors.primary, borderWidth: 1, borderRadius: 12, minWidth: 160, minHeight: layout.minTouch, padding: spacing.md, alignItems: 'center', justifyContent: 'center', marginTop: spacing.xs },
