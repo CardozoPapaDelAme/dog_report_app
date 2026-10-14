@@ -188,7 +188,7 @@ export default function CameraScreen({
             onPress={capture.capture}
             style={({ pressed }) => [styles.captureButton, pressed && styles.captureActive, captureDisabled && styles.captureDisabled]}
           >
-            {busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /> : null}
+            {busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.onPrimary} /> : null}
           </Pressable>
           <CameraLink testID="camera-without-photo" icon="pencil" label={t('camera.withoutPhoto')} disabled={busy} onPress={onReportWithoutPhoto} />
         </View>
@@ -219,8 +219,8 @@ const styles = StyleSheet.create({
   validatingText: { fontFamily: fontFamily.displayMedium, fontSize: 17, color: colors.onPrimary },
   bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', gap: spacing.md, paddingHorizontal: layout.margin },
   helper: { fontFamily: fontFamily.label, fontSize: 14, textAlign: 'center', color: colors.onPrimary, textShadowColor: 'rgba(0,0,0,0.55)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
-  captureButton: { width: 76, height: 76, borderRadius: 38, borderWidth: 5, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  captureButton: { width: 78, height: 78, borderRadius: 39, borderWidth: 5, borderColor: colors.onPrimary, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   queueBannerPosition: { position: 'absolute', left: spacing.lg, right: spacing.lg },
-  captureDisabled: { opacity: 0.62 }, captureActive: { transform: [{ scale: 0.96 }] },
+  captureDisabled: { opacity: 0.62 }, captureActive: { transform: [{ scale: 0.94 }], backgroundColor: 'rgba(255,255,255,0.28)' },
   pressed: { opacity: 0.7 }, disabled: { opacity: 0.5 },
 });
