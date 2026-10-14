@@ -9,7 +9,7 @@
  * which always covers the whole screen whatever the size of the parent layout.
  */
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, KeyboardAvoidingView, Modal, Platform, StyleSheet, View } from 'react-native';
 import { colors, motion, radius, shadows, spacing } from '../../theme/index.js';
 
 /** The sheet itself; its animation starts when it mounts, so it must mount together with its content. */
@@ -31,8 +31,13 @@ function SheetBody({ children, onClose, dismissable, dim, keyboardAware, modal, 
   return (
     <Root pointerEvents="box-none" style={modal ? styles.overlayModal : styles.overlay} {...rootProps}>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dim ? colors.scrim : 'transparent', opacity: progress }]} />
-      {/* Dismiss area: touchable but invisible to screen readers. */}
-      <Pressable importantForAccessibility="no" accessibilityElementsHidden onPress={dismissable ? onClose : undefined} style={styles.dismiss} />
+      {/* Dismiss area: a plain responder view (not a Pressable), so a tap on it always reaches `onClose`; it is not an accessible element. */}
+      <View
+        accessible={false}
+        style={styles.dismiss}
+        onStartShouldSetResponder={() => dismissable}
+        onResponderRelease={() => { if (dismissable) onClose?.(); }}
+      />
       <Animated.View
         testID={testID}
         style={[styles.sheet, { maxHeight }, { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [260, 0] }) }] }, style]}
