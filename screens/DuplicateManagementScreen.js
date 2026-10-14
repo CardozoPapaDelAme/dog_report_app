@@ -13,39 +13,42 @@ import { AppButton, AppTextField, Banner, Chip, Icon, Pager, Sheet, StateView } 
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 /** Suggestions and active groups shown per page. */
 const PAGE_SIZE=3;
+/** Width of a comparison card; the strip snaps to it. */
+const CARD_WIDTH=216;
 /** Last six characters of an id, used as a short label. */
 const short=(id)=>id.slice(-6);
 /** Translates a validation error (`{key, values}`) or returns a string error as is. */
 const errorText=(error,t)=>typeof error==='string'?error:error?t(`duplicates.validation.${error.key}`,error.values):'';
-/** Candidate report as a compact row: checkbox and summary on the left, canonical radio on the right, details folded. */
-function ReportRow({report,selected,canonical,disabled,onToggle,onCanonical,t,last}) {
+/** Candidate report as a comparable card: checkbox on top, the same facts in the same place, canonical pill at the bottom. */
+function ReportCard({report,selected,canonical,disabled,onToggle,onCanonical,t}) {
   const [open,setOpen]=useState(false);
   const label=t('duplicates.report',{id:short(report.id)});
-  const summary=[report.incident_type,report.sighting_type].filter(Boolean).map((value)=>value.replaceAll('_',' ')).join(' · ');
-  return <View style={[styles.row,styles.rowFlex,!last&&styles.rowDivider,selected&&styles.rowSelected]}>
-    <View style={styles.rowMain}>
-      <Pressable testID={`duplicate-select-${report.id}`} accessibilityRole="checkbox" accessibilityLabel={t('duplicates.select',{report:label})}
-        aria-checked={selected} accessibilityState={{checked:selected,disabled}} disabled={disabled} onPress={onToggle} style={styles.selection}>
-        <View style={[styles.box,selected&&styles.boxOn]}>{selected?<Icon name="check" size={16} color={colors.onPrimary} strokeWidth={3}/>:null}</View>
-        <View style={styles.selectionText}>
-          <View style={styles.titleLine}><Text style={styles.label}>{label}</Text><Chip label={t(`moderation.status.${report.status}`)} tone={report.status==='hidden'?'warning':'neutral'}/></View>
-          {summary?<Text style={styles.kind}>{summary}</Text>:null}
-        </View>
-      </Pressable>
-      <Pressable accessibilityRole="button" accessibilityState={{expanded:open}} onPress={()=>setOpen((value)=>!value)} hitSlop={6} style={styles.detailToggle}>
-        <Text style={styles.detailToggleText}>{t(open?'duplicates.hideDetails':'duplicates.showDetails')}</Text><Icon name="down" size={16} color={colors.primary}/>
-      </Pressable>
-      <View style={[styles.details,!open&&styles.hidden]}>
-        <Text selectable style={styles.caption}>ID: {report.id}</Text>
-        {report.client_created_at?<Text style={styles.caption}>{t('duplicates.observed')}: {new Date(report.client_created_at).toLocaleString()}</Text>:null}
-        {report.dog?<Text style={styles.caption}>{t('duplicates.dog')}: {[report.dog.predominant_color,report.dog.size].filter(Boolean).join(' · ')}{typeof report.dog.has_collar==='boolean'?` · ${t('duplicates.collar')}: ${t(report.dog.has_collar?'common.yes':'common.no')}`:''}</Text>:null}
-        {report.location?<Text selectable style={styles.caption}>{t('moderation.exactLocation')}: {report.location.latitude}, {report.location.longitude}</Text>:null}
-        {report.details?Object.entries(report.details).map(([key,value])=><Text key={key} style={styles.caption}>{key.replaceAll('_',' ')}: {typeof value==='object'?JSON.stringify(value):String(value)}</Text>):null}
-      </View>
-      {selected&&!canonical?<Text style={styles.caption}>{t('duplicates.willBeDuplicate')}</Text>:null}
+  const kind=[report.incident_type,report.sighting_type].filter(Boolean).map((value)=>value.replaceAll('_',' ')).join(' · ');
+  const dogLine=report.dog?[report.dog.predominant_color,report.dog.size].filter(Boolean).join(' · '):'';
+  return <View style={[styles.card,selected&&styles.cardSelected]}>
+    <Pressable testID={`duplicate-select-${report.id}`} accessibilityRole="checkbox" accessibilityLabel={t('duplicates.select',{report:label})}
+      aria-checked={selected} accessibilityState={{checked:selected,disabled}} disabled={disabled} onPress={onToggle} style={styles.cardHead}>
+      <View style={[styles.box,selected&&styles.boxOn]}>{selected?<Icon name="check" size={16} color={colors.onPrimary} strokeWidth={3}/>:null}</View>
+      <View style={styles.cardTitle}><Text style={styles.label}>{label}</Text><Chip label={t(`moderation.status.${report.status}`)} tone={report.status==='hidden'?'warning':'neutral'}/></View>
+    </Pressable>
+    <View style={styles.facts}>
+      {kind?<Text style={styles.kind}>{kind}</Text>:null}
+      {dogLine?<Text style={styles.fact}>{dogLine}</Text>:null}
+      {report.client_created_at?<Text style={styles.caption}>{t('duplicates.observed')}: {new Date(report.client_created_at).toLocaleString()}</Text>:null}
     </View>
+    <Pressable accessibilityRole="button" accessibilityState={{expanded:open}} onPress={()=>setOpen((value)=>!value)} hitSlop={6} style={styles.detailToggle}>
+      <Text style={styles.detailToggleText}>{t(open?'duplicates.hideDetails':'duplicates.showDetails')}</Text><Icon name="down" size={16} color={colors.primary}/>
+    </Pressable>
+    <View style={[styles.details,!open&&styles.hidden]}>
+      <Text selectable style={styles.caption}>ID: {report.id}</Text>
+      {report.dog&&typeof report.dog.has_collar==='boolean'?<Text style={styles.caption}>{t('duplicates.collar')}: {t(report.dog.has_collar?'common.yes':'common.no')}</Text>:null}
+      {report.location?<Text selectable style={styles.caption}>{t('moderation.exactLocation')}: {report.location.latitude}, {report.location.longitude}</Text>:null}
+      {report.details?Object.entries(report.details).map(([key,value])=><Text key={key} style={styles.caption}>{key.replaceAll('_',' ')}: {typeof value==='object'?JSON.stringify(value):String(value)}</Text>):null}
+    </View>
+    {selected&&!canonical?<Text style={styles.caption}>{t('duplicates.willBeDuplicate')}</Text>:null}
+    <View style={styles.spacer}/>
     <Pressable testID={`duplicate-canonical-${report.id}`} accessibilityRole="radio" accessibilityLabel={t('duplicates.chooseCanonical',{report:label})}
-      aria-checked={canonical} accessibilityState={{checked:canonical,disabled:disabled||!selected}} disabled={disabled||!selected} onPress={onCanonical} hitSlop={4} style={[styles.canonicalHit,canonical&&styles.canonicalChosenHit,(!selected||disabled)&&styles.dim]}>
+      aria-checked={canonical} accessibilityState={{checked:canonical,disabled:disabled||!selected}} disabled={disabled||!selected} onPress={onCanonical} style={[styles.canonicalHit,canonical&&styles.canonicalChosenHit,(!selected||disabled)&&styles.dim]}>
       <View style={[styles.radio,canonical&&styles.radioOn]}>{canonical?<View style={styles.radioDot}/>:null}</View>
       <Text style={[styles.canonicalText,canonical&&styles.canonicalTextOn]}>{t('duplicates.canonicalShort')}</Text>
     </Pressable>
@@ -129,12 +132,13 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
               {form.error.requestId?<Text selectable style={styles.caption}>{t('zoneSets.requestId')}: {form.error.requestId}</Text>:null}
             </Banner>:null}
             <View style={styles.sectionHeader}><Text accessibilityRole="header" style={styles.sectionTitle}>{t('duplicates.pending')}</Text><Text style={styles.count}>{form.components.length}</Text></View>
-            {!form.components.length?<Text style={styles.bodyText}>{t('duplicates.empty')}</Text>:null}
+            {!form.components.length?<Text style={styles.bodyText}>{t('duplicates.empty')}</Text>:<Text style={styles.caption}>{t('duplicates.canonicalLegend')}</Text>}
             {form.components.slice(currentSuggestionPage*PAGE_SIZE,(currentSuggestionPage+1)*PAGE_SIZE).map((component,sliceIndex)=>{const index=currentSuggestionPage*PAGE_SIZE+sliceIndex;return <View key={component.id} style={styles.group}>
               <Text accessibilityRole="header" style={styles.groupTitle}>{t('duplicates.component',{number:index+1,count:component.reports.length})}</Text>
-              <Text style={styles.caption}>{t('duplicates.canonicalLegend')}</Text>
-              <View style={styles.list}>{component.reports.map((report,i)=><ReportRow key={report.id} report={report} selected={form.ids.includes(report.id)} canonical={form.canonicalId===report.id}
-                disabled={disabled} onToggle={()=>form.toggleReport(report.id)} onCanonical={()=>form.chooseCanonical(report.id)} t={t} last={i===component.reports.length-1}/>)}</View>
+              <ScrollView horizontal style={styles.bleed} showsHorizontalScrollIndicator={false} snapToInterval={CARD_WIDTH+spacing.md} decelerationRate="fast" contentContainerStyle={styles.strip}>
+                {component.reports.map((report)=><ReportCard key={report.id} report={report} selected={form.ids.includes(report.id)} canonical={form.canonicalId===report.id}
+                  disabled={disabled} onToggle={()=>form.toggleReport(report.id)} onCanonical={()=>form.chooseCanonical(report.id)} t={t}/>)}
+              </ScrollView>
               <Text style={styles.caption}>{t('duplicates.links')}</Text>
               <View style={styles.links}>{form.snapshot.candidates.filter((edge)=>component.reports.some((r)=>r.id===edge.report_a)&&component.reports.some((r)=>r.id===edge.report_b)).map((edge)=><Chip key={edge.id} tone="info" label={`${short(edge.report_a)} ↔ ${short(edge.report_b)}${Number.isFinite(edge.distance_meters)?` · ${edge.distance_meters.toFixed(1)} m`:''}${Number.isFinite(edge.minutes_apart)?` · ${edge.minutes_apart.toFixed(1)} min`:''}`}/>)}</View>
             </View>;})}
@@ -206,17 +210,19 @@ const styles=StyleSheet.create({
   count:{fontFamily:fontFamily.number,fontVariant:['tabular-nums'],fontSize:22,color:colors.primary,backgroundColor:colors.primarySoft,borderRadius:radius.pill,minWidth:44,textAlign:'center',paddingHorizontal:spacing.md,paddingVertical:spacing.xs},
   group:{gap:spacing.md},groupTitle:{fontFamily:fontFamily.displayMedium,fontSize:20,lineHeight:26,color:colors.ink},
   list:{backgroundColor:colors.surface,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,overflow:'hidden'},
-  row:{padding:spacing.lg,gap:spacing.xs},rowDivider:{borderBottomWidth:1,borderBottomColor:colors.border},rowSelected:{backgroundColor:colors.primarySoft,borderLeftWidth:4,borderLeftColor:colors.primary},
-  selection:{flexDirection:'row',flexWrap:'wrap',alignItems:'center',gap:spacing.md,minHeight:layout.minTouch},
+  row:{padding:spacing.lg,gap:spacing.xs},rowDivider:{borderBottomWidth:1,borderBottomColor:colors.border},
+  bleed:{marginHorizontal:-layout.margin},strip:{gap:spacing.md,paddingHorizontal:layout.margin,paddingBottom:spacing.xs},
+  card:{width:CARD_WIDTH,backgroundColor:colors.surface,borderRadius:radius.lg,borderWidth:2,borderColor:colors.border,padding:spacing.lg,gap:spacing.sm},
+  cardSelected:{borderColor:colors.primary,backgroundColor:colors.primarySoft},
+  cardHead:{flexDirection:'row',alignItems:'center',gap:spacing.md,minHeight:layout.minTouch},cardTitle:{flex:1,gap:spacing.xs,alignItems:'flex-start'},
+  facts:{gap:2},fact:{fontFamily:fontFamily.labelMedium,fontSize:14,lineHeight:20,color:colors.ink},spacer:{flexGrow:1},
+  detailToggle:{flexDirection:'row',alignItems:'center',gap:spacing.xs,minHeight:32,alignSelf:'flex-start'},detailToggleText:{fontFamily:fontFamily.label,fontSize:13,color:colors.primary},details:{gap:2},hidden:{display:'none'},
   box:{width:26,height:26,borderRadius:6,borderWidth:2,borderColor:colors.outline,backgroundColor:colors.surface,alignItems:'center',justifyContent:'center'},boxOn:{backgroundColor:colors.primary,borderColor:colors.primary},
-  label:{fontFamily:fontFamily.label,fontSize:15,lineHeight:22,color:colors.ink,flexShrink:1},kind:{fontFamily:fontFamily.labelMedium,fontSize:14,lineHeight:20,color:colors.ink},
+  label:{fontFamily:fontFamily.label,fontSize:15,lineHeight:22,color:colors.ink,flexShrink:1},kind:{fontFamily:fontFamily.label,fontSize:14,lineHeight:20,color:colors.ink},
   caption:{...type.caption,color:colors.inkMuted},bodyText:{...type.body,fontSize:15,lineHeight:22,color:colors.inkMuted},
-  rowFlex:{flexDirection:'row',alignItems:'flex-start',gap:spacing.md},rowMain:{flex:1,gap:spacing.xs},selectionText:{flex:1,gap:2},titleLine:{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:spacing.sm},
-  detailToggle:{flexDirection:'row',alignItems:'center',gap:spacing.xs,minHeight:32,alignSelf:'flex-start',marginLeft:38},detailToggleText:{fontFamily:fontFamily.label,fontSize:13,color:colors.primary},details:{marginLeft:38,gap:2},hidden:{display:'none'},
-  canonicalHit:{flexDirection:'row',alignItems:'center',gap:spacing.xs,minHeight:layout.minTouch,paddingHorizontal:spacing.md,borderRadius:radius.pill,borderWidth:1,borderColor:colors.outline,backgroundColor:colors.surface,alignSelf:'flex-start'},canonicalChosenHit:{backgroundColor:colors.primary,borderColor:colors.primary},
-  canonicalX:{flexDirection:'row',alignItems:'center',gap:spacing.md,minHeight:layout.minTouch,borderTopWidth:1,borderTopColor:colors.border,marginTop:spacing.sm},
+  canonicalHit:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:spacing.sm,minHeight:layout.minTouch,borderRadius:radius.pill,borderWidth:1,borderColor:colors.outline,backgroundColor:colors.surface},canonicalChosenHit:{backgroundColor:colors.primary,borderColor:colors.primary},
   radio:{width:24,height:24,borderRadius:12,borderWidth:2,borderColor:colors.outline,alignItems:'center',justifyContent:'center',backgroundColor:colors.surface},radioOn:{borderColor:colors.onPrimary,backgroundColor:colors.primary},radioDot:{width:12,height:12,borderRadius:6,backgroundColor:colors.onPrimary},
-  canonicalText:{fontFamily:fontFamily.label,fontSize:13,color:colors.primary},canonicalTextOn:{color:colors.onPrimary},dim:{opacity:0.5},pressed:{opacity:0.7},
+  canonicalText:{fontFamily:fontFamily.label,fontSize:14,color:colors.primary},canonicalTextOn:{color:colors.onPrimary},dim:{opacity:0.5},pressed:{opacity:0.7},
   links:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},
   decision:{backgroundColor:colors.primary,borderRadius:radius.lg,padding:spacing.xl,gap:spacing.lg},
   decisionTitle:{fontFamily:fontFamily.display,fontSize:26,lineHeight:32,color:colors.onPrimary},decisionText:{...type.body,fontSize:14,lineHeight:21,color:colors.onForest},
