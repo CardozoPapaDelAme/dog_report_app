@@ -35,7 +35,7 @@ export default function ZoneReportsSheet({ cluster, zoom, onSelect, onClose, t, 
 
   const retry = () => setAttempt((value) => value + 1);
   return (
-    <Sheet modal bottomInset testID="zone-sheet" onClose={onClose} maxHeight="85%">
+    <Sheet bottomInset testID="zone-sheet" onClose={onClose} maxHeight="85%">
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.title}>{t('zone.title')}</Text>
         {state.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('zone.loading')} color={colors.primary} style={styles.loader} /> : null}

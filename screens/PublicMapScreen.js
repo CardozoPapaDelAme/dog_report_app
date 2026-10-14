@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton, Banner, Icon, IconButton, Sheet } from '../components/ui/index.js';
+import { AppButton, Banner, Icon, IconButton, Sheet, SheetHost } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 import RecentReportsList from '../components/RecentReportsList';
@@ -149,7 +149,7 @@ function PinSheet({ report, onClose, onFlag, t }) {
   ].filter(Boolean);
   const level = severityLevel(report.incident_type);
   return (
-    <Sheet modal bottomInset testID="pin-sheet" onClose={onClose} maxHeight="88%">
+    <Sheet bottomInset testID="pin-sheet" onClose={onClose} maxHeight="88%">
       <ScrollView contentContainerStyle={styles.sheetContent}>
         {uri && !photoFailed ? (
           <Image
@@ -214,11 +214,13 @@ function ExpoGoFallbackScreen({ onBack }) {
           </View>
           <RecentReportsList onSelect={setSelectedReport} t={t} />
         </ScrollView>
+      </View>
+      <SheetHost visible={Boolean(selectedReport || flagReport)} onRequestClose={() => (flagReport ? setFlagReport(null) : setSelectedReport(null))}>
         {selectedReport ? (
           <PinSheet key={`pin-${selectedReport.report_id}`} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
         ) : null}
         {flagReport ? <ReportFlagSheet key={`flag-${flagReport.report_id}`} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
-      </View>
+      </SheetHost>
     </SafeAreaView>
   );
 }
@@ -246,6 +248,13 @@ function NativeMapScreen({ onBack }) {
     setSelectedCluster({ cluster, zoom });
     focusCluster(cluster, zoom);
   }, [focusCluster, map.region]);
+
+  // Android back closes the sheet on top: flag form, then report detail, then the zone list.
+  const closeTopSheet = useCallback(() => {
+    if (flagReport) setFlagReport(null);
+    else if (selectedReport) setSelectedReport(null);
+    else setZoneCluster(null);
+  }, [flagReport, selectedReport]);
 
   // Opening a report closes the cluster card so only one panel is on screen.
   const selectReport = useCallback((report) => { setSelectedCluster(null); setSelectedReport(report); }, []);
@@ -315,19 +324,21 @@ function NativeMapScreen({ onBack }) {
           t={t}
         />
       ) : null}
-      {zoneCluster ? (
-        <ZoneReportsSheet
-          cluster={zoneCluster.cluster}
-          zoom={zoneCluster.zoom}
-          onSelect={setSelectedReport}
-          onClose={() => setZoneCluster(null)}
-          t={t}
-        />
-      ) : null}
-      {selectedReport ? (
-        <PinSheet key={`pin-${selectedReport.report_id}`} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
-      ) : null}
-      {flagReport ? <ReportFlagSheet key={`flag-${flagReport.report_id}`} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
+      <SheetHost visible={Boolean(zoneCluster || selectedReport || flagReport)} onRequestClose={closeTopSheet}>
+        {zoneCluster ? (
+          <ZoneReportsSheet
+            cluster={zoneCluster.cluster}
+            zoom={zoneCluster.zoom}
+            onSelect={setSelectedReport}
+            onClose={() => setZoneCluster(null)}
+            t={t}
+          />
+        ) : null}
+        {selectedReport ? (
+          <PinSheet key={`pin-${selectedReport.report_id}`} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
+        ) : null}
+        {flagReport ? <ReportFlagSheet key={`flag-${flagReport.report_id}`} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
+      </SheetHost>
     </View>
   );
 }
