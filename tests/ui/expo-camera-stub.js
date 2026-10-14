@@ -9,5 +9,7 @@ export function CameraView({ facing: _facing, mode: _mode, onCameraReady, ...pro
 }
 
 export function useCameraPermissions() {
-  return [{ granted: true }, async () => ({ granted: true })];
+  // `?camera&no-permission` renders the permission screen in the web fixture.
+  const denied = typeof location !== 'undefined' && new URLSearchParams(location.search).has('no-permission');
+  return [{ granted: !denied }, async () => ({ granted: true })];
 }
