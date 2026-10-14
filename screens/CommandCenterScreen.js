@@ -175,13 +175,11 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
               {onOpenConfiguration ? <Tool icon="gauge" label={t('configuration.open')} onPress={onOpenConfiguration} /> : null}
             </View>
           ) : null}
-        </View>
-      </View>
-      <View style={styles.metricsBand}>
-        <View style={styles.metricsRow}>
-          <Metric label={t('moderation.onPage')} value={summary.total} />
-          <Metric label={t('moderation.flagged')} value={summary.flagged} alert />
-          <Metric label={t('moderation.urgent')} value={summary.urgent} alert last />
+          <View style={styles.metricsRow}>
+            <Metric label={t('moderation.onPage')} value={summary.total} />
+            <Metric label={t('moderation.flagged')} value={summary.flagged} alert />
+            <Metric label={t('moderation.urgent')} value={summary.urgent} alert last />
+          </View>
         </View>
       </View>
       <View style={styles.queueIntro}>
@@ -276,7 +274,7 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, backgroundColor: colors.background, paddingBottom: 32 },
   hero: { backgroundColor: colors.primary, overflow: 'hidden' },
   bigPaw: { position: 'absolute', right: -44, top: 56, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
-  heroInner: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.sm, paddingBottom: spacing.xxl, gap: spacing.sm },
+  heroInner: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.sm },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginTop: spacing.lg },
   logout: { width: layout.minTouch, height: layout.minTouch, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,230,196,0.45)' },
   title: { flex: 1, fontFamily: fontFamily.display, fontSize: 35, lineHeight: 42, letterSpacing: -0.4, color: colors.onPrimary },
@@ -284,14 +282,13 @@ const styles = StyleSheet.create({
   tools: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
   tool: { flex: 1, minHeight: 84, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(201,230,196,0.4)', backgroundColor: colors.forestField, padding: spacing.md, gap: spacing.sm, justifyContent: 'space-between' },
   toolText: { fontFamily: fontFamily.label, fontSize: 13, lineHeight: 17, color: colors.onPrimary },
-  metricsBand: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
-  metricsRow: { flexDirection: 'row', width: '100%', maxWidth: 960, alignSelf: 'center' },
-  metric: { flex: 1, gap: 2, paddingVertical: spacing.xl, paddingHorizontal: layout.margin },
-  metricDivider: { borderRightWidth: 1, borderRightColor: colors.border },
-  metricValue: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 34, lineHeight: 40, color: colors.primary },
-  metricValueHot: { color: colors.danger },
-  metricLabel: { fontFamily: fontFamily.label, fontSize: 13, lineHeight: 17, color: colors.inkMuted },
-  queueIntro: { marginHorizontal: layout.margin, marginTop: spacing.xxxl, marginBottom: spacing.xl, gap: spacing.sm },
+  metricsRow: { flexDirection: 'row', marginTop: spacing.xl, borderTopWidth: 1, borderTopColor: 'rgba(201,230,196,0.3)' },
+  metric: { flex: 1, gap: 2, paddingTop: spacing.lg, paddingRight: spacing.md },
+  metricDivider: { borderRightWidth: 1, borderRightColor: 'rgba(201,230,196,0.3)', marginRight: spacing.md },
+  metricValue: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 34, lineHeight: 40, color: colors.onPrimary },
+  metricValueHot: { color: '#ffb4ab' },
+  metricLabel: { fontFamily: fontFamily.label, fontSize: 13, lineHeight: 17, color: colors.onForest },
+  queueIntro: { marginHorizontal: layout.margin, marginTop: spacing.xxl, marginBottom: spacing.xl, gap: spacing.sm },
   queueTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
   pageScope: { ...type.caption, color: colors.inkMuted },
   gridRow: { gap: 1 },
