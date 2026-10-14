@@ -36,7 +36,7 @@ import {
   DOG_SIZES,
   INJURED_DOG_SITUATIONS,
 } from '../models/reportPayload.js';
-import { AppButton, Banner, Icon, Scrim } from '../components/ui/index.js';
+import { AppButton, Banner, Icon, Scrim, Sheet } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 /** Translates a field validation error (`{key, values}`) or returns a string error as is. */
@@ -46,9 +46,8 @@ function fieldErrorText(error, t) {
   return t(`reportForm.validation.${error.key}`, error.values);
 }
 
-/** Single-choice field that opens a bottom sheet with the option list. */
-function SelectField({ label, field, value, options, disabled, error, t, onChange }) {
-  const [open, setOpen] = useState(false);
+/** Single-choice field; the option list opens in a sheet owned by the screen (`onOpen`). */
+function SelectField({ label, field, value, options, disabled, error, t, onOpen, expanded }) {
   const message = fieldErrorText(error, t);
   const selected = options.find((option) => option.value === value);
   return (
@@ -57,9 +56,9 @@ function SelectField({ label, field, value, options, disabled, error, t, onChang
       <Pressable
         testID={`report-${field}-select`}
         accessibilityRole="button"
-        accessibilityState={{ expanded: open, disabled: Boolean(disabled) }}
+        accessibilityState={{ expanded, disabled: Boolean(disabled) }}
         disabled={disabled}
-        onPress={() => setOpen(true)}
+        onPress={onOpen}
         style={({ pressed }) => [
           styles.select,
           error && styles.inputError,
@@ -70,41 +69,6 @@ function SelectField({ label, field, value, options, disabled, error, t, onChang
         <Text numberOfLines={1} style={styles.selectText}>{selected?.label ?? t('reportForm.selectPlaceholder')}</Text>
         <Icon name="down" size={20} color={colors.primary} />
       </Pressable>
-      <Modal
-        visible={open}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setOpen(false)}
-      >
-        <View style={styles.selectBackdrop}>
-          <Pressable accessible={false} aria-hidden importantForAccessibility="no" style={styles.selectDismissArea} onPress={() => setOpen(false)} />
-          <View style={styles.selectSheet}>
-            <Text accessibilityRole="header" style={styles.selectSheetTitle}>{label}</Text>
-            {options.map((option) => (
-              <Pressable
-                key={option.value}
-                testID={`report-${field}-${option.value}`}
-                accessibilityRole="button"
-                accessibilityState={{ selected: value === option.value }}
-                onPress={() => {
-                  onChange(option.value);
-                  setOpen(false);
-                }}
-                style={({ pressed }) => [
-                  styles.selectOption,
-                  value === option.value && styles.selectOptionSelected,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={[styles.selectOptionText, value === option.value && styles.selectOptionTextSelected]}>
-                  {option.label}
-                </Text>
-                {value === option.value ? <Icon name="check" size={20} color={colors.primary} strokeWidth={3} /> : null}
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      </Modal>
       {message ? <Text style={styles.fieldError}>{message}</Text> : null}
     </View>
   );
@@ -266,6 +230,8 @@ export default function ReportFormScreen({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [form, setForm] = useState(() => createEmptyReportFormDraft());
+  const [picker, setPicker] = useState(null);
+  const [photoFailed, setPhotoFailed] = useState(false);
   const submit = useSubmitReport({
     draft,
     queueDraft,
@@ -277,6 +243,7 @@ export default function ReportFormScreen({
   const validation = draft?.photo_validation;
   const detectedColor = detectedDogColorFromDraft(draft);
   const photoUri = draft?.photo_file_uri;
+  const showPhoto = Boolean(draft && photoUri && !photoFailed);
   const submittedDraft = submit.submittedDraft ?? draft;
   const photoRejection = photoRejectedInfo(submittedDraft);
   const statusError = submit.error ?? draft?.last_error ?? error;
@@ -293,6 +260,7 @@ export default function ReportFormScreen({
   );
 
   useEffect(() => {
+    setPhotoFailed(false);
     setForm({ ...createEmptyReportFormDraft(), dog_color: detectedDogColorFromDraft(draft) });
   }, [draft?.id]);
 
@@ -366,26 +334,24 @@ export default function ReportFormScreen({
     void submit.submit(form);
   }
 
-  const dialogOpen = showSuccessDialog || showQueuedDialog || showErrorDialog;
   const fullScreenResult = showSuccessDialog || showQueuedDialog;
 
   return (
     <View style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-          <View style={[styles.hero, { height: 200 + insets.top }]}>
-            {draft && photoUri ? (
-              <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
+          <View style={[styles.hero, { height: (showPhoto ? 280 : 130) + insets.top }]}>
+            {showPhoto ? (
+              <Image accessibilityRole="image" accessibilityLabel={t('reportForm.photoPreview')} source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" onError={() => setPhotoFailed(true)} />
             ) : (
               <View testID={draft ? 'report-no-photo' : undefined} style={styles.noPhoto}>
                 <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.noPhotoPaw}>
-                  <Icon name="dog" size={190} color={colors.onPrimary} strokeWidth={1.4} />
+                  <Icon name="dog" size={170} color={colors.onPrimary} strokeWidth={1.4} />
                 </View>
                 {draft ? <Text style={styles.noPhotoText}>{t('reportForm.noPhoto')}</Text> : null}
               </View>
             )}
-            {draft && photoUri ? <Scrim edge="top" height={110 + insets.top} strength={0.5} /> : null}
-            <Scrim edge="bottom" height={130} strength={0.7} />
+            {showPhoto ? <Scrim edge="top" height={90 + insets.top} strength={0.4} /> : null}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('reportForm.close')}
@@ -395,8 +361,8 @@ export default function ReportFormScreen({
             >
               <Icon name="close" size={22} color={colors.onPrimary} />
             </Pressable>
-            <Text accessibilityRole="header" style={styles.title}>{t('reportForm.title')}</Text>
           </View>
+          <Text accessibilityRole="header" style={styles.title}>{t('reportForm.title')}</Text>
 
           <View style={styles.body}>
             {loading ? (
@@ -438,7 +404,8 @@ export default function ReportFormScreen({
                     disabled={!canEdit}
                     error={submit.fieldErrors.incident_type}
                     t={t}
-                    onChange={(value) => updateField('incident_type', value)}
+                    expanded={picker?.field === 'incident_type'}
+                    onOpen={() => setPicker({ field: 'incident_type', label: t('reportForm.fields.incident_type'), options: incidentOptions, onChange: (value) => updateField('incident_type', value) })}
                   />
                   {form.incident_type === 'ataque_humano' ? (
                     <ChoiceGroup
@@ -505,10 +472,6 @@ export default function ReportFormScreen({
                   {form.incident_type === 'otro' ? (
                     <Text style={styles.caption}>{t('reportForm.onlyDescription')}</Text>
                   ) : null}
-                </View>
-
-                <View style={styles.section}>
-                  <Text accessibilityRole="header" style={styles.sectionTitle}>{t('reportForm.sections.details')}</Text>
                   <ChoiceGroup
                     label={t('reportForm.fields.sighting_type')}
                     field="sighting_type"
@@ -638,54 +601,26 @@ export default function ReportFormScreen({
         ) : null}
       </KeyboardAvoidingView>
 
-      <Modal
-        visible={dialogOpen}
-        transparent
-        animationType={fullScreenResult ? 'fade' : 'slide'}
-        onRequestClose={onBackToCamera}
-      >
-        <View style={fullScreenResult ? styles.resultFull : styles.resultBackdrop}>
+      <Modal visible={fullScreenResult} transparent animationType="fade" onRequestClose={onBackToCamera}>
+        <View style={styles.resultFull}>
           <View
-            testID={showSuccessDialog ? 'report-success' : showQueuedDialog ? 'report-queued' : 'report-error'}
-            style={fullScreenResult ? styles.resultFullBody : styles.resultSheet}
+            testID={showSuccessDialog ? 'report-success' : 'report-queued'}
+            style={styles.resultFullBody}
             accessibilityViewIsModal
             accessibilityRole="alert"
           >
-            {fullScreenResult ? (
-              <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.resultPaw}>
-                <Icon name="dog" size={240} color={colors.onPrimary} strokeWidth={1.3} />
-              </View>
-            ) : null}
+            <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.resultPaw}>
+              <Icon name="dog" size={240} color={colors.onPrimary} strokeWidth={1.3} />
+            </View>
             <View style={styles.resultText}>
-              <Text style={[styles.resultTitle, showErrorDialog && styles.resultTitleError]}>
-                {showSuccessDialog
-                  ? t('reportForm.successTitle')
-                  : showQueuedDialog
-                    ? t('reportForm.queuedTitle')
-                    : t('reportForm.errorTitle')}
-              </Text>
-              <Text style={[styles.resultBody, showErrorDialog && styles.resultBodyError]}>
-                {showSuccessDialog
-                  ? t('reportForm.successBody')
-                  : showQueuedDialog
-                    ? t('reportForm.queuedBody')
-                    : t('reportForm.errorCode', { code: reportErrorCode(statusError) })}
-              </Text>
+              <Text style={styles.resultTitle}>{showSuccessDialog ? t('reportForm.successTitle') : t('reportForm.queuedTitle')}</Text>
+              <Text style={styles.resultBody}>{showSuccessDialog ? t('reportForm.successBody') : t('reportForm.queuedBody')}</Text>
             </View>
             <View style={styles.resultActions}>
-              {showErrorDialog ? (
-                <AppButton
-                  testID="report-error-retry"
-                  title={t('reportForm.resultRetry')}
-                  loading={submit.submitting}
-                  disabled={submit.submitting}
-                  onPress={retrySubmit}
-                />
-              ) : null}
               <AppButton
-                testID={showSuccessDialog ? 'report-success-back' : showQueuedDialog ? 'report-queued-back' : 'report-error-back'}
+                testID={showSuccessDialog ? 'report-success-back' : 'report-queued-back'}
                 title={t('reportForm.resultBack')}
-                variant={showErrorDialog ? 'secondary' : 'signal'}
+                variant="signal"
                 size="lg"
                 onPress={onBackToCamera}
               />
@@ -693,6 +628,38 @@ export default function ReportFormScreen({
           </View>
         </View>
       </Modal>
+
+      {picker ? (
+        <Sheet onClose={() => setPicker(null)} maxHeight="80%" style={styles.pickerSheet}>
+          <Text accessibilityRole="header" style={styles.selectSheetTitle}>{picker.label}</Text>
+          {picker.options.map((option) => (
+            <Pressable
+              key={option.value}
+              testID={`report-${picker.field}-${option.value}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: form[picker.field] === option.value }}
+              onPress={() => { picker.onChange(option.value); setPicker(null); }}
+              style={({ pressed }) => [styles.selectOption, form[picker.field] === option.value && styles.selectOptionSelected, pressed && styles.pressed]}
+            >
+              <Text style={[styles.selectOptionText, form[picker.field] === option.value && styles.selectOptionTextSelected]}>{option.label}</Text>
+              {form[picker.field] === option.value ? <Icon name="check" size={20} color={colors.primary} strokeWidth={3} /> : null}
+            </Pressable>
+          ))}
+        </Sheet>
+      ) : null}
+
+      {showErrorDialog ? (
+        <Sheet testID="report-error" onClose={onBackToCamera} maxHeight="70%" style={styles.errorSheet}>
+          <View accessibilityViewIsModal accessibilityRole="alert" style={styles.errorBody}>
+            <Text style={styles.resultTitleError}>{t('reportForm.errorTitle')}</Text>
+            <Text style={styles.resultBodyError}>{t('reportForm.errorCode', { code: reportErrorCode(statusError) })}</Text>
+            <View style={styles.resultActions}>
+              <AppButton testID="report-error-retry" title={t('reportForm.resultRetry')} loading={submit.submitting} disabled={submit.submitting} onPress={retrySubmit} />
+              <AppButton testID="report-error-back" title={t('reportForm.resultBack')} variant="secondary" onPress={onBackToCamera} />
+            </View>
+          </View>
+        </Sheet>
+      ) : null}
     </View>
   );
 }
@@ -701,14 +668,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   safeArea: { flex: 1, backgroundColor: colors.primary },
   content: { flexGrow: 1, backgroundColor: colors.background },
-  hero: { width: '100%', backgroundColor: colors.primary, justifyContent: 'flex-end' },
+  hero: { width: '100%', backgroundColor: colors.primary },
   preview: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   noPhoto: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.primary, alignItems: 'flex-end', justifyContent: 'flex-start', overflow: 'hidden' },
   noPhotoPaw: { position: 'absolute', right: -40, top: 20, opacity: 0.12, transform: [{ rotate: '-18deg' }] },
-  noPhotoText: { position: 'absolute', right: layout.margin, bottom: spacing.xl, fontFamily: fontFamily.label, fontSize: 14, color: colors.onForest },
+  noPhotoText: { position: 'absolute', right: layout.margin, bottom: spacing.lg, fontFamily: fontFamily.label, fontSize: 14, color: colors.onForest },
   closeButton: { position: 'absolute', left: layout.margin, width: layout.minTouch, height: layout.minTouch, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.38)', alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: fontFamily.display, fontSize: 34, lineHeight: 40, letterSpacing: -0.3, color: colors.onPrimary, paddingHorizontal: layout.margin, paddingBottom: spacing.lg },
-  body: { width: '100%', maxWidth: 920, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.xl, paddingBottom: spacing.xxl, gap: spacing.xxl },
+  title: { fontFamily: fontFamily.display, fontSize: 36, lineHeight: 44, letterSpacing: -0.3, color: colors.primary, paddingHorizontal: layout.margin, paddingTop: spacing.xl },
+  body: { width: '100%', maxWidth: 920, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xxl },
   subtitle: { ...type.body, color: colors.inkMuted },
   state: { paddingVertical: spacing.xxl, alignItems: 'center' },
   section: { gap: spacing.lg },
@@ -728,13 +695,13 @@ const styles = StyleSheet.create({
   selectOptionTextSelected: { fontFamily: fontFamily.label, color: colors.primary },
   choiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   choice: { flexGrow: 1, flexBasis: 92, minHeight: layout.minTouch, borderRadius: radius.md, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  choiceWithAdornment: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center' },
+  choiceWithAdornment: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', paddingHorizontal: spacing.md },
   choiceSoftSelected: { backgroundColor: colors.primarySoft, borderColor: colors.primary, borderWidth: 2 },
   choiceTextSoftSelected: { fontFamily: fontFamily.label, color: colors.primary },
   dot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: colors.outline, overflow: 'hidden', flexDirection: 'row' },
   dotHalf: { flex: 1 },
   choiceSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  choiceText: { fontFamily: fontFamily.labelMedium, fontSize: 15, lineHeight: 20, color: colors.ink, textAlign: 'center' },
+  choiceText: { flexShrink: 1, fontFamily: fontFamily.labelMedium, fontSize: 15, lineHeight: 20, color: colors.ink, textAlign: 'center' },
   choiceTextSelected: { fontFamily: fontFamily.label, color: colors.onPrimary },
   input: { ...type.body, borderWidth: 1, borderColor: colors.outline, borderRadius: radius.sm, backgroundColor: colors.surface, color: colors.ink, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, minHeight: 48 },
   textArea: { minHeight: 112 },
@@ -756,12 +723,15 @@ const styles = StyleSheet.create({
   resultFull: { flex: 1, backgroundColor: colors.primary },
   resultFullBody: { flex: 1, justifyContent: 'space-between', padding: layout.margin, paddingTop: spacing.xxxl * 2, paddingBottom: spacing.xxxl, overflow: 'hidden' },
   resultPaw: { position: 'absolute', right: -60, top: '30%', opacity: 0.1, transform: [{ rotate: '-18deg' }] },
+  pickerSheet: { paddingHorizontal: 0, paddingTop: spacing.xl, paddingBottom: spacing.xxl, gap: 0 },
+  errorSheet: { paddingBottom: spacing.xxxl },
+  errorBody: { gap: spacing.lg },
   resultBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
   resultSheet: { width: '100%', maxWidth: 520, alignSelf: 'center', borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface, padding: layout.margin, paddingBottom: spacing.xxxl, gap: spacing.xl },
   resultText: { gap: spacing.md, justifyContent: 'center', flexGrow: 1 },
   resultTitle: { fontFamily: fontFamily.display, fontSize: 44, lineHeight: 50, letterSpacing: -0.5, color: colors.onPrimary },
-  resultTitleError: { fontSize: 30, lineHeight: 36, letterSpacing: 0, color: colors.danger },
+  resultTitleError: { fontFamily: fontFamily.display, fontSize: 30, lineHeight: 36, color: colors.danger },
   resultBody: { ...type.body, fontSize: 17, lineHeight: 25, color: colors.onForest, maxWidth: 420 },
-  resultBodyError: { color: colors.ink },
+  resultBodyError: { ...type.body, fontSize: 17, lineHeight: 25, color: colors.ink },
   resultActions: { gap: spacing.md },
 });
