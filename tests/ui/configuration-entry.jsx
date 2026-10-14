@@ -359,6 +359,7 @@ function Fixture() {
       <button onClick={()=>setVisible(true)}>Abrir formulario de prueba</button>
     </div>
     <SafeAreaProvider>{visible ? <Screen accessToken={token} onBack={()=>setVisible(false)} onLogout={()=>setToken(null)}
+      {...(params.has('tools') ? { onOpenDuplicates: () => {}, onOpenZoneSets: () => {}, onOpenConfiguration: () => {} } : {})}
       {...(params.has('association-preview') ? { getPage: previewAssociationPage, displayName: 'Vista de demostración' } : {})} /> : <p>Formulario cerrado</p>}</SafeAreaProvider>
   </div>;
 }
