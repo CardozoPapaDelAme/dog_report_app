@@ -13,6 +13,8 @@ export const type = {
   headline: { fontFamily: fontFamily.bold, fontSize: 24, lineHeight: 32, color: colors.ink },
   title: { fontFamily: fontFamily.semibold, fontSize: 18, lineHeight: 24, color: colors.ink },
   body: { fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 24, color: colors.ink },
+  /** Text inside single-line fields: no `lineHeight`, which on iOS pushes the text below the middle of the field. */
+  input: { fontFamily: fontFamily.regular, fontSize: 16, color: colors.ink },
   bodySmall: { fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 20, color: colors.inkMuted },
   caption: { fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 18, color: colors.inkMuted },
   button: { fontFamily: fontFamily.bold, fontSize: 16, lineHeight: 22 },

@@ -32,10 +32,10 @@ export default AppTextField;
 
 const styles = StyleSheet.create({
   container: { gap: spacing.xs },
-  input: { ...type.body, minHeight: layout.minTouch, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  input: { ...type.input, minHeight: layout.minTouch, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 0 },
-  bare: { ...type.body, flex: 1, minHeight: layout.minTouch - 2, paddingVertical: spacing.sm },
-  multiline: { minHeight: 96, textAlignVertical: 'top' },
+  bare: { ...type.input, flex: 1, minHeight: layout.minTouch - 2, paddingVertical: spacing.sm },
+  multiline: { minHeight: 96, lineHeight: 22, textAlignVertical: 'top' },
   labelDark: { color: colors.onForest },
   inputDark: { backgroundColor: colors.forestField, borderColor: 'rgba(201,230,196,0.45)' },
   textDark: { color: colors.onPrimary },
