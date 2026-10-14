@@ -300,6 +300,7 @@
     "flagged": "Flagged",
     "urgent": "High priority",
     "trust": "Trust",
+    "tier": { "low": "low", "medium": "medium", "high": "high" },
     "flags": "Flags",
     "photo": "Photo",
     "exactLocation": "Exact location",

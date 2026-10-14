@@ -23,6 +23,9 @@ export const colors = {
   forestDeep: '#06300b',
   forestField: '#0a3a12',
   onForest: '#c9e6c4', // secondary text on primary, 8.4:1
+  onForestAlert: '#ffb4ab', // alert number on primary
+  forestLine: 'rgba(201, 230, 196, 0.22)', // hairlines on primary
+  forestShade: 'rgba(0, 0, 0, 0.14)', // darker band on primary
   onForestSubtle: '#a9cfa5', // placeholders on forestField
   primaryFixed: '#91d78a', // eyebrow on primary, 6.4:1
   onPrimarySoft: '#00450d',

@@ -306,6 +306,7 @@
     "flagged": "Con banderas",
     "urgent": "Prioridad alta",
     "trust": "Confianza",
+    "tier": { "low": "baja", "medium": "media", "high": "alta" },
     "flags": "Banderas",
     "photo": "Foto",
     "exactLocation": "Ubicación exacta",
