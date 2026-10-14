@@ -7,31 +7,32 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AccessibilityInfo, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { AccessibilityInfo, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useConfiguration } from '../hooks/useConfiguration.js';
 import { CONFIGURATION_FIELDS, CONFIGURATION_GROUPS } from '../models/configuration.js';
-import { AppButton, Banner, Icon, PawTrail, Sheet, StateView } from '../components/ui/index.js';
+import { AppButton, Banner, Icon, Sheet, StateView } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
-const groupIcons = { flags: 'flag', duplicates: 'copy', trust: 'shield', location: 'map', limits: 'gauge' };
 /** Translates a validation error (`{key, values}`) or returns a string error as is. */
 function errorText(error, t) {
   return typeof error === 'string' ? error : error ? t(`configuration.validation.${error.key}`, error.values) : '';
 }
 /** Numeric input for one `CONFIGURATION_FIELDS` entry with hint, help and error text. */
-function ThresholdField({ field, value, error, disabled, t, wide, inputRef, onChange, onLayout }) {
+function ThresholdField({ field, value, error, disabled, t, inputRef, onChange, onLayout, last }) {
   const label = t(`configuration.fields.${field.key}`);
   const message = errorText(error, t);
   const hint = t(field.decimals === 0 ? 'configuration.integerHint' : 'configuration.decimalHint', field);
-  return <View onLayout={onLayout} style={[styles.field, wide && styles.wideField]}>
-    <Text nativeID={`${field.key}-label`} style={styles.label}>{label}</Text>
-    <Text style={styles.hint}>{hint}</Text>
+  return <View onLayout={onLayout} style={[styles.row, !last && styles.rowDivider]}>
+    <View style={styles.rowText}>
+      <Text nativeID={`${field.key}-label`} style={styles.label}>{label}</Text>
+      <Text style={styles.hint}>{hint}</Text>
+      <Text nativeID={`${field.key}-help`} accessibilityLiveRegion="polite" style={error ? styles.fieldError : styles.fieldHelp}>{message || t(`configuration.help.${field.key}`)}</Text>
+    </View>
     <TextInput ref={inputRef} testID={`configuration-${field.key}`} accessibilityLabel={label} accessibilityHint={message || hint}
       aria-invalid={Boolean(error)} aria-describedby={`${field.key}-help`} value={value} editable={!disabled}
       onChangeText={onChange} keyboardType={field.decimals === 0 ? 'number-pad' : 'decimal-pad'} inputMode={field.decimals === 0 ? 'numeric' : 'decimal'}
-      selectTextOnFocus autoCorrect={false} style={[styles.input, styles.numberInput, error && styles.inputError, disabled && styles.inputDisabled]} />
-    <Text nativeID={`${field.key}-help`} accessibilityLiveRegion="polite" style={error ? styles.fieldError : styles.fieldHelp}>{message || t(`configuration.help.${field.key}`)}</Text>
+      selectTextOnFocus autoCorrect={false} style={[styles.numberInput, error && styles.inputError, disabled && styles.inputDisabled]} />
   </View>;
 }
 
@@ -46,7 +47,6 @@ function ThresholdField({ field, value, error, disabled, t, wide, inputRef, onCh
  */
 export default function ConfigurationScreen({ accessToken, onBack, onLogout, logoutPending = false, api }) {
   const { t } = useTranslation();
-  const { width } = useWindowDimensions();
   const form = useConfiguration(accessToken, api);
   const [pendingAction, setPendingAction] = useState(null);
   const scroll = useRef(null);
@@ -103,7 +103,7 @@ export default function ConfigurationScreen({ accessToken, onBack, onLogout, log
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView ref={scroll} style={styles.scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          {ready ? <PawTrail style={styles.headerTrail} /> : null}
+          <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.bigPaw}><Icon name="dog" size={210} color={colors.onPrimary} strokeWidth={1.4} /></View>
           <View style={styles.headerInner}>
             {onBack || onLogout ? <View style={styles.topActions}>
               {onBack ? <Pressable accessibilityRole="button" disabled={form.saving} onPress={() => navigate('back')} hitSlop={8} style={styles.back}>
@@ -133,15 +133,18 @@ export default function ConfigurationScreen({ accessToken, onBack, onLogout, log
           {form.savedVersion ? <Banner tone="success" message={t('configuration.saved', { version: form.savedVersion })} /> : null}
           {errorCount ? <Banner tone="error" message={t('configuration.fixFields', { count: errorCount })} /> : null}
           {form.error && !errorCount ? <Banner tone="error" message={form.needsReload ? t('configuration.verifyBeforeRetry') : generalError} /> : null}
-          {CONFIGURATION_GROUPS.map((group) => <View key={group} onLayout={(event) => { sections.current[group] = event.nativeEvent.layout.y; }} style={styles.group}>
-            <View style={styles.sectionHeader}><View style={styles.sectionIcon}><Icon name={groupIcons[group] ?? 'info'} size={18} color={colors.primary} /></View><Text accessibilityRole="header" style={styles.sectionTitle}>{t(`configuration.groups.${group}`)}</Text></View>
-            <View style={styles.fields}>{CONFIGURATION_FIELDS.filter((field) => field.group === group).map((field) => <ThresholdField key={field.key} field={field} value={form.draft[field.key]}
-              error={form.fieldErrors[field.key]} disabled={form.saving || form.needsReload} t={t} wide={width >= 760}
-              inputRef={(node) => { inputs.current[field.key] = node; }} onChange={(value) => form.changeField(field.key, value)}
-              onLayout={(event) => { fieldOffsets.current[field.key] = event.nativeEvent.layout.y; }} />)}</View>
-          </View>)}
+          {CONFIGURATION_GROUPS.map((group) => {
+            const groupFields = CONFIGURATION_FIELDS.filter((field) => field.group === group);
+            return <View key={group} onLayout={(event) => { sections.current[group] = event.nativeEvent.layout.y; }} style={styles.group}>
+              <Text accessibilityRole="header" style={styles.sectionTitle}>{t(`configuration.groups.${group}`)}</Text>
+              <View style={styles.list}>{groupFields.map((field, index) => <ThresholdField key={field.key} field={field} value={form.draft[field.key]}
+                error={form.fieldErrors[field.key]} disabled={form.saving || form.needsReload} t={t} last={index === groupFields.length - 1}
+                inputRef={(node) => { inputs.current[field.key] = node; }} onChange={(value) => form.changeField(field.key, value)}
+                onLayout={(event) => { fieldOffsets.current[field.key] = event.nativeEvent.layout.y; }} />)}</View>
+            </View>;
+          })}
           <View style={styles.group} onLayout={(event) => { sections.current.note = event.nativeEvent.layout.y; }}>
-            <View style={styles.sectionHeader}><View style={styles.sectionIcon}><Icon name="info" size={18} color={colors.primary} /></View><Text accessibilityRole="header" style={styles.sectionTitle}>{t('configuration.reasonTitle')}</Text></View>
+            <Text accessibilityRole="header" style={styles.sectionTitle}>{t('configuration.reasonTitle')}</Text>
             <Text style={styles.hint}>{t('configuration.reasonHelp')}</Text>
             <TextInput ref={(node) => { inputs.current.change_note = node; }} testID="configuration-change_note" multiline textAlignVertical="top" value={form.draft.change_note}
               editable={!form.saving && !form.needsReload} accessibilityLabel={t('configuration.reasonTitle')} aria-invalid={Boolean(form.fieldErrors.change_note)}
@@ -155,8 +158,10 @@ export default function ConfigurationScreen({ accessToken, onBack, onLogout, log
         </View>
       </ScrollView>
       {ready ? <View style={styles.footer}><View style={styles.footerInner}>
-        <AppButton title={t(form.needsReload ? 'configuration.verify' : 'configuration.reload')} variant="glass" disabled={form.saving} onPress={() => navigate('reload')} style={styles.footerButton} />
-        <AppButton testID="configuration-save" variant="signal" title={t(form.saving ? 'configuration.saving' : 'configuration.save')} loading={form.saving} disabled={form.saving || form.needsReload} onPress={form.save} style={styles.footerButton} />
+        <Pressable accessibilityRole="button" accessibilityLabel={t(form.needsReload ? 'configuration.verify' : 'configuration.reload')} accessibilityState={{ disabled: form.saving }} disabled={form.saving} onPress={() => navigate('reload')} hitSlop={4} style={({ pressed }) => [styles.reload, pressed && styles.pressed, form.saving && styles.dim]}>
+          <Icon name="refresh" size={22} color={colors.onPrimary} />
+        </Pressable>
+        <AppButton testID="configuration-save" variant="signal" title={t(form.saving ? 'configuration.saving' : 'configuration.save')} loading={form.saving} disabled={form.saving || form.needsReload} onPress={form.save} style={styles.save} />
       </View></View> : null}
     </KeyboardAvoidingView>
     {pendingAction ? <Sheet onClose={() => setPendingAction(null)} maxHeight="70%">
@@ -171,7 +176,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 }, safeArea: { flex: 1, backgroundColor: colors.primary }, scroll: { backgroundColor: colors.background },
   content: { flexGrow: 1 },
   header: { backgroundColor: colors.primary, overflow: 'hidden' },
-  headerTrail: { top: '50%', left: '68%', bottom: spacing.lg },
+  bigPaw: { position: 'absolute', right: -44, top: 40, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
   headerInner: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.xs, paddingBottom: spacing.xxl, gap: spacing.sm },
   topActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   back: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: layout.minTouch, justifyContent: 'center' }, backText: { ...type.button, fontSize: 15, color: colors.onPrimary },
@@ -182,21 +187,24 @@ const styles = StyleSheet.create({
   environment: { fontFamily: fontFamily.label, fontSize: 13, color: colors.onForest, borderWidth: 1, borderColor: 'rgba(201,230,196,0.5)', borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   caption: { ...type.caption, color: colors.onForest },
   body: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.xxl, paddingBottom: spacing.xxxl, gap: spacing.xxl },
-  group: { gap: spacing.lg },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  sectionIcon: { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: { fontFamily: fontFamily.displayMedium, fontSize: 22, lineHeight: 28, color: colors.primary, flexShrink: 1 },
-  fields: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xl }, field: { width: '100%', gap: spacing.xs }, wideField: { flexBasis: '45%', flexGrow: 1 },
+  group: { gap: spacing.md },
+  sectionTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
+  list: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg, padding: spacing.lg },
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  rowText: { flex: 1, gap: spacing.xxs },
   label: { fontFamily: fontFamily.label, fontSize: 15, lineHeight: 21, color: colors.ink }, hint: { ...type.caption, color: colors.inkMuted },
+  numberInput: { width: 104, minHeight: 52, textAlign: 'right', fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 24, color: colors.primary, backgroundColor: colors.primarySoft, borderWidth: 2, borderColor: 'transparent', borderRadius: radius.md, paddingHorizontal: spacing.md },
   input: { ...type.body, borderWidth: 1, borderColor: colors.outline, borderRadius: radius.sm, backgroundColor: colors.surface, color: colors.ink, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, minHeight: 48 },
-  numberInput: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 17 },
-  inputError: { borderColor: colors.danger, borderWidth: 2, backgroundColor: '#fffaf9' }, inputDisabled: { opacity: 0.65 },
+  inputError: { borderColor: colors.danger, backgroundColor: '#fffaf9' }, inputDisabled: { opacity: 0.65 },
   fieldHelp: { ...type.caption, color: colors.inkMuted }, fieldError: { ...type.caption, fontSize: 13, color: colors.danger, flexShrink: 1 },
   noteInput: { minHeight: 120 }, noteFooter: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
   counter: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 13, color: colors.inkMuted },
   footnote: { ...type.caption, color: colors.inkMuted },
-  footer: { backgroundColor: colors.primary, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.md },
-  footerInner: { width: '100%', maxWidth: 920, alignSelf: 'center', flexDirection: 'row', gap: spacing.md }, footerButton: { flex: 1, borderRadius: 12 },
+  footer: { backgroundColor: colors.primary, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  footerInner: { width: '100%', maxWidth: 920, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  reload: { width: 52, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,230,196,0.45)' }, pressed: { opacity: 0.7 }, dim: { opacity: 0.45 },
+  save: { flex: 1, borderRadius: 12 },
   sheetTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.ink }, sheetBody: { ...type.body, color: colors.inkMuted },
   modalActions: { gap: spacing.md, marginTop: spacing.sm },
 });
