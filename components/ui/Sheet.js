@@ -67,7 +67,7 @@ export default function Sheet({ children, onClose, dismissable = true, dim = tru
 }
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end' },
+  overlay: { ...StyleSheet.absoluteFill, justifyContent: 'flex-end' },
   overlayModal: { flex: 1, justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, gap: spacing.md, ...shadows.overlay },
 });

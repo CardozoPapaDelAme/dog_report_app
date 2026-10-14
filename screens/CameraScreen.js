@@ -212,12 +212,12 @@ export default function CameraScreen({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
-  cameraFallback: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.primary },
+  cameraFallback: { ...StyleSheet.absoluteFill, backgroundColor: colors.primary },
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: layout.margin },
   topBarRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   link: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: layout.minTouch },
   linkText: { fontFamily: fontFamily.label, fontSize: 14, color: colors.onPrimary, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
-  permission: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.primary, paddingHorizontal: layout.margin, justifyContent: 'space-between', overflow: 'hidden' },
+  permission: { ...StyleSheet.absoluteFill, backgroundColor: colors.primary, paddingHorizontal: layout.margin, justifyContent: 'space-between', overflow: 'hidden' },
   permissionPaw: { position: 'absolute', right: -60, top: 140, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
   permissionText: { gap: spacing.lg, marginTop: spacing.xxl },
   permissionTitle: { fontFamily: fontFamily.display, fontSize: 40, lineHeight: 46, letterSpacing: -0.4, color: colors.onPrimary },
