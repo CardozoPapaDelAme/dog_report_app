@@ -9,8 +9,10 @@ import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ActivityIndicator, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDuplicateResolution } from '../hooks/useDuplicateResolution.js';
-import { AppButton, AppTextField, Banner, Chip, Icon, Sheet, StateView } from '../components/ui/index.js';
+import { AppButton, AppTextField, Banner, Chip, Icon, Pager, Sheet, StateView } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
+/** Suggestions and active groups shown per page. */
+const PAGE_SIZE=3;
 /** Last six characters of an id, used as a short label. */
 const short=(id)=>id.slice(-6);
 /** Translates a validation error (`{key, values}`) or returns a string error as is. */
@@ -43,9 +45,9 @@ function ReportRow({report,selected,canonical,disabled,onToggle,onCanonical,t,la
       {selected&&!canonical?<Text style={styles.caption}>{t('duplicates.willBeDuplicate')}</Text>:null}
     </View>
     <Pressable testID={`duplicate-canonical-${report.id}`} accessibilityRole="radio" accessibilityLabel={t('duplicates.chooseCanonical',{report:label})}
-      aria-checked={canonical} accessibilityState={{checked:canonical,disabled:disabled||!selected}} disabled={disabled||!selected} onPress={onCanonical} hitSlop={4} style={[styles.canonicalHit,(!selected||disabled)&&styles.dim]}>
+      aria-checked={canonical} accessibilityState={{checked:canonical,disabled:disabled||!selected}} disabled={disabled||!selected} onPress={onCanonical} hitSlop={4} style={[styles.canonicalHit,canonical&&styles.canonicalChosenHit,(!selected||disabled)&&styles.dim]}>
       <View style={[styles.radio,canonical&&styles.radioOn]}>{canonical?<View style={styles.radioDot}/>:null}</View>
-      {canonical?<Text style={styles.canonicalText}>{t('duplicates.canonicalChosen')}</Text>:null}
+      <Text style={[styles.canonicalText,canonical&&styles.canonicalTextOn]}>{t('duplicates.canonicalShort')}</Text>
     </Pressable>
   </View>;
 }
@@ -64,6 +66,7 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
   const {t}=useTranslation();
   const form=useDuplicateResolution(accessToken,api);
   const [navigation,setNavigation]=useState(null);
+  const [suggestionPage,setSuggestionPage]=useState(0), [groupPage,setGroupPage]=useState(0);
   const scroll=useRef(null), summaryY=useRef(0), bodyY=useRef(0), reason=useRef(null);
   const busy=Boolean(form.busy), disabled=busy||form.needsReload;
   function navigate(action) {
@@ -94,6 +97,9 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
   const generalError=form.error?t(`duplicates.errors.${form.error.code}`,{defaultValue:t('duplicates.errors.request_failed')}):'';
   const reverseGroup=form.groups.find((g)=>g.id===form.reverseId);
   const ready=form.phase==='ready';
+  const suggestionPages=Math.max(1,Math.ceil(form.components.length/PAGE_SIZE)), groupPages=Math.max(1,Math.ceil(form.groups.length/PAGE_SIZE));
+  const currentSuggestionPage=Math.min(suggestionPage,suggestionPages-1), currentGroupPage=Math.min(groupPage,groupPages-1);
+  const pageLabel=(page,total)=>t('duplicates.pageOf',{page:page+1,total});
   return <SafeAreaView style={styles.safe} edges={['top','bottom','left','right']}>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS==='ios'?'padding':undefined}>
       <ScrollView ref={scroll} style={styles.scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
@@ -124,14 +130,15 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
             </Banner>:null}
             <View style={styles.sectionHeader}><Text accessibilityRole="header" style={styles.sectionTitle}>{t('duplicates.pending')}</Text><Text style={styles.count}>{form.components.length}</Text></View>
             {!form.components.length?<Text style={styles.bodyText}>{t('duplicates.empty')}</Text>:null}
-            {form.components.map((component,index)=><View key={component.id} style={styles.group}>
+            {form.components.slice(currentSuggestionPage*PAGE_SIZE,(currentSuggestionPage+1)*PAGE_SIZE).map((component,sliceIndex)=>{const index=currentSuggestionPage*PAGE_SIZE+sliceIndex;return <View key={component.id} style={styles.group}>
               <Text accessibilityRole="header" style={styles.groupTitle}>{t('duplicates.component',{number:index+1,count:component.reports.length})}</Text>
               <Text style={styles.caption}>{t('duplicates.canonicalLegend')}</Text>
               <View style={styles.list}>{component.reports.map((report,i)=><ReportRow key={report.id} report={report} selected={form.ids.includes(report.id)} canonical={form.canonicalId===report.id}
                 disabled={disabled} onToggle={()=>form.toggleReport(report.id)} onCanonical={()=>form.chooseCanonical(report.id)} t={t} last={i===component.reports.length-1}/>)}</View>
               <Text style={styles.caption}>{t('duplicates.links')}</Text>
               <View style={styles.links}>{form.snapshot.candidates.filter((edge)=>component.reports.some((r)=>r.id===edge.report_a)&&component.reports.some((r)=>r.id===edge.report_b)).map((edge)=><Chip key={edge.id} tone="info" label={`${short(edge.report_a)} ↔ ${short(edge.report_b)}${Number.isFinite(edge.distance_meters)?` · ${edge.distance_meters.toFixed(1)} m`:''}${Number.isFinite(edge.minutes_apart)?` · ${edge.minutes_apart.toFixed(1)} min`:''}`}/>)}</View>
-            </View>)}
+            </View>;})}
+            <Pager page={currentSuggestionPage} pageCount={suggestionPages} onChange={setSuggestionPage} previousLabel={t('duplicates.pagePrev')} nextLabel={t('duplicates.pageNext')} pageLabel={pageLabel(currentSuggestionPage,suggestionPages)}/>
             <View testID="duplicate-selection-summary" onLayout={(event)=>{summaryY.current=event.nativeEvent.layout.y;}} style={styles.decision}>
               <Text accessibilityRole="header" style={styles.decisionTitle}>{t('duplicates.selection',{count:form.ids.length})}</Text>
               <Text style={styles.decisionText}>{form.canonicalId?t('duplicates.canonicalSummary',{id:short(form.canonicalId)}):t('duplicates.chooseHelp')}</Text>
@@ -143,7 +150,7 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
             </View>
             <View style={styles.sectionHeader}><Text accessibilityRole="header" style={styles.sectionTitle}>{t('duplicates.active')}</Text><Text style={styles.count}>{form.groups.length}</Text></View>
             {!form.groups.length?<Text style={styles.bodyText}>{t('duplicates.noActive')}</Text>:null}
-            {form.groups.map((group)=><View key={group.id} testID={`duplicate-group-${group.id}`} style={styles.list}>
+            {form.groups.slice(currentGroupPage*PAGE_SIZE,(currentGroupPage+1)*PAGE_SIZE).map((group)=><View key={group.id} testID={`duplicate-group-${group.id}`} style={styles.list}>
               <View style={[styles.row,styles.rowDivider]}>
                 <Text style={styles.label}>{t('duplicates.canonicalSummary',{id:short(group.canonical_report_id)})}</Text>
                 <Text selectable style={styles.caption}>ID: {group.id}</Text>
@@ -153,6 +160,7 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
               </View>
               <View style={styles.row}><AppButton variant="destructive" testID={`duplicate-reverse-${group.id}`} title={t('duplicates.reverse')} onPress={()=>form.openReverse(group.id)} disabled={disabled}/></View>
             </View>)}
+            <Pager page={currentGroupPage} pageCount={groupPages} onChange={setGroupPage} previousLabel={t('duplicates.pagePrev')} nextLabel={t('duplicates.pageNext')} pageLabel={pageLabel(currentGroupPage,groupPages)}/>
           </>:null}
         </View>
       </ScrollView>
@@ -205,10 +213,10 @@ const styles=StyleSheet.create({
   caption:{...type.caption,color:colors.inkMuted},bodyText:{...type.body,fontSize:15,lineHeight:22,color:colors.inkMuted},
   rowFlex:{flexDirection:'row',alignItems:'flex-start',gap:spacing.md},rowMain:{flex:1,gap:spacing.xs},selectionText:{flex:1,gap:2},titleLine:{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:spacing.sm},
   detailToggle:{flexDirection:'row',alignItems:'center',gap:spacing.xs,minHeight:32,alignSelf:'flex-start',marginLeft:38},detailToggleText:{fontFamily:fontFamily.label,fontSize:13,color:colors.primary},details:{marginLeft:38,gap:2},hidden:{display:'none'},
-  canonicalHit:{minWidth:layout.minTouch,minHeight:layout.minTouch,alignItems:'center',justifyContent:'center',gap:2},
+  canonicalHit:{flexDirection:'row',alignItems:'center',gap:spacing.xs,minHeight:layout.minTouch,paddingHorizontal:spacing.md,borderRadius:radius.pill,borderWidth:1,borderColor:colors.outline,backgroundColor:colors.surface,alignSelf:'flex-start'},canonicalChosenHit:{backgroundColor:colors.primary,borderColor:colors.primary},
   canonicalX:{flexDirection:'row',alignItems:'center',gap:spacing.md,minHeight:layout.minTouch,borderTopWidth:1,borderTopColor:colors.border,marginTop:spacing.sm},
-  radio:{width:24,height:24,borderRadius:12,borderWidth:2,borderColor:colors.outline,alignItems:'center',justifyContent:'center',backgroundColor:colors.surface},radioOn:{borderColor:colors.primary},radioDot:{width:12,height:12,borderRadius:6,backgroundColor:colors.primary},
-  canonicalText:{fontFamily:fontFamily.label,fontSize:11,color:colors.primary,textAlign:'center'},dim:{opacity:0.5},pressed:{opacity:0.7},
+  radio:{width:24,height:24,borderRadius:12,borderWidth:2,borderColor:colors.outline,alignItems:'center',justifyContent:'center',backgroundColor:colors.surface},radioOn:{borderColor:colors.onPrimary,backgroundColor:colors.primary},radioDot:{width:12,height:12,borderRadius:6,backgroundColor:colors.onPrimary},
+  canonicalText:{fontFamily:fontFamily.label,fontSize:13,color:colors.primary},canonicalTextOn:{color:colors.onPrimary},dim:{opacity:0.5},pressed:{opacity:0.7},
   links:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},
   decision:{backgroundColor:colors.primary,borderRadius:radius.lg,padding:spacing.xl,gap:spacing.lg},
   decisionTitle:{fontFamily:fontFamily.display,fontSize:26,lineHeight:32,color:colors.onPrimary},decisionText:{...type.body,fontSize:14,lineHeight:21,color:colors.onForest},

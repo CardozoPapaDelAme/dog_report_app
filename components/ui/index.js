@@ -10,3 +10,4 @@ export { default as Sheet } from './Sheet.js';
 export { default as ScreenHeader } from './ScreenHeader.js';
 export { default as StateView } from './StateView.js';
 export { default as PawTrail } from './PawTrail.js';
+export { default as Pager } from './Pager.js';
