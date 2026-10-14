@@ -316,6 +316,7 @@ export default function ReportFormScreen({
   const [form, setForm] = useState(() => createEmptyReportFormDraft());
   const [picker, setPicker] = useState(null);
   const [viewingPhoto, setViewingPhoto] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
   const submit = useSubmitReport({
     draft,
@@ -343,6 +344,13 @@ export default function ReportFormScreen({
       submit.phase !== 'photo_pending' &&
       !submit.submitting,
   );
+
+  // The form only makes room for the keyboard while one is really on screen.
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   useEffect(() => {
     setPhotoFailed(false);
@@ -423,7 +431,7 @@ export default function ReportFormScreen({
 
   return (
     <View style={styles.safeArea}>
-      <KeyboardAvoidingView style={styles.flex} enabled={!picker && !viewingPhoto} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.flex} enabled={keyboardVisible && !picker && !viewingPhoto} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
           <View style={[styles.topRow, { paddingTop: insets.top + spacing.sm }]}>
             <Pressable
