@@ -1,11 +1,5 @@
 # Matriz de pruebas de aceptación con el socio formador
 
-Sesión de aceptación del **15 de octubre de 2026**. El equipo opera el teléfono;
-el socio formador observa y dictamina. Esta matriz es la versión para el socio de
-los casos `TC-ACEPTACION-01` a `TC-ACEPTACION-12` de `docs/testing/ACCEPTANCE.md`
-(más la denuncia, `TC-ALPHA-22` y `TC-ALPHA-23` de `docs/testing/cases/alpha.md`).
-Convenciones: `docs/testing/README.md`.
-
 | Campo | Valor (se llena el día de la sesión) |
 |---|---|
 | Fecha, hora y zona | |
