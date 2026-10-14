@@ -6,7 +6,8 @@
  */
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import DraftQueueBanner from '../components/DraftQueueBanner.js';
@@ -14,16 +15,29 @@ import { Banner, Icon, Scrim } from '../components/ui/index.js';
 import { useCameraCapture } from '../hooks/useCameraCapture.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
-/** Four corner marks that frame the dog; purely decorative. */
-function FrameGuide() {
-  return (
-    <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.frame}>
-      <View style={[styles.corner, styles.cornerTL]} />
-      <View style={[styles.corner, styles.cornerTR]} />
-      <View style={[styles.corner, styles.cornerBL]} />
-      <View style={[styles.corner, styles.cornerBR]} />
-    </View>
-  );
+/** Two-finger pinch that drives the camera zoom (0 to 1); one-finger touches fall through to the controls. */
+function usePinchZoom() {
+  const [zoom, setZoom] = useState(0);
+  const zoomRef = useRef(0);
+  const gesture = useRef({ distance: 0, start: 0 });
+  const distanceOf = (touches) => Math.hypot(touches[0].pageX - touches[1].pageX, touches[0].pageY - touches[1].pageY);
+  const responder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: (event) => event.nativeEvent.touches.length === 2,
+    onMoveShouldSetPanResponder: (event) => event.nativeEvent.touches.length === 2,
+    onPanResponderGrant: (event) => {
+      const { touches } = event.nativeEvent;
+      gesture.current = { distance: touches.length === 2 ? distanceOf(touches) : 0, start: zoomRef.current };
+    },
+    onPanResponderMove: (event) => {
+      const { touches } = event.nativeEvent;
+      if (touches.length !== 2) return;
+      if (!gesture.current.distance) gesture.current = { distance: distanceOf(touches), start: zoomRef.current };
+      const next = Math.min(1, Math.max(0, gesture.current.start + (distanceOf(touches) / gesture.current.distance - 1) * 0.6));
+      zoomRef.current = next;
+      setZoom(next);
+    },
+  })).current;
+  return { zoom, handlers: responder.panHandlers };
 }
 
 /** Text control with an icon, readable over the camera scrim. */
@@ -71,6 +85,7 @@ export default function CameraScreen({
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const pinch = usePinchZoom();
   const [permission, requestPermission] = useCameraPermissions();
   const capture = useCameraCapture({ onPhotoAccepted });
   const feedback = reasonText(t, capture.captureState);
@@ -88,17 +103,19 @@ export default function CameraScreen({
           style={StyleSheet.absoluteFill}
           facing="back"
           mode="picture"
+          zoom={pinch.zoom}
           onCameraReady={() => capture.setCameraReady(true)}
         />
       ) : (
         <View style={styles.cameraFallback} />
       )}
 
+      {hasPermission ? <View style={StyleSheet.absoluteFill} {...pinch.handlers} /> : null}
+
       {hasPermission ? (
         <>
-          <Scrim edge="top" height={150 + insets.top} strength={0.62} />
-          <Scrim edge="bottom" height={230 + insets.bottom} strength={0.7} />
-          <FrameGuide />
+          <Scrim edge="top" height={130 + insets.top} strength={0.55} />
+          <Scrim edge="bottom" height={280 + insets.bottom} strength={0.72} />
           <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
             {onOpenMap ? <CameraLink icon="map" label={t('camera.openMap')} onPress={onOpenMap} /> : <View />}
             <View style={styles.topBarRight}>
@@ -162,10 +179,7 @@ export default function CameraScreen({
       {hasPermission ? (
         <View style={[styles.bottomPanel, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
           <Text style={styles.helper}>{t('camera.helper')}</Text>
-          <View style={styles.bottomRow}>
-            <View style={styles.bottomSide}>
-              <CameraLink testID="camera-without-photo" icon="pencil" label={t('camera.withoutPhoto')} disabled={busy} onPress={onReportWithoutPhoto} />
-            </View>
+          <View style={styles.shutterRing}>
             <Pressable
               testID="camera-capture"
               accessibilityRole="button"
@@ -177,8 +191,8 @@ export default function CameraScreen({
             >
               {busy ? <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /> : <View style={styles.captureInner} />}
             </Pressable>
-            <View style={styles.bottomSide} />
           </View>
+          <CameraLink testID="camera-without-photo" icon="pencil" label={t('camera.withoutPhoto')} disabled={busy} onPress={onReportWithoutPhoto} />
         </View>
       ) : null}
     </View>
@@ -188,12 +202,6 @@ export default function CameraScreen({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   cameraFallback: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.primary },
-  frame: { position: 'absolute', left: 36, right: 36, top: '22%', bottom: '30%' },
-  corner: { position: 'absolute', width: 34, height: 34, borderColor: 'rgba(255,255,255,0.78)' },
-  cornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 12 },
-  cornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 12 },
-  cornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 12 },
-  cornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 12 },
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: layout.margin },
   topBarRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   link: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: layout.minTouch },
@@ -211,12 +219,11 @@ const styles = StyleSheet.create({
   toastAction: { fontFamily: fontFamily.displayMedium, fontSize: 16, color: colors.primary, marginTop: spacing.xs },
   validating: { position: 'absolute', top: '16%', left: layout.margin, right: layout.margin, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, borderRadius: radius.md, backgroundColor: colors.glass, padding: spacing.lg },
   validatingText: { fontFamily: fontFamily.displayMedium, fontSize: 17, color: colors.onPrimary },
-  bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, gap: spacing.md, paddingHorizontal: layout.margin },
+  bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', gap: spacing.md, paddingHorizontal: layout.margin },
   helper: { fontFamily: fontFamily.label, fontSize: 14, textAlign: 'center', color: colors.onPrimary, textShadowColor: 'rgba(0,0,0,0.55)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bottomSide: { flex: 1, alignItems: 'flex-start' },
-  captureButton: { width: 84, height: 84, borderRadius: 42, borderWidth: 6, borderColor: colors.signal, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  captureInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: colors.surface, borderColor: colors.outlineSoft, borderWidth: 1 },
+  shutterRing: { width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: 'rgba(255,255,255,0.85)', alignItems: 'center', justifyContent: 'center' },
+  captureButton: { width: 82, height: 82, borderRadius: 41, borderWidth: 7, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  captureInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.surface, borderColor: colors.outlineSoft, borderWidth: 1 },
   queueBannerPosition: { position: 'absolute', left: spacing.lg, right: spacing.lg },
   captureDisabled: { opacity: 0.62 }, captureActive: { transform: [{ scale: 0.96 }] },
   pressed: { opacity: 0.7 }, disabled: { opacity: 0.5 },

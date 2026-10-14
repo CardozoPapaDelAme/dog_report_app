@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View } from 'react-native';
 
-export function CameraView({ facing: _facing, mode: _mode, onCameraReady, ...props }) {
+export function CameraView({ facing: _facing, mode: _mode, zoom: _zoom, onCameraReady, ...props }) {
   useEffect(() => {
     onCameraReady?.();
   }, [onCameraReady]);
