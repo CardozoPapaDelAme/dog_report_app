@@ -41,3 +41,14 @@ test('few reports show no pager and export stays enabled', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Siguiente', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'CSV', exact: true })).toBeEnabled();
 });
+
+test('choosing the start date opens the end date calendar automatically', async ({ page }) => {
+  await open(page, 3);
+  await page.getByRole('button', { name: 'Personalizado' }).click();
+  await expect(page.getByText('Elige la fecha inicial', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Mes anterior' }).click();
+  await page.getByRole('button', { name: /^1 de .* de 20\d\d$/ }).first().click();
+  await expect(page.getByText('Elige la fecha final', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(page.getByText('Elige la fecha final', { exact: true })).toHaveCount(0);
+});

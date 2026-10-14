@@ -77,11 +77,13 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   }
 
   function selectCustomDate(day) {
-    if (calendarField === 'from') setFromDay(day);
+    const choosingStart = calendarField === 'from';
+    if (choosingStart) setFromDay(day);
     else if (calendarField === 'to') setToDay(day);
     setActivePreset('custom');
     setExportError(null);
-    setCalendarField(null);
+    // Picking the start date opens the end date picker right away.
+    setCalendarField(choosingStart ? 'to' : null);
   }
 
   function displayDay(day) {
