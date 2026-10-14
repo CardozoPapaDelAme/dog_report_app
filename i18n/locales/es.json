@@ -446,6 +446,8 @@
     "noActive": "No hay una zona activa en este entorno.",
     "version": "Versión {{version}}",
     "sourceVersion": "Versión de la fuente",
+    "showDetails": "Ver detalles",
+    "hideDetails": "Ocultar detalles",
     "stepOne": "01 · Crear borrador",
     "stepOneHelp": "Selecciona un archivo o pega su contenido. Guardarlo crea una versión nueva y conserva la zona activa actual.",
     "pick": "Seleccionar archivo GeoJSON",

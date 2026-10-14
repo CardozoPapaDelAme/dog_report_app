@@ -440,6 +440,8 @@
     "noActive": "There is no active zone in this environment.",
     "version": "Version {{version}}",
     "sourceVersion": "Source version",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
     "stepOne": "01 · Create draft",
     "stepOneHelp": "Select a file or paste its content. Saving creates a new version and keeps the current active zone.",
     "pick": "Select GeoJSON file",

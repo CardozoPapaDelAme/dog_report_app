@@ -26,16 +26,25 @@ function Field({ name, label, value, error, onChange, disabled, multiline, input
     {error ? <Text nativeID={`zone-${name}-error`} accessibilityLiveRegion="polite" style={styles.errorText}>{message(error, t)}</Text> : null}
   </View>;
 }
-/** Read-only details of a zone set, including its SHA-256 checksum, as a grouped list. */
-function ZoneSummary({ zone, t }) {
-  return <View style={styles.list}>
-    <View style={[styles.item, styles.itemDivider]}><Text style={styles.label}>{zone.name} · {t('zoneSets.version', { version: zone.version })}</Text></View>
+/** Read-only details of a zone set (SHA-256 included) as a grouped list; `collapsible` folds all but the name behind a toggle. */
+function ZoneSummary({ zone, t, collapsible = false }) {
+  const [open, setOpen] = useState(!collapsible);
+  const details = <View style={!open && styles.hidden}>
     <View style={[styles.item, styles.itemDivider]}><Text style={styles.caption}>{t('zoneSets.sourceVersion')}</Text><Text selectable style={styles.value}>{zone.source_version}</Text></View>
     <View style={[styles.item, styles.itemDivider]}><Text style={styles.caption}>{t('zoneSets.fields.source_uri')}</Text><Text selectable style={styles.value}>{zone.source_uri}</Text></View>
     <View style={[styles.item, styles.itemDivider]}><Text style={styles.caption}>ID</Text><Text selectable style={styles.value}>{zone.id}</Text></View>
     <View style={[styles.item, zone.association_approval_reference && styles.itemDivider]}><Text style={styles.caption}>{t('zoneSets.checksum')}</Text>
       <Text selectable testID={`zone-checksum-${zone.status}`} style={styles.hash}>{zone.source_sha256}</Text></View>
     {zone.association_approval_reference ? <View style={styles.item}><Text selectable style={styles.caption}>{t('zoneSets.approval')}: {zone.association_approval_reference}</Text></View> : null}
+  </View>;
+  return <View style={styles.list}>
+    <View style={[styles.item, styles.itemHead, open && styles.itemDivider]}>
+      <Text style={[styles.label, styles.headText]}>{zone.name} · {t('zoneSets.version', { version: zone.version })}</Text>
+      {collapsible ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((value) => !value)} hitSlop={8} style={styles.toggle}>
+        <Text style={styles.toggleText}>{t(open ? 'zoneSets.hideDetails' : 'zoneSets.showDetails')}</Text><Icon name="down" size={18} color={colors.primary} />
+      </Pressable> : null}
+    </View>
+    {details}
   </View>;
 }
 /** One step of the flow: a dot on the route line, with the content on the right. */
@@ -120,7 +129,7 @@ export default function ZoneSetScreen({ accessToken, onBack, dependencies }) {
           {ready ? <>
             <View style={styles.block}>
               <Text accessibilityRole="header" style={styles.sectionTitle}>{t('zoneSets.current')}</Text>
-              {form.active ? <ZoneSummary zone={form.active} t={t} /> : <Text style={styles.body_text}>{t('zoneSets.noActive')}</Text>}
+              {form.active ? <ZoneSummary zone={form.active} t={t} collapsible /> : <Text style={styles.body_text}>{t('zoneSets.noActive')}</Text>}
             </View>
             {form.error && !Object.keys(form.errors).length ? <Banner tone="error" message={errorText} /> : null}
             {form.uncertain ? <Banner tone="error" title={t('zoneSets.uncertainTitle')} message={t(`zoneSets.uncertain.${form.uncertain}`)}>
@@ -200,6 +209,9 @@ const styles = StyleSheet.create({
   body_text: { ...type.body, fontSize: 15, lineHeight: 22, color: colors.inkMuted },
   caption: { ...type.caption, color: colors.inkMuted },
   list: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  hidden: { display: 'none' },
+  itemHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md }, headText: { flex: 1 },
+  toggle: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: layout.minTouch, justifyContent: 'center' }, toggleText: { fontFamily: fontFamily.label, fontSize: 14, color: colors.primary },
   item: { padding: spacing.lg, gap: spacing.xxs }, itemDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
   value: { fontFamily: fontFamily.labelMedium, fontSize: 15, lineHeight: 21, color: colors.ink, flexShrink: 1 },
   step: { flexDirection: 'row', gap: spacing.lg },
