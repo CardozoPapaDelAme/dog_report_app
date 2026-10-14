@@ -5,16 +5,7 @@
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-
-const colors = {
-  ink: '#191d17',
-  primary: '#00450d',
-  primarySoft: '#d9f2d4',
-  warning: '#8a5700',
-  warningSoft: '#fff0c2',
-  danger: '#ba1a1a',
-  dangerSoft: '#ffdad6',
-};
+import { colors, fontFamily, layout, radius, spacing } from '../theme/index.js';
 
 /** Chooses the banner tone, texts and optional action label; `null` when nothing should show. */
 function queueBannerContent(t, summary = {}, synced = false) {
@@ -122,15 +113,15 @@ export default function DraftQueueBanner({
 }
 
 const styles = StyleSheet.create({
-  banner: { minHeight: 72, borderRadius: 14, borderWidth: 1, borderColor: '#e2cf83', backgroundColor: colors.warningSoft, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
-  bannerDanger: { borderColor: '#eeaaa2', backgroundColor: colors.dangerSoft },
-  bannerSuccess: { borderColor: '#b9dcb3', backgroundColor: colors.primarySoft },
-  text: { flex: 1, gap: 3 },
-  title: { color: colors.warning, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14, lineHeight: 19 },
-  titleDanger: { color: colors.danger },
-  titleSuccess: { color: colors.primary },
-  body: { color: colors.ink, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12, lineHeight: 17 },
-  retryButton: { minHeight: 40, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.primary, paddingHorizontal: 12 },
-  retryText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12, textAlign: 'center' },
+  banner: { minHeight: 64, borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(255,160,0,0.65)', backgroundColor: 'rgba(2,26,6,0.86)', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  bannerDanger: { borderColor: 'rgba(255,180,171,0.8)' },
+  bannerSuccess: { borderColor: 'rgba(145,215,138,0.8)' },
+  text: { flex: 1, gap: 2 },
+  title: { color: colors.onPrimary, fontFamily: fontFamily.label, fontSize: 15, lineHeight: 20 },
+  titleDanger: { color: '#ffb4ab' },
+  titleSuccess: { color: colors.primaryFixed },
+  body: { color: colors.onForest, fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 18 },
+  retryButton: { minHeight: layout.minTouch, justifyContent: 'center', borderRadius: 12, backgroundColor: colors.signal, paddingHorizontal: spacing.lg },
+  retryText: { color: colors.forestDeep, fontFamily: fontFamily.displayMedium, fontSize: 15, textAlign: 'center' },
   pressed: { opacity: 0.75 },
 });

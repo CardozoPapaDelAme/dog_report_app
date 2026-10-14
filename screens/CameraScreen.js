@@ -11,7 +11,7 @@ import { ActivityIndicator, PanResponder, Pressable, StyleSheet, Text, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import DraftQueueBanner from '../components/DraftQueueBanner.js';
-import { Banner, Icon, Scrim } from '../components/ui/index.js';
+import { Icon, Scrim } from '../components/ui/index.js';
 import { useCameraCapture } from '../hooks/useCameraCapture.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
@@ -163,9 +163,12 @@ export default function CameraScreen({
 
       {feedback && hasPermission ? (
         <Pressable accessibilityRole="button" onPress={capture.clearFeedback} style={styles.toast}>
-          <Banner tone="warning" title={t('camera.retryTitle')} message={feedback}>
+          <Icon name="alert" size={24} color={colors.warningAmber} />
+          <View style={styles.toastText}>
+            <Text style={styles.toastTitle}>{t('camera.retryTitle')}</Text>
+            <Text style={styles.toastBody}>{feedback}</Text>
             {capture.captureState.phase === 'rejected' ? <Text style={styles.toastAction}>{t('camera.retake')}</Text> : null}
-          </Banner>
+          </View>
         </Pressable>
       ) : null}
 
@@ -213,9 +216,12 @@ const styles = StyleSheet.create({
   permissionButton: { minHeight: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: colors.signal },
   permissionButtonText: { fontFamily: fontFamily.displayMedium, fontSize: 19, color: colors.forestDeep },
   permissionLinks: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xl },
-  toast: { position: 'absolute', top: '16%', left: layout.margin, right: layout.margin },
-  toastAction: { fontFamily: fontFamily.displayMedium, fontSize: 16, color: colors.primary, marginTop: spacing.xs },
-  validating: { position: 'absolute', top: '16%', left: layout.margin, right: layout.margin, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, borderRadius: radius.md, backgroundColor: colors.glass, padding: spacing.lg },
+  toast: { position: 'absolute', top: '16%', left: layout.margin, right: layout.margin, flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(255,160,0,0.65)', backgroundColor: 'rgba(2,26,6,0.84)', padding: spacing.lg },
+  toastText: { flex: 1, gap: 2 },
+  toastTitle: { fontFamily: fontFamily.label, fontSize: 15, color: colors.onPrimary },
+  toastBody: { ...type.body, fontSize: 14, lineHeight: 20, color: colors.onForest },
+  toastAction: { fontFamily: fontFamily.displayMedium, fontSize: 16, color: colors.warningAmber, marginTop: spacing.sm },
+  validating: { position: 'absolute', top: '16%', left: layout.margin, right: layout.margin, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, borderRadius: radius.lg, backgroundColor: 'rgba(2,26,6,0.84)', padding: spacing.lg },
   validatingText: { fontFamily: fontFamily.displayMedium, fontSize: 17, color: colors.onPrimary },
   bottomPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', gap: spacing.md, paddingHorizontal: layout.margin },
   helper: { fontFamily: fontFamily.label, fontSize: 14, textAlign: 'center', color: colors.onPrimary, textShadowColor: 'rgba(0,0,0,0.55)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
