@@ -15,28 +15,38 @@ import { colors, fontFamily, layout, radius, spacing, type } from '../theme/inde
 const short=(id)=>id.slice(-6);
 /** Translates a validation error (`{key, values}`) or returns a string error as is. */
 const errorText=(error,t)=>typeof error==='string'?error:error?t(`duplicates.validation.${error.key}`,error.values):'';
-/** Candidate report as a list row with a selection checkbox and a canonical radio option. */
+/** Candidate report as a compact row: checkbox and summary on the left, canonical radio on the right, details folded. */
 function ReportRow({report,selected,canonical,disabled,onToggle,onCanonical,t,last}) {
+  const [open,setOpen]=useState(false);
   const label=t('duplicates.report',{id:short(report.id)});
-  return <View style={[styles.row,!last&&styles.rowDivider,selected&&styles.rowSelected]}>
-    <Pressable testID={`duplicate-select-${report.id}`} accessibilityRole="checkbox" accessibilityLabel={t('duplicates.select',{report:label})}
-      aria-checked={selected} accessibilityState={{checked:selected,disabled}} disabled={disabled} onPress={onToggle} style={styles.selection}>
-      <View style={[styles.box,selected&&styles.boxOn]}>{selected?<Icon name="check" size={16} color={colors.onPrimary} strokeWidth={3}/>:null}</View>
-      <Text style={styles.label}>{label}</Text>
-      <Chip label={t(`moderation.status.${report.status}`)} tone={report.status==='hidden'?'warning':'neutral'}/>
-    </Pressable>
-    <Text selectable style={styles.caption}>ID: {report.id}</Text>
-    <Text style={styles.kind}>{[report.incident_type,report.sighting_type].filter(Boolean).map((value)=>value.replaceAll('_',' ')).join(' · ')}</Text>
-    {report.client_created_at ? <Text style={styles.caption}>{t('duplicates.observed')}: {new Date(report.client_created_at).toLocaleString()}</Text> : null}
-    {report.dog ? <Text style={styles.caption}>{t('duplicates.dog')}: {[report.dog.predominant_color,report.dog.size].filter(Boolean).join(' · ')}{typeof report.dog.has_collar==='boolean'?` · ${t('duplicates.collar')}: ${t(report.dog.has_collar?'common.yes':'common.no')}`:''}</Text> : null}
-    {report.location ? <Text selectable style={styles.caption}>{t('moderation.exactLocation')}: {report.location.latitude}, {report.location.longitude}</Text> : null}
-    {report.details ? Object.entries(report.details).map(([key,value])=><Text key={key} style={styles.caption}>{key.replaceAll('_',' ')}: {typeof value==='object'?JSON.stringify(value):String(value)}</Text>) : null}
+  const summary=[report.incident_type,report.sighting_type].filter(Boolean).map((value)=>value.replaceAll('_',' ')).join(' · ');
+  return <View style={[styles.row,styles.rowFlex,!last&&styles.rowDivider,selected&&styles.rowSelected]}>
+    <View style={styles.rowMain}>
+      <Pressable testID={`duplicate-select-${report.id}`} accessibilityRole="checkbox" accessibilityLabel={t('duplicates.select',{report:label})}
+        aria-checked={selected} accessibilityState={{checked:selected,disabled}} disabled={disabled} onPress={onToggle} style={styles.selection}>
+        <View style={[styles.box,selected&&styles.boxOn]}>{selected?<Icon name="check" size={16} color={colors.onPrimary} strokeWidth={3}/>:null}</View>
+        <View style={styles.selectionText}>
+          <View style={styles.titleLine}><Text style={styles.label}>{label}</Text><Chip label={t(`moderation.status.${report.status}`)} tone={report.status==='hidden'?'warning':'neutral'}/></View>
+          {summary?<Text style={styles.kind}>{summary}</Text>:null}
+        </View>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityState={{expanded:open}} onPress={()=>setOpen((value)=>!value)} hitSlop={6} style={styles.detailToggle}>
+        <Text style={styles.detailToggleText}>{t(open?'duplicates.hideDetails':'duplicates.showDetails')}</Text><Icon name="down" size={16} color={colors.primary}/>
+      </Pressable>
+      <View style={[styles.details,!open&&styles.hidden]}>
+        <Text selectable style={styles.caption}>ID: {report.id}</Text>
+        {report.client_created_at?<Text style={styles.caption}>{t('duplicates.observed')}: {new Date(report.client_created_at).toLocaleString()}</Text>:null}
+        {report.dog?<Text style={styles.caption}>{t('duplicates.dog')}: {[report.dog.predominant_color,report.dog.size].filter(Boolean).join(' · ')}{typeof report.dog.has_collar==='boolean'?` · ${t('duplicates.collar')}: ${t(report.dog.has_collar?'common.yes':'common.no')}`:''}</Text>:null}
+        {report.location?<Text selectable style={styles.caption}>{t('moderation.exactLocation')}: {report.location.latitude}, {report.location.longitude}</Text>:null}
+        {report.details?Object.entries(report.details).map(([key,value])=><Text key={key} style={styles.caption}>{key.replaceAll('_',' ')}: {typeof value==='object'?JSON.stringify(value):String(value)}</Text>):null}
+      </View>
+      {selected&&!canonical?<Text style={styles.caption}>{t('duplicates.willBeDuplicate')}</Text>:null}
+    </View>
     <Pressable testID={`duplicate-canonical-${report.id}`} accessibilityRole="radio" accessibilityLabel={t('duplicates.chooseCanonical',{report:label})}
-      aria-checked={canonical} accessibilityState={{checked:canonical,disabled:disabled||!selected}} disabled={disabled||!selected} onPress={onCanonical} style={[styles.canonical,(!selected||disabled)&&styles.dim]}>
+      aria-checked={canonical} accessibilityState={{checked:canonical,disabled:disabled||!selected}} disabled={disabled||!selected} onPress={onCanonical} hitSlop={4} style={[styles.canonicalHit,(!selected||disabled)&&styles.dim]}>
       <View style={[styles.radio,canonical&&styles.radioOn]}>{canonical?<View style={styles.radioDot}/>:null}</View>
-      <Text style={styles.canonicalText}>{t(canonical?'duplicates.canonicalChosen':'duplicates.canonicalOption')}</Text>
+      {canonical?<Text style={styles.canonicalText}>{t('duplicates.canonicalChosen')}</Text>:null}
     </Pressable>
-    {selected&&!canonical ? <Text style={styles.caption}>{t('duplicates.willBeDuplicate')}</Text> : null}
   </View>;
 }
 function Note({value,onChange,label,error,disabled,t,inputRef,testID,tone}) {
@@ -116,6 +126,7 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
             {!form.components.length?<Text style={styles.bodyText}>{t('duplicates.empty')}</Text>:null}
             {form.components.map((component,index)=><View key={component.id} style={styles.group}>
               <Text accessibilityRole="header" style={styles.groupTitle}>{t('duplicates.component',{number:index+1,count:component.reports.length})}</Text>
+              <Text style={styles.caption}>{t('duplicates.canonicalLegend')}</Text>
               <View style={styles.list}>{component.reports.map((report,i)=><ReportRow key={report.id} report={report} selected={form.ids.includes(report.id)} canonical={form.canonicalId===report.id}
                 disabled={disabled} onToggle={()=>form.toggleReport(report.id)} onCanonical={()=>form.chooseCanonical(report.id)} t={t} last={i===component.reports.length-1}/>)}</View>
               <Text style={styles.caption}>{t('duplicates.links')}</Text>
@@ -192,9 +203,12 @@ const styles=StyleSheet.create({
   box:{width:26,height:26,borderRadius:6,borderWidth:2,borderColor:colors.outline,backgroundColor:colors.surface,alignItems:'center',justifyContent:'center'},boxOn:{backgroundColor:colors.primary,borderColor:colors.primary},
   label:{fontFamily:fontFamily.label,fontSize:15,lineHeight:22,color:colors.ink,flexShrink:1},kind:{fontFamily:fontFamily.labelMedium,fontSize:14,lineHeight:20,color:colors.ink},
   caption:{...type.caption,color:colors.inkMuted},bodyText:{...type.body,fontSize:15,lineHeight:22,color:colors.inkMuted},
-  canonical:{flexDirection:'row',alignItems:'center',gap:spacing.md,minHeight:layout.minTouch,borderTopWidth:1,borderTopColor:colors.border,marginTop:spacing.sm},
+  rowFlex:{flexDirection:'row',alignItems:'flex-start',gap:spacing.md},rowMain:{flex:1,gap:spacing.xs},selectionText:{flex:1,gap:2},titleLine:{flexDirection:'row',alignItems:'center',flexWrap:'wrap',gap:spacing.sm},
+  detailToggle:{flexDirection:'row',alignItems:'center',gap:spacing.xs,minHeight:32,alignSelf:'flex-start',marginLeft:38},detailToggleText:{fontFamily:fontFamily.label,fontSize:13,color:colors.primary},details:{marginLeft:38,gap:2},hidden:{display:'none'},
+  canonicalHit:{minWidth:layout.minTouch,minHeight:layout.minTouch,alignItems:'center',justifyContent:'center',gap:2},
+  canonicalX:{flexDirection:'row',alignItems:'center',gap:spacing.md,minHeight:layout.minTouch,borderTopWidth:1,borderTopColor:colors.border,marginTop:spacing.sm},
   radio:{width:24,height:24,borderRadius:12,borderWidth:2,borderColor:colors.outline,alignItems:'center',justifyContent:'center',backgroundColor:colors.surface},radioOn:{borderColor:colors.primary},radioDot:{width:12,height:12,borderRadius:6,backgroundColor:colors.primary},
-  canonicalText:{fontFamily:fontFamily.label,fontSize:14,color:colors.primary},dim:{opacity:0.5},pressed:{opacity:0.7},
+  canonicalText:{fontFamily:fontFamily.label,fontSize:11,color:colors.primary,textAlign:'center'},dim:{opacity:0.5},pressed:{opacity:0.7},
   links:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},
   decision:{backgroundColor:colors.primary,borderRadius:radius.lg,padding:spacing.xl,gap:spacing.lg},
   decisionTitle:{fontFamily:fontFamily.display,fontSize:26,lineHeight:32,color:colors.onPrimary},decisionText:{...type.body,fontSize:14,lineHeight:21,color:colors.onForest},
