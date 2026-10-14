@@ -531,6 +531,8 @@
     "dog": "Attributes",
     "collar": "Collar",
     "links": "Connections suggested by the system",
+    "linksSummary_one": "1 connection · up to {{meters}} m · up to {{minutes}} min",
+    "linksSummary_other": "{{count}} connections · up to {{meters}} m · up to {{minutes}} min",
     "selection": "Selection: {{count}} reports",
     "reviewSelection": "Review selection ({{count}})",
     "canonicalSummary": "Canonical: report {{id}}",

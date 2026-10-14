@@ -16,4 +16,9 @@ test('many', async ({ page }) => {
   await page.getByText('Página 1 de 3').scrollIntoViewIfNeeded();
   await page.waitForTimeout(200);
   await page.screenshot({ path: 'docs/redesign/after/web/es_duplicates_many_pager.png' });
+  await page.getByRole('button', { name: /Conexiones sugeridas/ }).first().scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'docs/redesign/after/web/es_duplicates_links_closed.png' });
+  await page.getByRole('button', { name: /Conexiones sugeridas/ }).first().click();
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: 'docs/redesign/after/web/es_duplicates_links_open.png' });
 });

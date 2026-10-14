@@ -76,6 +76,21 @@ Segundo intento (aprobado: "perfecto"), commit `48c404c`:
 20. **Pasos reales = ruta con puntos y línea;** pasos inexistentes no se numeran.
 21. **La barra inferior verde lleva la acción principal de la pantalla** y cambia de texto según el estado, en lugar de repetir botones dentro del contenido.
 
+## Duplicados (aprobada, commits `1d5fc62` a `3560da5` y el de conexiones)
+
+- **Comparar es mejor lado a lado que apilado:** cada sugerencia es una tira horizontal deslizable de tarjetas con los mismos datos en el mismo lugar; la tira llega al borde de la pantalla para que se note que se desliza.
+- **Un control debe decir lo que hace:** el círculo suelto de "canónico" se rechazó; ahora es una píldora con la palabra "Canónico" que se llena al elegirla.
+- **Paginar listas largas** (3 por página) con el `Pager` reutilizable; la selección persiste entre páginas.
+- **Datos técnicos en bruto (pares de ID con distancia y tiempo) se resumen en una línea** ("N conexiones · hasta X m · hasta Y min") que se despliega a una tabla alineada, ordenada de la más cercana a la más lejana. Con plural correcto (`_one` / `_other`).
+- **Panel de decisión verde oscuro con el único botón amarillo.**
+
+### Reglas añadidas (22 a 25)
+
+22. **Si la tarea es comparar, las opciones van en horizontal y alineadas;** si es leer, en vertical.
+23. **Nada de iconos o controles sin palabra** cuando su función no es obvia (el radio solo).
+24. **Los datos crudos se resumen y se pliegan;** el detalle se despliega a demanda, en columnas alineadas con cifras tabulares.
+25. **Las cantidades llevan plural correcto** ("1 conexión", "2 conexiones") con las formas `_one` y `_other` de i18n.
+
 ## Cómo se trabaja con las skills
 
 `frontend-design` ayudó más que el resto: obliga a planear con una paleta, roles de tipografía y un wireframe, a revisar el plan contra los defaults de plantilla y a gastar el riesgo estético en un solo lugar. `design-taste-frontend` sirve como lista de verificación (contraste, estados, etiquetas arriba del campo). `mobile-redesign-screen` da el método (auditar, proponer, arreglar). Para cada pantalla nueva: invocar `frontend-design` primero para el plan.

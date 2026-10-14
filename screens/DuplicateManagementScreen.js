@@ -54,6 +54,30 @@ function ReportCard({report,selected,canonical,disabled,onToggle,onCanonical,t})
     </Pressable>
   </View>;
 }
+/** System-suggested connections between reports: one summary line that unfolds into an aligned table, nearest first. */
+function LinkList({edges,t}) {
+  const [open,setOpen]=useState(false);
+  if(!edges.length)return null;
+  const sorted=[...edges].sort((x,y)=>(x.distance_meters??Infinity)-(y.distance_meters??Infinity));
+  const max=(key)=>Math.max(0,...edges.map((edge)=>Number.isFinite(edge[key])?edge[key]:0));
+  return <View style={styles.links}>
+    <Pressable accessibilityRole="button" accessibilityState={{expanded:open}} accessibilityLabel={`${t('duplicates.links')}: ${t('duplicates.linksSummary',{count:edges.length,meters:max('distance_meters').toFixed(1),minutes:max('minutes_apart').toFixed(1)})}`}
+      onPress={()=>setOpen((value)=>!value)} style={styles.linksHead}>
+      <View style={styles.linksText}>
+        <Text style={styles.linksTitle}>{t('duplicates.links')}</Text>
+        <Text style={styles.linksSummary}>{t('duplicates.linksSummary',{count:edges.length,meters:max('distance_meters').toFixed(1),minutes:max('minutes_apart').toFixed(1)})}</Text>
+      </View>
+      <Icon name={open?'up':'down'} size={20} color={colors.primary}/>
+    </Pressable>
+    <View style={[styles.linksBody,!open&&styles.hidden]}>
+      {sorted.map((edge,i)=><View key={edge.id} style={[styles.linkRow,i>0&&styles.linkRowDivider]}>
+        <Text style={styles.linkPair}>{short(edge.report_a)} ↔ {short(edge.report_b)}</Text>
+        <Text style={styles.linkValue}>{Number.isFinite(edge.distance_meters)?`${edge.distance_meters.toFixed(1)} m`:''}</Text>
+        <Text style={styles.linkValue}>{Number.isFinite(edge.minutes_apart)?`${edge.minutes_apart.toFixed(1)} min`:''}</Text>
+      </View>)}
+    </View>
+  </View>;
+}
 function Note({value,onChange,label,error,disabled,t,inputRef,testID,tone}) {
   return <AppTextField tone={tone} ref={inputRef} testID={testID} label={label} accessibilityHint={errorText(error,t)} aria-invalid={Boolean(error)}
     value={value} onChangeText={onChange} editable={!disabled} multiline error={errorText(error,t)||undefined} helper={t('duplicates.noteHint')}/>;
@@ -139,8 +163,7 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
                 {component.reports.map((report)=><ReportCard key={report.id} report={report} selected={form.ids.includes(report.id)} canonical={form.canonicalId===report.id}
                   disabled={disabled} onToggle={()=>form.toggleReport(report.id)} onCanonical={()=>form.chooseCanonical(report.id)} t={t}/>)}
               </ScrollView>
-              <Text style={styles.caption}>{t('duplicates.links')}</Text>
-              <View style={styles.links}>{form.snapshot.candidates.filter((edge)=>component.reports.some((r)=>r.id===edge.report_a)&&component.reports.some((r)=>r.id===edge.report_b)).map((edge)=><Chip key={edge.id} tone="info" label={`${short(edge.report_a)} ↔ ${short(edge.report_b)}${Number.isFinite(edge.distance_meters)?` · ${edge.distance_meters.toFixed(1)} m`:''}${Number.isFinite(edge.minutes_apart)?` · ${edge.minutes_apart.toFixed(1)} min`:''}`}/>)}</View>
+              <LinkList t={t} edges={form.snapshot.candidates.filter((edge)=>component.reports.some((r)=>r.id===edge.report_a)&&component.reports.some((r)=>r.id===edge.report_b))}/>
             </View>;})}
             <Pager page={currentSuggestionPage} pageCount={suggestionPages} onChange={setSuggestionPage} previousLabel={t('duplicates.pagePrev')} nextLabel={t('duplicates.pageNext')} pageLabel={pageLabel(currentSuggestionPage,suggestionPages)}/>
             <View testID="duplicate-selection-summary" onLayout={(event)=>{summaryY.current=event.nativeEvent.layout.y;}} style={styles.decision}>
@@ -223,7 +246,12 @@ const styles=StyleSheet.create({
   canonicalHit:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:spacing.sm,minHeight:layout.minTouch,borderRadius:radius.pill,borderWidth:1,borderColor:colors.outline,backgroundColor:colors.surface},canonicalChosenHit:{backgroundColor:colors.primary,borderColor:colors.primary},
   radio:{width:24,height:24,borderRadius:12,borderWidth:2,borderColor:colors.outline,alignItems:'center',justifyContent:'center',backgroundColor:colors.surface},radioOn:{borderColor:colors.onPrimary,backgroundColor:colors.primary},radioDot:{width:12,height:12,borderRadius:6,backgroundColor:colors.onPrimary},
   canonicalText:{fontFamily:fontFamily.label,fontSize:14,color:colors.primary},canonicalTextOn:{color:colors.onPrimary},dim:{opacity:0.5},pressed:{opacity:0.7},
-  links:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},
+  links:{backgroundColor:colors.surface,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,overflow:'hidden'},
+  linksHead:{flexDirection:'row',alignItems:'center',gap:spacing.md,padding:spacing.lg,minHeight:layout.minTouch},linksText:{flex:1,gap:2},
+  linksTitle:{fontFamily:fontFamily.label,fontSize:14,color:colors.ink},linksSummary:{fontFamily:fontFamily.labelMedium,fontVariant:['tabular-nums'],fontSize:13,lineHeight:19,color:colors.inkMuted},
+  linksBody:{borderTopWidth:1,borderTopColor:colors.border,paddingHorizontal:spacing.lg},
+  linkRow:{flexDirection:'row',alignItems:'center',gap:spacing.md,paddingVertical:spacing.md},linkRowDivider:{borderTopWidth:1,borderTopColor:colors.border},
+  linkPair:{flex:1,fontFamily:fontFamily.labelMedium,fontVariant:['tabular-nums'],fontSize:13,color:colors.ink},linkValue:{minWidth:64,textAlign:'right',fontFamily:fontFamily.labelMedium,fontVariant:['tabular-nums'],fontSize:13,color:colors.primary},
   decision:{backgroundColor:colors.primary,borderRadius:radius.lg,padding:spacing.xl,gap:spacing.lg},
   decisionTitle:{fontFamily:fontFamily.display,fontSize:26,lineHeight:32,color:colors.onPrimary},decisionText:{...type.body,fontSize:14,lineHeight:21,color:colors.onForest},
   darkError:{...type.caption,fontSize:14,color:'#ffb4ab'},errorText:{...type.caption,fontSize:13,color:colors.danger},onGreenError:{...type.caption,fontSize:13,color:'#ffb4ab'},
