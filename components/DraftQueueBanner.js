@@ -76,52 +76,42 @@ export default function DraftQueueBanner({
     <View
       testID="draft-queue-banner"
       accessibilityLiveRegion="polite"
-      style={[
-        styles.banner,
-        content.tone === 'danger' && styles.bannerDanger,
-        content.tone === 'success' && styles.bannerSuccess,
-        style,
-      ]}
+      style={[styles.slot, style]}
     >
-      <View style={styles.text}>
-        <Text style={[
-          styles.title,
-          content.tone === 'danger' && styles.titleDanger,
-          content.tone === 'success' && styles.titleSuccess,
-        ]}>
-          {content.title}
-        </Text>
-        <Text style={styles.body}>{content.body}</Text>
+      <View style={styles.banner}>
+        <View style={styles.text}>
+          <Text style={[styles.title, content.tone === 'danger' && styles.titleDanger, content.tone === 'success' && styles.titleSuccess]}>
+            {content.title}
+          </Text>
+          <Text style={styles.body}>{content.body}</Text>
+        </View>
+        {content.action ? (
+          <Pressable
+            testID="draft-queue-retry"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !summary?.canRetryNow || summary?.isSyncing }}
+            disabled={!summary?.canRetryNow || summary?.isSyncing}
+            onPress={onRetry}
+            hitSlop={8}
+            style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.retryText}>{content.action}</Text>
+          </Pressable>
+        ) : null}
       </View>
-      {content.action ? (
-        <Pressable
-          testID="draft-queue-retry"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !summary?.canRetryNow || summary?.isSyncing }}
-          disabled={!summary?.canRetryNow || summary?.isSyncing}
-          onPress={onRetry}
-          style={({ pressed }) => [
-            styles.retryButton,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.retryText}>{content.action}</Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  banner: { minHeight: 64, borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(255,160,0,0.65)', backgroundColor: 'rgba(2,26,6,0.86)', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  bannerDanger: { borderColor: 'rgba(255,180,171,0.8)' },
-  bannerSuccess: { borderColor: 'rgba(145,215,138,0.8)' },
-  text: { flex: 1, gap: 2 },
-  title: { color: colors.onPrimary, fontFamily: fontFamily.label, fontSize: 15, lineHeight: 20 },
+  slot: { alignItems: 'center' },
+  banner: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: spacing.lg, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.66)', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  text: { flexShrink: 1, gap: 1 },
+  title: { color: colors.onPrimary, fontFamily: fontFamily.label, fontSize: 14, lineHeight: 19 },
   titleDanger: { color: '#ffb4ab' },
   titleSuccess: { color: colors.primaryFixed },
   body: { color: colors.onForest, fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 18 },
-  retryButton: { minHeight: layout.minTouch, justifyContent: 'center', borderRadius: 12, backgroundColor: colors.signal, paddingHorizontal: spacing.lg },
-  retryText: { color: colors.forestDeep, fontFamily: fontFamily.displayMedium, fontSize: 15, textAlign: 'center' },
-  pressed: { opacity: 0.75 },
+  retryButton: { minHeight: layout.minTouch, justifyContent: 'center' },
+  retryText: { color: colors.signal, fontFamily: fontFamily.displayMedium, fontSize: 15 },
+  pressed: { opacity: 0.7 },
 });
