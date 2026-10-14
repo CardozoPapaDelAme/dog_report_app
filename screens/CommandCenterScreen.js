@@ -46,10 +46,10 @@ const NOTE_COMMANDS = {
 };
 
 /** Summary metric: only the value and its label (the label and number are the tile's whole content). `alert` colors a non-zero value. */
-function Metric({ label, value, alert }) {
+function Metric({ label, value, alert, last }) {
   const hot = alert && value > 0;
   return (
-    <View style={styles.metric}>
+    <View style={[styles.metric, !last && styles.metricDivider]}>
       <Text style={[styles.metricValue, hot && styles.metricValueHot]}>{value}</Text>
       <Text style={styles.metricLabel}>{label}</Text>
     </View>
@@ -177,10 +177,12 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
           ) : null}
         </View>
       </View>
-      <View style={styles.metricsRow}>
-        <Metric label={t('moderation.onPage')} value={summary.total} />
-        <Metric label={t('moderation.flagged')} value={summary.flagged} alert />
-        <Metric label={t('moderation.urgent')} value={summary.urgent} alert />
+      <View style={styles.metricsBand}>
+        <View style={styles.metricsRow}>
+          <Metric label={t('moderation.onPage')} value={summary.total} />
+          <Metric label={t('moderation.flagged')} value={summary.flagged} alert />
+          <Metric label={t('moderation.urgent')} value={summary.urgent} alert last />
+        </View>
       </View>
       <View style={styles.queueIntro}>
         <Text accessibilityRole="header" style={styles.queueTitle}>{t('moderation.title')}</Text>
@@ -282,12 +284,14 @@ const styles = StyleSheet.create({
   tools: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
   tool: { flex: 1, minHeight: 84, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(201,230,196,0.4)', backgroundColor: colors.forestField, padding: spacing.md, gap: spacing.sm, justifyContent: 'space-between' },
   toolText: { fontFamily: fontFamily.label, fontSize: 13, lineHeight: 17, color: colors.onPrimary },
-  metricsRow: { flexDirection: 'row', width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin, paddingVertical: spacing.xl, gap: spacing.lg },
-  metric: { flex: 1, gap: 2 },
+  metricsBand: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
+  metricsRow: { flexDirection: 'row', width: '100%', maxWidth: 960, alignSelf: 'center' },
+  metric: { flex: 1, gap: 2, paddingVertical: spacing.xl, paddingHorizontal: layout.margin },
+  metricDivider: { borderRightWidth: 1, borderRightColor: colors.border },
   metricValue: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 34, lineHeight: 40, color: colors.primary },
   metricValueHot: { color: colors.danger },
   metricLabel: { fontFamily: fontFamily.label, fontSize: 13, lineHeight: 17, color: colors.inkMuted },
-  queueIntro: { marginHorizontal: layout.margin, marginBottom: spacing.lg, gap: spacing.xs },
+  queueIntro: { marginHorizontal: layout.margin, marginTop: spacing.xxxl, marginBottom: spacing.xl, gap: spacing.sm },
   queueTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
   pageScope: { ...type.caption, color: colors.inkMuted },
   gridRow: { gap: 1 },
