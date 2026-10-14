@@ -12,7 +12,7 @@ import { useAssociationReports } from '../hooks/useAssociationReports.js';
 import { saveAssociationCsv, saveAssociationXlsx } from '../services/associationExport';
 import { createAssociationXlsx } from '../models/associationWorkbook.js';
 import AssociationDatePicker from '../components/associationDatePicker.js';
-import AssociationSummaryCard from '../components/associationSummaryCard.js';
+import AssociationSummaryCard, { AssociationTotal } from '../components/associationSummaryCard.js';
 import AssociationReportCard from '../components/associationReportCard.js';
 import { buildAssociationSummary } from '../models/associationSummary.js';
 import { associationDisplayValues, presentAssociationReport } from '../presenters/associationDisplay.js';
@@ -20,7 +20,7 @@ import { AppButton, Icon, Pager, StateView } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 /** Reports shown per page in the mobile list. */
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 /** Table column widths in pixels, in `ASSOCIATION_REPORT_COLUMNS` order. */
 const WIDTHS = [210, 190, 190, 175, 130, 290, 150, 100, 105, 120, 120, 105];
 const TABLE_WIDTH = WIDTHS.reduce((sum, width) => sum + width, 0);
@@ -133,7 +133,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
           <Icon name="logout" size={22} color={colors.onPrimary} />
         </Pressable>
       </View>
-      {summary ? <AssociationSummaryCard key={`${fromDay}:${toDay}`} summary={summary} wide={wide} /> : null}
+      {summary ? <AssociationTotal total={summary.total} /> : null}
     </View>
   </View>;
 
@@ -174,6 +174,8 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
         locale={i18n.language} previousMonthLabel={t('associationDashboard.previousMonth')} nextMonthLabel={t('associationDashboard.nextMonth')}
         cancelLabel={t('common.cancel')} onSelect={selectCustomDate} onClose={() => setCalendarField(null)} />
 
+      {summary ? <View style={styles.chartSection}><AssociationSummaryCard key={`${fromDay}:${toDay}`} summary={summary} /></View> : null}
+
       <View style={styles.resultsBar} onLayout={(event) => { resultsY.current = event.nativeEvent.layout.y; }}>
         <View style={styles.resultsText}>
           <Text accessibilityRole="header" style={styles.resultsTitle}>{t('associationDashboard.results')}</Text>
@@ -210,7 +212,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   </ScrollView> : null;
 
   return <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-    {wide ? <View style={styles.wideRoot}>{hero}<View style={styles.page}>{controls}{table}</View></View>
+    {wide ? <ScrollView style={styles.wideRoot} contentContainerStyle={styles.wideContent}>{hero}<View style={styles.page}>{controls}{table}</View></ScrollView>
       : <FlatList ref={listRef} style={styles.mobileList} contentContainerStyle={styles.mobileContent}
         data={showReports ? pageRows : []} keyExtractor={(item) => item.id}
         ListFooterComponent={showReports ? pager : null}
@@ -221,17 +223,17 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.primary },
-  wideRoot: { flex: 1, backgroundColor: colors.background },
-  page: { flex: 1, width: '100%', maxWidth: 1440, alignSelf: 'center', padding: layout.margin },
+  wideRoot: { flex: 1, backgroundColor: colors.background }, wideContent: { flexGrow: 1 },
+  page: { width: '100%', maxWidth: 1440, alignSelf: 'center', padding: layout.margin },
   mobileList: { flex: 1, backgroundColor: colors.background },
   mobileContent: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingBottom: spacing.xxxl },
   controls: { paddingHorizontal: layout.margin, paddingTop: spacing.xxl },
   hero: { backgroundColor: colors.primary, overflow: 'hidden' },
-  bigPaw: { position: 'absolute', right: -48, top: 96, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
+  bigPaw: { position: 'absolute', right: -48, top: 70, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
   heroInner: { width: '100%', maxWidth: 1440, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.xl },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md },
   heading: { flex: 1, gap: spacing.xs },
-  title: { fontFamily: fontFamily.display, fontSize: 32, lineHeight: 40, letterSpacing: -0.3, color: colors.onPrimary },
+  title: { fontFamily: fontFamily.display, fontSize: 30, lineHeight: 38, letterSpacing: -0.3, color: colors.onPrimary },
   name: { fontFamily: fontFamily.label, fontSize: 14, color: colors.onForest },
   logout: { width: layout.minTouch, height: layout.minTouch, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,230,196,0.45)' },
   pressed: { opacity: 0.7 },
@@ -246,6 +248,7 @@ const styles = StyleSheet.create({
   dateField: { flex: 1, minHeight: 56, borderWidth: 1, borderColor: colors.outline, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.surface, justifyContent: 'center' },
   dateLabel: { fontFamily: fontFamily.label, fontSize: 12, color: colors.inkMuted }, dateValue: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 15, color: colors.ink },
   search: { borderRadius: 12 },
+  chartSection: { marginTop: spacing.xxl },
   pager: { paddingVertical: spacing.xl, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
   fieldError: { ...type.caption, fontSize: 13, color: colors.danger },
   filterHint: { ...type.caption, color: colors.inkMuted },
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
   exportButton: { minWidth: 72, borderRadius: 12 }, disabled: { opacity: 0.45 },
   status: { alignItems: 'center', paddingVertical: spacing.xxl },
   error: { ...type.caption, fontSize: 14, color: colors.danger, marginBottom: spacing.md },
-  tableScroll: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border },
+  tableScroll: { height: 560, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border },
   tableScrollContent: { flexGrow: 1 }, table: { flex: 1 }, list: { flex: 1 },
   headerRow: { flexDirection: 'row', backgroundColor: colors.primarySoft, borderBottomWidth: 1, borderBottomColor: colors.outlineSoft },
   headerCell: { fontFamily: fontFamily.label, color: colors.primary },

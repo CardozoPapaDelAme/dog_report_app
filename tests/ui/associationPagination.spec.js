@@ -19,17 +19,18 @@ async function open(page, count) {
   await expect(page.getByText(`${count} reportes en este rango`)).toBeVisible();
 }
 
-test('mobile list shows ten reports per page and the total stays complete', async ({ page }) => {
+test('mobile list shows five reports per page and the total stays complete', async ({ page }) => {
   await open(page, 25);
   await expect(page.getByTestId('association-total')).toHaveText('25');
-  await expect(page.getByTestId('association-report-card')).toHaveCount(10);
-  await expect(page.getByText('Página 1 de 3', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('association-report-card')).toHaveCount(5);
+  await expect(page.getByText('Página 1 de 5', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Anterior', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await expect(page.getByText('Página 2 de 3', { exact: true })).toBeVisible();
-  await expect(page.getByText(row(11).id)).toBeAttached();
+  await expect(page.getByText('Página 2 de 5', { exact: true })).toBeVisible();
+  await expect(page.getByText(row(6).id)).toBeAttached();
   await expect(page.getByText(row(1).id)).toHaveCount(0);
-  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
+  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
+  await expect(page.getByText('Página 5 de 5', { exact: true })).toBeVisible();
   await expect(page.getByTestId('association-report-card')).toHaveCount(5);
   await expect(page.getByRole('button', { name: 'Siguiente', exact: true })).toBeDisabled();
 });
