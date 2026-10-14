@@ -23,7 +23,7 @@ const AppTextField = forwardRef(function AppTextField({ label, error, helper, tr
         />
         {trailing}
       </View>
-      {error ? <Text style={[type.caption, styles.error]}>{error}</Text> : helper ? <Text style={type.caption}>{helper}</Text> : null}
+      {error ? <Text style={[type.caption, styles.error, dark && styles.errorDark]}>{error}</Text> : helper ? <Text style={[type.caption, dark && styles.helperDark]}>{helper}</Text> : null}
     </View>
   );
 });
@@ -41,4 +41,6 @@ const styles = StyleSheet.create({
   textDark: { color: colors.onPrimary },
   inputError: { borderColor: colors.danger },
   error: { color: colors.danger },
+  errorDark: { color: '#ffb4ab' },
+  helperDark: { color: colors.onForest },
 });
