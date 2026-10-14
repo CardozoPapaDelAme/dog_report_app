@@ -21,6 +21,9 @@ commit `fe8da67d23862517ab5878228da5a15ca971b973`, anterior a la build final
 `88950993dfb3c60f5a5262357b9ec1de695af307`; solo RUN-137 corrió sobre esta
 última.
 
+**Sesión con el socio formador:** la matriz para su sesión del 15 de octubre está en
+`docs/testing/ACCEPTANCE-SOCIO.md`; no sustituye el registro por equivalencia de este archivo.
+
 ## Ejecución
 
 No hubo ejecución propia de T14. La tabla registra los datos de las ejecuciones

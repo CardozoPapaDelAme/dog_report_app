@@ -54,6 +54,7 @@ relationships.
 - [`TRACEABILITY.md`](TRACEABILITY.md) — complete RF/RNF/HU mapping
 - [`testing/README.md`](testing/README.md) — shared testing conventions and templates (T1)
 - [`testing/BACKLOG.md`](testing/BACKLOG.md) — Stage 4 testing backlog: tasks T1–T14, owners P1–P5, Jira keys
+- [`testing/ACCEPTANCE-SOCIO.md`](testing/ACCEPTANCE-SOCIO.md) — matriz de aceptación con el socio formador (15 oct)
 - [`DIAGRAM-READINESS.md`](DIAGRAM-READINESS.md) — diagram handoff and review checklist
 - [`diagrams/README.md`](diagrams/README.md) — versioned diagram sources; add a file only when that diagram is requested
 - [`GLOSSARY.md`](GLOSSARY.md) — vocabulary
