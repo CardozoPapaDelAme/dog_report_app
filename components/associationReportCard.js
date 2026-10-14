@@ -1,10 +1,12 @@
 /**
  * @module components/associationReportCard
- * Presentational card for one association report, formatted by `presentAssociationReport`.
+ * Presentational inbox row for one association report, formatted by `presentAssociationReport`: full-width,
+ * separated by hairlines (no card box).
  */
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { presentAssociationReport } from '../presenters/associationDisplay.js';
+import { colors, fontFamily, layout, spacing, type } from '../theme/index.js';
 
 /** Label/value pair with a selectable value. */
 function Info({ label, value, style }) {
@@ -23,7 +25,7 @@ export default function AssociationReportCard({ report }) {
   const { t, i18n } = useTranslation();
   const display = presentAssociationReport(report, t, i18n.language);
 
-  return <View testID="association-report-card" style={styles.card}>
+  return <View testID="association-report-card" style={styles.row}>
     <View style={styles.header}>
       <View style={styles.heading}>
         <Text style={styles.incident}>{display.incident}</Text>
@@ -37,8 +39,7 @@ export default function AssociationReportCard({ report }) {
 
     <View style={styles.infoRow}>
       <Info label={t('associationDashboard.card.observed')} value={display.occurredAt} style={styles.half} />
-      <Info label={t('associationDashboard.card.location')}
-        value={`${display.latitude}, ${display.longitude}`} style={styles.half} />
+      <Info label={t('associationDashboard.card.location')} value={`${display.latitude}, ${display.longitude}`} style={styles.half} />
     </View>
 
     <Text style={styles.sectionTitle}>{t('associationDashboard.card.dog')}</Text>
@@ -62,22 +63,22 @@ export default function AssociationReportCard({ report }) {
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: 12, padding: 16, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2eae0' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
-  heading: { flex: 1, minWidth: 0 },
-  incident: { color: '#172117', fontSize: 18, fontWeight: '700' },
-  sighting: { color: '#005a25', fontSize: 13, fontWeight: '600', marginTop: 4 },
-  accepted: { alignItems: 'flex-end' },
-  acceptedLabel: { color: '#61705e', fontSize: 11 },
-  acceptedDate: { color: '#334433', fontSize: 13, fontWeight: '700', marginTop: 3 },
-  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 16 },
+  row: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: layout.margin, paddingVertical: spacing.lg, gap: spacing.md },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.md },
+  heading: { flex: 1, minWidth: 0, gap: 2 },
+  incident: { fontFamily: fontFamily.displayMedium, fontSize: 21, lineHeight: 27, color: colors.ink },
+  sighting: { fontFamily: fontFamily.label, fontSize: 14, color: colors.primary },
+  accepted: { alignItems: 'flex-end', gap: 2 },
+  acceptedLabel: { fontFamily: fontFamily.regular, fontSize: 12, color: colors.inkMuted },
+  acceptedDate: { fontFamily: fontFamily.label, fontVariant: ['tabular-nums'], fontSize: 13, color: colors.ink },
+  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   half: { flexBasis: '45%', flexGrow: 1 },
-  info: { minWidth: 0 },
-  infoLabel: { color: '#61705e', fontSize: 11, marginBottom: 3 },
-  infoValue: { color: '#172117', fontSize: 14, lineHeight: 20 },
-  sectionTitle: { color: '#334433', fontSize: 13, fontWeight: '700', marginTop: 18 },
-  details: { gap: 10 },
-  footer: { marginTop: 18, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#edf1ec' },
-  idLabel: { color: '#61705e', fontSize: 11, marginBottom: 3 },
-  id: { color: '#5a6658', fontSize: 11 },
+  info: { minWidth: 0, gap: 1 },
+  infoLabel: { fontFamily: fontFamily.label, fontSize: 12, color: colors.inkMuted },
+  infoValue: { ...type.body, fontSize: 15, lineHeight: 21, color: colors.ink },
+  sectionTitle: { fontFamily: fontFamily.label, fontSize: 13, color: colors.primary, marginTop: spacing.xs },
+  details: { gap: spacing.sm },
+  footer: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm, gap: 2 },
+  idLabel: { fontFamily: fontFamily.regular, fontSize: 12, color: colors.inkMuted },
+  id: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 12, color: colors.inkMuted },
 });

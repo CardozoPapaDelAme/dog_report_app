@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ASSOCIATION_REPORT_COLUMNS, createAssociationCsv, getAssociationQuickRange } from '../models/associationReport.js';
 import { useAssociationReports } from '../hooks/useAssociationReports.js';
@@ -16,6 +16,8 @@ import AssociationSummaryCard from '../components/associationSummaryCard.js';
 import AssociationReportCard from '../components/associationReportCard.js';
 import { buildAssociationSummary } from '../models/associationSummary.js';
 import { associationDisplayValues, presentAssociationReport } from '../presenters/associationDisplay.js';
+import { AppButton, Icon, StateView } from '../components/ui/index.js';
+import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 /** Table column widths in pixels, in `ASSOCIATION_REPORT_COLUMNS` order. */
 const WIDTHS = [210, 190, 190, 175, 130, 290, 150, 100, 105, 120, 120, 105];
@@ -102,46 +104,50 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
     : reports.phase === 'idle' ? t('associationDashboard.idle') : null;
 
   const showReports = reports.phase === 'ready' && applied;
-  const dashboardContent = <>
-      <View style={styles.topBar}>
+  const loadingPhase = reports.phase === 'loading';
+  const hero = <View style={styles.hero}>
+    <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.bigPaw}><Icon name="dog" size={210} color={colors.onPrimary} strokeWidth={1.4} /></View>
+    <View style={styles.heroInner}>
+      <View style={styles.titleRow}>
         <View style={styles.heading}>
-          <Text style={styles.eyebrow}>{t('associationDashboard.eyebrow')}</Text>
-          <Text style={styles.title}>{t('associationDashboard.title')}</Text>
+          <Text accessibilityRole="header" style={styles.title}>{t('associationDashboard.title')}</Text>
           {displayName ? <Text style={styles.name}>{displayName}</Text> : null}
         </View>
-        <Pressable accessibilityRole="button" disabled={pending} onPress={onLogout} style={styles.logout}>
-          <Text style={styles.logoutText}>{t('login.logout')}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('login.logout')} disabled={pending} onPress={onLogout} hitSlop={6} style={({ pressed }) => [styles.logout, pressed && styles.pressed, pending && styles.disabled]}>
+          <Icon name="logout" size={22} color={colors.onPrimary} />
         </Pressable>
       </View>
+      {summary ? <AssociationSummaryCard key={`${fromDay}:${toDay}`} summary={summary} wide={wide} /> : null}
+    </View>
+  </View>;
 
-      <View style={styles.filterCard}>
-        <Text style={styles.filterTitle}>{t('associationDashboard.filterTitle')}</Text>
-        <View style={styles.presets}>
+  const controls = <>
+      <View style={styles.filter}>
+        <Text accessibilityRole="header" style={styles.filterTitle}>{t('associationDashboard.filterTitle')}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
           {['last7Days', 'last30Days', 'thisMonth'].map((preset) => <Pressable key={preset} accessibilityRole="button"
-            accessibilityState={{ selected: activePreset === preset }} disabled={reports.phase === 'loading'} onPress={() => applyPreset(preset)}
-            style={[styles.presetButton, activePreset === preset && styles.presetActive, reports.phase === 'loading' && styles.disabled]}>
-            <Text style={[styles.presetText, activePreset === preset && styles.presetActiveText]}>{t(`associationDashboard.presets.${preset}`)}</Text>
+            accessibilityState={{ selected: activePreset === preset }} disabled={loadingPhase} onPress={() => applyPreset(preset)}
+            style={[styles.tab, activePreset === preset && styles.tabActive, loadingPhase && styles.disabled]}>
+            <Text style={[styles.tabText, activePreset === preset && styles.tabTextActive]}>{t(`associationDashboard.presets.${preset}`)}</Text>
           </Pressable>)}
-          <Pressable accessibilityRole="button" accessibilityState={{ selected: activePreset === 'custom' }} disabled={reports.phase === 'loading'}
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: activePreset === 'custom' }} disabled={loadingPhase}
             onPress={() => { setActivePreset('custom'); setCalendarField('from'); }}
-            style={[styles.presetButton, activePreset === 'custom' && styles.presetActive, reports.phase === 'loading' && styles.disabled]}>
-            <Text style={[styles.presetText, activePreset === 'custom' && styles.presetActiveText]}>{t('associationDashboard.presets.custom')}</Text>
+            style={[styles.tab, activePreset === 'custom' && styles.tabActive, loadingPhase && styles.disabled]}>
+            <Text style={[styles.tabText, activePreset === 'custom' && styles.tabTextActive]}>{t('associationDashboard.presets.custom')}</Text>
           </Pressable>
-        </View>
+        </ScrollView>
         {activePreset === 'custom' ? <View style={styles.customRange}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`${t('associationDashboard.from')}: ${displayDay(fromDay)}`}
-            onPress={() => setCalendarField('from')} style={styles.dateField}>
-            <Text style={styles.dateLabel}>{t('associationDashboard.from')}</Text><Text style={styles.dateValue}>{displayDay(fromDay)}</Text>
-          </Pressable>
-          <Text style={styles.rangeSeparator}>—</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={`${t('associationDashboard.to')}: ${displayDay(toDay)}`}
-            onPress={() => setCalendarField('to')} style={styles.dateField}>
-            <Text style={styles.dateLabel}>{t('associationDashboard.to')}</Text><Text style={styles.dateValue}>{displayDay(toDay)}</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" disabled={reports.phase === 'loading'} onPress={() => { setExportError(null); loadRange(fromDay, toDay); }}
-            style={[styles.primaryButton, reports.phase === 'loading' && styles.disabled]}>
-            <Text style={styles.primaryText}>{t('associationDashboard.search')}</Text>
-          </Pressable>
+          <View style={styles.dates}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${t('associationDashboard.from')}: ${displayDay(fromDay)}`}
+              onPress={() => setCalendarField('from')} style={styles.dateField}>
+              <Text style={styles.dateLabel}>{t('associationDashboard.from')}</Text><Text style={styles.dateValue}>{displayDay(fromDay)}</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${t('associationDashboard.to')}: ${displayDay(toDay)}`}
+              onPress={() => setCalendarField('to')} style={styles.dateField}>
+              <Text style={styles.dateLabel}>{t('associationDashboard.to')}</Text><Text style={styles.dateValue}>{displayDay(toDay)}</Text>
+            </Pressable>
+          </View>
+          <AppButton variant="signal" size="lg" title={t('associationDashboard.search')} disabled={loadingPhase} onPress={() => { setExportError(null); loadRange(fromDay, toDay); }} style={styles.search} />
           {dateErrors.from || dateErrors.to ? <Text style={styles.fieldError}>{t((dateErrors.to === 'before_from') ? 'associationDashboard.reversedDate' : 'associationDashboard.invalidDate')}</Text> : null}
         </View> : null}
         <Text style={styles.filterHint}>{t('associationDashboard.dateHint')}</Text>
@@ -152,33 +158,27 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
         locale={i18n.language} previousMonthLabel={t('associationDashboard.previousMonth')} nextMonthLabel={t('associationDashboard.nextMonth')}
         cancelLabel={t('common.cancel')} onSelect={selectCustomDate} onClose={() => setCalendarField(null)} />
 
-      {summary ? <AssociationSummaryCard key={`${fromDay}:${toDay}`} summary={summary} /> : null}
-
       <View style={styles.resultsBar}>
-        <View>
-          <Text style={styles.resultsTitle}>{t('associationDashboard.results')}</Text>
+        <View style={styles.resultsText}>
+          <Text accessibilityRole="header" style={styles.resultsTitle}>{t('associationDashboard.results')}</Text>
           {resolvedRange ? <>
             <Text style={styles.count}>{t('associationDashboard.count', { count: rows.length })}</Text>
             <Text style={styles.appliedPeriod}>{t('associationDashboard.appliedPeriod', { from: displayDay(fromDay), to: displayDay(toDay) })}</Text>
           </> : null}
         </View>
         <View style={styles.exportActions}>
-          {['csv', 'xlsx'].map((format) => <Pressable key={format} accessibilityRole="button" disabled={!canExport}
+          {['csv', 'xlsx'].map((format) => <AppButton key={format} variant="secondary" disabled={!canExport}
             accessibilityHint={t('associationDashboard.exportHint')}
-            onPress={() => exportReports(format)} style={[styles.exportButton, !canExport && styles.disabled]}>
-            <Text style={styles.exportText}>{exportingFormat === format ? t('associationDashboard.exporting') : t(`associationDashboard.export${format.toUpperCase()}`)}</Text>
-          </Pressable>)}
+            title={exportingFormat === format ? t('associationDashboard.exporting') : t(`associationDashboard.export${format.toUpperCase()}`)}
+            accessibilityLabel={t(`associationDashboard.export${format.toUpperCase()}`)}
+            onPress={() => exportReports(format)} style={styles.exportButton} />)}
         </View>
       </View>
       {exportError ? <Text accessibilityRole="alert" style={styles.error}>{t('associationDashboard.exportError')}</Text> : null}
 
-      {status ? <View accessibilityLiveRegion="polite" style={styles.status}>
-        {reports.phase === 'loading' ? <ActivityIndicator accessibilityLabel={t('common.loading')} color="#005a25" /> : null}
-        <Text style={styles.statusText}>{status}</Text>
-        {reports.phase === 'error' ? <Pressable accessibilityRole="button" onPress={reports.reload} style={styles.retry}>
-          <Text style={styles.retryText}>{t('associationDashboard.retry')}</Text>
-        </Pressable> : null}
-      </View> : null}
+      {status ? <StateView kind={loadingPhase ? 'loading' : reports.phase === 'error' ? 'error' : 'empty'} title={status} style={styles.status}>
+        {reports.phase === 'error' ? <AppButton variant="secondary" title={t('associationDashboard.retry')} onPress={reports.reload} /> : null}
+      </StateView> : null}
     </>;
 
   const table = showReports ? <ScrollView testID="association-report-table" horizontal style={styles.tableScroll} contentContainerStyle={styles.tableScrollContent}>
@@ -193,55 +193,58 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
     </View>
   </ScrollView> : null;
 
-  return <SafeAreaView style={styles.safeArea}>
-    {wide ? <View style={styles.page}>{dashboardContent}{table}</View>
+  return <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    {wide ? <View style={styles.wideRoot}>{hero}<View style={styles.page}>{controls}{table}</View></View>
       : <FlatList style={styles.mobileList} contentContainerStyle={styles.mobileContent}
         data={showReports ? rows : []} keyExtractor={(item) => item.id}
-        ListHeaderComponent={<View>{dashboardContent}</View>}
+        ListHeaderComponent={<View>{hero}<View style={styles.controls}>{controls}</View></View>}
         renderItem={({ item }) => <AssociationReportCard report={item} />} />}
   </SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7fbf1' },
-  page: { flex: 1, width: '100%', maxWidth: 1440, alignSelf: 'center', padding: 20 },
-  mobileList: { flex: 1 },
-  mobileContent: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 20, paddingBottom: 36 },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 },
-  heading: { flexShrink: 1 }, eyebrow: { color: '#005a25', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
-  title: { color: '#172117', fontSize: 27, fontWeight: '700', marginTop: 6 },
-  name: { color: '#5d6859', marginTop: 4 },
-  logout: { padding: 10, borderWidth: 1, borderColor: '#b9c9b9', borderRadius: 8 },
-  logoutText: { color: '#005a25', fontWeight: '600' },
-  filterCard: { marginTop: 24, padding: 16, gap: 12, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2eae0' },
-  filterTitle: { color: '#172117', fontSize: 16, fontWeight: '700' },
-  presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  presetButton: { borderWidth: 1, borderColor: '#b9c9b9', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9, backgroundColor: '#fff' },
-  presetActive: { backgroundColor: '#005a25', borderColor: '#005a25' },
-  presetText: { color: '#334433', fontSize: 13, fontWeight: '600' }, presetActiveText: { color: '#fff' },
-  customRange: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', gap: 10 },
-  dateField: { minWidth: 132, borderWidth: 1, borderColor: '#aebead', borderRadius: 9, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#fff' },
-  dateLabel: { color: '#61705e', fontSize: 11, marginBottom: 3 }, dateValue: { color: '#172117', fontWeight: '600' },
-  rangeSeparator: { color: '#61705e', paddingBottom: 12 },
-  fieldError: { color: '#ad2d20', fontSize: 12, marginTop: 4 },
-  primaryButton: { backgroundColor: '#005a25', borderRadius: 8, paddingHorizontal: 18, paddingVertical: 12 },
-  primaryText: { color: '#fff', fontWeight: '700' },
-  filterHint: { color: '#61705e', fontSize: 12 },
-  resultsBar: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 26, marginBottom: 12 },
-  resultsTitle: { color: '#172117', fontSize: 19, fontWeight: '700' }, count: { color: '#61705e', marginTop: 3 },
-  appliedPeriod: { color: '#61705e', fontSize: 12, marginTop: 3 },
-  exportActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  exportButton: { borderWidth: 1, borderColor: '#005a25', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 11 },
-  exportText: { color: '#005a25', fontWeight: '700' }, disabled: { opacity: 0.45 },
-  status: { flex: 1, minHeight: 150, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20, backgroundColor: '#fff', borderRadius: 10 },
-  statusText: { color: '#334433', textAlign: 'center', fontSize: 16 },
-  retry: { padding: 10 }, retryText: { color: '#005a25', fontWeight: '700' },
-  error: { color: '#ad2d20', marginBottom: 10 },
-  tableScroll: { flex: 1, backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e2eae0' },
+  safeArea: { flex: 1, backgroundColor: colors.primary },
+  wideRoot: { flex: 1, backgroundColor: colors.background },
+  page: { flex: 1, width: '100%', maxWidth: 1440, alignSelf: 'center', padding: layout.margin },
+  mobileList: { flex: 1, backgroundColor: colors.background },
+  mobileContent: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingBottom: spacing.xxxl },
+  controls: { paddingHorizontal: layout.margin, paddingTop: spacing.xxl },
+  hero: { backgroundColor: colors.primary, overflow: 'hidden' },
+  bigPaw: { position: 'absolute', right: -44, top: 20, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
+  heroInner: { width: '100%', maxWidth: 1440, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md },
+  heading: { flex: 1, gap: spacing.xs },
+  title: { fontFamily: fontFamily.display, fontSize: 32, lineHeight: 40, letterSpacing: -0.3, color: colors.onPrimary },
+  name: { fontFamily: fontFamily.label, fontSize: 14, color: colors.onForest },
+  logout: { width: layout.minTouch, height: layout.minTouch, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,230,196,0.45)' },
+  pressed: { opacity: 0.7 },
+  filter: { gap: spacing.md },
+  filterTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
+  tabs: { gap: spacing.xs, paddingRight: spacing.lg },
+  tab: { minHeight: layout.minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, borderBottomWidth: 3, borderBottomColor: 'transparent' },
+  tabActive: { borderBottomColor: colors.primary },
+  tabText: { fontFamily: fontFamily.label, fontSize: 15, color: colors.inkMuted }, tabTextActive: { color: colors.primary },
+  customRange: { gap: spacing.md },
+  dates: { flexDirection: 'row', gap: spacing.md },
+  dateField: { flex: 1, minHeight: 56, borderWidth: 1, borderColor: colors.outline, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.surface, justifyContent: 'center' },
+  dateLabel: { fontFamily: fontFamily.label, fontSize: 12, color: colors.inkMuted }, dateValue: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 15, color: colors.ink },
+  search: { borderRadius: 12 },
+  fieldError: { ...type.caption, fontSize: 13, color: colors.danger },
+  filterHint: { ...type.caption, color: colors.inkMuted },
+  resultsBar: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: spacing.md, marginTop: spacing.xxl, marginBottom: spacing.md },
+  resultsText: { gap: 2, flexShrink: 1 },
+  resultsTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
+  count: { fontFamily: fontFamily.label, fontVariant: ['tabular-nums'], fontSize: 15, color: colors.ink },
+  appliedPeriod: { ...type.caption, color: colors.inkMuted },
+  exportActions: { flexDirection: 'row', gap: spacing.sm },
+  exportButton: { minWidth: 72, borderRadius: 12 }, disabled: { opacity: 0.45 },
+  status: { alignItems: 'center', paddingVertical: spacing.xxl },
+  error: { ...type.caption, fontSize: 14, color: colors.danger, marginBottom: spacing.md },
+  tableScroll: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border },
   tableScrollContent: { flexGrow: 1 }, table: { flex: 1 }, list: { flex: 1 },
-  headerRow: { flexDirection: 'row', backgroundColor: '#eaf3e9', borderBottomWidth: 1, borderBottomColor: '#c6d6c3' },
-  headerCell: { fontWeight: '700', color: '#234023' },
-  row: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#edf1ec', minHeight: 50 },
-  alternateRow: { backgroundColor: '#f8fbf7' },
-  cell: { paddingHorizontal: 10, paddingVertical: 12, color: '#172117', fontSize: 13 },
+  headerRow: { flexDirection: 'row', backgroundColor: colors.primarySoft, borderBottomWidth: 1, borderBottomColor: colors.outlineSoft },
+  headerCell: { fontFamily: fontFamily.label, color: colors.primary },
+  row: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border, minHeight: 50 },
+  alternateRow: { backgroundColor: colors.background },
+  cell: { paddingHorizontal: 10, paddingVertical: 12, color: colors.ink, fontFamily: fontFamily.regular, fontSize: 13 },
 });
