@@ -139,22 +139,18 @@ function PinSheet({ report, onClose, onFlag, t }) {
   const uri = report.has_sanitized_photo ? photoUrl(report.report_id) : null;
   const { dog } = report;
   const collar = dog.has_collar === null ? null : t(`reportForm.collar.${dog.has_collar ? 'si' : 'no'}`);
-  const rows = [
+  const facts = [
     [t('reportForm.fields.sighting_type'), t(`reportForm.sighting.${report.sighting_type}`)],
     dog.predominant_color ? [t('map.pin.color'), dog.predominant_color] : null,
     dog.size ? [t('reportForm.fields.dog_size'), t(`reportForm.dogSize.${dog.size}`, { defaultValue: dog.size })] : null,
     collar ? [t('reportForm.fields.has_collar'), collar] : null,
     ...DETAIL_KEYS.filter((key) => report.details[key] !== undefined && report.details[key] !== null && report.details[key] !== '')
       .map((key) => [t(`reportForm.fields.${key}`), detailValue(t, key, report.details[key])]),
-    [t('map.pin.occurredAt'), new Date(report.occurred_at).toLocaleString('es-MX')],
   ].filter(Boolean);
+  const level = severityLevel(report.incident_type);
   return (
-    <Sheet bottomInset testID="pin-sheet" onClose={onClose} maxHeight="88%">
+    <Sheet modal bottomInset testID="pin-sheet" onClose={onClose} maxHeight="88%">
       <ScrollView contentContainerStyle={styles.sheetContent}>
-        <Text accessibilityRole="header" style={styles.modalTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
-        {report.has_flags ? (
-          <View style={styles.flagNotice}><Icon name="flag" size={18} color={colors.warning} /><Text style={styles.flagText}>{t('map.pin.flagged')}</Text></View>
-        ) : null}
         {uri && !photoFailed ? (
           <Image
             accessibilityLabel={t('map.pin.photo')}
@@ -163,16 +159,29 @@ function PinSheet({ report, onClose, onFlag, t }) {
             onError={() => setPhotoFailed(true)}
           />
         ) : null}
-        <View style={styles.facts}>
-          {rows.map(([label, value]) => (
-            <View key={label} style={styles.countRow}>
-              <Text style={styles.rowLabel}>{label}</Text>
-              <Text style={[styles.rowValue, styles.rowValueWrap]}>{value}</Text>
+        <View style={styles.pinHead}>
+          <View style={[styles.pinStripe, { backgroundColor: colors.severity[level] }]} />
+          <View style={styles.pinHeadText}>
+            <Text accessibilityRole="header" style={styles.modalTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
+            <Text style={styles.pinDate}>{new Date(report.occurred_at).toLocaleString('es-MX')}</Text>
+          </View>
+        </View>
+        {report.has_flags ? (
+          <View style={styles.flagNotice}><Icon name="flag" size={18} color={colors.warning} /><Text style={styles.flagText}>{t('map.pin.flagged')}</Text></View>
+        ) : null}
+        <View style={styles.factGrid}>
+          {facts.map(([label, value]) => (
+            <View key={label} style={styles.fact}>
+              <Text style={styles.factLabel}>{label}</Text>
+              <Text style={styles.factValue}>{value}</Text>
             </View>
           ))}
         </View>
-        <AppButton title={t('flag.open')} variant="destructive" onPress={onFlag} />
-        <AppButton title={t('map.close')} variant="secondary" onPress={onClose} />
+        <AppButton title={t('map.close')} onPress={onClose} />
+        <Pressable accessibilityRole="button" onPress={onFlag} style={({ pressed }) => [styles.flagLink, pressed && styles.pressed]}>
+          <Icon name="flag" size={18} color={colors.danger} />
+          <Text style={styles.flagLinkText}>{t('flag.open')}</Text>
+        </Pressable>
       </ScrollView>
     </Sheet>
   );
@@ -238,6 +247,9 @@ function NativeMapScreen({ onBack }) {
     focusCluster(cluster, zoom);
   }, [focusCluster, map.region]);
 
+  // Opening a report closes the cluster card so only one panel is on screen.
+  const selectReport = useCallback((report) => { setSelectedCluster(null); setSelectedReport(report); }, []);
+
   const zoomIntoCluster = useCallback(() => {
     if (!selectedCluster) return;
     focusCluster(selectedCluster.cluster, map.region?.zoom ?? selectedCluster.zoom);
@@ -265,7 +277,7 @@ function NativeMapScreen({ onBack }) {
             focus={focus}
             onRegionChange={map.setRegion}
             onSelectCluster={selectCluster}
-            onSelectReport={setSelectedReport}
+            onSelectReport={selectReport}
           />
         ) : (
           <View style={styles.centered}><ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /></View>
@@ -360,7 +372,16 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: spacing.md },
   actionHalf: { flex: 1 },
   sheetContent: { gap: spacing.md },
-  facts: { borderTopWidth: 1, borderTopColor: colors.border },
+  pinHead: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  pinStripe: { width: 6, borderRadius: 3 },
+  pinHeadText: { flex: 1, gap: 2 },
+  pinDate: { ...type.caption, color: colors.inkMuted, fontVariant: ['tabular-nums'] },
+  factGrid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.lg, rowGap: spacing.lg, marginVertical: spacing.xs },
+  fact: { flexBasis: '45%', flexGrow: 1, gap: 2 },
+  factLabel: { fontFamily: fontFamily.label, fontSize: 12, color: colors.inkMuted },
+  factValue: { fontFamily: fontFamily.labelMedium, fontSize: 16, lineHeight: 22, color: colors.ink },
+  flagLink: { minHeight: layout.minTouch, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  flagLinkText: { fontFamily: fontFamily.label, fontSize: 15, color: colors.danger },
   flagNotice: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radius.md, backgroundColor: colors.warningSoft, padding: spacing.md },
   flagText: { fontFamily: fontFamily.label, fontSize: 14, color: colors.warning, flexShrink: 1 },
   photo: { width: '100%', height: 200, borderRadius: radius.lg, backgroundColor: colors.surfaceHigh },
