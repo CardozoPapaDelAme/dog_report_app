@@ -1,4 +1,6 @@
-# Taste: cómo se transformó el Login y qué reglas salen para las demás pantallas
+# Taste: lo que se aprobó y se rechazó, y las reglas que salen de ello
+
+> **Estado:** documento vivo, actualizado con el estado real de la rama `TD-134-JP-rediseno-paso0`. Está en orden cronológico por pantalla; cuando una regla posterior corrige a una anterior, la anterior lo dice. **Las reglas vigentes de cada pantalla son las de su sección "vigente" y las numeradas más recientes.** El sistema visual de referencia está en [`../design/DESIGN.md`](../design/DESIGN.md) y el contrato de pruebas en [`CONTRACT.md`](CONTRACT.md).
 
 ![Antes y ahora del Login](after/login_antes_vs_ahora.png)
 
@@ -26,11 +28,11 @@ Capturas web en español (`before/web/es/login_default.png` y `after/web/es_logi
 5. **Esquinas muy redondas en botones** ("las curvas de los botones, que sea menos agresiva").
 6. **Espacio vacío abajo** ("abajo se ve muy vacío"): no se deja un hueco sin intención.
 
-## Reglas para las siguientes pantallas
+## Reglas para las siguientes pantallas (1 a 12, del Login; siguen vigentes salvo lo que corrijan las posteriores)
 
 1. **Recomponer, no solo reestilizar.** Cada pantalla debe cambiar su estructura visual, no solo su paleta o fuente.
-2. **Verde de marca a pantalla completa en las pantallas de entrada** (Login y similares). Las pantallas de trabajo con muchos datos (Configuración, Duplicados, Asociación) pueden usar fondo claro, pero con el mismo vocabulario: Fredoka en títulos, campos oscuros o de borde claro, amarillo para la acción principal. *Esto es una inferencia mía, a confirmar con la primera pantalla de datos.*
-3. **Varias tipografías en una misma pantalla, cada una con rol fijo:** Fredoka = título y botón principal; Plus Jakarta Sans = texto corrido; Work Sans = etiquetas, números, enlaces pequeños.
+2. **Verde de marca a pantalla completa en las pantallas de entrada** (Login y similares). Las pantallas de trabajo con muchos datos (Configuración, Zonas, Duplicados, Asociación, Command Center) usan cabecera verde y cuerpo claro, con el mismo vocabulario: Fredoka en títulos, huella grande de fondo, amarillo para la acción principal. *Confirmado con las pantallas de datos.*
+3. **Varias tipografías en una misma pantalla, cada una con rol fijo:** Fredoka = títulos, números protagonistas y botón principal; Plus Jakarta Sans = texto corrido; Work Sans = etiquetas, números de datos, enlaces pequeños (ver regla 38).
 4. **Que se note que es de perros.** Huellas como motivo recurrente (rastro, fondo, estados vacíos), puntas hacia arriba. Nada que lea como militar, montaña, señalética ni corporativo frío.
 5. **Esquinas moderadas:** botones 12 px, campos 8 px, tarjetas 16 px. Evitar píldoras salvo chips y el obturador.
 6. **Amarillo `#e9e600` solo para la acción principal** de la pantalla (una por pantalla). El resto de la acción en blanco, borde o verde.
@@ -93,31 +95,40 @@ Segundo intento (aprobado: "perfecto"), commit `48c404c`:
 
 ## Command Center (cola de moderación)
 
-Primer intento (rechazado: "las tarjetas se siguen viendo muy ai-slop; la posición de sign out no me convence"): cada reporte en una tarjeta con borde, chips de colores, bloque azul de ubicación y tres botones con marco; "Cerrar sesión" suelto arriba a la derecha.
+Recorrido histórico (lo rechazado):
+1. **Tarjetas con borde, chips de colores, bloque azul de ubicación y tres botones con marco** ("las tarjetas se siguen viendo muy ai-slop").
+2. **Filas de bandeja pegadas, con barra lateral de gravedad:** se fundían en un solo bloque. La tarjeta redondeada con banda de color también se rechazó como plantilla.
+3. **Cabecera "sobria" sin identidad** (sin huella, tres columnas iguales, todo en Plus Jakarta): "se ve peor, no tiene identidad y se ve super AI-slop". Quitar elementos no es rediseñar; sin la huella perdió lo que lo hacía reconocible.
+4. **Tres tamaños de número distintos** y **tres columnas iguales** ("se ve feo"): ninguna de las dos funcionó. El botón "Aprobar" relleno y más grande tampoco ("no me gusta que se vea más grande").
 
-Segundo intento: **una bandeja, no tarjetas.**
-- Cada reporte es una **fila a todo el ancho** sobre blanco, separada por líneas finas, con **barra lateral de gravedad** (roja si es alta).
-- **Señales como texto plano** en una línea (Confianza | Banderas | Foto); solo las banderas se pintan de rojo si hay. Sin chips.
-- **Ubicación como línea de tabla:** etiqueta a la izquierda, coordenadas a la derecha. Sin bloque azul.
-- **Acciones como barra plana al pie de la fila:** "Aprobar | Ocultar | Eliminar" separadas por líneas, sin marco; verde, ámbar y rojo.
-- **Cerrar sesión como botón de ícono en la misma línea del título.**
-- Las **herramientas** (duplicados, zonas, umbrales) como tres mosaicos en una fila.
+### Vigente (aprobado)
 
-### Reglas añadidas (26 a 28)
+- **Encabezado verde con la huella grande de fondo** (tenue, recortada a la derecha), título en Fredoka y botón de cerrar sesión de ícono en la misma línea.
+- **Resumen en dos tamaños, centrado entre sí:** "En esta página" como número grande a la izquierda; a la derecha, "Prioridad alta" arriba y "Con banderas" debajo, **del mismo tamaño**. Los dos de la derecha se tiñen de rosa solo si valen más de cero (sin falsa alarma). La jerarquía se lee por orden y color, no por un tercer tamaño.
+- **Barra de herramientas** (duplicados, zonas, umbrales) bajo el resumen: ícono blanco y etiqueta, tres celdas separadas por líneas finas, sobre una banda ligeramente más oscura. Sin mosaicos, sin íconos amarillos.
+- **Cada reporte, una tira a todo el ancho** con líneas arriba y abajo y hueco de fondo claro entre una y otra, sin esquinas redondeadas.
+- **El pin del mapa (`PinGlyph`) es la marca de cada reporte**, del color de su gravedad, gris si está oculto y con insignia ámbar si tiene banderas. El mapa y la cola hablan el mismo idioma.
+- **Nombre del incidente en Fredoka**, fecha en gris y estado ("Pendiente", "Oculto") en texto neutro; el rojo queda para banderas y para lo grave.
+- **Señales solo si existen:** la confianza siempre (traducida: baja, media, alta), "Banderas: N" solo si hay y "Foto: Sí" solo si la tiene. Sin "Banderas: 0", sin barras `|`.
+- **Coordenadas como texto tabular**, sin ícono (el pin ya dice que es un lugar) y **sin código interno del reporte** (los últimos seis caracteres del UUID no significan nada para quien modera).
+- **Acciones como barra plana de tres celdas iguales** con texto de color: Aprobar (verde), Ocultar/Restaurar (tinta o verde), Eliminar (rojo).
+- **Carga con esqueleto** de dos tarjetas (nunca solo un indicador de actividad) y `role="progressbar"` con la etiqueta de carga.
+
+### Reglas añadidas (26 a 30, vigentes; la 30 corrige a la anterior)
 
 26. **Las listas de elementos de decisión van como filas de bandeja** (a todo el ancho, con separadores) y no como tarjetas apiladas.
-27. **Las acciones por fila van como barra plana con texto de color,** no como botones con marco.
+27. **Las acciones por fila van como barra plana con texto de color,** no como botones con marco, y **todas del mismo tamaño**: el peso lo da el color, no el ancho ni un relleno.
 28. **Las acciones globales (cerrar sesión) viven en la barra del título,** no flotando solas.
-
-### Command Center, tercera vuelta: cómo separar elementos sin tarjetas
-
-- Filas a todo el ancho **pegadas** se funden en un solo bloque ("parece que todo es uno").
-- **Tarjeta redondeada con banda de color arriba** se rechazó como plantilla genérica ("ai-slop").
-- Lo que funciona: **tira a todo el ancho con líneas arriba y abajo y un hueco de fondo claro entre una y otra, sin esquinas redondeadas**, con **barra lateral gruesa** de color por estado y **número corto del reporte** (`#a1b2c3`) para que cada uno tenga nombre.
-- Y **menos contenido por elemento:** se quitó la fila con etiqueta de ubicación y quedó una línea con ícono.
-
 29. **Separar elementos de una lista con huecos de fondo y bordes finos, no con color de cabecera ni esquinas redondeadas.**
-30. **Todo elemento repetido lleva un identificador corto visible** (número, nombre), no solo posición.
+30. **Cada elemento repetido se identifica por su contenido y su marca visual** (tipo de incidente, fecha, pin de gravedad), **nunca por un código interno** (fragmentos de UUID, números sin significado). *Corrige la versión anterior, que pedía un número corto visible.*
+
+### Reglas añadidas (38 a 42)
+
+38. **En pantallas de operación Fredoka se usa con medida:** título de pantalla, número protagonista, nombre del elemento y títulos de sección. Texto corrido y acciones en Plus Jakarta Sans; etiquetas y datos en Work Sans. *Corrige la primera versión de esta regla ("solo el título"), que dejaba la pantalla sin identidad.*
+39. **La huella grande de fondo es la identidad de toda cabecera verde** (Command Center, Configuración, Zonas, Duplicados, Asociación) y debe verse **completa**, no asomar por debajo de la cabecera. Un solo motivo, nunca varios pequeños.
+40. **Un color con significado por acción:** aprobar en verde, eliminar en rojo, lo demás en tinta; el amarillo queda para la acción principal y no para íconos.
+41. **Cifras de resumen: como máximo dos tamaños** (uno protagonista y el resto iguales), centrados entre sí. Tres tamaños distintos o tres columnas idénticas se rechazaron.
+42. **Mostrar las señales por presencia, no por ausencia:** nada de "Banderas: 0" ni "Foto: No" en cada elemento; valores de datos traducidos al idioma de la pantalla.
 
 ## Formulario (rehecho tres veces)
 
@@ -130,7 +141,7 @@ Segundo intento: **una bandeja, no tarjetas.**
 31. **Una foto de evidencia es una miniatura que se abre completa**, no un encabezado enorme.
 32. **Dos o tres opciones cortas = control segmentado**, no botones sueltos.
 33. **Un atributo visual (color, tamaño) se elige mirando el atributo**, no leyendo una palabra.
-34. **No usar el modal del sistema para hojas propias:** anima un fondo oscuro que sube y no cierra al tocar fuera; usar `Sheet` dentro de la pantalla.
+34. **Las hojas propias (`Sheet`) no usan el modal del sistema por defecto:** el modal nativo anima un fondo oscuro que sube y no cerraba al tocar fuera. `Sheet` vive dentro de la pantalla; solo cuando debe cubrir **todo** (selector del formulario, aviso de error) se usa `Sheet modal`, y cuando varias hojas pueden abrirse unas sobre otras, `SheetHost` (regla 46). *Versión anterior: "usar siempre Sheet dentro de la pantalla"; el modo `modal` se añadió después.*
 
 ### Lección técnica: hojas y toques en iPhone (reglas 35 y 36)
 
@@ -141,14 +152,38 @@ Segundo intento: **una bandeja, no tarjetas.**
 
 37. **Usar solo `StyleSheet.absoluteFill`** (en `style={[StyleSheet.absoluteFill, ...]}` o `{ ...StyleSheet.absoluteFill, ... }`). `absoluteFillObject` ya no existe en RN 0.86: el spread queda vacío y los elementos "superpuestos" caen en el flujo normal de la pantalla (hojas arriba o debajo, fondo difuminado ausente, tarjetas que no cierran, botón de enviar a media pantalla). react-native-web sí lo tiene, por eso las pruebas web no lo ven; `tests/ui/noRemovedStyleApis.spec.js` lo vigila.
 
-### Madurez en pantallas de administrador (reglas 38 a 41)
+## Cámara (aprobada)
 
-El usuario sintió Command Center "poco maduro" pese a haber mejorado. Diagnóstico con `frontend-design`: tipografía juguetona (Fredoka) en todo, cabecera tipo plantilla (huella decorativa, tres cajas iguales con íconos amarillos, tres números grandes) y demasiado color a la vez.
+- **Pantalla de permiso verde** con un solo mensaje y una sola acción, en lugar de botones fantasma detrás de una tarjeta negra.
+- **Controles sobre degradados reales** (`Scrim`, `react-native-svg`) arriba y abajo, no sobre un 56 % de negro: se leen sobre cualquier imagen.
+- **Obturador de un solo círculo** con contorno blanco; sin anillos dobles ni recuadro de encuadre. Zoom con pellizco (`PanResponder`).
+- **Avisos minimalistas:** foto rechazada, validando y cola de borradores son una **cápsula oscura de una línea** (ícono, texto), no un banner. **El aviso de rechazo desaparece solo a los 5 segundos.**
 
-38. **En pantallas de operación, Fredoka solo en el título de la pantalla;** títulos de sección, nombres y acciones en Plus Jakarta Sans con jerarquía por peso. Fredoka a todo tamaño se lee infantil en herramientas de trabajo.
-39. **Sin decoración en pantallas operativas:** nada de huella de fondo, subtítulos largos ni cajas de accesos; los destinos van como **barra de herramientas** (ícono blanco y etiqueta, separados por líneas finas).
-40. **Un color con significado por acción:** aprobar en verde, eliminar en rojo, lo demás en tinta neutra; el amarillo queda para la acción principal y no para íconos.
-41. **Densidad:** cabecera de unos 200 px, métricas pequeñas (24 px) y que el primer elemento de la cola quepa completo en la primera pantalla.
+43. **Los avisos sobre la cámara son cápsulas de una línea que no tapan el encuadre** y los transitorios se retiran solos.
+
+## Asociación (aprobada)
+
+- **Encabezado con el total** (número grande) y la gráfica de periodo en el cuerpo, **pestañas de periodo** (Últimos 7 días, Personalizado) y "Personalizado" como botón propio con calendario.
+- **Al elegir la fecha inicial se abre sola la fecha final** (decisión del usuario; se ajustó la prueba que esperaba lo contrario).
+- **Filas de bandeja** para los reportes, con **paginación de 5** (`Pager`); la tabla de escritorio se conserva a partir de 900 px de ancho.
+- **Huella lejos del botón de salir**, para que no parezca parte del control.
+
+## Mapa (aprobado)
+
+- **Pantalla completa:** el mapa ocupa todo y los controles flotan encima. **Control de volver circular**, blanco con sombra suave, sin título (el título se conserva para lectores de pantalla y se dibuja solo en el fallback sin mapa, `ExpoGoFallbackScreen`).
+- **Pin = una sola silueta de gota** (`PinGlyph`, SVG): relleno del color de gravedad, **un solo borde blanco continuo**, sombra de la misma forma desplazada, huella centrada e insignia ámbar si tiene banderas. Se rechazaron el círculo con triángulo y píldora de sombra apilados ("se ve como una cosa apilada sobre otra").
+- **Clusters:** círculos del color de gravedad con halo; el botón interno conserva el diámetro del contrato RF12.
+- **Tocar un cluster enfoca la cámara en él** al siguiente umbral de agrupación del servidor (`nextBandZoom`) y abre una **tarjeta compacta sin fondo difuminado y sin botón "Acercar"** (la cámara ya acercó); la tarjeta solo ofrece "Ver reportes de la zona".
+- **Detalle de un reporte como ficha:** foto, franja de gravedad, título y fecha, cuadrícula de 2 columnas con los datos, "Cerrar" como botón y "Denunciar" como enlace rojo con bandera. **Tocar la foto la abre completa** (`PhotoViewer`, el mismo visor del formulario).
+- **Hojas apiladas en una sola ventana del sistema** (`SheetHost`): iOS no puede presentar un modal sobre otro, y abrir el detalle desde la lista de zona congelaba la app. `ZoneReportsSheet`, `PinSheet` y `ReportFlagSheet` viven en un único `Modal`; la zona de cierre es el fondo difuminado de cada hoja.
+
+44. **Un marcador que representa un reporte se dibuja siempre con `PinGlyph`** (mapa y cola), no con vistas apiladas.
+45. **Si una acción ya ocurrió (el zoom del cluster), el control que la repite se quita.**
+46. **Las hojas que pueden abrirse unas sobre otras comparten una sola ventana del sistema** (`SheetHost`), nunca un `Modal` por hoja.
+
+## Campos de texto (corrección transversal)
+
+47. **Los campos de una línea no declaran `lineHeight`** (`type.input`): en iOS un `lineHeight` mayor que el tamaño de letra empuja el texto por debajo del centro del campo. Los campos multilínea fijan su propio `lineHeight` (22).
 
 ## Cómo se trabaja con las skills
 
@@ -156,4 +191,6 @@ El usuario sintió Command Center "poco maduro" pese a haber mejorado. Diagnóst
 
 ## Piezas reutilizables ya hechas
 
-`theme/` (colores, tipografía, espaciado), `components/ui/` (AppButton con variante `signal`, AppTextField con `tone="dark"`, Banner, Chip, Sheet, StateView `tone="dark"`, PawTrail, Icon con refresh/copy/shield/gauge/logout), fuentes en `theme/fonts.js`.
+- **`theme/`:** `colors`, `spacing` (y `layout`), `radius`, `shadows`, `motion`, `type` (estilos de texto con nombre) y `fonts` (Plus Jakarta Sans, Work Sans, Fredoka). Ninguna pantalla declara hex ni tamaños sueltos salvo excepciones comentadas.
+- **`components/ui/`:** `AppButton` (variante `signal`), `AppTextField` (`tone="dark"`), `Banner`, `Chip`, `Icon` (mapa de nombres semánticos a lucide), `IconButton`, `Pager`, `PawTrail`, `PhotoViewer`, `PinGlyph`, `Scrim`, `Sheet` (en pantalla o `modal`), `SheetHost`, `StateView`. `AppCard` y `ScreenHeader` se probaron en el Paso 0 y se retiraron por no usarse en ninguna pantalla.
+- **Tokens que existen aunque hoy no los consuma una pantalla** (forman parte de las escalas de `DESIGN.md`): `shadows.none/card/raised`, `motion.fast/slow`, `layout.gutter/safeAreaBottom`, `colors.primaryContainer` y los estilos `type.display/headline/number/numberSmall/labelCaps`.

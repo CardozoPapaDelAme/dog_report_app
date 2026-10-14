@@ -1,5 +1,7 @@
 # Capturas pendientes (solo lo que Playwright/web no pudo mostrar)
 
+> **Cerrado (histórico).** Estas capturas eran para la pasada 2 de la auditoría. El usuario aportó las de iPhone en inglés (`before/manual/`); **Android y las capturas manuales en español quedaron fuera del alcance de TD-134**. No hay capturas pendientes: las del estado posterior al rediseño son capturas web en `after/web/` (ver [`README.md`](README.md)) y la verificación de superposiciones, teclado y hojas se hizo en el iPhone del usuario.
+
 **Guárdalas en:** `docs/redesign/before/manual/` con el **nombre de archivo exacto** de la última columna. PNG de pantalla completa del dispositivo (captura nativa, sin recortar ni marcos). Cuando estén, avísame y hago la pasada 2.
 
 **Ya renderizado en web (no lo pidas):** login (4 estados), cámara (stub con permiso), formulario (sin foto, foto + color detectado, errores 400/500, guardado para sincronizar), cola de borradores (pendiente/sincronizada/terminal), mapa web (clusters, modal, zona, pin, denuncia, vacío, error, offline), fallback Expo Go, dashboard Asociación (móvil/desktop/vacío/cargando/error/picker), Command Center, Configuración, Zonas, Duplicados — en es y en, en `before/web/{es,en}/`.

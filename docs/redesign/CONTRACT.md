@@ -1,30 +1,34 @@
 # Contrato intocable (extraído de `tests/ui/*.spec.js`)
 
+> **Estado:** vigente y verificado contra la rama `TD-134-JP-rediseno-paso0` (109 pruebas Playwright en verde). Los `testID`, roles y textos de abajo existen tal cual en el código actual. La sección 7 lista lo que cambió respecto al contrato original y por qué.
+
 El rediseño de `screens/` y `components/` **no puede cambiar nada de lo siguiente**. Los textos vienen de las llaves i18n existentes (`i18n/locales/es.json`, `en.json`); las pruebas las leen en español salvo `language.spec.js` (en-US). Extraído con grep de los specs; regenerar si un spec cambia.
 
 ## 1. Reglas estructurales (no son strings)
 
 | Regla | Dónde | Implicación para el diseño |
 |---|---|---|
-| Configuración renderiza **exactamente 8 `<input>`**; el 9.º campo (`configuration-change_note`) NO puede ser un `<input>` (hoy es `TextInput multiline` → `<textarea>`, `ConfigurationScreen.js:153`). Con 401/403/sin sesión: **0 inputs**. | configuration.spec:28,72,81 | No añadir buscadores/inputs decorativos, ni convertir la nota en input de una línea. |
+| Configuración renderiza **exactamente 8 `<input>`**; el 9.º campo (`configuration-change_note`) NO puede ser un `<input>` (hoy es `TextInput multiline` → `<textarea>`, en `ConfigurationScreen.js`). Con 401/403/sin sesión: **0 inputs**. | configuration.spec:28,72,81 | No añadir buscadores/inputs decorativos, ni convertir la nota en input de una línea. |
 | Sin desbordamiento horizontal: `scrollWidth <= innerWidth` a 390 px y a 1200 px | configuration, zoneSet, duplicates | Anchos máximos/`flexWrap` obligatorios; no fijar anchos > viewport. |
 | Dashboard Asociación: **tarjetas** en móvil, **tabla** en ≥ ancho amplio (1280); nunca ambos | associationDashboard:36,85 | Mantener el punto de quiebre y los dos `testID`. |
 | Foco: al fallar validación se enfoca el primer campo inválido (`configuration-gps_accuracy_max_meters`); al exigir nota de reversión se enfoca `duplicate-reverse-note` | configuration:34, duplicates:59 | No reordenar el foco ni reemplazar los `TextInput` por componentes que no acepten `focus()`. |
 | La posición del control `report-sighting_type-solitario` no cambia al abrir el selector de incidente | reportForm:59-63 | El desplegable de incidente no debe empujar el contenido (overlay o espacio reservado). |
-| Campos honeypot (`report-honeypot-contact`, `-website`) existen, están ocultos y aceptan `fill(force)` | reportForm | Conservar la técnica actual (`position:absolute; 1×1; opacity:0; left:-9999`, `ReportFormScreen.js:755`); no usar `display:none`. |
+| Campos honeypot (`report-honeypot-contact`, `-website`) existen, están ocultos y aceptan `fill(force)` | reportForm | Conservar la técnica actual (`position:absolute; 1×1; opacity:0; left:-9999`, estilo `honeypot` de `ReportFormScreen.js`); no usar `display:none`. |
 | `#report-reporter_name/phone/email` y `report-reporter_*` **no existen** (RF02) | reportForm:32-36 | Nunca añadir campos de identidad. |
 | Los `id` de formulario web `report-<campo>` se exponen | reportForm:98 | Conservar `nativeID`/`id`. |
-| Cluster: diámetro `2·(18+30·min(1, ln(n)/ln(1000)))`, mín 36, máx 96 px; botón con `accessibilityLabel` "N reportes, gravedad X" y texto = N | publicMapClusterSize, `models/publicMap.js` | Tamaño de cluster es contrato (RF12). Se puede cambiar color/borde, no la escala. |
+| Cluster: diámetro `2·(18+30·min(1, ln(n)/ln(1000)))`, mín 36, máx 96 px; botón con `accessibilityLabel` "N reportes, gravedad X" y texto = N | publicMapClusterSize, `models/publicMap.js` | Tamaño de cluster es contrato (RF12). Se puede cambiar color/borde/halo, no la escala: el halo es un anillo exterior y el botón interno conserva el diámetro medido. |
+| El pin de un reporte es un solo elemento accesible "Reporte: <tipo>" (`PinGlyph` dentro) y el aviso del mapa/atribución no cambian | publicMap | El dibujo del pin es libre; el nombre accesible y el toque son contrato. |
+| No se usa `StyleSheet.absoluteFillObject` (no existe en RN 0.86; en el teléfono deja los overlays sin `position: absolute` y la web no lo detecta) | `noRemovedStyleApis.spec.js` | Usar `StyleSheet.absoluteFill`. |
 | Sin errores de página (`pageerror`) en ninguna prueba | todos | Fuentes/íconos nuevos no deben lanzar excepciones en react-native-web. |
 | El bundle web se construye con **esbuild** (`alias react-native→react-native-web`, `.ttf` como `file`, `jsx:automatic`) y solo resuelve `.web.js, .js, .jsx, .json` | `serve-configuration.mjs` | Toda dependencia nueva (fuentes, íconos, blur) debe poder empaquetarse con esbuild y tener alias/stub si es nativa; **no** archivos `.tsx`/`.ts`. |
-| Fuentes: el fixture solo registra `PlusJakartaSans_400Regular` y `_700Bold` por `@font-face`; el resto cae a fuente por defecto en web | `configuration-entry.jsx` | Si cambian nombres de familia (o se añade Work Sans / SemiBold), el fixture de pruebas debe actualizarse **a la par** (archivo de test: requiere aprobación). |
+| Fuentes: el fixture registra por `@font-face` las ocho familias de `theme/fonts.js` (Plus Jakarta Sans 400/600/700, Work Sans 500/600/700, Fredoka 500/600); cualquier otra cae a fuente por defecto en web | `configuration-entry.jsx` | Si cambian o se añaden familias, el fixture de pruebas debe actualizarse **a la par** (archivo de test: requiere aprobación). |
 
 ## 2. `testID` por pantalla
 
 - **Cámara**: `camera-screen`, `camera-preview`, `camera-without-photo` (también `camera-capture` en código)
 - **Cola de borradores**: `draft-queue-banner`, `draft-queue-retry`
 - **Formulario de reporte**: `report-submit`, `report-privacy-warning`, `report-incident_type-select`, `report-incident_type-<valor>` (`avistamiento_simple`, `ataque_humano`, …), `report-sighting_type-<solitario|manada>`, `report-tipo_animal`, `report-cantidad_aprox`, `report-cantidad_afectada`, `report-descripcion`, `report-situacion-atrapado`, `report-resulto_herido-si`, `report-hubo_mordida-si`, `report-has_collar-si`, `report-dog_size-<chico|grande|no_se>`, `report-dog_color-<negro|dorado|…>`, `report-dog_color-detected`, `report-photo-pending`, `report-honeypot-contact`, `report-honeypot-website`, `report-error`, `report-error-back`, `report-error-retry`, `report-queued`, `report-queued-back`, `report-success`, `report-success-back`
-- **Mapa**: `cluster-modal`, `zone-sheet`, `pin-sheet`, `flag-sheet`, `recent-reports`, `expo-go-notice`, `cluster-count-<n>` (fixture nativo)
+- **Mapa**: `cluster-modal`, `zone-sheet`, `pin-sheet`, `flag-sheet`, `recent-reports`, `expo-go-notice`, `cluster-count-<n>` (fixture nativo), `public-map-stub`
 - **Asociación**: `association-total`, `association-report-card`, `association-report-table`
 - **Configuración**: `configuration-<key>` (8 claves + `change_note`), `configuration-save`
 - **Zonas**: `zone-<key>` (`content`, `name`, `source_uri`, `source_version`, `association_approval_reference`), `zone-pick`, `zone-create`, `zone-activate`, `zone-activated`, `zone-created`, `zone-draft-status`, `zone-checksum-preview`, `zone-checksum-active`
@@ -34,7 +38,7 @@ El rediseño de `screens/` y `components/` **no puede cambiar nada de lo siguien
 ## 3. Roles con nombre (es) — `getByRole(role, {name})`
 
 - **Login**: button `Volver a cámara` (oculto en carga/sin handler; `disabled` en pendiente)
-- **Mapa**: button `Acercar`, `Cerrar`, `Reintentar` (exacto), `Denunciar` (exacto), `Enviar denuncia`, `Ver reportes de la zona`, `Reporte: Ataque a mascota`, `Reporte: Avistamiento`, `/Reporte:/`, `/gravedad/`, `N reportes, gravedad alta|baja`; radio `Foto falsa`, `Burla u ofensa`, `No es un perro callejero`, `Otro`
+- **Mapa**: button `Acercar` (controles del mapa y del fallback web; **la tarjeta del cluster ya no tiene `Acercar`**: la cámara se acerca sola al tocar el cluster), `Foto del reporte` (abre la foto completa), `Cerrar`, `Reintentar` (exacto), `Denunciar` (exacto), `Enviar denuncia`, `Ver reportes de la zona`, `Reporte: Ataque a mascota`, `Reporte: Avistamiento`, `/Reporte:/`, `/gravedad/`, `N reportes, gravedad alta|baja`; radio `Foto falsa`, `Burla u ofensa`, `No es un perro callejero`, `Otro`
 - **Asociación**: button `Últimos 7 días`, `Personalizado`, `Consultar`, `CSV`, `XLSX` (exactos, `disabled` sin datos), `Mes anterior`, `/Hasta:/`, `<día> de <mes> de 2026` y `<día>…: N reporte(s) aceptado(s)`, `<mes> de 2026: N reportes aceptados`; en: `Last 7 days`, `Custom`, `Search`, `/^From:/`, `/^To:/`
 - **Command Center**: button `Aprobar`, `Ocultar`, `Restaurar`, `Eliminar`, `Confirmar ocultar`, `Confirmar restaurar`, `Cargar más` (todos `exact`)
 - **Configuración**: button `Consultar versión activa`, `Reintentar carga`, `Seguir editando`, `Descartar y continuar`, `/Volver a moderación/`
@@ -66,4 +70,20 @@ El rediseño de `screens/` y `components/` **no puede cambiar nada de lo siguien
 
 ## 6. Fuera de alcance del rediseño (no tocar)
 
-`models/` (incl. Value Objects), `hooks/`, `controllers/`, `dao/`, `db/`, `services/`, `supabase/`, llaves i18n existentes (se puede **añadir** llaves nuevas; cambiar el texto de una llave existente rompe pruebas), `App.js` (navegación `useState`), `tests/` (cualquier cambio requiere aprobación).
+`models/` (incl. Value Objects), `hooks/`, `controllers/`, `dao/`, `db/`, `services/`, `supabase/`, llaves i18n existentes (se puede **añadir** llaves nuevas; cambiar el texto de una llave existente rompe pruebas), `App.js` (navegación `useState`), `tests/` (cualquier cambio requiere aprobación y se declara; ver sección 7).
+
+## 7. Cambios al contrato durante TD-134 (todos declarados al usuario)
+
+Cambios en `tests/` hechos con aprobación del usuario o por diseño aprobado por él:
+
+| Archivo | Cambio | Por qué |
+|---|---|---|
+| `configuration-entry.jsx`, `serve-configuration.mjs` | Registro de las ocho fuentes por `@font-face`, `define: { global: 'globalThis' }`, parámetros de fixture (`?camera&no-permission\|rejected\|blurry\|validating`, `?report&photo=sample`, `?command-center&tools`, `?native-map-pins`, `?ui-kit`, contenedor flex en `?map`) | Paso 0 y capturas de estados que el fixture no podía mostrar |
+| `expo-camera-stub.js`, `use-camera-capture-stub.js` | Estados de permiso y de validación simulables | Probar los avisos de la cámara |
+| `associationDashboard.spec.js` | Al elegir la fecha inicial se abre sola la fecha final | Decisión del usuario sobre el selector de rango |
+| `publicMap.spec.js` | Dos pruebas nuevas de TD-133 (cierre al tocar fuera, sin llaves duplicadas) | Corrección de errores del mapa |
+| `commandCenter.spec.js` | Sin cambios: las métricas siguen siendo `<valor><etiqueta>` | — |
+
+Pruebas nuevas (no sustituyen a las anteriores): `uiKit`, `reportFormPicker`, `cameraNotice`, `duplicatesPagination`, `associationPagination`, `publicMapFocus`, `publicMapPhoto`, `noRemovedStyleApis`.
+
+Cambio de comportamiento aprobado que afecta a una prueba existente: la tarjeta del cluster ya no ofrece "Acercar" (la prueba `publicMapFocus` comprueba que no está y que sí está "Ver reportes de la zona").

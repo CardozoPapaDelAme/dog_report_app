@@ -1,5 +1,7 @@
 # AUDIT.md — Auditoría de rediseño visual (TD-132, pasada 2)
 
+> **Documento histórico:** describe el estado de la app **antes** del rediseño (2026-10-13) y el plan de trabajo. Los hallazgos `F-nn` y las cifras (90 pruebas, 13 objetos `colors`, 68 hex…) son los de entonces. Qué se hizo con cada punto está en la sección final **"Estado al cierre de TD-134"**; el diseño vigente está en [`../design/DESIGN.md`](../design/DESIGN.md) y las reglas aprobadas en [`TASTE.md`](TASTE.md).
+
 Fecha: 2026-10-13. Solo auditoría y plan: **no se cambió código ni se instaló nada**. Insumos: `BASELINE.md`, `INVENTORY.md`, `CONTRACT.md`, `NOTAS_PASADA1.md`, capturas web (`before/web/{es,en}/`), capturas manuales (`before/manual/`), criterio de los skills `mobile-design-review` y `expo-design-system` y `docs/design/DESIGN.md` ("Sierra Guardian").
 
 ## 0. Resumen ejecutivo
@@ -170,3 +172,43 @@ Ya presentes, no instalar: `expo-camera`, `@expo-google-fonts/plus-jakarta-sans`
 
 ---
 **Estado:** auditoría terminada. No se ha iniciado el rediseño. Espero aprobación.
+
+## Estado al cierre de TD-134
+
+Resumen por tema (no se re-verificó cada hallazgo `F-nn` uno por uno; las cifras de arriba son las de antes).
+
+### Decisiones de la sección anterior
+
+| Pregunta | Resultado |
+|---|---|
+| ¿Adoptar Work Sans? | **Sí.** Además se añadió **Fredoka** como voz de marca (títulos); ver [`../design/DESIGN.md`](../design/DESIGN.md) |
+| ¿Cambios mínimos en `tests/ui/configuration-entry.jsx` y `serve-configuration.mjs`? | **Sí**, aprobados y registrados en [`CONTRACT.md`](CONTRACT.md) §7 |
+| ¿Borrar `ReportDraftScreen`? | **No se tocó.** Sigue sin importarse en ningún archivo (código muerto); decisión del equipo |
+| ¿Cambiar `title` de `es.json` ("Command Center")? | **No**: rompe pruebas; se conserva |
+| ¿Modo oscuro? | **No se hizo** |
+
+### Dependencias
+
+| Paquete | Estado |
+|---|---|
+| `@expo-google-fonts/work-sans`, `@expo-google-fonts/fredoka` | Instaladas |
+| `lucide-react-native`, `react-native-svg` | Instaladas (íconos, degradados de cámara con `Scrim`, silueta del pin) |
+| `expo-haptics`, `expo-linear-gradient`, `expo-blur`, `moti`, `@gorhom/bottom-sheet` | **No se instalaron:** los degradados usan `react-native-svg`, no se adoptó desenfoque, no hay animaciones que lo requieran y las hojas son propias (`Sheet`, `SheetHost`) |
+
+### Qué cambió, por tema
+
+- **Sistema (F-01, F-18, F-19):** existe `theme/` con tokens únicos (un solo verde primario), `components/ui/` con los componentes base y cifras tabulares donde hay datos. Un solo catálogo de íconos (`Icon`).
+- **Contraste del mapa:** clusters, pines y etiquetas usan `colors.severity` (rojo `#b71c1c`, naranja `#a64b00`, verde `#2e7d32`), con texto blanco ≥ 4.5:1. Se descartaron los `#F57C00`/`#43A047` de la primera versión de `DESIGN.md`.
+- **Login:** el botón "Volver a cámara" ya no se va con el teclado (enlace fijo fuera del scroll).
+- **Alertas falsas:** las métricas de Command Center solo se tiñen si valen más de cero.
+- **Cámara, Mapa, Formulario, Command Center, Configuración, Zonas, Duplicados, Asociación, Login:** rediseñados; las reglas y lo rechazado están en [`TASTE.md`](TASTE.md).
+- **Lecciones técnicas que la auditoría no podía ver** (solo se manifiestan en el teléfono): `StyleSheet.absoluteFillObject` no existe en RN 0.86 y dejaba los overlays en el flujo normal; iOS no puede apilar modales; una `View` transparente o con `aria-hidden` no recibe el toque exterior. Ver reglas 34 a 37 y 46 de `TASTE.md`.
+
+### Sigue abierto
+
+- **Texto grande (accesibilidad) no verificado**: la captura 14 de la pasada 1 era idéntica a la 13.
+- **Android y capturas manuales en español**: fuera del alcance de TD-134.
+- **Mapa nativo real** (clusters, enfoque, pin): solo se valida en dispositivo.
+- **Modo oscuro**: no existe.
+- **`ReportDraftScreen`**: código muerto.
+

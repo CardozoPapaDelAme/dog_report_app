@@ -1,5 +1,7 @@
 # Notas de trabajo de la pasada 1 (insumo para AUDIT.md; no es la auditoría)
 
+> **Histórico:** mediciones del código **antes** del rediseño. Casi todo lo que describe como carencia (theme compartido, Work Sans, íconos, componentes base, pin con perro, sheets) ya existe; ver [`TASTE.md`](TASTE.md) y [`../design/DESIGN.md`](../design/DESIGN.md).
+
 Datos medidos con grep sobre `screens/`, `components/`, `App.js` (2026-10-13). Criterio: skill `mobile-design-review` (checklist de greps) y `expo-design-system` (deriva de tokens); sin apoyo de `design-taste-frontend`/`frontend-design`, por indicación.
 
 ## Sistema de diseño
