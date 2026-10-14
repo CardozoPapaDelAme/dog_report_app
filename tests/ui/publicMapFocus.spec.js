@@ -7,7 +7,7 @@ const clusters = [
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-test('tapping a cluster focuses it on the next clustering band and shows a compact card', async ({ page }) => {
+test('tapping a cluster focuses it on the next clustering band and shows a compact card without a zoom button', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.route('**/public/clusters**', (route) => route.fulfill({ json: { data: clusters } }));
@@ -21,8 +21,8 @@ test('tapping a cluster focuses it on the next clustering band and shows a compa
   await expect(card.getByText('7 reportes en esta zona')).toBeVisible();
   const box = await card.boundingBox();
   expect(box.height).toBeLessThan(300);
-  await card.getByRole('button', { name: 'Acercar', exact: true }).click();
-  await expect(page.getByText('Zoom 17')).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Acercar', exact: true })).toHaveCount(0);
+  await expect(card.getByRole('button', { name: 'Ver reportes de la zona' })).toBeVisible();
   await card.getByRole('button', { name: 'Cerrar', exact: true }).click();
   await expect(page.getByTestId('cluster-modal')).toHaveCount(0);
   expect(errors).toEqual([]);

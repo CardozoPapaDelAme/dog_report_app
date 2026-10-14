@@ -112,9 +112,11 @@ export default function PublicMapView({
               style={styles.pinWrap}
             >
               <View style={[styles.pinHead, { backgroundColor: colors.severity[severityLevel(report.incident_type)] }]}>
-                <Icon name="dog" size={18} color={colors.onPrimary} strokeWidth={2.4} />
+                <Icon name="dog" size={26} color={colors.onPrimary} strokeWidth={2.2} />
+                {report.has_flags ? <View style={styles.pinFlag} /> : null}
               </View>
               <View style={[styles.pinTip, { borderTopColor: colors.severity[severityLevel(report.incident_type)] }]} />
+              <View style={styles.pinShadow} />
             </View>
           </ViewAnnotation>
         );
@@ -129,6 +131,8 @@ const styles = StyleSheet.create({
   cluster: { alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 5 },
   clusterText: { color: '#ffffff', fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 15 },
   pinWrap: { alignItems: 'center' },
-  pinHead: { width: 36, height: 36, borderRadius: 18, borderWidth: 3, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 5 },
-  pinTip: { width: 0, height: 0, marginTop: -3, borderLeftWidth: 7, borderRightWidth: 7, borderTopWidth: 12, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
+  pinHead: { width: 46, height: 46, borderRadius: 23, borderWidth: 3.5, borderColor: '#ffffff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5, shadowOffset: { width: 0, height: 3 }, elevation: 6 },
+  pinFlag: { position: 'absolute', top: -5, right: -5, width: 16, height: 16, borderRadius: 8, backgroundColor: '#ffa000', borderWidth: 2.5, borderColor: '#ffffff' },
+  pinTip: { width: 0, height: 0, marginTop: -4, borderLeftWidth: 8, borderRightWidth: 8, borderTopWidth: 13, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
+  pinShadow: { width: 16, height: 5, marginTop: 1, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.22)' },
 });

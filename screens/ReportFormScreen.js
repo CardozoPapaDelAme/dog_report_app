@@ -37,7 +37,7 @@ import {
   DOG_SIZES,
   INJURED_DOG_SITUATIONS,
 } from '../models/reportPayload.js';
-import { AppButton, Banner, Icon, Sheet } from '../components/ui/index.js';
+import { AppButton, Banner, Icon, PhotoViewer, Sheet } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 /** Translates a field validation error (`{key, values}`) or returns a string error as is. */
@@ -198,16 +198,6 @@ function CoatSwatches({ label, field, value, options, disabled, error, t, onChan
       </View>
       {message ? <Text style={styles.fieldError}>{message}</Text> : null}
     </View>
-  );
-}
-
-/** Full-screen view of the report photo, closed by tapping anywhere. */
-function PhotoViewer({ uri, label, closeLabel, onClose }) {
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel={closeLabel} onPress={onClose} style={styles.viewer}>
-      <Image accessibilityRole="image" accessibilityLabel={label} source={{ uri }} style={styles.viewerImage} resizeMode="contain" />
-      <View style={styles.viewerClose}><Icon name="close" size={22} color={colors.onPrimary} /></View>
-    </Pressable>
   );
 }
 
@@ -778,9 +768,6 @@ const styles = StyleSheet.create({
   thumbImage: { width: '100%', height: '100%' },
   thumbEmpty: { alignItems: 'center', justifyContent: 'center', gap: spacing.xs, borderWidth: 1, borderColor: colors.outlineSoft, borderStyle: 'dashed', backgroundColor: colors.surface },
   thumbEmptyText: { fontFamily: fontFamily.label, fontSize: 13, color: colors.primary },
-  viewer: { ...StyleSheet.absoluteFill, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
-  viewerImage: { width: '100%', height: '100%' },
-  viewerClose: { position: 'absolute', top: 56, left: layout.margin, width: layout.minTouch, height: layout.minTouch, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   labelRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.md },
   chosenName: { fontFamily: fontFamily.label, fontSize: 14, color: colors.primary },
   segmented: { flexDirection: 'row', borderRadius: radius.md, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, overflow: 'hidden' },

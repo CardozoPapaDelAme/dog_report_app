@@ -328,8 +328,22 @@ function NativeClusterFixture() {
     initialCenter={{ longitude: -107.6355, latitude: 27.7522 }} initialZoom={13} />;
 }
 
+// `?native-map-pins` renders the device pin marker for each severity (and a flagged one) for visual review.
+function NativePinFixture() {
+  const incidents = ['ataque_humano', 'ataque_ganado', 'ataque_mascota', 'perro_lastimado', 'otro', 'avistamiento_simple'];
+  const reports = incidents.map((incident, index) => ({
+    report_id: `pin-${incident}`,
+    approximate_location: { longitude: -107.6355 + index * 0.001, latitude: 27.7522 },
+    incident_type: incident, sighting_type: 'solitario', details: {}, dog: { predominant_color: null, size: null, has_collar: null },
+    has_sanitized_photo: false, occurred_at: '2026-09-27T14:30:00.000Z', has_flags: index % 3 === 0,
+  }));
+  return <NativePublicMapView mode="pins" clusters={[]} reports={reports}
+    initialCenter={{ longitude: -107.6355, latitude: 27.7522 }} initialZoom={17} />;
+}
+
 function Fixture() {
   const params = new URLSearchParams(location.search);
+  if (params.has('native-map-pins')) return <div style={{height:'100dvh',overflow:'auto'}}><NativePinFixture /></div>;
   if (params.has('ui-kit')) return <UiKitFixture />;
   if (params.has('native-map-clusters')) return <div style={{height:'100dvh',overflow:'auto'}}><NativeClusterFixture /></div>;
   if (params.has('camera')) return <div style={{height:'100dvh',display:'flex'}}>

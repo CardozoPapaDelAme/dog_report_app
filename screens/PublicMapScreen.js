@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton, Banner, Icon, IconButton, Sheet, SheetHost } from '../components/ui/index.js';
+import { AppButton, Banner, Icon, IconButton, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 import RecentReportsList from '../components/RecentReportsList';
@@ -83,8 +83,8 @@ function photoUrl(reportId) {
   try { return `${getApiBaseUrl()}/reports/${encodeURIComponent(reportId)}/photo`; } catch { return null; }
 }
 
-/** Compact card for a selected cluster: no dimmed backdrop, so the focused cluster stays visible above it. */
-function ClusterModal({ cluster, onClose, onZoomIn, onViewReports, t }) {
+/** Compact card for a selected cluster: no dimmed backdrop, so the focused cluster stays visible above it. The camera already zoomed in on tap. */
+function ClusterModal({ cluster, onClose, onViewReports, t }) {
   const insets = useSafeAreaInsets();
   const level = severityLevel(cluster.highest_severity);
   return (
@@ -105,23 +105,23 @@ function ClusterModal({ cluster, onClose, onZoomIn, onViewReports, t }) {
             </View>
           ))}
         </ScrollView>
-        <View style={styles.actions}>
-          <AppButton title={t('map.cluster.viewReports')} onPress={onViewReports} style={styles.actionMain} />
-          <AppButton title={t('map.zoomIn')} variant="secondary" onPress={onZoomIn} style={styles.actionSide} />
-        </View>
+        <AppButton title={t('map.cluster.viewReports')} onPress={onViewReports} />
       </View>
     </View>
   );
 }
 
-/** Floating top control: back arrow and screen title in one small capsule, so the map keeps the whole screen. */
-function MapTopBar({ onBack, t, style }) {
+/**
+ * Floating back control: one round white button with a soft shadow, like the controls of any map app.
+ * The screen title stays available to screen readers; `showTitle` also draws it (list view without a map).
+ */
+function MapTopBar({ onBack, t, style, showTitle = false }) {
   return (
     <View style={[styles.topBar, style]}>
-      <Pressable accessibilityRole="button" accessibilityLabel={t('map.back')} onPress={onBack} hitSlop={6} style={({ pressed }) => [styles.backCircle, pressed && styles.pressed]}>
-        <Icon name="back" size={22} color={colors.onPrimary} />
+      <Pressable accessibilityRole="button" accessibilityLabel={t('map.back')} onPress={onBack} hitSlop={8} style={({ pressed }) => [styles.backCircle, pressed && styles.pressed]}>
+        <Icon name="back" size={24} color={colors.primary} />
       </Pressable>
-      <Text accessibilityRole="header" numberOfLines={1} style={styles.topTitle}>{t('map.title')}</Text>
+      <Text accessibilityRole="header" numberOfLines={1} style={showTitle ? styles.topTitleShown : styles.topTitleHidden}>{t('map.title')}</Text>
     </View>
   );
 }
@@ -136,6 +136,7 @@ function detailValue(t, key, value) {
 /** Bottom sheet with the details, sanitized photo (when available) and flag action of one public report. */
 function PinSheet({ report, onClose, onFlag, t }) {
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
   const uri = report.has_sanitized_photo ? photoUrl(report.report_id) : null;
   const { dog } = report;
   const collar = dog.has_collar === null ? null : t(`reportForm.collar.${dog.has_collar ? 'si' : 'no'}`);
@@ -149,15 +150,19 @@ function PinSheet({ report, onClose, onFlag, t }) {
   ].filter(Boolean);
   const level = severityLevel(report.incident_type);
   return (
+    <>
     <Sheet bottomInset testID="pin-sheet" onClose={onClose} maxHeight="88%">
       <ScrollView contentContainerStyle={styles.sheetContent}>
         {uri && !photoFailed ? (
-          <Image
-            accessibilityLabel={t('map.pin.photo')}
-            source={{ uri }}
-            style={styles.photo}
-            onError={() => setPhotoFailed(true)}
-          />
+          <Pressable accessibilityRole="button" accessibilityLabel={t('map.pin.photo')} onPress={() => setViewingPhoto(true)} style={({ pressed }) => [styles.photoWrap, pressed && styles.pressed]}>
+            <Image
+              accessible={false}
+              source={{ uri }}
+              style={styles.photo}
+              onError={() => setPhotoFailed(true)}
+            />
+            <View pointerEvents="none" style={styles.expandBadge}><Icon name="expand" size={18} color={colors.onPrimary} /></View>
+          </Pressable>
         ) : null}
         <View style={styles.pinHead}>
           <View style={[styles.pinStripe, { backgroundColor: colors.severity[level] }]} />
@@ -184,6 +189,8 @@ function PinSheet({ report, onClose, onFlag, t }) {
         </Pressable>
       </ScrollView>
     </Sheet>
+    {viewingPhoto && uri ? <PhotoViewer uri={uri} label={t('map.pin.photo')} closeLabel={t('map.close')} onClose={() => setViewingPhoto(false)} /> : null}
+    </>
   );
 }
 
@@ -206,7 +213,7 @@ function ExpoGoFallbackScreen({ onBack }) {
   const [flagReport, setFlagReport] = useState(null);
   return (
     <SafeAreaView style={styles.fallbackRoot}>
-      <MapTopBar onBack={onBack} t={t} style={styles.topBarFlow} />
+      <MapTopBar onBack={onBack} t={t} showTitle style={styles.topBarFlow} />
       <View style={styles.mapArea}>
         <ScrollView contentContainerStyle={styles.fallbackContent}>
           <View accessibilityRole="alert" testID="expo-go-notice">
@@ -258,11 +265,6 @@ function NativeMapScreen({ onBack }) {
 
   // Opening a report closes the cluster card so only one panel is on screen.
   const selectReport = useCallback((report) => { setSelectedCluster(null); setSelectedReport(report); }, []);
-
-  const zoomIntoCluster = useCallback(() => {
-    if (!selectedCluster) return;
-    focusCluster(selectedCluster.cluster, map.region?.zoom ?? selectedCluster.zoom);
-  }, [focusCluster, map.region, selectedCluster]);
 
   const visibleReports = map.mode === 'pins' && map.region
     ? map.reports.filter((report) => isInViewport(report.approximate_location, map.region.viewport))
@@ -319,7 +321,6 @@ function NativeMapScreen({ onBack }) {
         <ClusterModal
           cluster={selectedCluster.cluster}
           onClose={() => setSelectedCluster(null)}
-          onZoomIn={zoomIntoCluster}
           onViewReports={() => { setZoneCluster({ cluster: selectedCluster.cluster, zoom: selectedCluster.zoom }); setSelectedCluster(null); }}
           t={t}
         />
@@ -346,19 +347,18 @@ function NativeMapScreen({ onBack }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   fallbackRoot: { flex: 1, backgroundColor: colors.background },
-  topBar: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 48, borderRadius: radius.pill, backgroundColor: 'rgba(2,26,6,0.86)', paddingLeft: 4, paddingRight: spacing.lg },
+  topBar: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   topBarFloat: { position: 'absolute', left: spacing.lg },
   topBarFlow: { marginHorizontal: spacing.lg, marginVertical: spacing.sm },
-  backCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' },
-  topTitle: { fontFamily: fontFamily.display, fontSize: 18, lineHeight: 24, color: colors.onPrimary },
+  backCircle: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 6 },
+  topTitleShown: { fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.primary },
+  topTitleHidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   pressed: { opacity: 0.7 },
   cardSlot: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   clusterCard: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.sm, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 12 },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   cardTitle: { flex: 1, fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.ink },
   countStrip: { gap: spacing.sm, paddingVertical: spacing.xs },
-  actionMain: { flex: 2.5 },
-  actionSide: { flex: 1 },
   mapArea: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loading: { position: 'absolute', alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
@@ -395,5 +395,7 @@ const styles = StyleSheet.create({
   flagLinkText: { fontFamily: fontFamily.label, fontSize: 15, color: colors.danger },
   flagNotice: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radius.md, backgroundColor: colors.warningSoft, padding: spacing.md },
   flagText: { fontFamily: fontFamily.label, fontSize: 14, color: colors.warning, flexShrink: 1 },
-  photo: { width: '100%', height: 200, borderRadius: radius.lg, backgroundColor: colors.surfaceHigh },
+  photoWrap: { borderRadius: radius.lg, overflow: 'hidden' },
+  photo: { width: '100%', height: 220, backgroundColor: colors.surfaceHigh },
+  expandBadge: { position: 'absolute', right: spacing.md, bottom: spacing.md, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
 });

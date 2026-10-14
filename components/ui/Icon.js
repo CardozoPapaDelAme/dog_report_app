@@ -2,7 +2,7 @@
  * @module components/ui/Icon
  * Single place that maps semantic icon names to lucide glyphs, so screens never import the icon library.
  */
-import { AlertTriangle, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Copy, Flag, Gauge, Info, LogOut, MapPin, PawPrint, Pencil, RefreshCw, Settings, ShieldCheck, X } from 'lucide-react-native';
+import { AlertTriangle, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Copy, Flag, Gauge, Info, LogOut, Maximize2, MapPin, PawPrint, Pencil, RefreshCw, Settings, ShieldCheck, X } from 'lucide-react-native';
 import { colors } from '../../theme/index.js';
 
 const glyphs = {
@@ -25,6 +25,7 @@ const glyphs = {
   gauge: Gauge,
   logout: LogOut,
   refresh: RefreshCw,
+  expand: Maximize2,
   pencil: Pencil,
 };
 
