@@ -140,18 +140,19 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   const controls = <>
       <View style={styles.filter}>
         <Text accessibilityRole="header" style={styles.filterTitle}>{t('associationDashboard.filterTitle')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+        <View style={styles.tabs}>
           {['last7Days', 'last30Days', 'thisMonth'].map((preset) => <Pressable key={preset} accessibilityRole="button"
             accessibilityState={{ selected: activePreset === preset }} disabled={loadingPhase} onPress={() => applyPreset(preset)}
             style={[styles.tab, activePreset === preset && styles.tabActive, loadingPhase && styles.disabled]}>
             <Text style={[styles.tabText, activePreset === preset && styles.tabTextActive]}>{t(`associationDashboard.presets.${preset}`)}</Text>
           </Pressable>)}
-          <Pressable accessibilityRole="button" accessibilityState={{ selected: activePreset === 'custom' }} disabled={loadingPhase}
-            onPress={() => { setActivePreset('custom'); setCalendarField('from'); }}
-            style={[styles.tab, activePreset === 'custom' && styles.tabActive, loadingPhase && styles.disabled]}>
-            <Text style={[styles.tabText, activePreset === 'custom' && styles.tabTextActive]}>{t('associationDashboard.presets.custom')}</Text>
-          </Pressable>
-        </ScrollView>
+        </View>
+        <Pressable accessibilityRole="button" accessibilityState={{ selected: activePreset === 'custom' }} disabled={loadingPhase}
+          onPress={() => { setActivePreset('custom'); setCalendarField('from'); }}
+          style={[styles.customButton, activePreset === 'custom' && styles.customButtonActive, loadingPhase && styles.disabled]}>
+          <Icon name="calendar" size={20} color={colors.primary} />
+          <Text style={styles.customButtonText}>{t('associationDashboard.presets.custom')}</Text>
+        </Pressable>
         {activePreset === 'custom' ? <View style={styles.customRange}>
           <View style={styles.dates}>
             <Pressable accessibilityRole="button" accessibilityLabel={`${t('associationDashboard.from')}: ${displayDay(fromDay)}`}
@@ -239,10 +240,13 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
   filter: { gap: spacing.md },
   filterTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
-  tabs: { gap: spacing.xs, paddingRight: spacing.lg },
-  tab: { minHeight: layout.minTouch, justifyContent: 'center', paddingHorizontal: spacing.md, borderBottomWidth: 3, borderBottomColor: 'transparent' },
+  tabs: { flexDirection: 'row', gap: spacing.sm },
+  tab: { flex: 1, minHeight: layout.minTouch + 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xs, borderBottomWidth: 3, borderBottomColor: colors.border },
   tabActive: { borderBottomColor: colors.primary },
-  tabText: { fontFamily: fontFamily.label, fontSize: 15, color: colors.inkMuted }, tabTextActive: { color: colors.primary },
+  tabText: { fontFamily: fontFamily.label, fontSize: 14, lineHeight: 18, textAlign: 'center', color: colors.inkMuted }, tabTextActive: { color: colors.primary },
+  customButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minHeight: layout.minTouch, borderRadius: 12, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface },
+  customButtonActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  customButtonText: { fontFamily: fontFamily.label, fontSize: 15, color: colors.primary },
   customRange: { gap: spacing.md },
   dates: { flexDirection: 'row', gap: spacing.md },
   dateField: { flex: 1, minHeight: 56, borderWidth: 1, borderColor: colors.outline, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.surface, justifyContent: 'center' },
