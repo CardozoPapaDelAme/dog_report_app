@@ -7,29 +7,11 @@ import { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Camera, Map, ViewAnnotation } from '@maplibre/maplibre-react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 import { INCIDENT_TYPES, clusterRadiusPx, severityLevel } from '../models/publicMap.js';
 import { colors, fontFamily } from '../theme/index.js';
-import { Icon } from './ui/index.js';
+import { PinGlyph } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
-
-/** Teardrop outline of the pin (one closed shape, so the white outline runs around the whole silhouette). */
-const PIN_PATH = 'M24 3 C12.5 3 4 11.6 4 22.6 C4 37 24 57 24 57 C24 57 44 37 44 22.6 C44 11.6 35.5 3 24 3 Z';
-
-/** A single-silhouette map pin: colored drop with a white outline and offset shadow, paw inside, amber badge when flagged. */
-function PinMarker({ color, flagged }) {
-  return (
-    <View style={styles.pin}>
-      <Svg width={48} height={62} viewBox="0 0 48 62" accessible={false} aria-hidden>
-        <Path d={PIN_PATH} fill="rgba(0,0,0,0.28)" transform="translate(0 3)" />
-        <Path d={PIN_PATH} fill={color} stroke="#ffffff" strokeWidth={3} strokeLinejoin="round" />
-        {flagged ? <Circle cx={40} cy={9} r={7} fill="#ffa000" stroke="#ffffff" strokeWidth={2.5} /> : null}
-      </Svg>
-      <View pointerEvents="none" style={styles.pinPaw}><Icon name="dog" size={24} color={colors.onPrimary} strokeWidth={2.2} /></View>
-    </View>
-  );
-}
 
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
 // Renders exactly what the server returned; no client-side clustering.
@@ -129,7 +111,7 @@ export default function PublicMapView({
               accessibilityLabel={t('map.pinItem', { type: t(`reportForm.incidents.${INCIDENT_TYPES.includes(report.incident_type) ? report.incident_type : 'otro'}`) })}
               style={styles.pinWrap}
             >
-              <PinMarker color={colors.severity[severityLevel(report.incident_type)]} flagged={Boolean(report.has_flags)} />
+              <PinGlyph color={colors.severity[severityLevel(report.incident_type)]} flagged={Boolean(report.has_flags)} />
             </View>
           </ViewAnnotation>
         );
@@ -144,6 +126,6 @@ const styles = StyleSheet.create({
   cluster: { alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 5 },
   clusterText: { color: '#ffffff', fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 15 },
   pinWrap: { alignItems: 'center' },
-  pin: { width: 48, height: 62 },
-  pinPaw: { position: 'absolute', left: 12, top: 11 },
+  
+  
 });

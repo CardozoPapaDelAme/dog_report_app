@@ -12,3 +12,4 @@ export { default as Pager } from './Pager.js';
 export { default as Scrim } from './Scrim.js';
 export { default as SheetHost } from './SheetHost.js';
 export { default as PhotoViewer } from './PhotoViewer.js';
+export { default as PinGlyph } from './PinGlyph.js';
