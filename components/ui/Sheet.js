@@ -30,11 +30,12 @@ function SheetBody({ children, onClose, dismissable, dim, keyboardAware, modal, 
   const rootProps = keyboardAware ? { behavior: Platform.OS === 'ios' ? 'padding' : undefined } : {};
   return (
     <Root pointerEvents="box-none" style={modal ? styles.overlayModal : styles.overlay} {...rootProps}>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dim ? colors.scrim : 'transparent', opacity: progress }]} />
-      {/* Dismiss area: a plain responder view (not a Pressable), so a tap on it always reaches `onClose`; it is not an accessible element. */}
-      <View
+      {/* The dimmed backdrop is also the dismiss area: one visible view that receives the tap. `collapsable={false}`
+          keeps native from flattening it away, which would leave nothing to touch. */}
+      <Animated.View
         accessible={false}
-        style={styles.dismiss}
+        collapsable={false}
+        style={[StyleSheet.absoluteFill, { backgroundColor: dim ? colors.scrim : 'rgba(0,0,0,0.01)', opacity: progress }]}
         onStartShouldSetResponder={() => dismissable}
         onResponderRelease={() => { if (dismissable) onClose?.(); }}
       />
@@ -65,6 +66,5 @@ export default function Sheet({ children, onClose, dismissable = true, dim = tru
 const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end' },
   overlayModal: { flex: 1, justifyContent: 'flex-end' },
-  dismiss: { ...StyleSheet.absoluteFillObject },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, gap: spacing.md, ...shadows.overlay },
 });
