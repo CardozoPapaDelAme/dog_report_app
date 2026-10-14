@@ -41,6 +41,32 @@ Capturas web en español (`before/web/es/login_default.png` y `after/web/es_logi
 11. **Sin eyebrows en mayúsculas ni insignias decorativas.** Se eliminó "PANEL PRIVADO" y la "C" del logo.
 12. **Se mantiene el contrato:** testIDs, roles con nombre, textos y llaves i18n, 8 inputs de Configuración y sin desbordamiento horizontal (ver `CONTRACT.md`).
 
+## Configuración (pantalla de datos): lo que se aprobó y lo que se rechazó
+
+Primer intento (rechazado: "las huellas siguen amontonadas, el layout no me gusta, los botones se ven feos, se sigue viendo ai-slop"): encabezado verde con rastro de seis huellas, cada sección con un círculo con ícono, campos apilados todos iguales, barra inferior con dos botones lado a lado, uno translúcido.
+
+Segundo intento (aprobado: "perfecto"), commit `48c404c`:
+- **Un solo motivo grande, no un patrón repetido:** una huella enorme recortada en la esquina del encabezado, muy tenue. El rastro de huellas queda solo para pantallas con espacio vacío (Login).
+- **Listas agrupadas en vez de campos apilados:** cada ajuste es una fila con nombre, rango y ayuda a la izquierda y el **número grande a la derecha** (Work Sans 24, verde claro). Menos scroll, se lee como tablero.
+- **Títulos de sección grandes en Fredoka, sin círculos con ícono ni numeración "01, 02".**
+- **Dato principal destacado:** la versión activa en amarillo, grande, en el encabezado.
+- **Barra inferior con una sola acción amarilla** en una línea. La acción secundaria (recargar) pasa a **botón de ícono con borde y nombre accesible**, no a un segundo botón de texto.
+- **Fondo claro para el cuerpo y verde de marca para encabezado y barra:** confirma la regla 2 para pantallas de datos.
+- **Hojas inferiores en lugar de modales centrados** (descartar cambios).
+
+### Reglas añadidas (13 a 18)
+
+13. **Un solo elemento memorable por pantalla.** El resto sobrio. Si hay un motivo de marca (huella), que sea uno grande o un rastro con aire, nunca varios pequeños apretados.
+14. **Evitar patrones repetidos de plantilla:** círculo con ícono en cada sección, tarjetas idénticas apiladas, numeración sin secuencia real.
+15. **Para listas de ajustes: filas con el valor grande a la derecha** y separadores finos dentro de un contenedor agrupado.
+16. **Una sola acción amarilla por barra o pantalla;** las demás, de ícono con borde o enlace. Sin botones translúcidos sobre verde.
+17. **Los botones de acción principal caben en una línea** (verificar con el texto más largo en español).
+18. **Revisar cada estado en captura** (cargando, sin acceso, error, campo inválido, escritorio) antes de dar la pantalla por buena.
+
+## Cómo se trabaja con las skills
+
+`frontend-design` ayudó más que el resto: obliga a planear con una paleta, roles de tipografía y un wireframe, a revisar el plan contra los defaults de plantilla y a gastar el riesgo estético en un solo lugar. `design-taste-frontend` sirve como lista de verificación (contraste, estados, etiquetas arriba del campo). `mobile-redesign-screen` da el método (auditar, proponer, arreglar). Para cada pantalla nueva: invocar `frontend-design` primero para el plan.
+
 ## Piezas reutilizables ya hechas
 
-`theme/` (colores, tipografía, espaciado), `components/ui/` (AppButton con variante `signal`, AppTextField con `tone="dark"`, Banner, Chip, Sheet, StateView `tone="dark"`, PawTrail, Icon), fuentes en `theme/fonts.js`.
+`theme/` (colores, tipografía, espaciado), `components/ui/` (AppButton con variante `signal`, AppTextField con `tone="dark"`, Banner, Chip, Sheet, StateView `tone="dark"`, PawTrail, Icon con refresh/copy/shield/gauge/logout), fuentes en `theme/fonts.js`.
