@@ -730,7 +730,7 @@ export default function ReportFormScreen({
       {viewingPhoto && showPhoto ? <PhotoViewer uri={photoUri} label={t('reportForm.photoPreview')} closeLabel={t('reportForm.close')} onClose={() => setViewingPhoto(false)} /> : null}
 
       {picker ? (
-        <Sheet onClose={() => setPicker(null)} maxHeight="80%" style={styles.pickerSheet}>
+        <Sheet modal onClose={() => setPicker(null)} maxHeight="80%" style={styles.pickerSheet}>
           <Text accessibilityRole="header" style={styles.selectSheetTitle}>{picker.label}</Text>
           {picker.options.map((option) => (
             <Pressable
@@ -749,7 +749,7 @@ export default function ReportFormScreen({
       ) : null}
 
       {showErrorDialog ? (
-        <Sheet testID="report-error" onClose={onBackToCamera} maxHeight="70%" style={styles.errorSheet}>
+        <Sheet modal testID="report-error" onClose={onBackToCamera} maxHeight="70%" style={styles.errorSheet}>
           <View accessibilityViewIsModal accessibilityRole="alert" style={styles.errorBody}>
             <Text style={styles.resultTitleError}>{t('reportForm.errorTitle')}</Text>
             <Text style={styles.resultBodyError}>{t('reportForm.errorCode', { code: reportErrorCode(statusError) })}</Text>

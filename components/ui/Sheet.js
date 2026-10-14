@@ -1,16 +1,19 @@
 /**
  * @module components/ui/Sheet
- * Bottom sheet over a dismissable, dimmed backdrop, drawn inside the screen (not in a system modal, so there
- * is no sliding black box). The backdrop fades in and the sheet rises; both are skipped when the user asks for
- * reduced motion. The backdrop is hidden from accessibility so it never adds a second "Close" button; the
- * sheet's own close control remains the accessible one. `keyboardAware` wraps the sheet in
- * KeyboardAvoidingView (iOS `padding`, matching the rest of the app).
+ * Bottom sheet over a dismissable, dimmed backdrop. The backdrop fades in and the sheet rises (both skipped
+ * when the user asks for reduced motion). The backdrop is hidden from screen readers so it never adds a second
+ * "Close" button; the sheet's own controls and the system back gesture close it. `keyboardAware` wraps the
+ * sheet in KeyboardAvoidingView (iOS `padding`, matching the rest of the app).
+ *
+ * By default the sheet is drawn inside the current screen. `modal` draws it in the system window instead,
+ * which always covers the whole screen whatever the size of the parent layout.
  */
-import { useEffect, useRef } from 'react';
-import { AccessibilityInfo, Animated, Easing, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { colors, motion, radius, shadows, spacing } from '../../theme/index.js';
 
-export default function Sheet({ children, onClose, dismissable = true, dim = true, keyboardAware = false, maxHeight = '90%', style, testID }) {
+/** The sheet itself; its animation starts when it mounts, so it must mount together with its content. */
+function SheetBody({ children, onClose, dismissable, dim, keyboardAware, modal, maxHeight, style, testID }) {
   const progress = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     let cancelled = false;
@@ -20,15 +23,16 @@ export default function Sheet({ children, onClose, dismissable = true, dim = tru
       else Animated.timing(progress, { toValue: 1, duration: motion.base, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     };
     AccessibilityInfo.isReduceMotionEnabled().then(run, () => run(false));
-    return () => { cancelled = true; };
+    return () => { cancelled = true; progress.stopAnimation(); };
   }, [progress]);
 
   const Root = keyboardAware ? KeyboardAvoidingView : View;
   const rootProps = keyboardAware ? { behavior: Platform.OS === 'ios' ? 'padding' : undefined } : {};
   return (
-    <Root pointerEvents="box-none" style={styles.overlay} {...rootProps}>
+    <Root pointerEvents="box-none" style={modal ? styles.overlayModal : styles.overlay} {...rootProps}>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dim ? colors.scrim : 'transparent', opacity: progress }]} />
-      <Pressable accessible={false} aria-hidden importantForAccessibility="no" onPress={dismissable ? onClose : undefined} style={StyleSheet.absoluteFill} />
+      {/* Dismiss area: touchable but invisible to screen readers. */}
+      <Pressable importantForAccessibility="no" accessibilityElementsHidden onPress={dismissable ? onClose : undefined} style={styles.dismiss} />
       <Animated.View
         testID={testID}
         style={[styles.sheet, { maxHeight }, { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [260, 0] }) }] }, style]}
@@ -39,7 +43,23 @@ export default function Sheet({ children, onClose, dismissable = true, dim = tru
   );
 }
 
+export default function Sheet({ children, onClose, dismissable = true, dim = true, keyboardAware = false, modal = false, maxHeight = '90%', style, testID }) {
+  // The system modal is switched on after the first render (react-native-web drops a modal that mounts already visible).
+  const [shown, setShown] = useState(!modal);
+  useEffect(() => { if (modal) setShown(true); }, [modal]);
+  const body = (
+    <SheetBody onClose={onClose} dismissable={dismissable} dim={dim} keyboardAware={keyboardAware} modal={modal} maxHeight={maxHeight} style={style} testID={testID}>
+      {children}
+    </SheetBody>
+  );
+  return modal
+    ? <Modal transparent visible={shown} animationType="none" statusBarTranslucent onRequestClose={dismissable ? onClose : undefined}>{shown ? body : null}</Modal>
+    : body;
+}
+
 const styles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end' },
+  overlayModal: { flex: 1, justifyContent: 'flex-end' },
+  dismiss: { ...StyleSheet.absoluteFillObject },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, gap: spacing.md, ...shadows.overlay },
 });
