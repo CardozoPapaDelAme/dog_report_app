@@ -35,9 +35,7 @@ export const colors = {
   warningSoft: '#fff0c2',
   info: '#0b4f8a',
   infoSoft: '#e3f2fd',
-  /** Map clusters/pins by severity. White text on every one of these is >= 4.5:1. */
-  cluster: { high: '#b71c1c', med: '#a64b00', low: '#2e7d32' },
-  /** Fill by `severityLevel()` ('high' | 'medium' | 'low') for map markers and tags; white text passes 4.5:1 on all three. */
+  /** Fill by `severityLevel()` ('high' | 'medium' | 'low') for map markers (clusters and pins), queue pins and tags; white text passes 4.5:1 on all three. */
   severity: { high: '#b71c1c', medium: '#a64b00', low: '#2e7d32' },
   scrim: 'rgba(17, 25, 15, 0.55)',
   glass: 'rgba(18, 18, 18, 0.56)',

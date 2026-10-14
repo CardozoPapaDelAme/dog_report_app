@@ -785,15 +785,15 @@ const styles = StyleSheet.create({
   subtitle: { ...type.body, color: colors.inkMuted },
   state: { paddingVertical: spacing.xxl, alignItems: 'center' },
   section: { gap: spacing.xl },
-  sectionTitle: { fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.primary },
+  
   fieldGroup: { gap: spacing.sm },
   dropdownGroup: {},
   label: { fontFamily: fontFamily.label, fontSize: 14, lineHeight: 20, color: colors.inkMuted },
   select: { minHeight: 52, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.outline, backgroundColor: colors.surface, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   selectText: { ...type.body, color: colors.ink, flexShrink: 1 },
-  selectBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
-  selectDismissArea: { ...StyleSheet.absoluteFill },
-  selectSheet: { width: '100%', maxWidth: 520, alignSelf: 'center', borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface, paddingTop: spacing.xl, paddingBottom: spacing.xxl, overflow: 'hidden' },
+  
+  
+  
   selectSheetTitle: { fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.ink, paddingHorizontal: layout.margin, paddingBottom: spacing.md },
   selectOption: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: layout.margin, borderTopWidth: 1, borderTopColor: colors.border },
   selectOptionSelected: { backgroundColor: colors.primarySoft },
@@ -832,8 +832,8 @@ const styles = StyleSheet.create({
   pickerSheet: { paddingHorizontal: 0, paddingTop: spacing.xl, paddingBottom: spacing.xxl, gap: 0 },
   errorSheet: { paddingBottom: spacing.xxxl },
   errorBody: { gap: spacing.lg },
-  resultBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
-  resultSheet: { width: '100%', maxWidth: 520, alignSelf: 'center', borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface, padding: layout.margin, paddingBottom: spacing.xxxl, gap: spacing.xl },
+  
+  
   resultText: { gap: spacing.md, justifyContent: 'center', flexGrow: 1 },
   resultTitle: { fontFamily: fontFamily.display, fontSize: 44, lineHeight: 50, letterSpacing: -0.5, color: colors.onPrimary },
   resultTitleError: { fontFamily: fontFamily.display, fontSize: 30, lineHeight: 36, color: colors.danger },

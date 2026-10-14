@@ -373,15 +373,15 @@ const styles = StyleSheet.create({
   attribution: { position: 'absolute', left: spacing.sm, borderRadius: radius.xs, backgroundColor: 'rgba(255,255,255,0.88)', paddingHorizontal: 6, paddingVertical: 2, color: colors.ink, fontFamily: fontFamily.regular, fontSize: 10 },
   modalTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.ink },
   severityTag: { flexShrink: 0, alignSelf: 'flex-start', overflow: 'hidden', borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, color: '#ffffff', fontFamily: fontFamily.label, fontSize: 13 },
-  counts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginVertical: spacing.sm },
+  
   countCell: { minWidth: 104, flexDirection: 'column-reverse', gap: 2, borderRadius: radius.md, backgroundColor: colors.surfaceLow, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
-  countRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md, borderBottomColor: colors.border, borderBottomWidth: 1, paddingVertical: spacing.md },
+  
   rowLabel: { fontFamily: fontFamily.label, fontSize: 13, color: colors.inkMuted },
   rowValue: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 20, lineHeight: 24, color: colors.primary },
   rowValueZero: { color: colors.inkSubtle },
-  rowValueWrap: { flexShrink: 1, textAlign: 'right', fontFamily: fontFamily.labelMedium, fontSize: 15, lineHeight: 21, color: colors.ink },
-  actions: { flexDirection: 'row', gap: spacing.md },
-  actionHalf: { flex: 1 },
+  
+  
+  
   sheetContent: { gap: spacing.md },
   pinHead: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
   pinStripe: { width: 6, borderRadius: 3 },

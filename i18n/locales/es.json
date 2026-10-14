@@ -196,11 +196,6 @@
     "resultBack": "Regresar",
     "resultRetry": "Volver a intentar",
     "onlyDescription": "Para esta categoría no hay preguntas adicionales.",
-    "sections": {
-      "incident": "Datos base",
-      "details": "Cantidad",
-      "dog": "Detalles Físicos"
-    },
     "fields": {
       "incident_type": "Tipo de Incidente",
       "sighting_type": "Perro solitario o manada",
@@ -302,9 +297,7 @@
     }
   },
   "commandCenter": {
-    "eyebrow": "Espacio del administrador",
-    "title": "Command Center",
-    "subtitle": "Prioriza la página de trabajo actual y entra a cada revisión con su contexto completo."
+    "title": "Command Center"
   },
   "moderation": {
     "title": "Cola de moderación",

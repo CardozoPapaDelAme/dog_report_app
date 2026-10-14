@@ -190,11 +190,6 @@
     "resultBack": "Back",
     "resultRetry": "Try again",
     "onlyDescription": "This category has no additional questions.",
-    "sections": {
-      "incident": "Base details",
-      "details": "Quantity",
-      "dog": "Physical details"
-    },
     "fields": {
       "incident_type": "Incident type",
       "sighting_type": "Solitary dog or pack",
@@ -296,9 +291,7 @@
     }
   },
   "commandCenter": {
-    "eyebrow": "Administrator workspace",
-    "title": "Command Center",
-    "subtitle": "Prioritize the current work page and open each review with its complete context."
+    "title": "Command Center"
   },
   "moderation": {
     "title": "Moderation queue",

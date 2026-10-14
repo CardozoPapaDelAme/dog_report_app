@@ -7,7 +7,6 @@ test.describe('shared base components', () => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('/?ui-kit');
-    await expect(page.getByTestId('kit-card')).toBeVisible();
     const save = page.getByRole('button', { name: 'Guardar', exact: true });
     expect((await save.boundingBox()).height).toBeGreaterThanOrEqual(44);
     expect((await page.getByRole('button', { name: 'Cerrar kit' }).boundingBox()).width).toBeGreaterThanOrEqual(44);

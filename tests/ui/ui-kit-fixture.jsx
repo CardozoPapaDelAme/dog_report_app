@@ -1,7 +1,7 @@
 // Fixture for the shared base components (components/ui). Never imported by the app.
 import React, { useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { AppButton, AppCard, AppTextField, Banner, Chip, IconButton, ScreenHeader, Sheet, StateView, iconNames, Icon } from '../../components/ui/index.js';
+import { AppButton, AppTextField, Banner, Chip, IconButton, Sheet, StateView, iconNames, Icon } from '../../components/ui/index.js';
 import { colors, type } from '../../theme/index.js';
 
 export default function UiKitFixture() {
@@ -12,7 +12,6 @@ export default function UiKitFixture() {
   return (
     <View style={{ height: '100dvh', backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-        <ScreenHeader title="Kit base" onBack={() => {}} backLabel="Atrás" />
         <Text style={type.display}>Aa 123</Text>
         <Text testID="kit-number" style={type.number}>1,234.50</Text>
         <Text style={type.labelCaps}>Etiqueta</Text>
@@ -26,7 +25,6 @@ export default function UiKitFixture() {
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           {iconNames.map((name) => <Icon key={name} name={name} />)}
         </View>
-        <AppCard testID="kit-card"><Text style={type.title}>Tarjeta</Text><Text style={type.bodySmall}>Contenido</Text></AppCard>
         <AppTextField ref={fieldRef} label="Correo" nativeID="kit-field" testID="kit-field" placeholder="correo@ejemplo.com" />
         <AppTextField label="Nota" multiline error="Obligatorio" />
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
