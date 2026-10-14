@@ -109,6 +109,16 @@ Segundo intento: **una bandeja, no tarjetas.**
 27. **Las acciones por fila van como barra plana con texto de color,** no como botones con marco.
 28. **Las acciones globales (cerrar sesión) viven en la barra del título,** no flotando solas.
 
+### Command Center, tercera vuelta: cómo separar elementos sin tarjetas
+
+- Filas a todo el ancho **pegadas** se funden en un solo bloque ("parece que todo es uno").
+- **Tarjeta redondeada con banda de color arriba** se rechazó como plantilla genérica ("ai-slop").
+- Lo que funciona: **tira a todo el ancho con líneas arriba y abajo y un hueco de fondo claro entre una y otra, sin esquinas redondeadas**, con **barra lateral gruesa** de color por estado y **número corto del reporte** (`#a1b2c3`) para que cada uno tenga nombre.
+- Y **menos contenido por elemento:** se quitó la fila con etiqueta de ubicación y quedó una línea con ícono.
+
+29. **Separar elementos de una lista con huecos de fondo y bordes finos, no con color de cabecera ni esquinas redondeadas.**
+30. **Todo elemento repetido lleva un identificador corto visible** (número, nombre), no solo posición.
+
 ## Cómo se trabaja con las skills
 
 `frontend-design` ayudó más que el resto: obliga a planear con una paleta, roles de tipografía y un wireframe, a revisar el plan contra los defaults de plantilla y a gastar el riesgo estético en un solo lugar. `design-taste-frontend` sirve como lista de verificación (contraste, estados, etiquetas arriba del campo). `mobile-redesign-screen` da el método (auditar, proponer, arreglar). Para cada pantalla nueva: invocar `frontend-design` primero para el plan.

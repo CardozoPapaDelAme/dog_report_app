@@ -78,18 +78,21 @@ function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t })
     can('restore') && { key: 'restore', label: t('moderation.restore'), color: colors.primary, onPress: () => onRestore(report) },
     can('delete') && { key: 'delete', label: t('moderation.delete'), color: colors.danger, onPress: () => onDelete(report) },
   ].filter(Boolean);
+  const severe = report.isHighSeverity || report.flagCount > 0;
   return (
     <View style={styles.item}>
-      <View style={[styles.stripe, report.isHighSeverity && styles.stripeSevere]} />
+      <View style={[styles.stripe, severe && styles.stripeSevere, hidden && styles.stripeHidden]} />
       <View style={styles.itemBody}>
         <View style={styles.itemTop}>
           <View style={styles.itemTitleBlock}>
             <Text style={styles.incident}>{incident}</Text>
-            <Text style={styles.timestamp}>{formatObservedAt(report.client_created_at)}</Text>
+            <View style={styles.timeRow}>
+              <Text style={styles.timestamp}>{formatObservedAt(report.client_created_at)}</Text>
+              <Text style={styles.reportNumber}>#{String(report.id).slice(-6)}</Text>
+            </View>
           </View>
-          <Text style={[styles.status, hidden && styles.statusHidden]}>{t(`moderation.status.${report.status}`)}</Text>
+          <Text style={[styles.status, severe && styles.statusSevere, hidden && styles.statusHidden]}>{t(`moderation.status.${report.status}`)}</Text>
         </View>
-
         {report.description ? <Text style={styles.description}>{report.description}</Text> : null}
         <View style={styles.meta}>
           <Text style={styles.metaText}>{t('moderation.trust')}: {report.trust?.tier ?? '-'}</Text>
@@ -98,8 +101,8 @@ function ReportCard({ report, busy, onApprove, onHide, onRestore, onDelete, t })
           <Text style={styles.metaBar}>|</Text>
           <Text style={styles.metaText}>{`${t('moderation.photo')}: ${report.photo_available ? t('common.yes') : t('common.no')}`}</Text>
         </View>
-        <View style={styles.place}>
-          <Text style={styles.placeLabel}>{t('moderation.exactLocation')}</Text>
+        <View style={styles.place} accessible accessibilityLabel={`${t('moderation.exactLocation')}: ${report.location.latitude.toFixed(5)}, ${report.location.longitude.toFixed(5)}`}>
+          <Icon name="map" size={16} color={colors.inkMuted} />
           <Text style={styles.coordinates}>{report.location.latitude.toFixed(5)}, {report.location.longitude.toFixed(5)}</Text>
         </View>
         {suspicious ? <Text style={styles.warningText}>{t('moderation.suspiciousSignals')}</Text> : null}
@@ -291,26 +294,27 @@ const styles = StyleSheet.create({
   queueIntro: { marginHorizontal: layout.margin, marginTop: spacing.xxl, marginBottom: spacing.xl, gap: spacing.sm },
   queueTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.primary },
   pageScope: { ...type.caption, color: colors.inkMuted },
-  gridRow: { gap: 1 },
+  gridRow: { gap: spacing.md },
   gridItem: { flex: 1, maxWidth: '50%' },
-  item: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
-  stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: colors.outlineSoft },
-  stripeSevere: { backgroundColor: colors.dangerAlert },
-  itemBody: { paddingHorizontal: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
+  item: { backgroundColor: colors.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.outlineSoft, marginBottom: spacing.md },
+  stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 6, backgroundColor: colors.primary },
+  stripeSevere: { backgroundColor: colors.dangerAlert }, stripeHidden: { backgroundColor: colors.outline },
+  itemBody: { paddingLeft: layout.margin + 6, paddingRight: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
   itemTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   itemTitleBlock: { flex: 1, gap: 2 },
   incident: { fontFamily: fontFamily.displayMedium, fontSize: 21, lineHeight: 27, color: colors.ink },
+  timeRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.md },
   timestamp: { ...type.caption, color: colors.inkMuted, fontVariant: ['tabular-nums'] },
-  status: { fontFamily: fontFamily.label, fontSize: 14, color: colors.warning, marginTop: 2 }, statusHidden: { color: colors.danger },
+  reportNumber: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 12, color: colors.inkSubtle },
+  status: { fontFamily: fontFamily.label, fontSize: 14, color: colors.primary, marginTop: 2 }, statusSevere: { color: colors.danger }, statusHidden: { color: colors.inkMuted },
   description: { ...type.body, fontSize: 15, lineHeight: 22, color: colors.ink },
   meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
   metaText: { fontFamily: fontFamily.labelMedium, fontSize: 13, color: colors.inkMuted }, metaHot: { fontFamily: fontFamily.label, color: colors.danger },
   metaBar: { fontSize: 13, color: colors.outlineSoft },
-  place: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
-  placeLabel: { fontFamily: fontFamily.label, fontSize: 13, color: colors.inkMuted },
+  place: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   coordinates: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 14, color: colors.ink },
   warningText: { ...type.caption, fontSize: 13, color: colors.danger },
-  actionBar: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border },
+  actionBar: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
   actionCell: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center' }, actionDivider: { borderLeftWidth: 1, borderLeftColor: colors.border },
   actionText: { fontFamily: fontFamily.displayMedium, fontSize: 17 },
   pressed: { opacity: 0.78 }, disabled: { opacity: 0.42 },

@@ -11,7 +11,8 @@ for (const [lang, locale] of [['es', 'es-MX'], ['en', 'en-US']]) {
       await page.goto('/?command-center&tools');
       await page.waitForTimeout(600);
       await page.screenshot({ path: `docs/redesign/after/web/${lang}_command_start.png` });
-      await page.getByText('Reporte sintético 1', { exact: true }).scrollIntoViewIfNeeded().catch(() => {});
+      await page.getByText('Cola de moderación', { exact: true }).scrollIntoViewIfNeeded().catch(() => {});
+      await page.evaluate(() => { const el = [...document.querySelectorAll('div')].find((d) => d.scrollHeight > d.clientHeight + 50 && getComputedStyle(d).overflowY !== 'visible'); if (el) el.scrollTop = 420; });
       await page.waitForTimeout(200);
       await page.screenshot({ path: `docs/redesign/after/web/${lang}_command_queue.png` });
       if (lang === 'es') {
