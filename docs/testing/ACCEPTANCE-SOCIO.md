@@ -10,22 +10,28 @@ Convenciones: `docs/testing/README.md`.
 |---|---|
 | Fecha, hora y zona | |
 | Build / commit de `main` instalado | |
-| Dispositivo y versión de Android | |
+| Dispositivo y versión de iOS (iPhone) | |
 | Entorno | Staging (no producción) |
 | Opera el teléfono | |
 | Socio formador | |
 
 ## Condiciones de entrada
 
-1. Build nativo instalado (no Expo Go), apuntando a staging, con el teléfono dentro
-   del geofence de prueba descrito en `docs/DEPLOYMENT.md`; ubicación y cámara permitidas.
+1. Build nativo instalado en un iPhone físico (no Expo Go ni simulador), apuntando a
+   staging, con el teléfono dentro del geofence de prueba descrito en
+   `docs/DEPLOYMENT.md`; ubicación y cámara permitidas. Instalación por development
+   build o TestFlight: confirmarla antes de la sesión.
 2. Cuentas de Asociación y de Administrator disponibles; las credenciales se teclean
    en el momento y no se escriben en Git ni en capturas.
 3. Al menos tres reportes de prueba, de categorías distintas, ya aprobados por el
    Administrator, para que el mapa y el panel tengan contenido.
 4. Imagen de un perro (impresa o en otra pantalla) y una escena sin perro. Sin
    personas, placas ni domicilios en cuadro.
-5. Duración estimada: 60 a 90 minutos. Orden sugerido: 01–05, 12–13, 06–08, 09–11.
+5. Aviso: la sesión alfa (`docs/testing/ALPHA.md`) se hizo en Android; en iPhone real
+   no se han ejecutado estos flujos. Hacer un ensayo previo, en especial cámara y
+   validación de foto (TC-SOCIO-01, 04), exportación y compartir CSV/XLSX (10) y
+   modo avión (05, 07), que en iOS se activa desde el Centro de control.
+6. Duración estimada: 60 a 90 minutos. Orden sugerido: 01–05, 12–13, 06–08, 09–11.
 
 Valores exactos a escribir en cada caso: `docs/testing/data/aceptacion-entradas.json`
 (claves `acept-nn-...`). Para la denuncia: motivo «Otro» y detalle `Prueba de aceptación`.
