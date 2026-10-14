@@ -44,10 +44,10 @@ export default function AssociationReportCard({ report }) {
 
     <Text style={styles.sectionTitle}>{t('associationDashboard.card.dog')}</Text>
     <View style={styles.infoRow}>
-      <Info label={t('associationDashboard.card.size')} value={display.size} style={styles.half} />
-      <Info label={t('associationDashboard.card.color')} value={display.color} style={styles.half} />
-      <Info label={t('associationDashboard.card.collar')} value={display.collar} style={styles.half} />
-      <Info label={t('associationDashboard.card.photo')} value={display.photo} style={styles.half} />
+      <Info label={t('associationDashboard.card.size')} value={display.size} style={styles.quarter} />
+      <Info label={t('associationDashboard.card.color')} value={display.color} style={styles.quarter} />
+      <Info label={t('associationDashboard.card.collar')} value={display.collar} style={styles.quarter} />
+      <Info label={t('associationDashboard.card.photo')} value={display.photo} style={styles.quarter} />
     </View>
 
     {display.details.length ? <View style={styles.details}>
@@ -63,7 +63,7 @@ export default function AssociationReportCard({ report }) {
 }
 
 const styles = StyleSheet.create({
-  row: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: layout.margin, paddingVertical: spacing.lg, gap: spacing.md },
+  row: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: layout.margin, paddingVertical: spacing.lg, gap: spacing.sm },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.md },
   heading: { flex: 1, minWidth: 0, gap: 2 },
   incident: { fontFamily: fontFamily.displayMedium, fontSize: 21, lineHeight: 27, color: colors.ink },
@@ -71,8 +71,9 @@ const styles = StyleSheet.create({
   accepted: { alignItems: 'flex-end', gap: 2 },
   acceptedLabel: { fontFamily: fontFamily.regular, fontSize: 12, color: colors.inkMuted },
   acceptedDate: { fontFamily: fontFamily.label, fontVariant: ['tabular-nums'], fontSize: 13, color: colors.ink },
-  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  infoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, columnGap: spacing.sm },
   half: { flexBasis: '45%', flexGrow: 1 },
+  quarter: { flexBasis: '21%', flexGrow: 1 },
   info: { minWidth: 0, gap: 1 },
   infoLabel: { fontFamily: fontFamily.label, fontSize: 12, color: colors.inkMuted },
   infoValue: { ...type.body, fontSize: 15, lineHeight: 21, color: colors.ink },

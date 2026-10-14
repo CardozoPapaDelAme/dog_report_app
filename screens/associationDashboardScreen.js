@@ -3,7 +3,7 @@
  * Container screen for users with the `association` role: date range presets and custom dates,
  * accepted report summary, report cards (narrow) or table (wide, at least 900 px), and CSV/XLSX export.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,9 +16,11 @@ import AssociationSummaryCard from '../components/associationSummaryCard.js';
 import AssociationReportCard from '../components/associationReportCard.js';
 import { buildAssociationSummary } from '../models/associationSummary.js';
 import { associationDisplayValues, presentAssociationReport } from '../presenters/associationDisplay.js';
-import { AppButton, Icon, StateView } from '../components/ui/index.js';
+import { AppButton, Icon, Pager, StateView } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
+/** Reports shown per page in the mobile list. */
+const PAGE_SIZE = 10;
 /** Table column widths in pixels, in `ASSOCIATION_REPORT_COLUMNS` order. */
 const WIDTHS = [210, 190, 190, 175, 130, 290, 150, 100, 105, 120, 120, 105];
 const TABLE_WIDTH = WIDTHS.reduce((sum, width) => sum + width, 0);
@@ -50,6 +52,10 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   const [exportingFormat, setExportingFormat] = useState(null);
   const [exportError, setExportError] = useState(null);
   const reports = useAssociationReports(accessToken, getPage);
+  const [page, setPage] = useState(0);
+  const listRef = useRef(null);
+  const heroHeight = useRef(0);
+  const resultsY = useRef(0);
   const { loadRange } = reports;
   useEffect(() => { loadRange(fromDay, toDay); }, [loadRange]);
 
@@ -104,8 +110,18 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
     : reports.phase === 'idle' ? t('associationDashboard.idle') : null;
 
   const showReports = reports.phase === 'ready' && applied;
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageRows = rows.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  useEffect(() => { setPage(0); }, [rows]);
+  function changePage(next) {
+    setPage(next);
+    listRef.current?.scrollToOffset({ offset: Math.max(0, heroHeight.current + resultsY.current - 8), animated: true });
+  }
+  const pager = <Pager page={currentPage} pageCount={pageCount} onChange={changePage} previousLabel={t('associationDashboard.pagePrev')} nextLabel={t('associationDashboard.pageNext')}
+    pageLabel={t('associationDashboard.pageOf', { page: currentPage + 1, total: pageCount })} style={styles.pager} />;
   const loadingPhase = reports.phase === 'loading';
-  const hero = <View style={styles.hero}>
+  const hero = <View style={styles.hero} onLayout={(event) => { heroHeight.current = event.nativeEvent.layout.height; }}>
     <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.bigPaw}><Icon name="dog" size={210} color={colors.onPrimary} strokeWidth={1.4} /></View>
     <View style={styles.heroInner}>
       <View style={styles.titleRow}>
@@ -158,7 +174,7 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
         locale={i18n.language} previousMonthLabel={t('associationDashboard.previousMonth')} nextMonthLabel={t('associationDashboard.nextMonth')}
         cancelLabel={t('common.cancel')} onSelect={selectCustomDate} onClose={() => setCalendarField(null)} />
 
-      <View style={styles.resultsBar}>
+      <View style={styles.resultsBar} onLayout={(event) => { resultsY.current = event.nativeEvent.layout.y; }}>
         <View style={styles.resultsText}>
           <Text accessibilityRole="header" style={styles.resultsTitle}>{t('associationDashboard.results')}</Text>
           {resolvedRange ? <>
@@ -195,8 +211,9 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
 
   return <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
     {wide ? <View style={styles.wideRoot}>{hero}<View style={styles.page}>{controls}{table}</View></View>
-      : <FlatList style={styles.mobileList} contentContainerStyle={styles.mobileContent}
-        data={showReports ? rows : []} keyExtractor={(item) => item.id}
+      : <FlatList ref={listRef} style={styles.mobileList} contentContainerStyle={styles.mobileContent}
+        data={showReports ? pageRows : []} keyExtractor={(item) => item.id}
+        ListFooterComponent={showReports ? pager : null}
         ListHeaderComponent={<View>{hero}<View style={styles.controls}>{controls}</View></View>}
         renderItem={({ item }) => <AssociationReportCard report={item} />} />}
   </SafeAreaView>;
@@ -210,7 +227,7 @@ const styles = StyleSheet.create({
   mobileContent: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingBottom: spacing.xxxl },
   controls: { paddingHorizontal: layout.margin, paddingTop: spacing.xxl },
   hero: { backgroundColor: colors.primary, overflow: 'hidden' },
-  bigPaw: { position: 'absolute', right: -44, top: 20, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
+  bigPaw: { position: 'absolute', right: -48, top: 96, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
   heroInner: { width: '100%', maxWidth: 1440, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.xl },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md },
   heading: { flex: 1, gap: spacing.xs },
@@ -229,6 +246,7 @@ const styles = StyleSheet.create({
   dateField: { flex: 1, minHeight: 56, borderWidth: 1, borderColor: colors.outline, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, backgroundColor: colors.surface, justifyContent: 'center' },
   dateLabel: { fontFamily: fontFamily.label, fontSize: 12, color: colors.inkMuted }, dateValue: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 15, color: colors.ink },
   search: { borderRadius: 12 },
+  pager: { paddingVertical: spacing.xl, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
   fieldError: { ...type.caption, fontSize: 13, color: colors.danger },
   filterHint: { ...type.caption, color: colors.inkMuted },
   resultsBar: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: spacing.md, marginTop: spacing.xxl, marginBottom: spacing.md },

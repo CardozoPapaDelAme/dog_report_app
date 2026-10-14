@@ -219,7 +219,7 @@ export default function DuplicateManagementScreen({accessToken,onBack,api}) {
 }
 const styles=StyleSheet.create({
   flex:{flex:1},safe:{flex:1,backgroundColor:colors.primary},scroll:{backgroundColor:colors.background},content:{flexGrow:1},
-  header:{backgroundColor:colors.primary,overflow:'hidden'},bigPaw:{position:'absolute',right:-44,top:40,opacity:0.1,transform:[{rotate:'-18deg'}]},
+  header:{backgroundColor:colors.primary,overflow:'hidden'},bigPaw:{position:'absolute',right:-48,top:96,opacity:0.1,transform:[{rotate:'-18deg'}]},
   headerInner:{width:'100%',maxWidth:920,alignSelf:'center',paddingHorizontal:layout.margin,paddingTop:spacing.xs,paddingBottom:spacing.xxl,gap:spacing.sm},
   topActions:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
   back:{flexDirection:'row',alignItems:'center',gap:spacing.xs,minHeight:layout.minTouch},backText:{...type.button,fontSize:15,color:colors.onPrimary},

@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   list: { backgroundColor: colors.background },
   content: { flexGrow: 1, backgroundColor: colors.background, paddingBottom: 32 },
   hero: { backgroundColor: colors.primary, overflow: 'hidden' },
-  bigPaw: { position: 'absolute', right: -44, top: 56, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
+  bigPaw: { position: 'absolute', right: -48, top: 120, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
   heroInner: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.sm },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginTop: spacing.lg },
   logout: { width: layout.minTouch, height: layout.minTouch, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(201,230,196,0.45)' },
