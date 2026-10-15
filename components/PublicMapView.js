@@ -8,7 +8,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Camera, GeoJSONSource, Layer, Map, ViewAnnotation } from '@maplibre/maplibre-react-native';
 
-import { INCIDENT_TYPES, clusterRadiusPx, clustersToHeatmapGeoJSON, severityLevel } from '../models/publicMap.js';
+import { INCIDENT_TYPES, clusterRadiusPx, reportsToHeatmapGeoJSON, severityLevel } from '../models/publicMap.js';
 import { colors, fontFamily } from '../theme/index.js';
 import { PinGlyph } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
@@ -18,7 +18,8 @@ import { getMapStyleUrl } from '../services/mapConfig.js';
 /**
  * @param {object} props
  * @param {'clusters' | 'pins'} props.mode
- * @param {'clusters' | 'heatmap'} [props.viewMode] - `heatmap` draws a weighted density layer instead of cluster markers (pins unchanged).
+ * @param {'clusters' | 'heatmap'} [props.viewMode] - `heatmap` draws a density layer from `heatmapReports` instead of markers.
+ * @param {import('../models/publicMap.js').PublicReport[]} [props.heatmapReports] - Individual reports feeding the heatmap.
  * @param {(bearing: number) => void} [props.onBearingChange] - Map rotation in degrees; 0 is north.
  * Ref handle: `resetNorth()` eases the camera back to north.
  * @param {import('../models/publicMap.js').MapCluster[]} props.clusters - Rendered in `clusters` mode.
@@ -31,18 +32,20 @@ import { getMapStyleUrl } from '../services/mapConfig.js';
  * @param {(report: import('../models/publicMap.js').PublicReport) => void} [props.onSelectReport]
  * @returns {JSX.Element}
  */
+// Soft, wide blobs that merge where reports overlap and saturate to red in dense areas.
 const HEATMAP_PAINT = {
-  'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 1, 0.25, 20, 1],
-  'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 0.8, 16, 2],
-  'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 18, 14, 36, 17, 56],
-  'heatmap-opacity': 0.85,
+  'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 1, 0.5, 3, 1],
+  'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 1.2, 14, 2.4],
+  'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 22, 12, 48, 16, 90],
+  'heatmap-opacity': 0.78,
   'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
-    0, 'rgba(46,125,50,0)', 0.25, colors.severity.low, 0.5, colors.signal, 0.75, colors.severity.medium, 1, colors.severity.high],
+    0, 'rgba(76,175,80,0)', 0.12, 'rgba(76,175,80,0.55)', 0.3, '#9ccc3c', 0.5, colors.signal, 0.72, '#ff9800', 1, '#e53935'],
 };
 
 const PublicMapView = forwardRef(function PublicMapView({
   mode,
   viewMode = 'clusters',
+  heatmapReports = [],
   onBearingChange,
   clusters,
   reports,
@@ -57,8 +60,8 @@ const PublicMapView = forwardRef(function PublicMapView({
   const mapRef = useRef(null);
   const cameraRef = useRef(null);
 
-  const heatmapData = useMemo(() => clustersToHeatmapGeoJSON(clusters), [clusters]);
-  const heatmap = viewMode === 'heatmap' && mode === 'clusters';
+  const heatmapData = useMemo(() => reportsToHeatmapGeoJSON(clusters), [clusters]);
+  const heatmap = viewMode === 'heatmap';
 
   useImperativeHandle(ref, () => ({
     resetNorth: () => cameraRef.current?.easeTo({ bearing: 0, duration: 400 }),
@@ -123,7 +126,7 @@ const PublicMapView = forwardRef(function PublicMapView({
           </ViewAnnotation>
         );
       }) : null}
-      {mode === 'pins' ? reports.map((report) => {
+      {mode === 'pins' && !heatmap ? reports.map((report) => {
         const { longitude, latitude } = report.approximate_location;
         return (
           <ViewAnnotation

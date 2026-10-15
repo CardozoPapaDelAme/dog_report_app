@@ -308,20 +308,23 @@ export function reportsInCluster(reports, cluster, zoom) {
     .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at));
 }
 
+/** Heat contribution per severity level: a serious incident warms the map more than a sighting. */
+export const HEATMAP_SEVERITY_WEIGHT = Object.freeze({ low: 1, medium: 2, high: 3 });
+
 /**
- * Builds the heatmap source from already-served clusters. The server stays the only clusterer
- * (RNF13); this only reshapes centroids, so no position finer than the 50 m approximation is exposed.
- * @param {MapCluster[]} clusters
- * @returns {{type: 'FeatureCollection', features: object[]}} Point features weighted by `report_count`.
+ * Builds the heatmap source from individual public reports (already the stable 50 m approximation,
+ * so nothing finer than that is exposed). Density comes from overlapping points, not from clusters.
+ * @param {PublicReport[]} reports
+ * @returns {{type: 'FeatureCollection', features: object[]}} Point features weighted by incident severity.
  */
-export function clustersToHeatmapGeoJSON(clusters) {
+export function reportsToHeatmapGeoJSON(reports) {
   const features = [];
-  for (const item of Array.isArray(clusters) ? clusters : []) {
+  for (const item of Array.isArray(reports) ? reports : []) {
     const location = readLocation(item?.approximate_location);
-    if (!location || !finiteNumber(item.report_count) || item.report_count <= 0) continue;
+    if (!location) continue;
     features.push({
       type: 'Feature',
-      properties: { weight: item.report_count },
+      properties: { weight: HEATMAP_SEVERITY_WEIGHT[severityLevel(item.incident_type)] },
       geometry: { type: 'Point', coordinates: [location.longitude, location.latitude] },
     });
   }

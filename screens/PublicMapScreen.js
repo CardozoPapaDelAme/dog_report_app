@@ -17,6 +17,7 @@ import { colors, fontFamily, layout, radius, spacing, type } from '../theme/inde
 import RecentReportsList from '../components/RecentReportsList';
 import ReportFlagSheet from '../components/ReportFlagSheet';
 import ZoneReportsSheet from '../components/ZoneReportsSheet';
+import { usePublicHeatmapReports } from '../hooks/usePublicHeatmapReports.js';
 import { usePublicMap } from '../hooks/usePublicMap.js';
 import { INCIDENT_TYPES, MAX_ZOOM, ZOOM_RADIUS_BANDS, isInViewport, severityLevel } from '../models/publicMap.js';
 import { getApiBaseUrl } from '../services/apiClient.js';
@@ -126,24 +127,22 @@ function MapTopBar({ onBack, t, style, showTitle = false }) {
   );
 }
 
-/** Segmented floating switch between the cluster markers and the heatmap layer. */
+/** Slim vertical switch flush with the right edge: icon-only (labels for screen readers), clusters over heatmap. */
 function MapModeSwitch({ value, onChange, t, style }) {
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={t('map.modeLabel')} style={[styles.modeSwitch, style]}>
       {['clusters', 'heatmap'].map((mode) => {
         const selected = value === mode;
-        const label = t(mode === 'clusters' ? 'map.modeClusters' : 'map.modeHeatmap');
         return (
           <Pressable
             key={mode}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            accessibilityLabel={label}
+            accessibilityLabel={t(mode === 'clusters' ? 'map.modeClusters' : 'map.modeHeatmap')}
             onPress={() => onChange(mode)}
             style={[styles.modeOption, selected && styles.modeOptionSelected]}
           >
-            <Icon name={mode === 'clusters' ? 'clusters' : 'heat'} size={18} color={selected ? colors.onPrimary : colors.primary} />
-            <Text style={[styles.modeText, selected && styles.modeTextSelected]}>{label}</Text>
+            <Icon name={mode === 'clusters' ? 'clusters' : 'heat'} size={20} color={selected ? colors.onPrimary : colors.primary} />
           </Pressable>
         );
       })}
@@ -273,6 +272,7 @@ function NativeMapScreen({ onBack }) {
   const [viewMode, setViewMode] = useState('clusters');
   const [bearing, setBearing] = useState(0);
   const mapRef = useRef(null);
+  const heatmap = usePublicHeatmapReports(viewMode === 'heatmap');
 
   const focusCluster = useCallback((cluster, fromZoom) => {
     setFocus({ ...cluster.approximate_location, zoom: nextBandZoom(fromZoom), padding: { bottom: CLUSTER_CARD_PADDING + insets.bottom } });
@@ -298,10 +298,12 @@ function NativeMapScreen({ onBack }) {
     ? map.reports.filter((report) => isInViewport(report.approximate_location, map.region.viewport))
     : map.reports;
 
+  const activePhase = viewMode === 'heatmap' ? heatmap.phase : map.phase;
+  const activeRetry = viewMode === 'heatmap' ? heatmap.retry : map.retry;
   let banner = null;
-  if (map.phase === 'offline') banner = { text: t('map.offline'), retry: true };
-  else if (map.phase === 'error') banner = { text: t('map.error'), retry: true, danger: true };
-  else if (map.phase === 'empty') banner = { text: t('map.empty') };
+  if (activePhase === 'offline') banner = { text: t('map.offline'), retry: true };
+  else if (activePhase === 'error') banner = { text: t('map.error'), retry: true, danger: true };
+  else if (activePhase === 'empty') banner = { text: t('map.empty') };
 
   return (
     <View style={styles.root}>
@@ -311,6 +313,7 @@ function NativeMapScreen({ onBack }) {
             ref={mapRef}
             mode={map.mode}
             viewMode={viewMode}
+            heatmapReports={heatmap.reports}
             onBearingChange={setBearing}
             clusters={map.clusters}
             reports={visibleReports}
@@ -331,9 +334,9 @@ function NativeMapScreen({ onBack }) {
         bearing={bearing}
         onPress={() => mapRef.current?.resetNorth?.()}
         accessibilityLabel={t('map.compass')}
-        style={{ top: insets.top + spacing.sm + 60, right: spacing.lg }}
+        style={{ top: insets.top + spacing.sm + 96, right: spacing.sm }}
       />
-      {map.phase === 'loading' && initialCenter ? (
+      {activePhase === 'loading' && initialCenter ? (
         <View pointerEvents="none" style={[styles.loading, { top: insets.top + spacing.sm }]}>
           <ActivityIndicator accessibilityLabel={t('map.loading')} color={colors.primary} />
         </View>
@@ -344,10 +347,10 @@ function NativeMapScreen({ onBack }) {
             <Icon name="alert" size={20} color={banner.danger ? '#ffb4ab' : colors.warningAmber} />
             <View style={styles.bannerText}>
               <Text style={styles.bannerTitle}>{banner.text}</Text>
-              {map.phase === 'offline' ? <Text style={styles.bannerHint}>{t('map.offlineReporting')}</Text> : null}
+              {activePhase === 'offline' ? <Text style={styles.bannerHint}>{t('map.offlineReporting')}</Text> : null}
             </View>
             {banner.retry ? (
-              <Pressable accessibilityRole="button" onPress={map.retry} hitSlop={8} style={styles.retryButton}>
+              <Pressable accessibilityRole="button" onPress={activeRetry} hitSlop={8} style={styles.retryButton}>
                 <Text style={styles.retryText}>{t('map.retry')}</Text>
               </Pressable>
             ) : null}
@@ -399,11 +402,9 @@ const styles = StyleSheet.create({
   countStrip: { gap: spacing.sm, paddingVertical: spacing.xs },
   mapArea: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  modeSwitch: { position: 'absolute', right: spacing.lg, flexDirection: 'row', padding: 3, borderRadius: radius.pill, backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 6 },
-  modeOption: { minHeight: layout.minTouch - 6, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, borderRadius: radius.pill },
+  modeSwitch: { position: 'absolute', right: 0, padding: 3, gap: 2, borderTopLeftRadius: radius.lg, borderBottomLeftRadius: radius.lg, backgroundColor: 'rgba(255,255,255,0.92)', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 1 }, elevation: 5 },
+  modeOption: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md },
   modeOptionSelected: { backgroundColor: colors.primary },
-  modeText: { color: colors.primary, fontFamily: fontFamily.semibold, fontSize: 13 },
-  modeTextSelected: { color: '#ffffff' },
   loading: { position: 'absolute', alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
   fallbackContent: { padding: spacing.lg, gap: spacing.xl },
   bannerSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
