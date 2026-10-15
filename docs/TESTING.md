@@ -50,7 +50,7 @@ per-suite summary (passed / failed / skipped). It exits non-zero if any suite fa
 | Deno (mobile + backend) | `npm run test:deno` | Every `*.test.js` under `models`, `services`, `controllers`, `hooks`, `i18n`, `scripts` and `supabase/functions/api`, except files that import `node:test` |
 | `node:test` | `npm run test:node` | The `*.test.js` files that import `node:test` (they may import npm packages Deno does not resolve, such as `xlsx`) |
 | Playwright (UI) | `npm run test:e2e` | `tests/ui/*.spec.js` against the local preview server (needs `npx playwright install chromium` once) |
-| PostgreSQL/PostGIS | `npm run test:postgres` | The six database suites; needs Docker and is **not** part of `npm test` |
+| PostgreSQL/PostGIS | `npm run test:postgres` | The seven database suites; needs Docker and is **not** part of `npm test` |
 
 Files are routed by content: a new test that imports `node:test` goes to the
 `node:test` suite automatically, so no list needs maintaining
@@ -61,7 +61,7 @@ per suite (the flag and public-map suites create cluster-level roles, so cluster
 cannot be shared), creates the fixed-name database, runs the suite and removes the
 container (`scripts/test-postgres.mjs`). Pass suite names to run a subset:
 `npm run test:postgres -- zone flag` (`configuration`, `zone`, `duplicate`, `flag`,
-`publicMap`, `report`). A suite that Deno reports as skipped counts as a failure. On
+`publicMap`, `report`, `demoSeed`). A suite that Deno reports as skipped counts as a failure. On
 Apple-silicon hosts the image runs emulated and is slower.
 
 `.github/workflows/tests.yml` runs on every pull request and on pushes to `main`,
