@@ -307,3 +307,23 @@ export function reportsInCluster(reports, cluster, zoom) {
     })
     .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at));
 }
+
+/**
+ * Builds the heatmap source from already-served clusters. The server stays the only clusterer
+ * (RNF13); this only reshapes centroids, so no position finer than the 50 m approximation is exposed.
+ * @param {MapCluster[]} clusters
+ * @returns {{type: 'FeatureCollection', features: object[]}} Point features weighted by `report_count`.
+ */
+export function clustersToHeatmapGeoJSON(clusters) {
+  const features = [];
+  for (const item of Array.isArray(clusters) ? clusters : []) {
+    const location = readLocation(item?.approximate_location);
+    if (!location || !finiteNumber(item.report_count) || item.report_count <= 0) continue;
+    features.push({
+      type: 'Feature',
+      properties: { weight: item.report_count },
+      geometry: { type: 'Point', coordinates: [location.longitude, location.latitude] },
+    });
+  }
+  return { type: 'FeatureCollection', features };
+}

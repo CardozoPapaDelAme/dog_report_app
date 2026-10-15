@@ -1,5 +1,5 @@
 import {
-  CLUSTER_RADIUS_MAX_PX, CLUSTER_RADIUS_MIN_PX, INCIDENT_SEVERITY_ORDER, INCIDENT_TYPES, PIN_ZOOM_THRESHOLD,
+  clustersToHeatmapGeoJSON, CLUSTER_RADIUS_MAX_PX, CLUSTER_RADIUS_MIN_PX, INCIDENT_SEVERITY_ORDER, INCIDENT_TYPES, PIN_ZOOM_THRESHOLD,
   SEVERITY_COLORS, ZOOM_RADIUS_BANDS, clusterRadiusMetersForZoom, clusterRadiusPx, isInViewport, queryModeForZoom,
   readClusters, readPublicReports, reportsInCluster, severityColor, severityLevel, viewportFromBounds, viewportToQuery,
 } from './publicMap.js';
@@ -133,4 +133,16 @@ Deno.test('clusterRadiusMetersForZoom rejects a non-numeric zoom', () => {
   assert(clusterRadiusMetersForZoom(Number.NaN) === null);
   assert(clusterRadiusMetersForZoom(undefined) === null);
   assert(clusterRadiusMetersForZoom(12) === 250);
+});
+
+Deno.test('clustersToHeatmapGeoJSON weights centroids by report_count and skips malformed clusters', () => {
+  const snapshot = JSON.stringify([cluster]);
+  const collection = clustersToHeatmapGeoJSON([cluster, { ...cluster, approximate_location: null },
+    { ...cluster, report_count: 0 }, null]);
+  assert(collection.type === 'FeatureCollection' && collection.features.length === 1);
+  const [feature] = collection.features;
+  assert(feature.properties.weight === 3);
+  assert(feature.geometry.coordinates[0] === -107.6 && feature.geometry.coordinates[1] === 27.75, 'lng,lat order');
+  assert(JSON.stringify([cluster]) === snapshot, 'input not mutated');
+  assert(clustersToHeatmapGeoJSON(null).features.length === 0 && clustersToHeatmapGeoJSON([]).features.length === 0);
 });
