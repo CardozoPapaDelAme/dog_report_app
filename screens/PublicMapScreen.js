@@ -129,7 +129,7 @@ function MapTopBar({ onBack, t, style, showTitle = false }) {
   );
 }
 
-/** Slim vertical switch flush with the right edge: icon-only (labels for screen readers), clusters over heatmap. */
+/** Slim vertical switch floating at the right margin (same inset as the back button): icon-only (labels for screen readers), clusters over heatmap. */
 function MapModeSwitch({ value, onChange, t, style }) {
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={t('map.modeLabel')} style={[styles.modeSwitch, style]}>
@@ -336,7 +336,7 @@ function NativeMapScreen({ onBack }) {
         bearing={bearing}
         onPress={() => mapRef.current?.resetNorth?.()}
         accessibilityLabel={t('map.compass')}
-        style={{ top: insets.top + spacing.sm + MODE_SWITCH_HEIGHT + spacing.sm, right: 0 }}
+        style={{ top: insets.top + spacing.sm + MODE_SWITCH_HEIGHT + spacing.sm, right: spacing.lg }}
       />
       {activePhase === 'loading' && initialCenter ? (
         <View pointerEvents="none" style={[styles.loading, { top: insets.top + spacing.sm }]}>
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   countStrip: { gap: spacing.sm, paddingVertical: spacing.xs },
   mapArea: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  modeSwitch: { position: 'absolute', right: 0, width: 46, alignItems: 'center', padding: 3, gap: 2, borderTopLeftRadius: radius.lg, borderBottomLeftRadius: radius.lg, backgroundColor: 'rgba(255,255,255,0.92)', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 1 }, elevation: 5 },
+  modeSwitch: { position: 'absolute', right: spacing.lg, width: 46, alignItems: 'center', padding: 3, gap: 2, borderRadius: radius.xl, backgroundColor: 'rgba(255,255,255,0.92)', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 1 }, elevation: 5 },
   modeOption: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md },
   modeOptionSelected: { backgroundColor: colors.primary },
   loading: { position: 'absolute', alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
