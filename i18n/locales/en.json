@@ -47,12 +47,10 @@
       "accepted": "Accepted",
       "observed": "Observed",
       "location": "Coordinates",
-      "dog": "Dog characteristics",
       "size": "Size",
       "color": "Color",
       "collar": "Collar",
       "photo": "Photo available",
-      "details": "Report details",
       "reportId": "Report ID",
       "unknown": "Not specified"
     },

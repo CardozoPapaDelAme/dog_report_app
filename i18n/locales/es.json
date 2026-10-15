@@ -49,12 +49,10 @@
       "accepted": "Aceptado",
       "observed": "Observado",
       "location": "Coordenadas",
-      "dog": "Características del perro",
       "size": "Tamaño",
       "color": "Color",
       "collar": "Collar",
       "photo": "Foto disponible",
-      "details": "Detalles del reporte",
       "reportId": "ID del reporte",
       "unknown": "No indicado"
     },

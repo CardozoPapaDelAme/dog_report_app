@@ -5,7 +5,7 @@ test('many', async ({ page }) => {
   await page.route('**/association/reports?**', (r) => r.fulfill({ json: { data: { items: Array.from({ length: 25 }, (_, i) => row(i + 1)), next_cursor: null } } }));
   await page.goto('/?association');
   await page.waitForTimeout(700);
-  await page.getByText('Página 1 de 3').scrollIntoViewIfNeeded();
+  await page.getByText('Página 1 de 5').scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'docs/redesign/after/web/es_association_pager.png' });
 });
