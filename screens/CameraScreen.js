@@ -11,7 +11,7 @@ import { ActivityIndicator, PanResponder, Pressable, StyleSheet, Text, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import DraftQueueBanner from '../components/DraftQueueBanner.js';
-import { Icon, Scrim } from '../components/ui/index.js';
+import { Icon, PawTrail, Scrim } from '../components/ui/index.js';
 import { useCameraCapture } from '../hooks/useCameraCapture.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
@@ -145,17 +145,18 @@ export default function CameraScreen({
 
       {!hasPermission ? (
         <View style={[styles.permission, { paddingTop: insets.top + spacing.xxl, paddingBottom: Math.max(insets.bottom, spacing.xxl) }]}>
-          <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.permissionPaw}>
-            <Icon name="dog" size={260} color={colors.onPrimary} strokeWidth={1.3} />
-          </View>
           {!permission ? (
             <ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.signal} />
           ) : (
             <>
+              <PawTrail style={[styles.permissionTrail, { top: insets.top + spacing.sm }]} />
               <View style={styles.permissionText}>
                 <Icon name="camera" size={40} color={colors.signal} />
                 <Text accessibilityRole="header" style={styles.permissionTitle}>{t('camera.permissionTitle')}</Text>
                 <Text style={styles.permissionBody}>{t('camera.permissionBody')}</Text>
+              </View>
+              <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.permissionPawSlot}>
+                <Icon name="dog" size={220} color={colors.onPrimary} strokeWidth={1.3} />
               </View>
               <View style={styles.permissionActions}>
                 <Pressable accessibilityRole="button" onPress={requestPermission} style={({ pressed }) => [styles.permissionButton, pressed && styles.pressed]}>
@@ -218,7 +219,8 @@ const styles = StyleSheet.create({
   link: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: layout.minTouch },
   linkText: { fontFamily: fontFamily.label, fontSize: 14, color: colors.onPrimary, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
   permission: { ...StyleSheet.absoluteFill, backgroundColor: colors.primary, paddingHorizontal: layout.margin, justifyContent: 'space-between', overflow: 'hidden' },
-  permissionPaw: { position: 'absolute', right: -60, top: 140, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
+  permissionTrail: { left: 72, right: -8, bottom: undefined, height: 76 },
+  permissionPawSlot: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', opacity: 0.14, transform: [{ rotate: '-18deg' }] },
   permissionText: { gap: spacing.lg, marginTop: spacing.xxl },
   permissionTitle: { fontFamily: fontFamily.display, fontSize: 40, lineHeight: 46, letterSpacing: -0.4, color: colors.onPrimary },
   permissionBody: { ...type.body, fontSize: 16, lineHeight: 24, color: colors.onForest, maxWidth: 420 },
