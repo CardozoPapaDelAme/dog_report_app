@@ -6,12 +6,12 @@
  * Creel.
  */
 import * as Location from 'expo-location';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton, Banner, Icon, IconButton, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
+import { AppButton, Banner, Icon, IconButton, MapCompass, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 import RecentReportsList from '../components/RecentReportsList';
@@ -122,6 +122,31 @@ function MapTopBar({ onBack, t, style, showTitle = false }) {
         <Icon name="back" size={24} color={colors.primary} />
       </Pressable>
       <Text accessibilityRole="header" numberOfLines={1} style={showTitle ? styles.topTitleShown : styles.topTitleHidden}>{t('map.title')}</Text>
+    </View>
+  );
+}
+
+/** Segmented floating switch between the cluster markers and the heatmap layer. */
+function MapModeSwitch({ value, onChange, t, style }) {
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel={t('map.modeLabel')} style={[styles.modeSwitch, style]}>
+      {['clusters', 'heatmap'].map((mode) => {
+        const selected = value === mode;
+        const label = t(mode === 'clusters' ? 'map.modeClusters' : 'map.modeHeatmap');
+        return (
+          <Pressable
+            key={mode}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            accessibilityLabel={label}
+            onPress={() => onChange(mode)}
+            style={[styles.modeOption, selected && styles.modeOptionSelected]}
+          >
+            <Icon name={mode === 'clusters' ? 'clusters' : 'heat'} size={18} color={selected ? colors.onPrimary : colors.primary} />
+            <Text style={[styles.modeText, selected && styles.modeTextSelected]}>{label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -245,6 +270,9 @@ function NativeMapScreen({ onBack }) {
   const [zoneCluster, setZoneCluster] = useState(null);
   const [flagReport, setFlagReport] = useState(null);
   const [focus, setFocus] = useState(null);
+  const [viewMode, setViewMode] = useState('clusters');
+  const [bearing, setBearing] = useState(0);
+  const mapRef = useRef(null);
 
   const focusCluster = useCallback((cluster, fromZoom) => {
     setFocus({ ...cluster.approximate_location, zoom: nextBandZoom(fromZoom), padding: { bottom: CLUSTER_CARD_PADDING + insets.bottom } });
@@ -280,7 +308,10 @@ function NativeMapScreen({ onBack }) {
       <View style={StyleSheet.absoluteFill}>
         {initialCenter ? (
           <PublicMapView
+            ref={mapRef}
             mode={map.mode}
+            viewMode={viewMode}
+            onBearingChange={setBearing}
             clusters={map.clusters}
             reports={visibleReports}
             initialCenter={initialCenter}
@@ -295,6 +326,13 @@ function NativeMapScreen({ onBack }) {
         )}
       </View>
       <MapTopBar onBack={onBack} t={t} style={[styles.topBarFloat, { top: insets.top + spacing.sm }]} />
+      <MapModeSwitch value={viewMode} onChange={setViewMode} t={t} style={{ top: insets.top + spacing.sm }} />
+      <MapCompass
+        bearing={bearing}
+        onPress={() => mapRef.current?.resetNorth?.()}
+        accessibilityLabel={t('map.compass')}
+        style={{ top: insets.top + spacing.sm + 60, right: spacing.lg }}
+      />
       {map.phase === 'loading' && initialCenter ? (
         <View pointerEvents="none" style={[styles.loading, { top: insets.top + spacing.sm }]}>
           <ActivityIndicator accessibilityLabel={t('map.loading')} color={colors.primary} />
@@ -361,6 +399,11 @@ const styles = StyleSheet.create({
   countStrip: { gap: spacing.sm, paddingVertical: spacing.xs },
   mapArea: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  modeSwitch: { position: 'absolute', right: spacing.lg, flexDirection: 'row', padding: 3, borderRadius: radius.pill, backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 6 },
+  modeOption: { minHeight: layout.minTouch - 6, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.md, borderRadius: radius.pill },
+  modeOptionSelected: { backgroundColor: colors.primary },
+  modeText: { color: colors.primary, fontFamily: fontFamily.semibold, fontSize: 13 },
+  modeTextSelected: { color: '#ffffff' },
   loading: { position: 'absolute', alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
   fallbackContent: { padding: spacing.lg, gap: spacing.xl },
   bannerSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },

@@ -230,6 +230,7 @@ The shape language is **Rounded (Level 2)**.
 
 - **Buttons:** `AppButton` uses `rounded.lg` (16); the Login and the flat action bars lower it to 12 (`rounded.md`). The capture button is a circle.
 - **Cards & Dashboard Modules:** 16 px (`rounded.lg`). Bottom sheets round their top corners to 24 px (`rounded.xl`).
+- **Map mode switch and compass:** a floating pill (Grupos | Calor) switches the cluster markers for a green-to-red density layer weighted by report count (pins stay). A round white compass appears below it only while the map is rotated, counter-rotates with the map, fades out once north is restored, and returns the map to north on tap.
 - **Map Clusters:** Perfect circles that scale with the report count (the scale is a tested contract, see `docs/redesign/CONTRACT.md`).
 - **Input Fields:** 8 px (`rounded.sm`).
 - **Chips and capsules:** `pill`.
