@@ -9,6 +9,8 @@
 export const PIN_ZOOM_THRESHOLD = 17;
 export const MIN_ZOOM = 0;
 export const MAX_ZOOM = 22;
+/** Deepest zoom in heatmap mode: beyond it single reports read as isolated blurred dots; use cluster mode for detail. */
+export const HEATMAP_MAX_ZOOM = 15;
 
 // Mirrors supabase/functions/api/domain/publicMap.js (parity asserted in models/publicMap.test.js).
 export const ZOOM_RADIUS_BANDS = Object.freeze([

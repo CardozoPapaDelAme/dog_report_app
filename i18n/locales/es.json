@@ -602,6 +602,7 @@
     "modeClusters": "Grupos",
     "modeHeatmap": "Calor",
     "compass": "Volver al norte",
+    "heatmapZoomLimit": "Para acercarte más, cambia al modo Grupos.",
     "close": "Cerrar",
     "clusterItem": "{{count}} reportes, gravedad {{severity}}",
     "pinItem": "Reporte: {{type}}",

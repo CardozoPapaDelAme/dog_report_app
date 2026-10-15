@@ -19,13 +19,15 @@ import ReportFlagSheet from '../components/ReportFlagSheet';
 import ZoneReportsSheet from '../components/ZoneReportsSheet';
 import { usePublicHeatmapReports } from '../hooks/usePublicHeatmapReports.js';
 import { usePublicMap } from '../hooks/usePublicMap.js';
-import { INCIDENT_TYPES, MAX_ZOOM, ZOOM_RADIUS_BANDS, isInViewport, severityLevel } from '../models/publicMap.js';
+import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, ZOOM_RADIUS_BANDS, isInViewport, severityLevel } from '../models/publicMap.js';
 import { getApiBaseUrl } from '../services/apiClient.js';
 import { CREEL_CENTER, INITIAL_ZOOM, MAP_ATTRIBUTION_TEXT } from '../services/mapConfig.js';
 import { isNativeMapAvailableAtRuntime } from '../services/mapRuntime.js';
 
 /** Height of the vertical mode switch (two 40 pt options, 2 pt gap, 3 pt padding); the compass sits right under it. */
 const MODE_SWITCH_HEIGHT = 40 * 2 + 2 + 3 * 2;
+/** How long the "switch to clusters to zoom further" hint stays on screen. */
+const HEATMAP_HINT_MS = 5000;
 const LOCATION_TIMEOUT_MS = 3000;
 /** Height of the compact cluster card; the camera leaves this much room below the focused cluster. */
 const CLUSTER_CARD_PADDING = 260;
@@ -275,6 +277,30 @@ function NativeMapScreen({ onBack }) {
   const [bearing, setBearing] = useState(0);
   const mapRef = useRef(null);
   const heatmap = usePublicHeatmapReports(viewMode === 'heatmap');
+  const [zoomHint, setZoomHint] = useState(false);
+  const atZoomLimit = useRef(false);
+
+  // Heatmap stops at HEATMAP_MAX_ZOOM: tell the user once per arrival how to get closer.
+  const handleRegionChange = useCallback((region) => {
+    map.setRegion(region);
+    if (viewMode !== 'heatmap') return;
+    if (region.zoom >= HEATMAP_MAX_ZOOM - 0.05) {
+      if (!atZoomLimit.current) { atZoomLimit.current = true; setZoomHint(true); }
+    } else if (region.zoom < HEATMAP_MAX_ZOOM - 0.5) {
+      atZoomLimit.current = false;
+    }
+  }, [map.setRegion, viewMode]);
+
+  useEffect(() => {
+    if (!zoomHint) return undefined;
+    const timer = setTimeout(() => setZoomHint(false), HEATMAP_HINT_MS);
+    return () => clearTimeout(timer);
+  }, [zoomHint]);
+
+  const changeViewMode = useCallback((next) => {
+    setViewMode(next);
+    if (next !== 'heatmap') { setZoomHint(false); atZoomLimit.current = false; }
+  }, []);
 
   const focusCluster = useCallback((cluster, fromZoom) => {
     setFocus({ ...cluster.approximate_location, zoom: nextBandZoom(fromZoom), padding: { bottom: CLUSTER_CARD_PADDING + insets.bottom } });
@@ -322,7 +348,7 @@ function NativeMapScreen({ onBack }) {
             initialCenter={initialCenter}
             initialZoom={INITIAL_ZOOM}
             focus={focus}
-            onRegionChange={map.setRegion}
+            onRegionChange={handleRegionChange}
             onSelectCluster={selectCluster}
             onSelectReport={selectReport}
           />
@@ -331,7 +357,7 @@ function NativeMapScreen({ onBack }) {
         )}
       </View>
       <MapTopBar onBack={onBack} t={t} style={[styles.topBarFloat, { top: insets.top + spacing.sm }]} />
-      <MapModeSwitch value={viewMode} onChange={setViewMode} t={t} style={{ top: insets.top + spacing.sm }} />
+      <MapModeSwitch value={viewMode} onChange={changeViewMode} t={t} style={{ top: insets.top + spacing.sm }} />
       <MapCompass
         bearing={bearing}
         onPress={() => mapRef.current?.resetNorth?.()}
@@ -356,6 +382,14 @@ function NativeMapScreen({ onBack }) {
                 <Text style={styles.retryText}>{t('map.retry')}</Text>
               </Pressable>
             ) : null}
+          </View>
+        </View>
+      ) : null}
+      {zoomHint ? (
+        <View pointerEvents="none" accessibilityRole="alert" style={[styles.hintSlot, { bottom: insets.bottom + 44 }]}>
+          <View style={styles.banner}>
+            <Icon name="info" size={20} color={colors.signal} />
+            <Text style={[styles.bannerTitle, styles.bannerText]}>{t('map.heatmapZoomLimit')}</Text>
           </View>
         </View>
       ) : null}
@@ -409,6 +443,7 @@ const styles = StyleSheet.create({
   modeOptionSelected: { backgroundColor: colors.primary },
   loading: { position: 'absolute', alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
   fallbackContent: { padding: spacing.lg, gap: spacing.xl },
+  hintSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
   bannerSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
   banner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.lg, backgroundColor: 'rgba(2,26,6,0.9)', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   bannerText: { flex: 1, gap: 2 },

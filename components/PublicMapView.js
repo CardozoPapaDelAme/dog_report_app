@@ -8,7 +8,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Camera, GeoJSONSource, Layer, Map, ViewAnnotation } from '@maplibre/maplibre-react-native';
 
-import { INCIDENT_TYPES, clusterRadiusPx, reportsToHeatmapGeoJSON, severityLevel } from '../models/publicMap.js';
+import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, clusterRadiusPx, reportsToHeatmapGeoJSON, severityLevel } from '../models/publicMap.js';
 import { colors, fontFamily } from '../theme/index.js';
 import { PinGlyph } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
@@ -32,9 +32,6 @@ import { getMapStyleUrl } from '../services/mapConfig.js';
  * @param {(report: import('../models/publicMap.js').PublicReport) => void} [props.onSelectReport]
  * @returns {JSX.Element}
  */
-/** Deepest zoom in heatmap mode: beyond it single reports read as isolated blurred dots; use cluster mode for detail. */
-export const HEATMAP_MAX_ZOOM = 15;
-
 // Soft, wide blobs that merge where reports overlap and saturate to red in dense areas.
 const HEATMAP_PAINT = {
   'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 1, 0.5, 3, 1],
@@ -94,7 +91,7 @@ const PublicMapView = forwardRef(function PublicMapView({
     >
       <Camera
         ref={cameraRef}
-        maxZoom={heatmap ? HEATMAP_MAX_ZOOM : undefined}
+        maxZoom={heatmap ? HEATMAP_MAX_ZOOM : MAX_ZOOM}
         initialViewState={{ center: [initialCenter.longitude, initialCenter.latitude], zoom: initialZoom }}
       />
       {heatmap ? (

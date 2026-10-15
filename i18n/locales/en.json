@@ -596,6 +596,7 @@
     "modeClusters": "Clusters",
     "modeHeatmap": "Heatmap",
     "compass": "Reset to north",
+    "heatmapZoomLimit": "To zoom in further, switch to Clusters mode.",
     "close": "Close",
     "clusterItem": "{{count}} reports, {{severity}} severity",
     "pinItem": "Report: {{type}}",
