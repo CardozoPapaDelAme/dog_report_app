@@ -3,12 +3,12 @@
  * Presentational native public map (MapLibre): server clusters or report pins, colored by severity.
  * The web build uses `components/PublicMapView.web.js` with the same props.
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Camera, Map, ViewAnnotation } from '@maplibre/maplibre-react-native';
+import { Camera, GeoJSONSource, Layer, Map, ViewAnnotation } from '@maplibre/maplibre-react-native';
 
-import { INCIDENT_TYPES, clusterRadiusPx, severityLevel } from '../models/publicMap.js';
+import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, clusterRadiusPx, reportsToHeatmapGeoJSON, severityLevel } from '../models/publicMap.js';
 import { colors, fontFamily } from '../theme/index.js';
 import { PinGlyph } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
@@ -18,6 +18,10 @@ import { getMapStyleUrl } from '../services/mapConfig.js';
 /**
  * @param {object} props
  * @param {'clusters' | 'pins'} props.mode
+ * @param {'clusters' | 'heatmap'} [props.viewMode] - `heatmap` draws a density layer from `heatmapReports` instead of markers.
+ * @param {import('../models/publicMap.js').PublicReport[]} [props.heatmapReports] - Individual reports feeding the heatmap.
+ * @param {(bearing: number) => void} [props.onBearingChange] - Map rotation in degrees; 0 is north.
+ * Ref handle: `resetNorth()` eases the camera back to north.
  * @param {import('../models/publicMap.js').MapCluster[]} props.clusters - Rendered in `clusters` mode.
  * @param {import('../models/publicMap.js').PublicReport[]} props.reports - Rendered in `pins` mode.
  * @param {{longitude: number, latitude: number}} props.initialCenter
@@ -28,8 +32,22 @@ import { getMapStyleUrl } from '../services/mapConfig.js';
  * @param {(report: import('../models/publicMap.js').PublicReport) => void} [props.onSelectReport]
  * @returns {JSX.Element}
  */
-export default function PublicMapView({
+// Soft, wide blobs that merge where reports overlap and saturate to red in dense areas.
+const HEATMAP_PAINT = {
+  'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 1, 0.5, 3, 1],
+  'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 1.2, 15, 2.2],
+  // Radius doubles per zoom level (≈250 m on the ground) so nearby reports keep merging.
+  'heatmap-radius': ['interpolate', ['exponential', 2], ['zoom'], 8, 8, 15, 120],
+  'heatmap-opacity': 0.78,
+  'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
+    0, 'rgba(76,175,80,0)', 0.12, 'rgba(76,175,80,0.55)', 0.3, '#9ccc3c', 0.5, colors.signal, 0.72, '#ff9800', 1, '#e53935'],
+};
+
+const PublicMapView = forwardRef(function PublicMapView({
   mode,
+  viewMode = 'clusters',
+  heatmapReports = [],
+  onBearingChange,
   clusters,
   reports,
   initialCenter,
@@ -38,14 +56,22 @@ export default function PublicMapView({
   onRegionChange,
   onSelectCluster,
   onSelectReport,
-}) {
+}, ref) {
   const { t } = useTranslation();
   const mapRef = useRef(null);
   const cameraRef = useRef(null);
 
+  const heatmapData = useMemo(() => reportsToHeatmapGeoJSON(clusters), [clusters]);
+  const heatmap = viewMode === 'heatmap';
+
+  useImperativeHandle(ref, () => ({
+    resetNorth: () => cameraRef.current?.easeTo({ bearing: 0, duration: 400 }),
+  }), []);
+
   const emit = useCallback((view) => {
     if (view && Array.isArray(view.bounds)) onRegionChange?.({ zoom: view.zoom, bounds: view.bounds });
-  }, [onRegionChange]);
+    if (view && Number.isFinite(view.bearing)) onBearingChange?.(view.bearing);
+  }, [onRegionChange, onBearingChange]);
 
   // Programmatic zoom requests (cluster expansion) arrive as a new `focus` object.
   useEffect(() => {
@@ -60,13 +86,20 @@ export default function PublicMapView({
       mapStyle={getMapStyleUrl()}
       attribution
       onDidFinishLoadingMap={() => { mapRef.current?.getViewState().then(emit).catch(() => {}); }}
+      onRegionIsChanging={(event) => { const b = event.nativeEvent?.bearing; if (Number.isFinite(b)) onBearingChange?.(b); }}
       onRegionDidChange={(event) => emit(event.nativeEvent)}
     >
       <Camera
         ref={cameraRef}
+        maxZoom={heatmap ? HEATMAP_MAX_ZOOM : MAX_ZOOM}
         initialViewState={{ center: [initialCenter.longitude, initialCenter.latitude], zoom: initialZoom }}
       />
-      {mode === 'clusters' ? clusters.map((cluster) => {
+      {heatmap ? (
+        <GeoJSONSource id="heatmap-source" data={heatmapData}>
+          <Layer type="heatmap" id="heatmap-layer" paint={HEATMAP_PAINT} />
+        </GeoJSONSource>
+      ) : null}
+      {mode === 'clusters' && !heatmap ? clusters.map((cluster) => {
         const radius = clusterRadiusPx(cluster.report_count);
         const { longitude, latitude } = cluster.approximate_location;
         return (
@@ -95,7 +128,7 @@ export default function PublicMapView({
           </ViewAnnotation>
         );
       }) : null}
-      {mode === 'pins' ? reports.map((report) => {
+      {mode === 'pins' && !heatmap ? reports.map((report) => {
         const { longitude, latitude } = report.approximate_location;
         return (
           <ViewAnnotation
@@ -118,7 +151,9 @@ export default function PublicMapView({
       }) : null}
     </Map>
   );
-}
+});
+
+export default PublicMapView;
 
 const styles = StyleSheet.create({
   map: { flex: 1 },
@@ -126,6 +161,4 @@ const styles = StyleSheet.create({
   cluster: { alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 5 },
   clusterText: { color: '#ffffff', fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 15 },
   pinWrap: { alignItems: 'center' },
-  
-  
 });

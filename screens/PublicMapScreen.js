@@ -6,23 +6,28 @@
  * Creel.
  */
 import * as Location from 'expo-location';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton, Banner, Icon, IconButton, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
+import { AppButton, Banner, Icon, IconButton, MapCompass, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 import RecentReportsList from '../components/RecentReportsList';
 import ReportFlagSheet from '../components/ReportFlagSheet';
 import ZoneReportsSheet from '../components/ZoneReportsSheet';
+import { usePublicHeatmapReports } from '../hooks/usePublicHeatmapReports.js';
 import { usePublicMap } from '../hooks/usePublicMap.js';
-import { INCIDENT_TYPES, MAX_ZOOM, ZOOM_RADIUS_BANDS, isInViewport, severityLevel } from '../models/publicMap.js';
+import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, ZOOM_RADIUS_BANDS, isInViewport, severityLevel } from '../models/publicMap.js';
 import { getApiBaseUrl } from '../services/apiClient.js';
 import { CREEL_CENTER, INITIAL_ZOOM, MAP_ATTRIBUTION_TEXT } from '../services/mapConfig.js';
 import { isNativeMapAvailableAtRuntime } from '../services/mapRuntime.js';
 
+/** Height of the vertical mode switch (two 40 pt options, 2 pt gap, 3 pt padding); the compass sits right under it. */
+const MODE_SWITCH_HEIGHT = 40 * 2 + 2 + 3 * 2;
+/** How long the "switch to clusters to zoom further" hint stays on screen. */
+const HEATMAP_HINT_MS = 5000;
 const LOCATION_TIMEOUT_MS = 3000;
 /** Height of the compact cluster card; the camera leaves this much room below the focused cluster. */
 const CLUSTER_CARD_PADDING = 260;
@@ -122,6 +127,29 @@ function MapTopBar({ onBack, t, style, showTitle = false }) {
         <Icon name="back" size={24} color={colors.primary} />
       </Pressable>
       <Text accessibilityRole="header" numberOfLines={1} style={showTitle ? styles.topTitleShown : styles.topTitleHidden}>{t('map.title')}</Text>
+    </View>
+  );
+}
+
+/** Slim vertical switch floating at the right margin (same inset as the back button): icon-only (labels for screen readers), clusters over heatmap. */
+function MapModeSwitch({ value, onChange, t, style }) {
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel={t('map.modeLabel')} style={[styles.modeSwitch, style]}>
+      {['clusters', 'heatmap'].map((mode) => {
+        const selected = value === mode;
+        return (
+          <Pressable
+            key={mode}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            accessibilityLabel={t(mode === 'clusters' ? 'map.modeClusters' : 'map.modeHeatmap')}
+            onPress={() => onChange(mode)}
+            style={[styles.modeOption, selected && styles.modeOptionSelected]}
+          >
+            <Icon name={mode === 'clusters' ? 'clusters' : 'heat'} size={20} color={selected ? colors.onPrimary : colors.primary} />
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -245,6 +273,34 @@ function NativeMapScreen({ onBack }) {
   const [zoneCluster, setZoneCluster] = useState(null);
   const [flagReport, setFlagReport] = useState(null);
   const [focus, setFocus] = useState(null);
+  const [viewMode, setViewMode] = useState('clusters');
+  const [bearing, setBearing] = useState(0);
+  const mapRef = useRef(null);
+  const heatmap = usePublicHeatmapReports(viewMode === 'heatmap');
+  const [zoomHint, setZoomHint] = useState(false);
+  const atZoomLimit = useRef(false);
+
+  // Heatmap stops at HEATMAP_MAX_ZOOM: tell the user once per arrival how to get closer.
+  const handleRegionChange = useCallback((region) => {
+    map.setRegion(region);
+    if (viewMode !== 'heatmap') return;
+    if (region.zoom >= HEATMAP_MAX_ZOOM - 0.05) {
+      if (!atZoomLimit.current) { atZoomLimit.current = true; setZoomHint(true); }
+    } else if (region.zoom < HEATMAP_MAX_ZOOM - 0.5) {
+      atZoomLimit.current = false;
+    }
+  }, [map.setRegion, viewMode]);
+
+  useEffect(() => {
+    if (!zoomHint) return undefined;
+    const timer = setTimeout(() => setZoomHint(false), HEATMAP_HINT_MS);
+    return () => clearTimeout(timer);
+  }, [zoomHint]);
+
+  const changeViewMode = useCallback((next) => {
+    setViewMode(next);
+    if (next !== 'heatmap') { setZoomHint(false); atZoomLimit.current = false; }
+  }, []);
 
   const focusCluster = useCallback((cluster, fromZoom) => {
     setFocus({ ...cluster.approximate_location, zoom: nextBandZoom(fromZoom), padding: { bottom: CLUSTER_CARD_PADDING + insets.bottom } });
@@ -270,23 +326,29 @@ function NativeMapScreen({ onBack }) {
     ? map.reports.filter((report) => isInViewport(report.approximate_location, map.region.viewport))
     : map.reports;
 
+  const activePhase = viewMode === 'heatmap' ? heatmap.phase : map.phase;
+  const activeRetry = viewMode === 'heatmap' ? heatmap.retry : map.retry;
   let banner = null;
-  if (map.phase === 'offline') banner = { text: t('map.offline'), retry: true };
-  else if (map.phase === 'error') banner = { text: t('map.error'), retry: true, danger: true };
-  else if (map.phase === 'empty') banner = { text: t('map.empty') };
+  if (activePhase === 'offline') banner = { text: t('map.offline'), retry: true };
+  else if (activePhase === 'error') banner = { text: t('map.error'), retry: true, danger: true };
+  else if (activePhase === 'empty') banner = { text: t('map.empty') };
 
   return (
     <View style={styles.root}>
       <View style={StyleSheet.absoluteFill}>
         {initialCenter ? (
           <PublicMapView
+            ref={mapRef}
             mode={map.mode}
+            viewMode={viewMode}
+            heatmapReports={heatmap.reports}
+            onBearingChange={setBearing}
             clusters={map.clusters}
             reports={visibleReports}
             initialCenter={initialCenter}
             initialZoom={INITIAL_ZOOM}
             focus={focus}
-            onRegionChange={map.setRegion}
+            onRegionChange={handleRegionChange}
             onSelectCluster={selectCluster}
             onSelectReport={selectReport}
           />
@@ -295,7 +357,14 @@ function NativeMapScreen({ onBack }) {
         )}
       </View>
       <MapTopBar onBack={onBack} t={t} style={[styles.topBarFloat, { top: insets.top + spacing.sm }]} />
-      {map.phase === 'loading' && initialCenter ? (
+      <MapModeSwitch value={viewMode} onChange={changeViewMode} t={t} style={{ top: insets.top + spacing.sm }} />
+      <MapCompass
+        bearing={bearing}
+        onPress={() => mapRef.current?.resetNorth?.()}
+        accessibilityLabel={t('map.compass')}
+        style={{ top: insets.top + spacing.sm + MODE_SWITCH_HEIGHT + spacing.sm, right: spacing.lg }}
+      />
+      {activePhase === 'loading' && initialCenter ? (
         <View pointerEvents="none" style={[styles.loading, { top: insets.top + spacing.sm }]}>
           <ActivityIndicator accessibilityLabel={t('map.loading')} color={colors.primary} />
         </View>
@@ -306,13 +375,21 @@ function NativeMapScreen({ onBack }) {
             <Icon name="alert" size={20} color={banner.danger ? '#ffb4ab' : colors.warningAmber} />
             <View style={styles.bannerText}>
               <Text style={styles.bannerTitle}>{banner.text}</Text>
-              {map.phase === 'offline' ? <Text style={styles.bannerHint}>{t('map.offlineReporting')}</Text> : null}
+              {activePhase === 'offline' ? <Text style={styles.bannerHint}>{t('map.offlineReporting')}</Text> : null}
             </View>
             {banner.retry ? (
-              <Pressable accessibilityRole="button" onPress={map.retry} hitSlop={8} style={styles.retryButton}>
+              <Pressable accessibilityRole="button" onPress={activeRetry} hitSlop={8} style={styles.retryButton}>
                 <Text style={styles.retryText}>{t('map.retry')}</Text>
               </Pressable>
             ) : null}
+          </View>
+        </View>
+      ) : null}
+      {zoomHint ? (
+        <View pointerEvents="none" accessibilityRole="alert" style={[styles.hintSlot, { bottom: insets.bottom + 44 }]}>
+          <View style={styles.banner}>
+            <Icon name="info" size={20} color={colors.signal} />
+            <Text style={[styles.bannerTitle, styles.bannerText]}>{t('map.heatmapZoomLimit')}</Text>
           </View>
         </View>
       ) : null}
@@ -361,8 +438,12 @@ const styles = StyleSheet.create({
   countStrip: { gap: spacing.sm, paddingVertical: spacing.xs },
   mapArea: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  modeSwitch: { position: 'absolute', right: spacing.lg, width: 46, alignItems: 'center', padding: 3, gap: 2, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.92)', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 1 }, elevation: 5 },
+  modeOption: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill },
+  modeOptionSelected: { backgroundColor: colors.primary },
   loading: { position: 'absolute', alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
   fallbackContent: { padding: spacing.lg, gap: spacing.xl },
+  hintSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
   bannerSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
   banner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.lg, backgroundColor: 'rgba(2,26,6,0.9)', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   bannerText: { flex: 1, gap: 2 },

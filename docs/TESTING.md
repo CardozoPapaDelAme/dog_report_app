@@ -208,6 +208,7 @@ or retry state through spies/fakes before any live-project exercise.
   return the same approximate point.
 - Confirm cluster queries honor the documented viewport and the 2,000/5,000 report
   cap rather than scanning unbounded history.
+- `reportsToHeatmapGeoJSON` weights public reports by severity and keeps only the 50 m approximate positions; the compass shows only while `|bearing| > 1°` and resets to north (manual device check, MapLibre rotation is not simulated).
 - Test online loading under the RNF02 prototype target and explicit offline UX.
 
 Executable L3 API coverage:

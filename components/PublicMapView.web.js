@@ -16,6 +16,7 @@ import { WEB_STUB_BOUNDS } from '../services/mapConfig.js';
  * Same props as the native `PublicMapView`; `initialCenter` is ignored.
  * @param {object} props
  * @param {'clusters' | 'pins'} props.mode
+ * @param {'clusters' | 'heatmap'} [props.viewMode] - Ignored on web: the list stand-in has no density layer.
  * @param {import('../models/publicMap.js').MapCluster[]} props.clusters
  * @param {import('../models/publicMap.js').PublicReport[]} props.reports
  * @param {number} props.initialZoom - Reported once on mount.

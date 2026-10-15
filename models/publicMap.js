@@ -9,6 +9,8 @@
 export const PIN_ZOOM_THRESHOLD = 17;
 export const MIN_ZOOM = 0;
 export const MAX_ZOOM = 22;
+/** Deepest zoom in heatmap mode: beyond it single reports read as isolated blurred dots; use cluster mode for detail. */
+export const HEATMAP_MAX_ZOOM = 15;
 
 // Mirrors supabase/functions/api/domain/publicMap.js (parity asserted in models/publicMap.test.js).
 export const ZOOM_RADIUS_BANDS = Object.freeze([
@@ -306,4 +308,27 @@ export function reportsInCluster(reports, cluster, zoom) {
       return location !== null && haversineMeters(center, location) <= radius;
     })
     .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at));
+}
+
+/** Heat contribution per severity level: a serious incident warms the map more than a sighting. */
+export const HEATMAP_SEVERITY_WEIGHT = Object.freeze({ low: 1, medium: 2, high: 3 });
+
+/**
+ * Builds the heatmap source from individual public reports (already the stable 50 m approximation,
+ * so nothing finer than that is exposed). Density comes from overlapping points, not from clusters.
+ * @param {PublicReport[]} reports
+ * @returns {{type: 'FeatureCollection', features: object[]}} Point features weighted by incident severity.
+ */
+export function reportsToHeatmapGeoJSON(reports) {
+  const features = [];
+  for (const item of Array.isArray(reports) ? reports : []) {
+    const location = readLocation(item?.approximate_location);
+    if (!location) continue;
+    features.push({
+      type: 'Feature',
+      properties: { weight: HEATMAP_SEVERITY_WEIGHT[severityLevel(item.incident_type)] },
+      geometry: { type: 'Point', coordinates: [location.longitude, location.latitude] },
+    });
+  }
+  return { type: 'FeatureCollection', features };
 }
