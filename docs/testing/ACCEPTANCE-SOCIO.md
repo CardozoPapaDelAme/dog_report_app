@@ -1,4 +1,8 @@
-# Matriz de pruebas de aceptación con el socio formador
+# Test cases para el socio formador
+
+Cinco casos principales con escenario, pasos y resultados (`TC-CLIENTE-01` a
+`TC-CLIENTE-05`), en el formato Given / When / Then. Sesión del 15 de octubre de
+2026, con el equipo operando el teléfono y el socio formador dictaminando.
 
 | Campo | Valor (se llena el día de la sesión) |
 |---|---|
@@ -19,45 +23,103 @@
    en el momento y no se escriben en Git ni en capturas.
 3. Al menos tres reportes de prueba, de categorías distintas, ya aprobados por el
    Administrator, para que el mapa y el panel tengan contenido.
-4. Imagen de un perro (impresa o en otra pantalla) y una escena sin perro. Sin
-   personas, placas ni domicilios en cuadro.
+4. Imagen de un perro (impresa o en otra pantalla). Sin personas, placas ni
+   domicilios en cuadro.
 5. Aviso: la sesión alfa (`docs/testing/ALPHA.md`) se hizo en Android; en iPhone real
    no se han ejecutado estos flujos. Hacer un ensayo previo, en especial cámara y
-   validación de foto (TC-SOCIO-01, 04), exportación y compartir CSV/XLSX (10) y
-   modo avión (05, 07), que en iOS se activa desde el Centro de control.
-6. Duración estimada: 60 a 90 minutos. Orden sugerido: 01–05, 12–13, 06–08, 09–11.
+   validación de foto (TC-CLIENTE-01), modo avión (02) y guardar/compartir CSV y
+   XLSX (04). En iOS el modo avión se activa desde el Centro de control.
+6. Duración estimada: 45 a 60 minutos. Orden: 01, 02, 05, 03, 04.
 
-Valores exactos a escribir en cada caso: `docs/testing/data/aceptacion-entradas.json`
-(claves `acept-nn-...`). Para la denuncia: motivo «Otro» y detalle `Prueba de aceptación`.
+Valores exactos a escribir: `docs/testing/data/aceptacion-entradas.json` (claves
+`acept-01-reporte-con-foto`, `acept-05-sin-red`, `acept-08-panel-periodo`,
+`acept-09-exportacion`, `acept-11-moderacion`). Casos base:
+`docs/testing/ACCEPTANCE.md` y `docs/testing/cases/alpha.md`.
 
-## Matriz
+## TC-CLIENTE-01 · Crear un reporte con foto
 
-Las columnas **Pasó / No pasó** y **Comentario** van vacías: se llenan durante la sesión.
+Requerimientos: HU-01, HU-02, HU-03, HU-06, HU-07; RF01, RF02, RF03, RF06, RF07.
+Base: `TC-ACEPTACION-01`.
 
-| ID | Actor | Qué valida para el negocio | Req. | Tipo | Qué haremos | Qué debe ocurrir | Datos de entrada | Pasó / No pasó | Comentario |
-|---|---|---|---|---|---|---|---|---|---|
-| TC-SOCIO-01 | Reportero público | Cualquier persona reporta un perro en segundos, sin cuenta ni datos personales | HU-01, HU-02, HU-03, HU-06, HU-07; RF01, RF02, RF03, RF06, RF07 | normal | Abrir la app, tomar la foto del perro, leer el aviso, elegir «Avistamiento» y «Solitario», escribir una descripción y enviar | La app abre en la cámara; la foto se acepta; el aviso pide no ingresar datos personales y no hay campos de nombre, teléfono ni correo; aparece «Reporte enviado» | `acept-01-reporte-con-foto`; perro nítido | | |
-| TC-SOCIO-02 | Reportero público | Se puede reportar rápido aunque no haya foto | HU-04, HU-05; RF04, RF05 | normal | Tocar «Reportar sin foto», elegir «Avistamiento» y «Manada», escribir cantidad 5 y enviar | El formulario indica «Sin foto»; pide la cantidad de la manada; aparece «Reporte enviado» | `acept-02-sin-foto-manada` | | |
-| TC-SOCIO-03 | Reportero público | Los datos absurdos no ensucian la información de la Asociación | HU-04; RF04 | excepción | En una manada, escribir cantidad 1001 y enviar; repetir con 1 | «Escribe un número entero entre 2 y 1000.»; el reporte no se envía ni se guarda | `acept-03-cantidad-fuera-de-rango`; también `1` | | |
-| TC-SOCIO-04 | Reportero público | Solo entran fotos de perros; la revisión ocurre en el teléfono | HU-09; RF09 | excepción | Tomar la foto de una escena sin perro | «No detectamos un perro en la foto.» con opción «Tomar otra»; no se crea reporte | `acept-04-foto-sin-perro` | | |
-| TC-SOCIO-05 | Reportero público | En zonas con mala señal el reporte no se pierde ni se duplica | HU-01; RF01, RNF12 | normal | Activar modo avión, crear y enviar un reporte; volver a la cámara; desactivar modo avión y esperar la sincronización | Sin red: «Reporte guardado para sincronizar» y aviso de pendientes; con red: «Reportes sincronizados» y el aviso desaparece; el reporte aparece una sola vez en la cola de moderación | `acept-05-sin-red` | | |
-| TC-SOCIO-06 | Público general | El mapa muestra dónde hay problemas sin revelar ubicaciones exactas | HU-10, HU-11, HU-12, HU-13, HU-14; RF10–RF14, RNF13 | normal | Tocar «Ver mapa»; observar los círculos; tocar uno; acercar hasta ver pines; tocar un pin | Los reportes cercanos se agrupan con su número; más reportes, círculo más grande; el color indica la mayor gravedad; el detalle muestra el conteo por categoría; los pines muestran tipo, fecha y ubicación aproximada | Reportes aprobados de las condiciones de entrada | | |
-| TC-SOCIO-07 | Público general | Sin internet la app lo dice con claridad y sigue permitiendo reportar | HU-10; RF10 | excepción | Con modo avión, abrir el mapa; desactivar modo avión y tocar «Reintentar» | «El mapa no está disponible sin conexión» y se puede seguir creando reportes; al volver la red, el mapa aparece | Modo avión | | |
-| TC-SOCIO-08 | Público general | La comunidad ayuda a detectar reportes falsos sin tener cuenta | HU-08; RF08, RNF29 | normal y excepción | Abrir un reporte de prueba propio y tocar «Denunciar»; enviar sin motivo; enviar con motivo «Otro» y detalle; denunciar otra vez | Sin motivo no se puede enviar; con motivo aparece «Gracias. Revisaremos el reporte.»; la segunda vez dice «Ya denunciaste este reporte.» | Motivo «Otro»; detalle `Prueba de aceptación` | | |
-| TC-SOCIO-09 | Asociación de Hoteles | La Asociación consulta solo datos de negocio, con cuenta provisionada | HU-15, HU-16; RF15, RF16 | normal | En la cámara, «Acceso de personal»; iniciar sesión como Asociación; elegir «Últimos 7 días» y «Consultar»; revisar resumen y una tarjeta | Abre «Panel de la Asociación» sin opción de registro; muestra total, resumen por fecha y tarjetas con datos del perro y del hecho, sin datos de moderación ni de operadores | `acept-08-panel-periodo`; cuenta de Asociación | | |
-| TC-SOCIO-10 | Asociación de Hoteles | La Asociación se lleva la información a Excel o CSV para sus propios análisis | HU-17; RF17 | normal | Con la consulta anterior, tocar «CSV» y guardar; repetir con «XLSX»; abrir ambos archivos | Se generan los dos archivos con las mismas columnas; el número de filas es igual al «Total de reportes» del panel | `acept-09-exportacion` | | |
-| TC-SOCIO-11 | Asociación de Hoteles | Consultas sin resultados o con fechas erróneas no confunden | HU-16, HU-17; RF16, RF17 | excepción | Consultar del 2020-01-01 al 2020-01-02; después del 2026-10-10 al 2026-10-01 | (1) «No hay resultados en este rango.» y la exportación queda deshabilitada; (2) «La fecha final debe ser igual o posterior a la inicial.» | `acept-10-rangos` | | |
-| TC-SOCIO-12 | Administrator | Solo reportes revisados llegan al mapa y a la Asociación; cada acción queda justificada | HU-18, HU-19, HU-20; RF18, RF19, RF20 | normal | Iniciar sesión como Administrator; en «Cola de moderación» aprobar dos reportes; ocultar, restaurar y eliminar un tercero, escribiendo motivo | Abre «Command Center» sin el panel de la Asociación; cada acción pide motivo; ocultar lo retira del mapa; restaurar lo devuelve a «Pendiente»; eliminar es reversible y lo quita de la cola | `acept-11-moderacion`; cuenta de Administrator | | |
-| TC-SOCIO-13 | Administrator | No se puede ocultar un reporte sin dejar el porqué | HU-20; RF20 | excepción | Tocar «Ocultar» en un reporte pendiente, dejar el motivo vacío y cancelar | «Confirmar ocultar» permanece deshabilitado sin motivo; el reporte no cambia de estado | `acept-12-motivo-vacio` | | |
+| Campo | Contenido |
+|---|---|
+| Scenario | **GIVEN** estoy dentro de la zona de prueba, con conexión y sin iniciar sesión. **WHEN** tomo la foto de un perro, completo el formulario y envío el reporte. **THEN** la app confirma el envío y muestra el identificador, sin solicitar mis datos personales. |
+| Preconditions | App en la cámara, permisos habilitados y un perro o su imagen nítida disponible. |
+| Steps | 1. Abrir la app y tomar la foto. 2. Elegir Avistamiento / Solitario y describir. 3. Enviar y anotar el identificador. |
+| Input | Foto nítida de un perro. Tipo: Avistamiento. Clasificación: Solitario. Descripción: Prueba de aceptación. |
+| Expected output | «Reporte enviado» y su identificador. No se pide nombre, teléfono ni correo; se muestra el aviso de evitar datos personales. |
+| Post-conditions | El reporte queda registrado con el identificador anotado. El reportero no necesita una cuenta. |
 
-Fuera de esta sesión: duplicados (RF23), umbrales y zonas del Administrator; ya
-probados en la sesión alfa (`docs/testing/ALPHA.md`).
+## TC-CLIENTE-02 · Reportar sin conexión y sincronizar
 
-## Veredicto del socio formador
+Requerimientos: HU-01, HU-05; RF01, RF05, RNF12. Base: `TC-ACEPTACION-05`.
 
-| Veredicto (marcar uno) | Observaciones y condiciones | Fecha | Nombre y firma |
-|---|---|---|---|
-| ☐ Aceptado ☐ Aceptado con observaciones ☐ Rechazado | | | |
+| Campo | Contenido |
+|---|---|
+| Scenario | **GIVEN** la app está abierta dentro de la zona de prueba y no tengo conexión. **WHEN** envío un reporte sin foto y después recupero internet. **THEN** el reporte se guarda como pendiente y luego se sincroniza una sola vez. |
+| Preconditions | Permiso de ubicación habilitado; modo avión activado y acceso a internet al desactivarlo. |
+| Steps | 1. Elegir Reportar sin foto y completar el caso. 2. Enviar sin red y comprobar el pendiente. 3. Desactivar modo avión y volver a la app. |
+| Input | Sin foto. Tipo: Avistamiento. Clasificación: Solitario. Red: sin conexión y luego con internet. |
+| Expected output | Sin red: «Reporte guardado para sincronizar». Con internet: confirmación de sincronización y retiro del pendiente. |
+| Post-conditions | El facilitador comprueba un solo reporte con el mismo identificador; ya no queda pendiente en la app. |
+
+## TC-CLIENTE-03 · Consultar zonas de riesgo en el mapa
+
+Requerimientos: HU-10, HU-11, HU-12, HU-13, HU-14; RF10–RF14, RNF13.
+Base: `TC-ACEPTACION-06`.
+
+| Campo | Contenido |
+|---|---|
+| Scenario | **GIVEN** tengo internet y hay reportes cercanos, visibles y recientes, de distintas categorías. **WHEN** abro el mapa, selecciono un grupo y acerco hasta abrir un reporte individual. **THEN** veo cantidad, gravedad, conteos por categoría y detalle con ubicación aproximada. |
+| Preconditions | Mapa disponible y reportes de prueba preparados para mostrar grupos y reportes individuales. |
+| Steps | 1. Entrar a Ver mapa y seleccionar un grupo. 2. Revisar sus conteos y acercar el mapa. 3. Seleccionar un reporte y consultar el detalle. |
+| Input | Reportes visibles y recientes. Varios cercanos entre sí. Categorías distintas. Conexión a internet disponible. |
+| Expected output | El grupo muestra cantidad, gravedad y conteos por categoría. El reporte muestra tipo, fecha y ubicación aproximada. |
+| Post-conditions | Se consultó el detalle sin modificar reportes ni exponer su ubicación exacta. |
+
+## TC-CLIENTE-04 · Consultar y exportar datos de la Asociación
+
+Requerimientos: HU-15, HU-16, HU-17; RF15, RF16, RF17.
+Base: `TC-ACEPTACION-08` y `TC-ACEPTACION-09`.
+
+| Campo | Contenido |
+|---|---|
+| Scenario | **GIVEN** tengo cuenta de la Asociación y reportes aceptados y canónicos de los últimos siete días. **WHEN** inicio sesión, consulto ese período y exporto los resultados en CSV y XLSX. **THEN** el panel y ambos archivos contienen los mismos reportes autorizados. |
+| Preconditions | Cuenta de la Asociación disponible y datos de prueba dentro del período que se consultará. |
+| Steps | 1. Ingresar por Acceso de personal. 2. Consultar Últimos 7 días y revisar el total. 3. Guardar y abrir los archivos CSV y XLSX. |
+| Input | Cuenta de la Asociación. Período: Últimos 7 días. Formatos: CSV y XLSX. |
+| Expected output | El panel muestra total y resumen por fecha. CSV y XLSX tienen ese total de filas de datos (sin contar encabezados); excluyen moderación y operadores. |
+| Post-conditions | Ambos archivos están guardados y se comprobó su coincidencia con la consulta del panel. |
+
+## TC-CLIENTE-05 · Ocultar un reporte con una justificación
+
+Requerimientos: HU-18, HU-19, HU-20; RF18, RF19, RF20. Base: `TC-ACEPTACION-11`.
+
+| Campo | Contenido |
+|---|---|
+| Scenario | **GIVEN** estoy autenticado como Administrator y hay un reporte de prueba visible que puedo ocultar. **WHEN** selecciono Ocultar, escribo el motivo y confirmo la acción. **THEN** el reporte queda oculto y deja de aparecer en el mapa al actualizarlo. |
+| Preconditions | Cuenta Administrator activa y reporte identificado, visible y disponible en moderación. |
+| Steps | 1. Seleccionar el reporte y tocar Ocultar. 2. Escribir el motivo y confirmar. 3. Actualizar el mapa y revisar moderación. |
+| Input | Cuenta: Administrator. Reporte de prueba identificado. Motivo: Prueba de aceptación: ocultar. |
+| Expected output | Reporte oculto y ausente del mapa actualizado. En moderación se reconoce como oculto y ofrece la opción de restaurarlo. |
+| Post-conditions | El reporte conserva su contenido; ocultarlo no es borrarlo definitivamente y la acción es reversible. |
+
+## Resultados y conformidad del socio
+
+Registrar: pasó, no pasó o bloqueado. Agregar la observación del socio. Completar
+únicamente con resultados observados.
+
+| Caso | Resultado | Observación del socio |
+|---|---|---|
+| 01 Reporte con foto | | |
+| 02 Sin conexión y sincronización | | |
+| 03 Mapa y zonas de riesgo | | |
+| 04 Panel y exportación | | |
+| 05 Moderación con motivo | | |
+
+| Veredicto (marcar uno) | Observaciones y condiciones | Fecha / nombre / firma |
+|---|---|---|
+| ☐ Aceptado ☐ Aceptado con observaciones ☐ Rechazado | | |
 
 ## Registro posterior
 
