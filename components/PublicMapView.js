@@ -32,11 +32,15 @@ import { getMapStyleUrl } from '../services/mapConfig.js';
  * @param {(report: import('../models/publicMap.js').PublicReport) => void} [props.onSelectReport]
  * @returns {JSX.Element}
  */
+/** Deepest zoom in heatmap mode: beyond it single reports read as isolated blurred dots; use cluster mode for detail. */
+export const HEATMAP_MAX_ZOOM = 15;
+
 // Soft, wide blobs that merge where reports overlap and saturate to red in dense areas.
 const HEATMAP_PAINT = {
   'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 1, 0.5, 3, 1],
-  'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 1.2, 14, 2.4],
-  'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 22, 12, 48, 16, 90],
+  'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 1.2, 15, 2.2],
+  // Radius doubles per zoom level (≈250 m on the ground) so nearby reports keep merging.
+  'heatmap-radius': ['interpolate', ['exponential', 2], ['zoom'], 8, 8, 15, 120],
   'heatmap-opacity': 0.78,
   'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
     0, 'rgba(76,175,80,0)', 0.12, 'rgba(76,175,80,0.55)', 0.3, '#9ccc3c', 0.5, colors.signal, 0.72, '#ff9800', 1, '#e53935'],
@@ -90,6 +94,7 @@ const PublicMapView = forwardRef(function PublicMapView({
     >
       <Camera
         ref={cameraRef}
+        maxZoom={heatmap ? HEATMAP_MAX_ZOOM : undefined}
         initialViewState={{ center: [initialCenter.longitude, initialCenter.latitude], zoom: initialZoom }}
       />
       {heatmap ? (
