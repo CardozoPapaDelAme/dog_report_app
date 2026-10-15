@@ -254,6 +254,7 @@ Shared components live in `components/ui/` and are the only place where buttons,
     - *Clusters:* circular badges with a count and a halo, colored by the highest severity inside; the inner button keeps the diameter contract.
 - **Report Details:** a "ficha" sheet: photo (tap to open it full size), severity stripe, title and date, a two-column grid of facts, "Close" as a button and "Report" as a red link with a flag.
 - **Moderation Row:** pin, incident name (Fredoka), date, neutral status, only the signals that exist (trust, flags, photo), tabular coordinates, and a flat three-cell action bar of equal size (green approve, ink hide/restore, red delete).
+- **Association Report Strip:** the same structure as the moderation row (pin, incident name, date, only the known signals, tabular coordinates) without actions, plus the full report id in small gray text at the foot.
 - **Photo Validator / Camera Notices:** one-line dark capsules (icon + text) in the top third of the camera; "photo rejected" clears itself after 5 seconds.
 
 ## Implementation map

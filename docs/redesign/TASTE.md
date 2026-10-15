@@ -155,6 +155,7 @@ Recorrido histórico (lo rechazado):
 ## Cámara (aprobada)
 
 - **Pantalla de permiso verde** con un solo mensaje y una sola acción, en lugar de botones fantasma detrás de una tarjeta negra.
+- **Huellas en la pantalla de permiso:** el rastro de huellitas del Login arriba a la derecha (junto al ícono de cámara y sobre el título) y una huella grande, tenue, centrada en el hueco entre el texto y el botón "Permitir cámara". Se ven bien juntas por la diferencia de escala y de zona; si estorban, se quita una (regla 13).
 - **Controles sobre degradados reales** (`Scrim`, `react-native-svg`) arriba y abajo, no sobre un 56 % de negro: se leen sobre cualquier imagen.
 - **Obturador de un solo círculo** con contorno blanco; sin anillos dobles ni recuadro de encuadre. Zoom con pellizco (`PanResponder`).
 - **Avisos minimalistas:** foto rechazada, validando y cola de borradores son una **cápsula oscura de una línea** (ícono, texto), no un banner. **El aviso de rechazo desaparece solo a los 5 segundos.**
@@ -165,7 +166,7 @@ Recorrido histórico (lo rechazado):
 
 - **Encabezado con el total** (número grande) y la gráfica de periodo en el cuerpo, **pestañas de periodo** (Últimos 7 días, Personalizado) y "Personalizado" como botón propio con calendario.
 - **Al elegir la fecha inicial se abre sola la fecha final** (decisión del usuario; se ajustó la prueba que esperaba lo contrario).
-- **Filas de bandeja** para los reportes, con **paginación de 5** (`Pager`); la tabla de escritorio se conserva a partir de 900 px de ancho.
+- **Cada reporte, una tira igual a la de moderación:** pin de gravedad (`PinGlyph`), nombre del incidente en Fredoka, fecha de observación en gris, "Aceptado" con su fecha a la derecha, líneas de texto con lo que se sabe (Solitario o Manada, detalles, tamaño, color, collar, foto; lo "No indicado" no se muestra), coordenadas tabulares y, discreto al pie, el **ID completo del reporte** (las pruebas lo usan para demostrar que las tarjetas y el CSV traen los mismos reportes). Sin barra de acciones: la Asociación solo lee. Con **paginación de 5** (`Pager`); la tabla de escritorio se conserva a partir de 900 px de ancho.
 - **Huella lejos del botón de salir**, para que no parezca parte del control.
 
 ## Mapa (aprobado)

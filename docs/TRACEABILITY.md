@@ -68,7 +68,7 @@ stub `components/PublicMapView.web.js` backs the Playwright spec.
 | RNF03 | API/database | Bounded Hono queries, spatial/time indexes | Load test growth profile |
 | RNF04 | Report UX | Camera-first dynamic form; UAT con usuarios generales | `TC-UAT-01` en `docs/testing/cases/uat.md`: U01, U02 y U03 completaron reporte en 76.15 s, 123.43 s y 10 s respectivamente (`RUN-124`, `RUN-125`, `RUN-127`), bajo 300 s |
 | RNF05 | Mobile app | Expo development builds, iOS/Android | Supported-device smoke tests |
-| RNF06 | Localization | `react-i18next`; device-locale selection (`i18n/deviceLanguage.js`, es default); all role flows | ES/EN key parity (`i18n/locales.test.js`), language selection test, English Playwright spec; TalkBack/VoiceOver and layout manual |
+| RNF06 | Localization | `react-i18next`; device-locale selection (`i18n/deviceLanguage.js`, es default; iOS only reports the languages the app declares, so `app.json` sets `ios.infoPlist.CFBundleLocalizations` to `es` and `en`, which needs a native rebuild); all role flows | ES/EN key parity (`i18n/locales.test.js`), language selection test, English Playwright spec; TalkBack/VoiceOver and layout manual |
 | RNF07 | Auth/navigation | Two sibling roles; profile checks | No public signup or role inheritance |
 | RNF08 | On-device vision | `react-native-fast-tflite`; bundled MobileNetV3-Small (float32 despite the `int8` file name) | Runs offline in development/standalone builds; not in Expo Go/web. Load/latency device-only |
 | RNF09 | Location validation | Versioned zones; ReportService + PostGIS repository | New points outside rejected; identical replay still accepted; mock/imprecise reviewed |
