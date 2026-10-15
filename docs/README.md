@@ -50,6 +50,7 @@ relationships.
 - [`SECURITY.md`](SECURITY.md) — security, privacy, and threat controls
 - [`DEPLOYMENT.md`](DEPLOYMENT.md) — deployment and operations runbook
 - [`REVIEWING.md`](REVIEWING.md) — simplest way for the team to install and review the app
+- [`DEMO_DATA.md`](DEMO_DATA.md) — removable Creel demo reports and photos for client demos on staging
 - [`TESTING.md`](TESTING.md) — verification strategy and scenario ownership
 - [`TRACEABILITY.md`](TRACEABILITY.md) — complete RF/RNF/HU mapping
 - [`testing/README.md`](testing/README.md) — shared testing conventions and templates (T1)
