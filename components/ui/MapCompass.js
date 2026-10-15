@@ -5,8 +5,12 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet } from 'react-native';
-import { colors, layout, motion, radius } from '../../theme/index.js';
-import Icon from './Icon.js';
+import Svg, { Circle, Polygon } from 'react-native-svg';
+import { colors, motion, radius } from '../../theme/index.js';
+
+/** Matches the 46 pt mode switch so both controls share one centered column. */
+export const COMPASS_SIZE = 46;
+const SIZE = COMPASS_SIZE;
 
 /** Degrees from north below which the compass hides (and above which it shows). */
 const SHOW_DEGREES = 1;
@@ -50,7 +54,13 @@ export default function MapCompass({ bearing, onPress, accessibilityLabel, style
         style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       >
         <Animated.View style={{ transform: [{ rotate: `${-bearing}deg` }] }}>
-          <Icon name="compass" size={26} color={colors.primary} />
+          {/* Needle drawn pointing up: the red half is north, so it matches the map at rotation 0. */}
+          <Svg width={28} height={28} viewBox="0 0 24 24" accessible={false}>
+            <Circle cx={12} cy={12} r={10.5} fill="none" stroke={colors.primary} strokeWidth={1.5} />
+            <Polygon points="12,3.5 15.5,12 8.5,12" fill={colors.severity.high} />
+            <Polygon points="12,20.5 15.5,12 8.5,12" fill={colors.inkSubtle} />
+            <Circle cx={12} cy={12} r={1.4} fill={colors.surface} />
+          </Svg>
         </Animated.View>
       </Pressable>
     </Animated.View>
@@ -59,6 +69,6 @@ export default function MapCompass({ bearing, onPress, accessibilityLabel, style
 
 const styles = StyleSheet.create({
   wrap: { position: 'absolute' },
-  button: { width: layout.minTouch + 4, height: layout.minTouch + 4, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 6 },
+  button: { width: SIZE, height: SIZE, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 6 },
   pressed: { opacity: 0.7 },
 });

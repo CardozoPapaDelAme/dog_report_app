@@ -24,6 +24,8 @@ import { getApiBaseUrl } from '../services/apiClient.js';
 import { CREEL_CENTER, INITIAL_ZOOM, MAP_ATTRIBUTION_TEXT } from '../services/mapConfig.js';
 import { isNativeMapAvailableAtRuntime } from '../services/mapRuntime.js';
 
+/** Height of the vertical mode switch (two 40 pt options, 2 pt gap, 3 pt padding); the compass sits right under it. */
+const MODE_SWITCH_HEIGHT = 40 * 2 + 2 + 3 * 2;
 const LOCATION_TIMEOUT_MS = 3000;
 /** Height of the compact cluster card; the camera leaves this much room below the focused cluster. */
 const CLUSTER_CARD_PADDING = 260;
@@ -334,7 +336,7 @@ function NativeMapScreen({ onBack }) {
         bearing={bearing}
         onPress={() => mapRef.current?.resetNorth?.()}
         accessibilityLabel={t('map.compass')}
-        style={{ top: insets.top + spacing.sm + 96, right: spacing.sm }}
+        style={{ top: insets.top + spacing.sm + MODE_SWITCH_HEIGHT + spacing.sm, right: 0 }}
       />
       {activePhase === 'loading' && initialCenter ? (
         <View pointerEvents="none" style={[styles.loading, { top: insets.top + spacing.sm }]}>
@@ -402,7 +404,7 @@ const styles = StyleSheet.create({
   countStrip: { gap: spacing.sm, paddingVertical: spacing.xs },
   mapArea: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  modeSwitch: { position: 'absolute', right: 0, padding: 3, gap: 2, borderTopLeftRadius: radius.lg, borderBottomLeftRadius: radius.lg, backgroundColor: 'rgba(255,255,255,0.92)', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 1 }, elevation: 5 },
+  modeSwitch: { position: 'absolute', right: 0, width: 46, alignItems: 'center', padding: 3, gap: 2, borderTopLeftRadius: radius.lg, borderBottomLeftRadius: radius.lg, backgroundColor: 'rgba(255,255,255,0.92)', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 1 }, elevation: 5 },
   modeOption: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md },
   modeOptionSelected: { backgroundColor: colors.primary },
   loading: { position: 'absolute', alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
