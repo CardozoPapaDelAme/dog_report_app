@@ -4,6 +4,8 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import Icon from './ui/Icon.js';
+import { colors, fontFamily, radius, spacing } from '../theme/index.js';
 
 /** Formats a local date as `YYYY-MM-DD`. */
 function dateKey(date) {
@@ -37,7 +39,8 @@ export default function AssociationDatePicker({ visible, value, title, locale, p
     if (visible) setMonth(monthStart(selected));
   }, [visible, selected]);
 
-  const monthLabel = month.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+  const rawMonthLabel = month.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+  const monthLabel = rawMonthLabel.charAt(0).toUpperCase() + rawMonthLabel.slice(1);
   const firstWeekday = month.getDay();
   const dayCount = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const cells = [...Array(firstWeekday).fill(null), ...Array.from({ length: dayCount }, (_, index) => index + 1)];
@@ -47,19 +50,20 @@ export default function AssociationDatePicker({ visible, value, title, locale, p
   const monthBeforeMinimum = nextMonth <= monthStart(earliest);
   const monthAfterMaximum = monthStart(today) <= month;
 
-  return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
     <View style={styles.backdrop}>
+      <Pressable accessible={false} aria-hidden importantForAccessibility="no" onPress={onClose} style={StyleSheet.absoluteFill} />
       <View accessibilityViewIsModal style={styles.dialog}>
         <Text style={styles.title}>{title}</Text>
         <View style={styles.monthRow}>
           <Pressable accessibilityRole="button" accessibilityLabel={previousMonthLabel} disabled={monthBeforeMinimum}
             onPress={() => setMonth(previousMonth)} style={[styles.navButton, monthBeforeMinimum && styles.disabled]}>
-            <Text style={styles.navText}>‹</Text>
+            <Icon name="back" size={22} color={colors.primary} />
           </Pressable>
           <Text accessibilityLiveRegion="polite" style={styles.monthLabel}>{monthLabel}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel={nextMonthLabel} disabled={monthAfterMaximum}
             onPress={() => setMonth(nextMonth)} style={[styles.navButton, monthAfterMaximum && styles.disabled]}>
-            <Text style={styles.navText}>›</Text>
+            <Icon name="forward" size={22} color={colors.primary} />
           </Pressable>
         </View>
         <View style={styles.grid}>
@@ -90,21 +94,20 @@ export default function AssociationDatePicker({ visible, value, title, locale, p
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(16, 28, 16, 0.45)' },
-  dialog: { width: '100%', maxWidth: 380, padding: 20, borderRadius: 18, backgroundColor: '#fff' },
-  title: { color: '#172117', fontSize: 18, fontWeight: '700', marginBottom: 14 },
-  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  navButton: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: '#edf4ea' },
-  navText: { color: '#005a25', fontSize: 27, lineHeight: 30 },
-  monthLabel: { color: '#172117', fontSize: 16, fontWeight: '700', textTransform: 'capitalize' },
+  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
+  dialog: { width: '100%', maxWidth: 480, alignSelf: 'center', padding: spacing.xl, paddingBottom: spacing.xxxl, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface },
+  title: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.ink, marginBottom: spacing.lg },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  navButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
+  monthLabel: { fontFamily: fontFamily.displayMedium, fontSize: 18, color: colors.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  weekday: { width: '14.2857%', paddingVertical: 8, color: '#61705e', textAlign: 'center', fontSize: 12, fontWeight: '600' },
-  dayCell: { width: '14.2857%', height: 42, alignItems: 'center', justifyContent: 'center' },
-  dayButton: { borderRadius: 21 },
-  dayText: { color: '#172117', fontSize: 14 },
-  selectedDay: { backgroundColor: '#005a25' },
-  selectedDayText: { color: '#fff', fontWeight: '700' },
+  weekday: { width: '14.2857%', paddingVertical: spacing.sm, color: colors.inkMuted, textAlign: 'center', fontFamily: fontFamily.label, fontSize: 12 },
+  dayCell: { width: '14.2857%', height: 44, alignItems: 'center', justifyContent: 'center' },
+  dayButton: { borderRadius: 22 },
+  dayText: { fontFamily: fontFamily.labelMedium, fontVariant: ['tabular-nums'], fontSize: 15, color: colors.ink },
+  selectedDay: { backgroundColor: colors.primary },
+  selectedDayText: { color: colors.onPrimary, fontFamily: fontFamily.number },
   disabled: { opacity: 0.35 },
-  cancelButton: { alignSelf: 'flex-end', paddingVertical: 10, paddingHorizontal: 14, marginTop: 12 },
-  cancelText: { color: '#005a25', fontWeight: '700' },
+  cancelButton: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.lg, marginTop: spacing.md },
+  cancelText: { fontFamily: fontFamily.label, fontSize: 15, color: colors.primary },
 });

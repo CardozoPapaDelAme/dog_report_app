@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wildogscanner.app"
+      "bundleIdentifier": "com.wildogscanner.app",
+      "infoPlist": {
+        "CFBundleLocalizations": ["es", "en"]
+      }
     },
     "android": {
       "package": "com.wildogscanner.app"

@@ -51,7 +51,7 @@ test('mobile cards and downloaded CSV contain the same complete filtered reports
   await expect(page.getByTestId('association-total')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'CSV', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'XLSX', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: /Hasta:/ }).click();
+  // Picking the start date opens the end date calendar automatically.
   await page.getByRole('button', { name: 'Mes anterior' }).click();
   await page.getByRole('button', { name: '29 de septiembre de 2026', exact: true }).click();
   await page.getByRole('button', { name: 'Consultar' }).click();
@@ -102,6 +102,8 @@ test('long date ranges show monthly bars from the accepted reports', async ({ pa
   await page.getByRole('button', { name: 'Personalizado' }).click();
   await page.getByRole('button', { name: 'Mes anterior' }).click();
   await page.getByRole('button', { name: '1 de agosto de 2026', exact: true }).click();
+  // The end date calendar opens right after the start date.
+  await page.getByRole('button', { name: '4 de octubre de 2026', exact: true }).click();
   await page.getByRole('button', { name: 'Consultar' }).click();
   await expect(page.getByText('Por mes')).toBeVisible();
   await page.getByRole('button', { name: 'septiembre de 2026: 2 reportes aceptados' }).click();

@@ -19,12 +19,32 @@ import { summarizeReportDraftQueue } from '../../models/reportDraft.js';
 import { buildReportPayload } from '../../models/reportPayload.js';
 import regular from '@expo-google-fonts/plus-jakarta-sans/400Regular/PlusJakartaSans_400Regular.ttf';
 import bold from '@expo-google-fonts/plus-jakarta-sans/700Bold/PlusJakartaSans_700Bold.ttf';
+import semibold from '@expo-google-fonts/plus-jakarta-sans/600SemiBold/PlusJakartaSans_600SemiBold.ttf';
+import workMedium from '@expo-google-fonts/work-sans/500Medium/WorkSans_500Medium.ttf';
+import workSemibold from '@expo-google-fonts/work-sans/600SemiBold/WorkSans_600SemiBold.ttf';
+import workBold from '@expo-google-fonts/work-sans/700Bold/WorkSans_700Bold.ttf';
+import fredokaMedium from '@expo-google-fonts/fredoka/500Medium/Fredoka_500Medium.ttf';
+import fredokaSemibold from '@expo-google-fonts/fredoka/600SemiBold/Fredoka_600SemiBold.ttf';
+import UiKitFixture from './ui-kit-fixture.jsx';
 
 if (new URLSearchParams(location.search).has('association-preview')) i18n.changeLanguage('es');
 
 const fonts = document.createElement('style');
-fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})}`;
+fonts.textContent = `@font-face{font-family:PlusJakartaSans_400Regular;src:url(${regular})} @font-face{font-family:PlusJakartaSans_700Bold;src:url(${bold})} @font-face{font-family:PlusJakartaSans_600SemiBold;src:url(${semibold})} @font-face{font-family:WorkSans_500Medium;src:url(${workMedium})} @font-face{font-family:WorkSans_600SemiBold;src:url(${workSemibold})} @font-face{font-family:WorkSans_700Bold;src:url(${workBold})} @font-face{font-family:Fredoka_500Medium;src:url(${fredokaMedium})} @font-face{font-family:Fredoka_600SemiBold;src:url(${fredokaSemibold})}`;
 document.head.appendChild(fonts);
+
+// `?report&photo=sample` loads this picture so the preview and full-photo viewer can be seen on the web fixture.
+const sampleDogPhoto = (() => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 480;
+  canvas.height = 640;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#d9a441'; ctx.fillRect(0, 0, 480, 640);
+  ctx.fillStyle = '#6b4226'; ctx.beginPath(); ctx.arc(240, 260, 150, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(190, 230, 22, 0, Math.PI * 2); ctx.arc(290, 230, 22, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#222'; ctx.beginPath(); ctx.ellipse(240, 320, 46, 32, 0, 0, Math.PI * 2); ctx.fill();
+  return canvas.toDataURL('image/png');
+})();
 
 const previewReport = (id, incident, sighting, details, color, size, collar, acceptedAt) => ({
   id: `00000000-0000-4000-8000-${String(id).padStart(12, '0')}`,
@@ -53,7 +73,7 @@ const reportDraft = {
   updated_at: '2026-09-28T20:01:00.000Z',
   queued_at: null,
   payload_json: null,
-  photo_file_uri: new URLSearchParams(location.search).has('photo') ? 'file:///private/report.jpg' : null,
+  photo_file_uri: new URLSearchParams(location.search).has('photo') ? (new URLSearchParams(location.search).get('photo') === 'sample' ? sampleDogPhoto : 'file:///private/report.jpg') : null,
   photo_validation: {
     dogProbability: 0.91,
     blurVariance: 200,
@@ -308,8 +328,23 @@ function NativeClusterFixture() {
     initialCenter={{ longitude: -107.6355, latitude: 27.7522 }} initialZoom={13} />;
 }
 
+// `?native-map-pins` renders the device pin marker for each severity (and a flagged one) for visual review.
+function NativePinFixture() {
+  const incidents = ['ataque_humano', 'ataque_ganado', 'ataque_mascota', 'perro_lastimado', 'otro', 'avistamiento_simple'];
+  const reports = incidents.map((incident, index) => ({
+    report_id: `pin-${incident}`,
+    approximate_location: { longitude: -107.6355 + index * 0.001, latitude: 27.7522 },
+    incident_type: incident, sighting_type: 'solitario', details: {}, dog: { predominant_color: null, size: null, has_collar: null },
+    has_sanitized_photo: false, occurred_at: '2026-09-27T14:30:00.000Z', has_flags: index % 3 === 0,
+  }));
+  return <NativePublicMapView mode="pins" clusters={[]} reports={reports}
+    initialCenter={{ longitude: -107.6355, latitude: 27.7522 }} initialZoom={17} />;
+}
+
 function Fixture() {
   const params = new URLSearchParams(location.search);
+  if (params.has('native-map-pins')) return <div style={{height:'100dvh',overflow:'auto'}}><NativePinFixture /></div>;
+  if (params.has('ui-kit')) return <UiKitFixture />;
   if (params.has('native-map-clusters')) return <div style={{height:'100dvh',overflow:'auto'}}><NativeClusterFixture /></div>;
   if (params.has('camera')) return <div style={{height:'100dvh',display:'flex'}}>
     <SafeAreaProvider style={{flex:1}}><CameraFixture /></SafeAreaProvider>
@@ -320,7 +355,7 @@ function Fixture() {
   if (params.has('offline-queue')) return <div style={{height:'100dvh'}}>
     <SafeAreaProvider><OfflineQueueFixture /></SafeAreaProvider>
   </div>;
-  if (params.has('map')) return <div style={{height:'100dvh'}}>
+  if (params.has('map')) return <div style={{height:'100dvh',display:'flex'}}>
     <SafeAreaProvider><PublicMapScreen onBack={() => {}} mapAvailable={params.has('expo-go') ? false : undefined} /></SafeAreaProvider>
   </div>;
   if (params.has('association-preview')) return <div style={{height:'100dvh'}}>
@@ -351,6 +386,7 @@ function Fixture() {
       <button onClick={()=>setVisible(true)}>Abrir formulario de prueba</button>
     </div>
     <SafeAreaProvider>{visible ? <Screen accessToken={token} onBack={()=>setVisible(false)} onLogout={()=>setToken(null)}
+      {...(params.has('tools') ? { onOpenDuplicates: () => {}, onOpenZoneSets: () => {}, onOpenConfiguration: () => {} } : {})}
       {...(params.has('association-preview') ? { getPage: previewAssociationPage, displayName: 'Vista de demostración' } : {})} /> : <p>Formulario cerrado</p>}</SafeAreaProvider>
   </div>;
 }

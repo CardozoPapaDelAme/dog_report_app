@@ -9,24 +9,35 @@ import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { AppButton, Banner, Icon, IconButton, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
+import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 import RecentReportsList from '../components/RecentReportsList';
 import ReportFlagSheet from '../components/ReportFlagSheet';
 import ZoneReportsSheet from '../components/ZoneReportsSheet';
 import { usePublicMap } from '../hooks/usePublicMap.js';
-import { INCIDENT_TYPES, MAX_ZOOM, isInViewport, severityColor } from '../models/publicMap.js';
+import { INCIDENT_TYPES, MAX_ZOOM, ZOOM_RADIUS_BANDS, isInViewport, severityLevel } from '../models/publicMap.js';
 import { getApiBaseUrl } from '../services/apiClient.js';
 import { CREEL_CENTER, INITIAL_ZOOM, MAP_ATTRIBUTION_TEXT } from '../services/mapConfig.js';
 import { isNativeMapAvailableAtRuntime } from '../services/mapRuntime.js';
 
-const colors = {
-  ink: '#191d17', primary: '#00450d', surface: '#f7fbf1', muted: '#5d6859', line: '#e0e0e0',
-  danger: '#ba1a1a', dangerSoft: '#ffdad6', warningSoft: '#fff0c2', warning: '#8a5700',
-};
 const LOCATION_TIMEOUT_MS = 3000;
-const CLUSTER_ZOOM_STEP = 2;
+/** Height of the compact cluster card; the camera leaves this much room below the focused cluster. */
+const CLUSTER_CARD_PADDING = 260;
 const DETAIL_KEYS = ['descripcion', 'cantidad_aprox', 'hubo_mordida', 'tipo_animal', 'resulto_herido', 'cantidad_afectada', 'situacion'];
+
+/**
+ * Zoom at which the server clusters with a smaller radius, i.e. where a tapped cluster actually splits.
+ * Zooming inside a band changes nothing (the server only re-clusters at band boundaries).
+ */
+function nextBandZoom(zoom) {
+  const level = Math.floor(zoom);
+  const index = ZOOM_RADIUS_BANDS.findIndex((band) => level >= band.min && level <= band.max);
+  const next = ZOOM_RADIUS_BANDS[index + 1];
+  return Math.min(MAX_ZOOM, next ? next.min : level + 1);
+}
 
 // Lazy on purpose: Expo Go must never evaluate the MapLibre native module.
 // Keep the extensionless path so Metro/esbuild still pick PublicMapView.web.js on web.
@@ -72,33 +83,45 @@ function photoUrl(reportId) {
   try { return `${getApiBaseUrl()}/reports/${encodeURIComponent(reportId)}/photo`; } catch { return null; }
 }
 
-/** Overlay for a selected cluster with zoom-in and view-reports actions. */
-function ClusterModal({ cluster, onClose, onZoomIn, onViewReports, t }) {
+/** Compact card for a selected cluster: no dimmed backdrop, so the focused cluster stays visible above it. The camera already zoomed in on tap. */
+function ClusterModal({ cluster, onClose, onViewReports, t }) {
+  const insets = useSafeAreaInsets();
+  const level = severityLevel(cluster.highest_severity);
   return (
-    <View style={styles.backdrop}>
-      <View accessibilityRole="alert" style={styles.modal} testID="cluster-modal">
-        <Text style={styles.modalTitle}>{t('map.cluster.title', { count: cluster.report_count })}</Text>
-        <Text style={[styles.severityTag, { backgroundColor: severityColor(cluster.highest_severity) }]}>
+    <View pointerEvents="box-none" style={styles.cardSlot}>
+      <View testID="cluster-modal" style={[styles.clusterCard, { paddingBottom: spacing.lg + insets.bottom }]}>
+        <View style={styles.cardHead}>
+          <Text accessibilityRole="alert" style={styles.cardTitle}>{t('map.cluster.title', { count: cluster.report_count })}</Text>
+          <IconButton icon="close" accessibilityLabel={t('map.close')} onPress={onClose} />
+        </View>
+        <Text style={[styles.severityTag, { backgroundColor: colors.severity[level] }]}>
           {t('map.cluster.highest', { type: t(`reportForm.incidents.${cluster.highest_severity}`) })}
         </Text>
-        {INCIDENT_TYPES.map((type) => (
-          <View key={type} style={styles.countRow}>
-            <Text style={styles.rowLabel}>{t(`reportForm.incidents.${type}`)}</Text>
-            <Text style={styles.rowValue}>{cluster.type_counts[type]}</Text>
-          </View>
-        ))}
-        <Pressable accessibilityRole="button" onPress={onViewReports} style={styles.primaryButton}>
-          <Text style={styles.primaryText}>{t('map.cluster.viewReports')}</Text>
-        </Pressable>
-        <View style={styles.actions}>
-          <Pressable accessibilityRole="button" onPress={onZoomIn} style={styles.primaryButton}>
-            <Text style={styles.primaryText}>{t('map.zoomIn')}</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={onClose} style={styles.secondaryButton}>
-            <Text style={styles.secondaryText}>{t('map.close')}</Text>
-          </Pressable>
-        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.countStrip}>
+          {INCIDENT_TYPES.map((type) => (
+            <View key={type} style={styles.countCell}>
+              <Text style={styles.rowLabel}>{t(`reportForm.incidents.${type}`)}</Text>
+              <Text style={[styles.rowValue, cluster.type_counts[type] === 0 && styles.rowValueZero]}>{cluster.type_counts[type]}</Text>
+            </View>
+          ))}
+        </ScrollView>
+        <AppButton title={t('map.cluster.viewReports')} onPress={onViewReports} />
       </View>
+    </View>
+  );
+}
+
+/**
+ * Floating back control: one round white button with a soft shadow, like the controls of any map app.
+ * The screen title stays available to screen readers; `showTitle` also draws it (list view without a map).
+ */
+function MapTopBar({ onBack, t, style, showTitle = false }) {
+  return (
+    <View style={[styles.topBar, style]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('map.back')} onPress={onBack} hitSlop={8} style={({ pressed }) => [styles.backCircle, pressed && styles.pressed]}>
+        <Icon name="back" size={24} color={colors.primary} />
+      </Pressable>
+      <Text accessibilityRole="header" numberOfLines={1} style={showTitle ? styles.topTitleShown : styles.topTitleHidden}>{t('map.title')}</Text>
     </View>
   );
 }
@@ -113,48 +136,61 @@ function detailValue(t, key, value) {
 /** Bottom sheet with the details, sanitized photo (when available) and flag action of one public report. */
 function PinSheet({ report, onClose, onFlag, t }) {
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState(false);
   const uri = report.has_sanitized_photo ? photoUrl(report.report_id) : null;
   const { dog } = report;
   const collar = dog.has_collar === null ? null : t(`reportForm.collar.${dog.has_collar ? 'si' : 'no'}`);
-  const rows = [
+  const facts = [
     [t('reportForm.fields.sighting_type'), t(`reportForm.sighting.${report.sighting_type}`)],
     dog.predominant_color ? [t('map.pin.color'), dog.predominant_color] : null,
     dog.size ? [t('reportForm.fields.dog_size'), t(`reportForm.dogSize.${dog.size}`, { defaultValue: dog.size })] : null,
     collar ? [t('reportForm.fields.has_collar'), collar] : null,
     ...DETAIL_KEYS.filter((key) => report.details[key] !== undefined && report.details[key] !== null && report.details[key] !== '')
       .map((key) => [t(`reportForm.fields.${key}`), detailValue(t, key, report.details[key])]),
-    [t('map.pin.occurredAt'), new Date(report.occurred_at).toLocaleString('es-MX')],
   ].filter(Boolean);
+  const level = severityLevel(report.incident_type);
   return (
-    <View style={styles.sheet} testID="pin-sheet">
-      <View style={styles.grabber} />
+    <>
+    <Sheet bottomInset testID="pin-sheet" onClose={onClose} maxHeight="88%">
       <ScrollView contentContainerStyle={styles.sheetContent}>
-        <Text style={styles.modalTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
-        {report.has_flags ? (
-          <View style={styles.flagNotice}><Text style={styles.flagText}>{t('map.pin.flagged')}</Text></View>
-        ) : null}
         {uri && !photoFailed ? (
-          <Image
-            accessibilityLabel={t('map.pin.photo')}
-            source={{ uri }}
-            style={styles.photo}
-            onError={() => setPhotoFailed(true)}
-          />
+          <Pressable accessibilityRole="button" accessibilityLabel={t('map.pin.photo')} onPress={() => setViewingPhoto(true)} style={({ pressed }) => [styles.photoWrap, pressed && styles.pressed]}>
+            <Image
+              accessible={false}
+              source={{ uri }}
+              style={styles.photo}
+              onError={() => setPhotoFailed(true)}
+            />
+            <View pointerEvents="none" style={styles.expandBadge}><Icon name="expand" size={18} color={colors.onPrimary} /></View>
+          </Pressable>
         ) : null}
-        {rows.map(([label, value]) => (
-          <View key={label} style={styles.countRow}>
-            <Text style={styles.rowLabel}>{label}</Text>
-            <Text style={[styles.rowValue, styles.rowValueWrap]}>{value}</Text>
+        <View style={styles.pinHead}>
+          <View style={[styles.pinStripe, { backgroundColor: colors.severity[level] }]} />
+          <View style={styles.pinHeadText}>
+            <Text accessibilityRole="header" style={styles.modalTitle}>{t(`reportForm.incidents.${report.incident_type}`)}</Text>
+            <Text style={styles.pinDate}>{new Date(report.occurred_at).toLocaleString('es-MX')}</Text>
           </View>
-        ))}
-        <Pressable accessibilityRole="button" onPress={onFlag} style={styles.flagButton}>
-          <Text style={styles.flagButtonText}>{t('flag.open')}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" onPress={onClose} style={styles.secondaryButton}>
-          <Text style={styles.secondaryText}>{t('map.close')}</Text>
+        </View>
+        {report.has_flags ? (
+          <View style={styles.flagNotice}><Icon name="flag" size={18} color={colors.warning} /><Text style={styles.flagText}>{t('map.pin.flagged')}</Text></View>
+        ) : null}
+        <View style={styles.factGrid}>
+          {facts.map(([label, value]) => (
+            <View key={label} style={styles.fact}>
+              <Text style={styles.factLabel}>{label}</Text>
+              <Text style={styles.factValue}>{value}</Text>
+            </View>
+          ))}
+        </View>
+        <AppButton title={t('map.close')} onPress={onClose} />
+        <Pressable accessibilityRole="button" onPress={onFlag} style={({ pressed }) => [styles.flagLink, pressed && styles.pressed]}>
+          <Icon name="flag" size={18} color={colors.danger} />
+          <Text style={styles.flagLinkText}>{t('flag.open')}</Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </Sheet>
+    {viewingPhoto && uri ? <PhotoViewer uri={uri} label={t('map.pin.photo')} closeLabel={t('map.close')} onClose={() => setViewingPhoto(false)} /> : null}
+    </>
   );
 }
 
@@ -176,26 +212,22 @@ function ExpoGoFallbackScreen({ onBack }) {
   const [selectedReport, setSelectedReport] = useState(null);
   const [flagReport, setFlagReport] = useState(null);
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <Pressable accessibilityRole="button" onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>{t('map.back')}</Text>
-        </Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>{t('map.title')}</Text>
-      </View>
+    <SafeAreaView style={styles.fallbackRoot}>
+      <MapTopBar onBack={onBack} t={t} showTitle style={styles.topBarFlow} />
       <View style={styles.mapArea}>
         <ScrollView contentContainerStyle={styles.fallbackContent}>
-          <View accessibilityRole="alert" style={styles.noticeCard} testID="expo-go-notice">
-            <Text style={styles.bannerText}>{t('map.expoGo.notice')}</Text>
-            <Text style={styles.bannerHint}>{t('map.expoGo.hint')}</Text>
+          <View accessibilityRole="alert" testID="expo-go-notice">
+            <Banner tone="warning" title={t('map.expoGo.notice')} message={t('map.expoGo.hint')} />
           </View>
           <RecentReportsList onSelect={setSelectedReport} t={t} />
         </ScrollView>
-        {selectedReport ? (
-          <PinSheet key={selectedReport.report_id} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
-        ) : null}
-        {flagReport ? <ReportFlagSheet key={flagReport.report_id} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
       </View>
+      <SheetHost visible={Boolean(selectedReport || flagReport)} onRequestClose={() => (flagReport ? setFlagReport(null) : setSelectedReport(null))}>
+        {selectedReport ? (
+          <PinSheet key={`pin-${selectedReport.report_id}`} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
+        ) : null}
+        {flagReport ? <ReportFlagSheet key={`flag-${flagReport.report_id}`} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
+      </SheetHost>
     </SafeAreaView>
   );
 }
@@ -204,20 +236,35 @@ function ExpoGoFallbackScreen({ onBack }) {
 function NativeMapScreen({ onBack }) {
   const PublicMapView = getPublicMapView();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const map = usePublicMap();
   const initialCenter = useInitialCenter();
+  // `selectedCluster` keeps the zoom at the moment of the tap: the zone list resolves membership with it.
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
   const [zoneCluster, setZoneCluster] = useState(null);
   const [flagReport, setFlagReport] = useState(null);
   const [focus, setFocus] = useState(null);
 
-  const zoomIntoCluster = useCallback(() => {
-    if (!selectedCluster) return;
-    const zoom = Math.min(MAX_ZOOM, (map.region?.zoom ?? INITIAL_ZOOM) + CLUSTER_ZOOM_STEP);
-    setFocus({ ...selectedCluster.approximate_location, zoom });
-    setSelectedCluster(null);
-  }, [map.region, selectedCluster]);
+  const focusCluster = useCallback((cluster, fromZoom) => {
+    setFocus({ ...cluster.approximate_location, zoom: nextBandZoom(fromZoom), padding: { bottom: CLUSTER_CARD_PADDING + insets.bottom } });
+  }, [insets.bottom]);
+
+  const selectCluster = useCallback((cluster) => {
+    const zoom = map.region?.zoom ?? INITIAL_ZOOM;
+    setSelectedCluster({ cluster, zoom });
+    focusCluster(cluster, zoom);
+  }, [focusCluster, map.region]);
+
+  // Android back closes the sheet on top: flag form, then report detail, then the zone list.
+  const closeTopSheet = useCallback(() => {
+    if (flagReport) setFlagReport(null);
+    else if (selectedReport) setSelectedReport(null);
+    else setZoneCluster(null);
+  }, [flagReport, selectedReport]);
+
+  // Opening a report closes the cluster card so only one panel is on screen.
+  const selectReport = useCallback((report) => { setSelectedCluster(null); setSelectedReport(report); }, []);
 
   const visibleReports = map.mode === 'pins' && map.region
     ? map.reports.filter((report) => isInViewport(report.approximate_location, map.region.viewport))
@@ -229,14 +276,8 @@ function NativeMapScreen({ onBack }) {
   else if (map.phase === 'empty') banner = { text: t('map.empty') };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <Pressable accessibilityRole="button" onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>{t('map.back')}</Text>
-        </Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>{t('map.title')}</Text>
-      </View>
-      <View style={styles.mapArea}>
+    <View style={styles.root}>
+      <View style={StyleSheet.absoluteFill}>
         {initialCenter ? (
           <PublicMapView
             mode={map.mode}
@@ -246,38 +287,45 @@ function NativeMapScreen({ onBack }) {
             initialZoom={INITIAL_ZOOM}
             focus={focus}
             onRegionChange={map.setRegion}
-            onSelectCluster={setSelectedCluster}
-            onSelectReport={setSelectedReport}
+            onSelectCluster={selectCluster}
+            onSelectReport={selectReport}
           />
         ) : (
           <View style={styles.centered}><ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /></View>
         )}
-        {map.phase === 'loading' && initialCenter ? (
-          <View pointerEvents="none" style={styles.loading}>
-            <ActivityIndicator accessibilityLabel={t('map.loading')} color={colors.primary} />
-          </View>
-        ) : null}
-        {banner ? (
-          <View style={[styles.banner, banner.danger && styles.bannerDanger]} accessibilityRole="alert">
-            <Text style={styles.bannerText}>{banner.text}</Text>
+      </View>
+      <MapTopBar onBack={onBack} t={t} style={[styles.topBarFloat, { top: insets.top + spacing.sm }]} />
+      {map.phase === 'loading' && initialCenter ? (
+        <View pointerEvents="none" style={[styles.loading, { top: insets.top + spacing.sm }]}>
+          <ActivityIndicator accessibilityLabel={t('map.loading')} color={colors.primary} />
+        </View>
+      ) : null}
+      {banner ? (
+        <View style={[styles.bannerSlot, { top: insets.top + 64 }]} accessibilityRole="alert">
+          <View style={styles.banner}>
+            <Icon name="alert" size={20} color={banner.danger ? '#ffb4ab' : colors.warningAmber} />
+            <View style={styles.bannerText}>
+              <Text style={styles.bannerTitle}>{banner.text}</Text>
+              {map.phase === 'offline' ? <Text style={styles.bannerHint}>{t('map.offlineReporting')}</Text> : null}
+            </View>
             {banner.retry ? (
-              <Pressable accessibilityRole="button" onPress={map.retry} style={styles.retryButton}>
+              <Pressable accessibilityRole="button" onPress={map.retry} hitSlop={8} style={styles.retryButton}>
                 <Text style={styles.retryText}>{t('map.retry')}</Text>
               </Pressable>
             ) : null}
-            {map.phase === 'offline' ? <Text style={styles.bannerHint}>{t('map.offlineReporting')}</Text> : null}
           </View>
-        ) : null}
-        <Text style={styles.attribution}>{MAP_ATTRIBUTION_TEXT}</Text>
-        {selectedCluster ? (
-          <ClusterModal
-            cluster={selectedCluster}
-            onClose={() => setSelectedCluster(null)}
-            onZoomIn={zoomIntoCluster}
-            onViewReports={() => { setZoneCluster({ cluster: selectedCluster, zoom: map.region?.zoom ?? INITIAL_ZOOM }); setSelectedCluster(null); }}
-            t={t}
-          />
-        ) : null}
+        </View>
+      ) : null}
+      <Text style={[styles.attribution, { bottom: insets.bottom + spacing.sm }]}>{MAP_ATTRIBUTION_TEXT}</Text>
+      {selectedCluster ? (
+        <ClusterModal
+          cluster={selectedCluster.cluster}
+          onClose={() => setSelectedCluster(null)}
+          onViewReports={() => { setZoneCluster({ cluster: selectedCluster.cluster, zoom: selectedCluster.zoom }); setSelectedCluster(null); }}
+          t={t}
+        />
+      ) : null}
+      <SheetHost visible={Boolean(zoneCluster || selectedReport || flagReport)} onRequestClose={closeTopSheet}>
         {zoneCluster ? (
           <ZoneReportsSheet
             cluster={zoneCluster.cluster}
@@ -288,51 +336,66 @@ function NativeMapScreen({ onBack }) {
           />
         ) : null}
         {selectedReport ? (
-          <PinSheet key={selectedReport.report_id} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
+          <PinSheet key={`pin-${selectedReport.report_id}`} report={selectedReport} onClose={() => setSelectedReport(null)} onFlag={() => setFlagReport(selectedReport)} t={t} />
         ) : null}
-        {flagReport ? <ReportFlagSheet key={flagReport.report_id} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
-      </View>
-    </SafeAreaView>
+        {flagReport ? <ReportFlagSheet key={`flag-${flagReport.report_id}`} report={flagReport} onClose={() => setFlagReport(null)} t={t} /> : null}
+      </SheetHost>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
-  backButton: { minHeight: 44, justifyContent: 'center', borderRadius: 999, borderColor: colors.line, borderWidth: 1, backgroundColor: '#ffffff', paddingHorizontal: 16 },
-  backText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13 },
-  headerTitle: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 20 },
-  mapArea: { flex: 1 },
+  root: { flex: 1, backgroundColor: colors.background },
+  fallbackRoot: { flex: 1, backgroundColor: colors.background },
+  topBar: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  topBarFloat: { position: 'absolute', left: spacing.lg },
+  topBarFlow: { marginHorizontal: spacing.lg, marginVertical: spacing.sm },
+  backCircle: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 6 },
+  topTitleShown: { fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.primary },
+  topTitleHidden: { position: 'absolute', width: 1, height: 1, opacity: 0 },
+  pressed: { opacity: 0.7 },
+  cardSlot: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  clusterCard: { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.sm, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 12 },
+  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  cardTitle: { flex: 1, fontFamily: fontFamily.display, fontSize: 24, lineHeight: 30, color: colors.ink },
+  countStrip: { gap: spacing.sm, paddingVertical: spacing.xs },
+  mapArea: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loading: { position: 'absolute', top: 12, alignSelf: 'center', borderRadius: 999, backgroundColor: '#ffffff', padding: 8 },
-  fallbackContent: { padding: 16, gap: 16 },
-  noticeCard: { borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14, gap: 8 },
-  banner: { position: 'absolute', top: 12, left: 16, right: 16, borderRadius: 14, borderColor: '#ffa000', borderWidth: 1, backgroundColor: colors.warningSoft, padding: 14, gap: 8 },
-  bannerDanger: { borderColor: colors.danger, backgroundColor: colors.dangerSoft },
-  bannerText: { color: colors.ink, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 14 },
-  bannerHint: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12 },
-  retryButton: { minHeight: 40, alignSelf: 'flex-start', justifyContent: 'center', borderRadius: 12, backgroundColor: colors.primary, paddingHorizontal: 16 },
-  retryText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 13 },
-  attribution: { position: 'absolute', left: 8, bottom: 6, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.85)', paddingHorizontal: 6, paddingVertical: 2, color: colors.ink, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 10 },
-  backdrop: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.25)', padding: 24 },
-  modal: { width: '100%', maxWidth: 380, borderRadius: 16, backgroundColor: '#ffffff', padding: 20, gap: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
-  modalTitle: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 20 },
-  severityTag: { alignSelf: 'flex-start', overflow: 'hidden', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12 },
-  countRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, borderBottomColor: colors.line, borderBottomWidth: 1, paddingVertical: 8 },
-  rowLabel: { color: colors.muted, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14 },
-  rowValue: { color: colors.ink, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
-  rowValueWrap: { flexShrink: 1, textAlign: 'right' },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 6 },
-  primaryButton: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.primary },
-  primaryText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
-  secondaryButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderColor: colors.line, borderWidth: 1, paddingHorizontal: 16, marginTop: 6 },
-  secondaryText: { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '70%', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, elevation: 10 },
-  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginTop: 10 },
-  sheetContent: { padding: 20, gap: 6 },
-  flagNotice: { borderRadius: 12, backgroundColor: colors.warningSoft, padding: 10 },
-  flagText: { color: colors.warning, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13 },
-  flagButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderColor: colors.danger, borderWidth: 1, paddingHorizontal: 16, marginTop: 6 },
-  flagButtonText: { color: colors.danger, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14 },
-  photo: { width: '100%', height: 200, borderRadius: 12, backgroundColor: '#d8dbd2' },
+  loading: { position: 'absolute', alignSelf: 'center', borderRadius: radius.pill, backgroundColor: colors.surface, padding: spacing.sm },
+  fallbackContent: { padding: spacing.lg, gap: spacing.xl },
+  bannerSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.lg, backgroundColor: 'rgba(2,26,6,0.9)', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  bannerText: { flex: 1, gap: 2 },
+  bannerTitle: { fontFamily: fontFamily.label, fontSize: 15, lineHeight: 20, color: colors.onPrimary },
+  bannerHint: { ...type.caption, color: colors.onForest },
+  retryButton: { minHeight: layout.minTouch, justifyContent: 'center' },
+  retryText: { fontFamily: fontFamily.displayMedium, fontSize: 16, color: colors.signal },
+  attribution: { position: 'absolute', left: spacing.sm, borderRadius: radius.xs, backgroundColor: 'rgba(255,255,255,0.88)', paddingHorizontal: 6, paddingVertical: 2, color: colors.ink, fontFamily: fontFamily.regular, fontSize: 10 },
+  modalTitle: { fontFamily: fontFamily.display, fontSize: 26, lineHeight: 32, color: colors.ink },
+  severityTag: { flexShrink: 0, alignSelf: 'flex-start', overflow: 'hidden', borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, color: '#ffffff', fontFamily: fontFamily.label, fontSize: 13 },
+  
+  countCell: { minWidth: 104, flexDirection: 'column-reverse', gap: 2, borderRadius: radius.md, backgroundColor: colors.surfaceLow, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  
+  rowLabel: { fontFamily: fontFamily.label, fontSize: 13, color: colors.inkMuted },
+  rowValue: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 20, lineHeight: 24, color: colors.primary },
+  rowValueZero: { color: colors.inkSubtle },
+  
+  
+  
+  sheetContent: { gap: spacing.md },
+  pinHead: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  pinStripe: { width: 6, borderRadius: 3 },
+  pinHeadText: { flex: 1, gap: 2 },
+  pinDate: { ...type.caption, color: colors.inkMuted, fontVariant: ['tabular-nums'] },
+  factGrid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.lg, rowGap: spacing.lg, marginVertical: spacing.xs },
+  fact: { flexBasis: '45%', flexGrow: 1, gap: 2 },
+  factLabel: { fontFamily: fontFamily.label, fontSize: 12, color: colors.inkMuted },
+  factValue: { fontFamily: fontFamily.labelMedium, fontSize: 16, lineHeight: 22, color: colors.ink },
+  flagLink: { minHeight: layout.minTouch, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  flagLinkText: { fontFamily: fontFamily.label, fontSize: 15, color: colors.danger },
+  flagNotice: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radius.md, backgroundColor: colors.warningSoft, padding: spacing.md },
+  flagText: { fontFamily: fontFamily.label, fontSize: 14, color: colors.warning, flexShrink: 1 },
+  photoWrap: { borderRadius: radius.lg, overflow: 'hidden' },
+  photo: { width: '100%', height: 220, backgroundColor: colors.surfaceHigh },
+  expandBadge: { position: 'absolute', right: spacing.md, bottom: spacing.md, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
 });

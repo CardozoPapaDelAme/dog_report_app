@@ -5,9 +5,7 @@
  * users get the association dashboard; other authenticated staff get the command center and its
  * configuration, zone set and duplicate screens; anonymous users get the camera, map and report form.
  */
-import { PlusJakartaSans_400Regular } from '@expo-google-fonts/plus-jakarta-sans/400Regular';
-import { PlusJakartaSans_600SemiBold } from '@expo-google-fonts/plus-jakarta-sans/600SemiBold';
-import { PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans/700Bold';
+import { fontAssets } from './theme/index.js';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { AppState, Platform } from 'react-native';
@@ -72,11 +70,7 @@ export default function App() {
     [draftQueueSyncing, reportDraftFlow.drafts],
   );
   const login = useLogin(loginController);
-  const [fontsLoaded, fontError] = useFonts({
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-  });
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
 
   useEffect(() => {
     if (Platform.OS === 'web') return undefined;

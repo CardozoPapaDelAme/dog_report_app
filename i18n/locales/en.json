@@ -20,6 +20,9 @@
     "eyebrow": "Chihuahua Hotel Association",
     "title": "Association dashboard",
     "filterTitle": "Report period",
+    "pagePrev": "Previous",
+    "pageNext": "Next",
+    "pageOf": "Page {{page}} of {{total}}",
     "presets": {
       "last7Days": "Last 7 days",
       "last30Days": "Last 30 days",
@@ -44,12 +47,10 @@
       "accepted": "Accepted",
       "observed": "Observed",
       "location": "Coordinates",
-      "dog": "Dog characteristics",
       "size": "Size",
       "color": "Color",
       "collar": "Collar",
       "photo": "Photo available",
-      "details": "Report details",
       "reportId": "Report ID",
       "unknown": "Not specified"
     },
@@ -163,6 +164,7 @@
     "submitting": "Submitting…",
     "noPhoto": "No photo",
     "photoPreview": "Preview of the report photo",
+    "viewPhoto": "Tap the photo to view it",
     "photoAttached": "Photo attached",
     "selectPlaceholder": "Select an option",
     "privacyTitle": "Do not enter personal data",
@@ -186,11 +188,6 @@
     "resultBack": "Back",
     "resultRetry": "Try again",
     "onlyDescription": "This category has no additional questions.",
-    "sections": {
-      "incident": "Base details",
-      "details": "Quantity",
-      "dog": "Physical details"
-    },
     "fields": {
       "incident_type": "Incident type",
       "sighting_type": "Solitary dog or pack",
@@ -292,9 +289,7 @@
     }
   },
   "commandCenter": {
-    "eyebrow": "Administrator workspace",
-    "title": "Command Center",
-    "subtitle": "Prioritize the current work page and open each review with its complete context."
+    "title": "Command Center"
   },
   "moderation": {
     "title": "Moderation queue",
@@ -303,6 +298,7 @@
     "flagged": "Flagged",
     "urgent": "High priority",
     "trust": "Trust",
+    "tier": { "low": "low", "medium": "medium", "high": "high" },
     "flags": "Flags",
     "photo": "Photo",
     "exactLocation": "Exact location",
@@ -440,6 +436,8 @@
     "noActive": "There is no active zone in this environment.",
     "version": "Version {{version}}",
     "sourceVersion": "Source version",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
     "stepOne": "01 · Create draft",
     "stepOneHelp": "Select a file or paste its content. Saving creates a new version and keeps the current active zone.",
     "pick": "Select GeoJSON file",
@@ -517,11 +515,20 @@
     "chooseCanonical": "Choose {{report}} as canonical",
     "canonicalChosen": "Canonical selected",
     "canonicalOption": "Use as canonical report",
+    "canonicalLegend": "Mark the circle of the canonical report",
+    "canonicalShort": "Canonical",
+    "pagePrev": "Previous",
+    "pageNext": "Next",
+    "pageOf": "Page {{page}} of {{total}}",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
     "willBeDuplicate": "When confirmed, this will be marked as a duplicate of the selected canonical report.",
     "observed": "Observed",
     "dog": "Attributes",
     "collar": "Collar",
     "links": "Connections suggested by the system",
+    "linksSummary_one": "1 connection · up to {{meters}} m · up to {{minutes}} min",
+    "linksSummary_other": "{{count}} connections · up to {{meters}} m · up to {{minutes}} min",
     "selection": "Selection: {{count}} reports",
     "reviewSelection": "Review selection ({{count}})",
     "canonicalSummary": "Canonical: report {{id}}",

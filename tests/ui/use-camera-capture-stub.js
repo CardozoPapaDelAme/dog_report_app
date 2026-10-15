@@ -1,14 +1,24 @@
 import { useRef, useState } from 'react';
 
+function fixtureState() {
+  const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
+  if (params.has('rejected')) return { phase: 'rejected', reasons: ['no_dog'], error: null };
+  if (params.has('blurry')) return { phase: 'rejected', reasons: ['no_dog', 'blurry'], error: null };
+  if (params.has('validating')) return { phase: 'validating', reasons: [], error: null };
+  return { phase: 'idle', reasons: [], error: null };
+}
+
 export function useCameraCapture({ onPhotoAccepted } = {}) {
   const cameraRef = useRef(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [captureState, setCaptureState] = useState(fixtureState);
   return {
     cameraRef,
     cameraReady,
     setCameraReady,
-    captureState: { phase: 'idle', reasons: [], error: null },
-    clearFeedback() {},
+    // `?camera&rejected` / `&validating` render those feedback states in the web fixture.
+    captureState,
+    clearFeedback() { setCaptureState({ phase: 'idle', reasons: [], error: null }); },
     async capture() {
       onPhotoAccepted?.({
         photoUri: 'file:///private/ui-camera-stub.jpg',

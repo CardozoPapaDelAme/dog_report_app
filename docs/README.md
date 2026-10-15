@@ -59,6 +59,7 @@ relationships.
 - [`diagrams/README.md`](diagrams/README.md) — versioned diagram sources; add a file only when that diagram is requested
 - [`GLOSSARY.md`](GLOSSARY.md) — vocabulary
 - [`design/DESIGN.md`](design/DESIGN.md) — visual design system, tokens, and UI components
+- [`redesign/README.md`](redesign/README.md) — visual redesign (TD-132/133/134): approved/rejected decisions per screen, test contract, inventory, and historical audit
 
 ## Identifier ranges
 
