@@ -288,8 +288,15 @@
       "request_failed": "The request could not be completed. Check your connection and try again."
     }
   },
+  "adminExport": {
+    "title": "Export data",
+    "subtitle": "Query accepted reports and download them as CSV or Excel. It is the same information the Association receives, without moderation data.",
+    "exportTitle": "Download",
+    "forbidden": "This account does not have access to data export."
+  },
   "commandCenter": {
-    "title": "Command Center"
+    "title": "Command Center",
+    "exportData": "Export data"
   },
   "moderation": {
     "title": "Moderation queue",

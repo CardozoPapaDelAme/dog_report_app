@@ -10,8 +10,12 @@ import { Camera, GeoJSONSource, Layer, Map, ViewAnnotation } from '@maplibre/map
 
 import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, clusterRadiusPx, reportsToHeatmapGeoJSON, severityLevel } from '../models/publicMap.js';
 import { colors, fontFamily } from '../theme/index.js';
-import { PinGlyph } from './ui/index.js';
+import { FadeIn, PinGlyph } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
+
+/** Entrance stagger between markers, capped so a large batch does not take long to appear. */
+const STAGGER_MS = 45;
+const MAX_STAGGER_MS = 360;
 
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
 // Renders exactly what the server returned; no client-side clustering.
@@ -61,7 +65,7 @@ const PublicMapView = forwardRef(function PublicMapView({
   const mapRef = useRef(null);
   const cameraRef = useRef(null);
 
-  const heatmapData = useMemo(() => reportsToHeatmapGeoJSON(clusters), [clusters]);
+  const heatmapData = useMemo(() => reportsToHeatmapGeoJSON(heatmapReports), [heatmapReports]);
   const heatmap = viewMode === 'heatmap';
 
   useImperativeHandle(ref, () => ({
@@ -99,7 +103,7 @@ const PublicMapView = forwardRef(function PublicMapView({
           <Layer type="heatmap" id="heatmap-layer" paint={HEATMAP_PAINT} />
         </GeoJSONSource>
       ) : null}
-      {mode === 'clusters' && !heatmap ? clusters.map((cluster) => {
+      {mode === 'clusters' && !heatmap ? clusters.map((cluster, index) => {
         const radius = clusterRadiusPx(cluster.report_count);
         const { longitude, latitude } = cluster.approximate_location;
         return (
@@ -109,6 +113,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             lngLat={[longitude, latitude]}
             onPress={() => onSelectCluster?.(cluster)}
           >
+            <FadeIn delay={Math.min(index * STAGGER_MS, MAX_STAGGER_MS)}>
             <View style={[styles.halo, { width: radius * 2 + 14, height: radius * 2 + 14, borderRadius: radius + 7, backgroundColor: `${colors.severity[severityLevel(cluster.highest_severity)]}33` }]}>
               <View
                 accessible
@@ -125,10 +130,11 @@ const PublicMapView = forwardRef(function PublicMapView({
                 <Text style={styles.clusterText}>{cluster.report_count}</Text>
               </View>
             </View>
+            </FadeIn>
           </ViewAnnotation>
         );
       }) : null}
-      {mode === 'pins' && !heatmap ? reports.map((report) => {
+      {mode === 'pins' && !heatmap ? reports.map((report, index) => {
         const { longitude, latitude } = report.approximate_location;
         return (
           <ViewAnnotation
@@ -138,6 +144,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             lngLat={[longitude, latitude]}
             onPress={() => onSelectReport?.(report)}
           >
+            <FadeIn delay={Math.min(index * STAGGER_MS, MAX_STAGGER_MS)}>
             <View
               accessible
               accessibilityRole="button"
@@ -146,6 +153,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             >
               <PinGlyph color={colors.severity[severityLevel(report.incident_type)]} flagged={Boolean(report.has_flags)} />
             </View>
+            </FadeIn>
           </ViewAnnotation>
         );
       }) : null}

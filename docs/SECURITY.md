@@ -25,7 +25,7 @@ verification secrets, Storage service keys, or internal scheduler secrets.
 |---|---:|---:|---:|
 | Submit/flag | Yes, through Hono | Public Hono routes only | Public Hono routes only |
 | Public map | Yes | Yes | Yes |
-| Accepted BI/export | No | Yes | No |
+| Accepted BI/export | No | Yes | Yes, the same read-only projection (clarification #27) |
 | Moderation context/commands | No | No | Yes |
 | Zone/threshold commands | No | No | Yes, audited exception |
 | Direct domain-table access | No | No | No |

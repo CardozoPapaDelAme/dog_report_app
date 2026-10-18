@@ -13,4 +13,5 @@ export { default as Scrim } from './Scrim.js';
 export { default as SheetHost } from './SheetHost.js';
 export { default as PhotoViewer } from './PhotoViewer.js';
 export { default as PinGlyph } from './PinGlyph.js';
+export { default as FadeIn } from './FadeIn.js';
 export { default as MapCompass } from './MapCompass.js';

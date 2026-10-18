@@ -72,8 +72,8 @@ JSON validation, and narrow private atomic/set-based primitives.
 | technical operator | Managed project and Auth administration | Provision/deactivate accounts; link/apply migrations; deploy `api`; exports/restores |
 | scheduler | No UI | Call the cron-secret-gated retention route; never access domain tables directly |
 
-Asociación de Hoteles de Chihuahua and Administrator are sibling roles. Administrator does not inherit
-analytics/export. Its configuration commands are an explicit exception to its
+Asociación de Hoteles de Chihuahua and Administrator are sibling roles. Administrator may read and export only the same
+accepted projection (clarification #27), with no other analytics. Its configuration commands are an explicit exception to its
 otherwise moderation-focused scope.
 
 ## Contract handoff

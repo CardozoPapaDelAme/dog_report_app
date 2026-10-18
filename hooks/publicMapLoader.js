@@ -11,7 +11,9 @@ export const PUBLIC_MAP_DEBOUNCE_MS = 300;
 
 const initialState = Object.freeze({
   phase: 'idle', // idle | loading | ready | empty | error | offline
-  mode: 'clusters', region: null, clusters: [], reports: [], error: null,
+  // `mode` follows the zoom; `dataMode` is what `clusters`/`reports` currently hold, so the previous markers stay
+  // on screen until the new mode's data arrives instead of leaving an empty map.
+  mode: 'clusters', dataMode: 'clusters', region: null, clusters: [], reports: [], error: null,
 });
 
 // Plain state machine: debounced region loads, mode switch, stale-response protection, retry.
@@ -25,7 +27,7 @@ const initialState = Object.freeze({
  * @param {(state: object) => void} [options.onChange] - Receives every new state until disposed.
  * @returns {{setRegion: (region: {zoom: number, bounds: *}) => boolean, retry: () => boolean,
  *   dispose: () => void, getState: () => {phase: 'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'offline',
- *   mode: 'clusters' | 'pins', region: {zoom: number, viewport: import('../models/publicMap.js').Viewport} | null,
+ *   mode: 'clusters' | 'pins', dataMode: 'clusters' | 'pins', region: {zoom: number, viewport: import('../models/publicMap.js').Viewport} | null,
  *   clusters: import('../models/publicMap.js').MapCluster[],
  *   reports: import('../models/publicMap.js').PublicReport[], error: Error | null}}}
  *   `setRegion` returns `false` for an invalid zoom or bounds; `retry` returns `false` before any region.
@@ -54,15 +56,15 @@ export function createPublicMapLoader({
         if (current !== epoch || disposed) return;
         pinsLoaded = true;
         const visible = reports.filter((report) => isInViewport(report.approximate_location, region.viewport));
-        set({ reports, clusters: [], phase: visible.length ? 'ready' : 'empty' });
+        set({ reports, clusters: [], dataMode: 'pins', phase: visible.length ? 'ready' : 'empty' });
       } else {
         const clusters = await getClusters({ zoom: region.zoom, viewport: region.viewport });
         if (current !== epoch || disposed) return;
-        set({ clusters, reports: [], phase: clusters.length ? 'ready' : 'empty' });
+        set({ clusters, reports: [], dataMode: 'clusters', phase: clusters.length ? 'ready' : 'empty' });
       }
     } catch (error) {
       if (current !== epoch || disposed) return;
-      set({ phase: error?.code === 'network_unavailable' ? 'offline' : 'error', error });
+      set({ clusters: [], reports: [], dataMode: mode, phase: error?.code === 'network_unavailable' ? 'offline' : 'error', error });
     }
   }
 
@@ -74,7 +76,7 @@ export function createPublicMapLoader({
     const previous = state;
     const modeChanged = mode !== previous.mode;
     state = { ...state, mode, region: { zoom: level, viewport } };
-    if (modeChanged) { pinsLoaded = false; state = { ...state, clusters: [], reports: [] }; }
+    if (modeChanged) pinsLoaded = false; // keep the previous markers until the new mode's data arrives
     clearTimer();
     if (mode === 'pins' && pinsLoaded && state.phase !== 'offline' && state.phase !== 'error') {
       // Reports are not viewport-scoped: re-filter locally instead of refetching on pan.

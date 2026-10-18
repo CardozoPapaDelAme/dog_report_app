@@ -339,7 +339,7 @@ function NativeMapScreen({ onBack }) {
         {initialCenter ? (
           <PublicMapView
             ref={mapRef}
-            mode={map.mode}
+            mode={map.dataMode}
             viewMode={viewMode}
             heatmapReports={heatmap.reports}
             onBearingChange={setBearing}

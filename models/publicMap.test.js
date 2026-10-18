@@ -29,9 +29,9 @@ Deno.test('ERI9 model: zoom bands and incident types match the server module', (
   }
 });
 
-Deno.test('ERI9 model: pins start at zoom 17 and zoom is normalized', () => {
-  assert(PIN_ZOOM_THRESHOLD === 17);
-  assert(queryModeForZoom(16.9) === 'clusters' && queryModeForZoom(17) === 'pins' && queryModeForZoom(22) === 'pins');
+Deno.test('ERI9 model: pins start at zoom 15 and zoom is normalized', () => {
+  assert(PIN_ZOOM_THRESHOLD === 15);
+  assert(queryModeForZoom(14.9) === 'clusters' && queryModeForZoom(15) === 'pins' && queryModeForZoom(22) === 'pins');
   assert(queryModeForZoom(0) === 'clusters' && queryModeForZoom(NaN) === 'clusters');
 });
 
@@ -99,9 +99,9 @@ Deno.test('ERI10 model: reportsInCluster keeps reports inside the zoom band radi
   const ids = (zoom) => reportsInCluster(reports, cluster, zoom).map((item) => item.report_id).sort().join();
   assert(ids(17) === 'center,near-45m', 'zoom 17 radius 50 m');
   assert(ids(16) === 'center,near-45m' && ids(15) === 'center,near-45m', 'radius 100 m');
-  assert(ids(14) === 'center,far-133m,near-45m', 'radius 250 m');
-  assert(ids(8) === 'center,far-133m,far-1km,near-45m' || ids(8) === 'center,far-133m,near-45m', 'radius 1000 m');
-  assert(!ids(8).includes('far-1km') === (111.2 * 10 > 1000), 'zoom 8 boundary is metric');
+  assert(ids(14) === 'center,far-133m,near-45m', 'radius 400 m');
+  assert(ids(12) === 'center,far-133m,far-1km,near-45m', 'radius 1500 m');
+  assert(ids(8) === 'center,far-133m,far-1km,near-45m', 'radius 20 km');
 });
 
 Deno.test('ERI10 model: reportsInCluster radius depends on zoom and includes the exact edge', () => {
@@ -132,7 +132,7 @@ Deno.test('ERI10 model: reportsInCluster sorts newest first and is pure and defe
 Deno.test('clusterRadiusMetersForZoom rejects a non-numeric zoom', () => {
   assert(clusterRadiusMetersForZoom(Number.NaN) === null);
   assert(clusterRadiusMetersForZoom(undefined) === null);
-  assert(clusterRadiusMetersForZoom(12) === 250);
+  assert(clusterRadiusMetersForZoom(12) === 1500);
 });
 
 Deno.test('reportsToHeatmapGeoJSON weights each report by severity and skips malformed ones', () => {

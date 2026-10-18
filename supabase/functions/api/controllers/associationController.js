@@ -100,7 +100,7 @@ export function parseAssociationQuery(query) {
 }
 
 /**
- * `GET /association/reports`: lists accepted reports for the association role.
+ * `GET /association/reports`: lists accepted reports for the association and administrator roles.
  * Responds 200, 400 `invalid_request`, 403 `forbidden`, or 503 `database_unavailable` for any other failure.
  * @param {import('hono').Context} c - Hono request context.
  * @returns {Promise<Response>}
@@ -131,7 +131,7 @@ export async function getAssociationReports(c) {
         c,
         403,
         "forbidden",
-        "This route allows only the association role.",
+        "This route allows only the association and administrator roles.",
       );
     }
     return presentError(

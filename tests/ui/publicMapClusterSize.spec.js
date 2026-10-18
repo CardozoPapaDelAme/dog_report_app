@@ -25,6 +25,14 @@ async function markerSize(page, count) {
     .getByRole('button', { name: `${count} reportes, gravedad baja`, exact: true });
   await expect(marker).toBeVisible();
   await expect(marker).toHaveText(String(count));
+  // Markers scale in when they appear (components/ui/FadeIn.js): measure once the size stops changing.
+  let previous = null;
+  await expect.poll(async () => {
+    const box = await marker.boundingBox();
+    const settled = previous !== null && Math.abs(box.width - previous) < 0.01;
+    previous = box.width;
+    return settled;
+  }, { intervals: [200], timeout: 5000 }).toBe(true);
   const box = await marker.boundingBox();
   return { width: box.width, height: box.height };
 }

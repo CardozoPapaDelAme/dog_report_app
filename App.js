@@ -18,6 +18,7 @@ import { useDraftAutoSync } from './hooks/useDraftAutoSync.js';
 import { useLogin } from './hooks/useLogin.js';
 import { useReportDraftFlow } from './hooks/useReportDraftFlow.js';
 import AssociationDashboardScreen from './screens/associationDashboardScreen.js';
+import AdminDataExportScreen from './screens/AdminDataExportScreen.js';
 import CameraScreen from './screens/CameraScreen.js';
 import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
@@ -132,6 +133,14 @@ export default function App() {
         logoutPending={login.pending}
       />
     );
+  } else if (login.session && screen === 'dataExport') {
+    content = (
+      <AdminDataExportScreen
+        accessToken={login.session.accessToken}
+        onBack={() => setScreen('moderation')}
+        logoutPending={login.pending}
+      />
+    );
   } else if (login.session && screen === 'duplicates') {
     content = <DuplicateManagementScreen accessToken={login.session.accessToken} onBack={() => setScreen('moderation')} />;
   } else if (login.session && screen === 'zoneSets') {
@@ -143,6 +152,7 @@ export default function App() {
         onOpenConfiguration={() => setScreen('configuration')}
         onOpenZoneSets={() => setScreen('zoneSets')}
         onOpenDuplicates={() => setScreen('duplicates')}
+        onOpenDataExport={() => setScreen('dataExport')}
         onLogout={login.logout}
         logoutPending={login.pending}
       />
