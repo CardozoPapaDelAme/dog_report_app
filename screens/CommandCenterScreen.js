@@ -151,11 +151,12 @@ function QueueSkeleton({ label }) {
  * @param {() => void} props.onOpenConfiguration
  * @param {() => void} props.onOpenZoneSets
  * @param {() => void} props.onOpenDuplicates
+ * @param {() => void} [props.onOpenDataExport] - Opens the accepted-report query and CSV/XLSX export (clarification #27).
  * @param {() => void} props.onLogout
  * @param {boolean} [props.logoutPending=false]
  * @returns {JSX.Element}
  */
-export default function CommandCenterScreen({ accessToken, onOpenConfiguration, onOpenZoneSets, onOpenDuplicates, onLogout, logoutPending = false }) {
+export default function CommandCenterScreen({ accessToken, onOpenConfiguration, onOpenZoneSets, onOpenDuplicates, onOpenDataExport, onLogout, logoutPending = false }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const queue = useModerationQueue(accessToken);
@@ -180,6 +181,7 @@ export default function CommandCenterScreen({ accessToken, onOpenConfiguration, 
   const toolItems = [
     onOpenDuplicates && { icon: 'copy', label: t('duplicates.open'), onPress: onOpenDuplicates },
     onOpenZoneSets && { icon: 'map', label: t('zoneSets.open'), onPress: onOpenZoneSets },
+    onOpenDataExport && { icon: 'download', label: t('commandCenter.exportData'), onPress: onOpenDataExport },
     onOpenConfiguration && { icon: 'gauge', label: t('configuration.open'), onPress: onOpenConfiguration },
   ].filter(Boolean);
 

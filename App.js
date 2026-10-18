@@ -132,6 +132,16 @@ export default function App() {
         logoutPending={login.pending}
       />
     );
+  } else if (login.session && screen === 'dataExport') {
+    content = (
+      <AssociationDashboardScreen
+        accessToken={login.session.accessToken}
+        displayName={login.session.profile.displayName}
+        onBack={() => setScreen('moderation')}
+        onLogout={login.logout}
+        pending={login.pending}
+      />
+    );
   } else if (login.session && screen === 'duplicates') {
     content = <DuplicateManagementScreen accessToken={login.session.accessToken} onBack={() => setScreen('moderation')} />;
   } else if (login.session && screen === 'zoneSets') {
@@ -143,6 +153,7 @@ export default function App() {
         onOpenConfiguration={() => setScreen('configuration')}
         onOpenZoneSets={() => setScreen('zoneSets')}
         onOpenDuplicates={() => setScreen('duplicates')}
+        onOpenDataExport={() => setScreen('dataExport')}
         onLogout={login.logout}
         logoutPending={login.pending}
       />

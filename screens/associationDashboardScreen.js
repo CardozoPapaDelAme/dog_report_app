@@ -34,13 +34,14 @@ function Cell({ value, width, header = false }) {
  * @param {string} props.accessToken - Session access token.
  * @param {string} props.displayName - Shown in the header.
  * @param {() => void} props.onLogout
+ * @param {() => void} [props.onBack] - Shown when an Administrator opens the export from the Command Center.
  * @param {boolean} props.pending - Logout in progress; disables export.
  * @param {Function} [props.getPage] - Page request override for `useAssociationReports`.
  * @param {(file: {filename: string, content: string}) => Promise<void>} [props.saveCsv=saveAssociationCsv]
  * @param {(file: {filename: string, content: Uint8Array}) => Promise<void>} [props.saveXlsx=saveAssociationXlsx]
  * @returns {JSX.Element}
  */
-export default function AssociationDashboardScreen({ accessToken, displayName, onLogout, pending, getPage, saveCsv = saveAssociationCsv, saveXlsx = saveAssociationXlsx }) {
+export default function AssociationDashboardScreen({ accessToken, displayName, onLogout, onBack, pending, getPage, saveCsv = saveAssociationCsv, saveXlsx = saveAssociationXlsx }) {
   const { t, i18n } = useTranslation();
   const { width } = useWindowDimensions();
   const wide = width >= 900;
@@ -126,6 +127,9 @@ export default function AssociationDashboardScreen({ accessToken, displayName, o
   const hero = <View style={styles.hero} onLayout={(event) => { heroHeight.current = event.nativeEvent.layout.height; }}>
     <View pointerEvents="none" accessible={false} aria-hidden importantForAccessibility="no" style={styles.bigPaw}><Icon name="dog" size={210} color={colors.onPrimary} strokeWidth={1.4} /></View>
     <View style={styles.heroInner}>
+      {onBack ? <Pressable accessibilityRole="button" onPress={onBack} hitSlop={8} style={styles.back}>
+        <Icon name="back" size={20} color={colors.onPrimary} /><Text style={styles.backText}>{t('configuration.back')}</Text>
+      </Pressable> : null}
       <View style={styles.titleRow}>
         <View style={styles.heading}>
           <Text accessibilityRole="header" style={styles.title}>{t('associationDashboard.title')}</Text>
@@ -234,6 +238,8 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.primary, overflow: 'hidden' },
   bigPaw: { position: 'absolute', right: -48, top: 70, opacity: 0.1, transform: [{ rotate: '-18deg' }] },
   heroInner: { width: '100%', maxWidth: 1440, alignSelf: 'center', paddingHorizontal: layout.margin, paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  back: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: layout.minTouch },
+  backText: { ...type.button, fontSize: 15, color: colors.onPrimary },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md },
   heading: { flex: 1, gap: spacing.xs },
   title: { fontFamily: fontFamily.display, fontSize: 30, lineHeight: 38, letterSpacing: -0.3, color: colors.onPrimary },

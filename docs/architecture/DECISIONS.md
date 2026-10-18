@@ -19,7 +19,8 @@ per role, provisioned by a technical operator.
 accountability without introducing hotel tenants or a role hierarchy.
 
 **Constraint.** No public signup, in-app account administration, per-hotel tenant,
-or Administrator inheritance of Asociación de Hoteles de Chihuahua BI/export.
+or Administrator access to Asociación de Hoteles de Chihuahua BI beyond the same read-only
+accepted projection and export (clarification #27).
 
 ## ADR-002 — RPC-only client data boundary
 

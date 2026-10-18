@@ -86,18 +86,18 @@ test('tapping a cluster shows the six type counts', async ({ page }) => {
   await expect(modal).toHaveCount(0);
 });
 
-test('zooming in to 17 switches to pins and a flagged pin shows details and notice', async ({ page }) => {
+test('zooming in to 15 switches to pins and a flagged pin shows details and notice', async ({ page }) => {
   const seen = await mockPublic(page);
   await open(page);
   await expect(page.getByRole('button', { name: '7 reportes, gravedad alta' })).toBeVisible();
-  for (let level = 14; level <= 16; level++) {
+  for (let level = 14; level <= 14; level++) {
     await zoomIn(page).click();
     await expect(page.getByText(`Zoom ${level}`)).toBeVisible();
   }
   await expect(page.getByRole('button', { name: /Reporte:/ })).toHaveCount(0);
   expect(seen.reports).toHaveLength(0);
   await zoomIn(page).click();
-  await expect(page.getByText('Zoom 17')).toBeVisible();
+  await expect(page.getByText('Zoom 15')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reporte: Ataque a mascota' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reporte: Avistamiento' })).toBeVisible();
   await expect(page.getByRole('button', { name: /gravedad/ })).toHaveCount(0);

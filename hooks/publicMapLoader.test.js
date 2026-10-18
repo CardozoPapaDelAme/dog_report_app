@@ -74,11 +74,11 @@ Deno.test('ERI9 loader: a response arriving during the debounce window is discar
   assert(loader.getState().phase === 'loading' && loader.getState().clusters.length === 0);
 });
 
-Deno.test('ERI9 loader: switches to pins at zoom 17, loads once and filters by viewport', async () => {
+Deno.test('ERI9 loader: switches to pins at zoom 15, loads once and filters by viewport', async () => {
   const { loader, calls, fire } = harness();
-  loader.setRegion({ zoom: 16, bounds });
+  loader.setRegion({ zoom: 14, bounds });
   await fire();
-  loader.setRegion({ zoom: 17, bounds });
+  loader.setRegion({ zoom: 15, bounds });
   assert(loader.getState().mode === 'pins' && loader.getState().clusters.length === 0);
   await fire();
   assert(calls.reports.length === 1 && calls.clusters.length === 1);

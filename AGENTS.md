@@ -26,8 +26,9 @@ schema/data contract, ADRs, traceability, and tests together.
 - Multiple individual accounts are allowed per role. They are manually
   provisioned by a technical operator. Public signup and in-app account
   management stay disabled.
-- The Asociación de Hoteles de Chihuahua receives accepted canonical business data only. Administrator does
-  not inherit BI/export and acts through specific audited commands.
+- The Asociación de Hoteles de Chihuahua receives accepted canonical business data only. Administrator
+  may also read and export that same projection (clarification #27) and acts
+  through specific audited commands; it gains no other BI.
 - Mobile clients never access domain tables directly or set moderation, trust, server-controlled
   lifecycle/audit timestamps, retention, or duplicate-resolution fields. The
   validated `client_created_at` field is the client's observation timestamp, not a

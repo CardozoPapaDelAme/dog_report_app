@@ -295,7 +295,8 @@
     }
   },
   "commandCenter": {
-    "title": "Command Center"
+    "title": "Command Center",
+    "exportData": "Exportar datos"
   },
   "moderation": {
     "title": "Cola de moderación",

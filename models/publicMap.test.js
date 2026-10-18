@@ -29,9 +29,9 @@ Deno.test('ERI9 model: zoom bands and incident types match the server module', (
   }
 });
 
-Deno.test('ERI9 model: pins start at zoom 17 and zoom is normalized', () => {
-  assert(PIN_ZOOM_THRESHOLD === 17);
-  assert(queryModeForZoom(16.9) === 'clusters' && queryModeForZoom(17) === 'pins' && queryModeForZoom(22) === 'pins');
+Deno.test('ERI9 model: pins start at zoom 15 and zoom is normalized', () => {
+  assert(PIN_ZOOM_THRESHOLD === 15);
+  assert(queryModeForZoom(14.9) === 'clusters' && queryModeForZoom(15) === 'pins' && queryModeForZoom(22) === 'pins');
   assert(queryModeForZoom(0) === 'clusters' && queryModeForZoom(NaN) === 'clusters');
 });
 

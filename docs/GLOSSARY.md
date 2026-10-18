@@ -10,7 +10,7 @@ the linked contract documents.
 - **Asociación de Hoteles de Chihuahua** — authenticated read-only business-intelligence role. It receives
   accepted canonical data and export, not moderation internals.
 - **Administrator** — authenticated moderation role with specific audited commands
-  and an explicit configuration-management exception. It does not inherit BI.
+  and an explicit configuration-management exception. It may read and export the same accepted projection as the Asociación (clarification #27) and has no other BI.
 - **technical operator** — infrastructure/Auth operator who provisions accounts,
   deploys migrations, and performs recovery; not an application role.
 - **scheduler** — server-only caller of the cron-secret-gated retention route;

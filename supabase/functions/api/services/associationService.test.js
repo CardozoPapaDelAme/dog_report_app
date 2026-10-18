@@ -13,9 +13,10 @@ function assertThrowsForbidden(actor) {
   throw new Error("Expected association authorization to fail");
 }
 
-Deno.test("association service accepts only the association sibling role", () => {
+Deno.test("association service accepts the association and administrator roles only", () => {
   assertAssociationActor({ type: "authenticated", role: "association" });
-  assertThrowsForbidden({ type: "authenticated", role: "administrator" });
+  assertAssociationActor({ type: "authenticated", role: "administrator" });
+  assertThrowsForbidden({ type: "authenticated", role: "internal" });
   assertThrowsForbidden({ type: "anonymous" });
 });
 

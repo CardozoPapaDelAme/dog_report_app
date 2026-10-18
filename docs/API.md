@@ -42,7 +42,7 @@ blocker; neither contract silently overrides the other.
 | `POST /reports/:report_id/photo` | submitting origin | 201/200 replay | PhotoService |
 | `GET /reports/:report_id/photo` | public or authenticated | 200/302 | PhotoService |
 | `GET /me` | authenticated | 200 | IdentityService |
-| `GET /association/reports` | Asociación de Hoteles de Chihuahua | 200 | AssociationService |
+| `GET /association/reports` | Asociación de Hoteles de Chihuahua or Administrator | 200 | AssociationService |
 | `GET /admin/moderation-queue` | Administrator | 200 | ModerationService |
 | `POST /admin/reports/:report_id/approve` | Administrator | 200 | ModerationService |
 | `POST /admin/reports/:report_id/hide` | Administrator | 200 | ModerationService |
@@ -185,7 +185,8 @@ canonical business rows retained up to five years plus `next_cursor`. Each
 details, dog attributes, `has_sanitized_photo`, occurred/accepted timestamps.
 It excludes pending/hidden/deleted/non-canonical records, fingerprints, raw EXIF,
 flags, trust, moderation, private paths, and operator identities. CSV/Excel export
-must use this exact paginated projection. Administrator receives `403`.
+must use this exact paginated projection. Administrator receives the same projection
+(clarification #27); anonymous callers receive `401` and other roles `403`.
 
 ## Administrator contract
 

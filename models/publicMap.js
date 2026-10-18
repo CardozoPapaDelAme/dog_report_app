@@ -6,7 +6,7 @@
 // Public map model: zoom bands, viewport helpers, severity styling and wire-format readers.
 // Clustering is server-authoritative; the client never re-clusters or invents coordinates.
 
-export const PIN_ZOOM_THRESHOLD = 17;
+export const PIN_ZOOM_THRESHOLD = 15;
 export const MIN_ZOOM = 0;
 export const MAX_ZOOM = 22;
 /** Deepest zoom in heatmap mode: beyond it single reports read as isolated blurred dots; use cluster mode for detail. */
