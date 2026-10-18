@@ -5,16 +5,7 @@
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-
-const colors = {
-  ink: '#191d17',
-  primary: '#00450d',
-  primarySoft: '#d9f2d4',
-  warning: '#8a5700',
-  warningSoft: '#fff0c2',
-  danger: '#ba1a1a',
-  dangerSoft: '#ffdad6',
-};
+import { colors, fontFamily, layout, radius, spacing } from '../theme/index.js';
 
 /** Chooses the banner tone, texts and optional action label; `null` when nothing should show. */
 function queueBannerContent(t, summary = {}, synced = false) {
@@ -85,52 +76,42 @@ export default function DraftQueueBanner({
     <View
       testID="draft-queue-banner"
       accessibilityLiveRegion="polite"
-      style={[
-        styles.banner,
-        content.tone === 'danger' && styles.bannerDanger,
-        content.tone === 'success' && styles.bannerSuccess,
-        style,
-      ]}
+      style={[styles.slot, style]}
     >
-      <View style={styles.text}>
-        <Text style={[
-          styles.title,
-          content.tone === 'danger' && styles.titleDanger,
-          content.tone === 'success' && styles.titleSuccess,
-        ]}>
-          {content.title}
-        </Text>
-        <Text style={styles.body}>{content.body}</Text>
+      <View style={styles.banner}>
+        <View style={styles.text}>
+          <Text style={[styles.title, content.tone === 'danger' && styles.titleDanger, content.tone === 'success' && styles.titleSuccess]}>
+            {content.title}
+          </Text>
+          <Text style={styles.body}>{content.body}</Text>
+        </View>
+        {content.action ? (
+          <Pressable
+            testID="draft-queue-retry"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !summary?.canRetryNow || summary?.isSyncing }}
+            disabled={!summary?.canRetryNow || summary?.isSyncing}
+            onPress={onRetry}
+            hitSlop={8}
+            style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.retryText}>{content.action}</Text>
+          </Pressable>
+        ) : null}
       </View>
-      {content.action ? (
-        <Pressable
-          testID="draft-queue-retry"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !summary?.canRetryNow || summary?.isSyncing }}
-          disabled={!summary?.canRetryNow || summary?.isSyncing}
-          onPress={onRetry}
-          style={({ pressed }) => [
-            styles.retryButton,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text style={styles.retryText}>{content.action}</Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  banner: { minHeight: 72, borderRadius: 14, borderWidth: 1, borderColor: '#e2cf83', backgroundColor: colors.warningSoft, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
-  bannerDanger: { borderColor: '#eeaaa2', backgroundColor: colors.dangerSoft },
-  bannerSuccess: { borderColor: '#b9dcb3', backgroundColor: colors.primarySoft },
-  text: { flex: 1, gap: 3 },
-  title: { color: colors.warning, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14, lineHeight: 19 },
-  titleDanger: { color: colors.danger },
-  titleSuccess: { color: colors.primary },
-  body: { color: colors.ink, fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12, lineHeight: 17 },
-  retryButton: { minHeight: 40, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.primary, paddingHorizontal: 12 },
-  retryText: { color: '#ffffff', fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12, textAlign: 'center' },
-  pressed: { opacity: 0.75 },
+  slot: { alignItems: 'center' },
+  banner: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: spacing.lg, borderRadius: radius.lg, backgroundColor: 'rgba(0,0,0,0.66)', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  text: { flexShrink: 1, gap: 1 },
+  title: { color: colors.onPrimary, fontFamily: fontFamily.label, fontSize: 14, lineHeight: 19 },
+  titleDanger: { color: '#ffb4ab' },
+  titleSuccess: { color: colors.primaryFixed },
+  body: { color: colors.onForest, fontFamily: fontFamily.regular, fontSize: 13, lineHeight: 18 },
+  retryButton: { minHeight: layout.minTouch, justifyContent: 'center' },
+  retryText: { color: colors.signal, fontFamily: fontFamily.displayMedium, fontSize: 15 },
+  pressed: { opacity: 0.7 },
 });

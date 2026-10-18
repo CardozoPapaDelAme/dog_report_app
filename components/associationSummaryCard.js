@@ -1,15 +1,25 @@
 /**
  * @module components/associationSummaryCard
- * Presentational summary for the association dashboard: total count and a scrollable bar chart by day
- * or month with a selectable bucket.
+ * Presentational summary for the association dashboard: `AssociationTotal` (big number for the green header)
+ * and the default export, a scrollable bar chart by day or month with a selectable bucket on a light surface.
  */
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { colors, fontFamily, spacing } from '../theme/index.js';
 
 /** Local noon date for a `YYYY-MM-DD` (day) or `YYYY-MM` (month) bucket key. */
 function bucketDate(key, grouping) {
   return new Date(`${key}${grouping === 'month' ? '-01' : ''}T12:00:00`);
+}
+
+/** Total count for the header (on forest green); keeps the `association-total` test id. */
+export function AssociationTotal({ total }) {
+  const { t, i18n } = useTranslation();
+  return <View style={styles.totalRow}>
+    <Text testID="association-total" style={styles.totalNumber}>{total.toLocaleString(i18n.language)}</Text>
+    <Text style={styles.totalLabel}>{t('associationDashboard.summary.total')}</Text>
+  </View>;
 }
 
 /**
@@ -26,16 +36,10 @@ export default function AssociationSummaryCard({ summary }) {
   const highest = Math.max(1, ...summary.buckets.map((bucket) => bucket.count));
   const initialIndex = summary.buckets.findIndex((bucket) => bucket.key === initial?.key);
 
-  return <View style={styles.card}>
-    <View style={styles.heading}>
-      <View style={styles.totalBlock}>
-        <Text style={styles.totalLabel}>{t('associationDashboard.summary.total')}</Text>
-        <Text testID="association-total" style={styles.totalNumber}>{summary.total.toLocaleString(i18n.language)}</Text>
-      </View>
-      <View style={styles.chartHeading}>
-        <Text style={styles.chartTitle}>{t('associationDashboard.summary.byDate')}</Text>
-        <Text style={styles.chartSubtitle}>{t(`associationDashboard.summary.${summary.grouping}`)}</Text>
-      </View>
+  return <View style={styles.summary}>
+    <View style={styles.chartHeading}>
+      <Text accessibilityRole="header" style={styles.chartTitle}>{t('associationDashboard.summary.byDate')}</Text>
+      <Text style={styles.chartSubtitle}>{t(`associationDashboard.summary.${summary.grouping}`)}</Text>
     </View>
 
     {summary.total > 0 ? <ScrollView ref={chartRef} horizontal style={styles.chartScroll} contentContainerStyle={styles.chartContent}
@@ -52,7 +56,7 @@ export default function AssociationSummaryCard({ summary }) {
           accessibilityState={{ selected: chosen }} onPress={() => setSelectedKey(bucket.key)} style={styles.barItem}>
           <View style={styles.barTrack}>
             {bucket.count ? <Text style={styles.barCount}>{bucket.count}</Text> : null}
-            <View style={[styles.bar, { height: bucket.count ? Math.max(8, Math.round(bucket.count / highest * 80)) : 3 },
+            <View style={[styles.bar, { height: bucket.count ? Math.max(8, Math.round(bucket.count / highest * 84)) : 3 },
               chosen ? styles.selectedBar : bucket.count ? styles.filledBar : styles.emptyBar]} />
           </View>
           <Text numberOfLines={1} style={[styles.barLabel, chosen && styles.selectedLabel]}>{shortLabel}</Text>
@@ -69,24 +73,23 @@ export default function AssociationSummaryCard({ summary }) {
 }
 
 const styles = StyleSheet.create({
-  card: { marginTop: 18, padding: 16, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2eae0' },
-  heading: { alignItems: 'flex-start' },
-  totalBlock: { minWidth: 110 },
-  totalLabel: { color: '#61705e', fontSize: 13, fontWeight: '600' },
-  totalNumber: { color: '#005a25', fontSize: 32, fontWeight: '800', marginTop: 2 },
-  chartHeading: { marginTop: 12 },
-  chartTitle: { color: '#172117', fontSize: 16, fontWeight: '700' },
-  chartSubtitle: { color: '#61705e', fontSize: 12, marginTop: 3 },
-  chartScroll: { marginTop: 14 },
+  totalRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.md, flexWrap: 'wrap' },
+  totalNumber: { fontFamily: fontFamily.number, fontVariant: ['tabular-nums'], fontSize: 64, lineHeight: 70, color: colors.onPrimary },
+  totalLabel: { fontFamily: fontFamily.label, fontSize: 16, color: colors.onForest },
+  summary: { gap: spacing.sm },
+  chartHeading: { gap: 2 },
+  chartTitle: { fontFamily: fontFamily.display, fontSize: 22, lineHeight: 28, color: colors.primary },
+  chartSubtitle: { fontFamily: fontFamily.regular, fontSize: 13, color: colors.inkMuted },
+  chartScroll: { marginTop: spacing.sm },
   chartContent: { alignItems: 'flex-end', paddingRight: 4 },
   barItem: { width: 52, alignItems: 'center', marginRight: 4 },
-  barTrack: { height: 104, width: 38, justifyContent: 'flex-end', alignItems: 'center' },
-  barCount: { color: '#334433', fontSize: 11, fontWeight: '700', marginBottom: 3 },
-  bar: { width: 30, borderTopLeftRadius: 5, borderTopRightRadius: 5 },
-  selectedBar: { backgroundColor: '#005a25' },
-  filledBar: { backgroundColor: '#92c49c' },
-  emptyBar: { backgroundColor: '#dce7da' },
-  barLabel: { color: '#61705e', fontSize: 10, marginTop: 6, textAlign: 'center' },
-  selectedLabel: { color: '#005a25', fontWeight: '700' },
-  selectedDetail: { color: '#334433', fontSize: 13, fontWeight: '600', marginTop: 12 },
+  barTrack: { height: 112, width: 38, justifyContent: 'flex-end', alignItems: 'center' },
+  barCount: { fontFamily: fontFamily.label, fontVariant: ['tabular-nums'], fontSize: 12, color: colors.ink, marginBottom: 3 },
+  bar: { width: 28, borderTopLeftRadius: 6, borderTopRightRadius: 6 },
+  selectedBar: { backgroundColor: colors.primary },
+  filledBar: { backgroundColor: '#8fcf8a' },
+  emptyBar: { backgroundColor: colors.surfaceHigh },
+  barLabel: { fontFamily: fontFamily.regular, fontSize: 12, color: colors.inkMuted, marginTop: 6, textAlign: 'center' },
+  selectedLabel: { fontFamily: fontFamily.label, color: colors.primary },
+  selectedDetail: { fontFamily: fontFamily.label, fontSize: 14, color: colors.ink, marginTop: spacing.sm },
 });

@@ -349,3 +349,27 @@ operators.
 
 **Constraint.** Reassess on any move to a paid plan or before a public production
 launch. The Supabase security advisor will keep reporting this finding.
+
+## ADR-023 — One UI foundation (tokens and shared components) and a web harness that cannot see the native layer
+
+**Decision.** All screens draw from `theme/` (colors, type, spacing, radius, shadows,
+motion, fonts) and from the shared components in `components/ui/`. Icons come from
+one catalogue (`lucide-react-native` behind `components/ui/Icon.js`) and vector
+drawing (the report pin, camera gradients) from `react-native-svg`. Three font
+families have fixed roles: Plus Jakarta Sans for text, Work Sans for labels and
+data, Fredoka for the brand voice. Sheets that can open over one another share one
+system window (`SheetHost`). The visual system is documented in `docs/design/DESIGN.md`.
+
+**Why.** Before the redesign there were 13 local color objects, 68 distinct hex
+values, two competing primary greens and per-screen buttons and sheets, which made
+contrast and consistency impossible to guarantee. iOS cannot present a modal over
+another modal, which froze the map when a report was opened from the zone list.
+
+**Constraint.** The Playwright harness renders with `react-native-web`, which still
+has APIs React Native 0.86 removed (`StyleSheet.absoluteFillObject`), so a screen can
+pass every web test and still lay out wrongly on the phone. Layout of overlays,
+keyboard, safe areas and the native map is verified on a development build, and
+`tests/ui/noRemovedStyleApis.spec.js` guards the one known case. Visual rules and
+history are in `docs/redesign/TASTE.md`; the test contract that visual changes
+must keep is `docs/redesign/CONTRACT.md`.
+

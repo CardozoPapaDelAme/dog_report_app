@@ -3,7 +3,7 @@
  * Runner for the opt-in PostgreSQL/PostGIS Deno suites.
  *
  * Invoked as `npm run test:postgres` (`node scripts/test-postgres.mjs [configuration] [zone]
- * [duplicate] [flag] [publicMap] [report]`). Requires Docker. For each suite it starts a disposable
+ * [duplicate] [flag] [publicMap] [report] [demoSeed]`). Requires Docker. For each suite it starts a disposable
  * `postgis/postgis` container on a loopback port, creates the suite database, runs the Deno
  * test file with the suite's `*_TEST_DATABASE_URL` variable set, and stops the container.
  * A suite that reports skipped tests or no passes counts as failed. Exits with 0 only when
@@ -15,7 +15,7 @@
 // Each suite gets its own throwaway container: flag and public-map create
 // cluster-level roles, and every suite requires a fresh database with a fixed
 // name created after startup (see docs/TESTING.md, "Database suites").
-//   node scripts/test-postgres.mjs               -> all six suites
+//   node scripts/test-postgres.mjs               -> all seven suites
 //   node scripts/test-postgres.mjs zone flag     -> only the named ones
 import { spawn, spawnSync } from 'node:child_process';
 import { arch } from 'node:os';
@@ -29,8 +29,9 @@ const IMAGE = 'postgis/postgis:17-3.5';
 const PASSWORD = 'local-test-only'; // disposable container bound to loopback only
 const TESTS = 'supabase/functions/api/tests';
 
-// `read` is the only path each suite may read: the configuration suite loads
-// db/schema.sql, the others apply the ordered supabase/migrations.
+// `read` lists the only paths each suite may read: the configuration suite loads
+// db/schema.sql, the others apply the ordered supabase/migrations (demoSeed also
+// reads scripts/demo-seed.sql and scripts/demo-unseed.sql).
 const suites = {
   configuration: { label: 'PostgreSQL · configuración (FAB-1)', db: 'fab1_configuration_test', env: 'CONFIGURATION_TEST_DATABASE_URL', file: 'configurationPostgres.test.js', port: 55431, read: 'db/schema.sql' },
   zone: { label: 'PostgreSQL · zonas (FAB-2)', db: 'fab2_zone_test', env: 'ZONE_TEST_DATABASE_URL', file: 'zonePostgres.test.js', port: 55432, read: 'supabase/migrations' },
@@ -38,6 +39,7 @@ const suites = {
   flag: { label: 'PostgreSQL · reportes (L2)', db: 'fab4_flag_test', env: 'FLAG_TEST_DATABASE_URL', file: 'flag-postgres.test.js', port: 55434, read: 'supabase/migrations' },
   publicMap: { label: 'PostgreSQL · mapa público', db: 'fab_public_map_test', env: 'PUBLIC_MAP_TEST_DATABASE_URL', file: 'publicMapPostgres.test.js', port: 55435, read: 'supabase/migrations' },
   report: { label: 'PostgreSQL · reportero público (T5)', db: 'fab5_report_test', env: 'REPORT_TEST_DATABASE_URL', file: 'reportPostgres.test.js', port: 55436, read: 'supabase/migrations' },
+  demoSeed: { label: 'PostgreSQL · datos demo (Creel)', db: 'fab_demo_seed_test', env: 'DEMO_SEED_TEST_DATABASE_URL', file: 'demoSeedPostgres.test.js', port: 55437, read: 'supabase/migrations,scripts' },
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

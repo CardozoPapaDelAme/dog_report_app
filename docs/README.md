@@ -50,15 +50,17 @@ relationships.
 - [`SECURITY.md`](SECURITY.md) — security, privacy, and threat controls
 - [`DEPLOYMENT.md`](DEPLOYMENT.md) — deployment and operations runbook
 - [`REVIEWING.md`](REVIEWING.md) — simplest way for the team to install and review the app
+- [`DEMO_DATA.md`](DEMO_DATA.md) — removable Creel demo reports and photos for client demos on staging
 - [`TESTING.md`](TESTING.md) — verification strategy and scenario ownership
 - [`TRACEABILITY.md`](TRACEABILITY.md) — complete RF/RNF/HU mapping
 - [`testing/README.md`](testing/README.md) — shared testing conventions and templates (T1)
 - [`testing/BACKLOG.md`](testing/BACKLOG.md) — Stage 4 testing backlog: tasks T1–T14, owners P1–P5, Jira keys
-- [`testing/ACCEPTANCE-SOCIO.md`](testing/ACCEPTANCE-SOCIO.md) — matriz de aceptación con el socio formador (15 oct)
+- [`testing/cases/aceptacion-socio.md`](testing/cases/aceptacion-socio.md) — casos TC-CLIENTE ejecutados con el socio formador
 - [`DIAGRAM-READINESS.md`](DIAGRAM-READINESS.md) — diagram handoff and review checklist
 - [`diagrams/README.md`](diagrams/README.md) — versioned diagram sources; add a file only when that diagram is requested
 - [`GLOSSARY.md`](GLOSSARY.md) — vocabulary
 - [`design/DESIGN.md`](design/DESIGN.md) — visual design system, tokens, and UI components
+- [`redesign/README.md`](redesign/README.md) — visual redesign (TD-132/133/134): approved/rejected decisions per screen, test contract, inventory, and historical audit
 
 ## Identifier ranges
 

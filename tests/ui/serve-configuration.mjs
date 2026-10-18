@@ -18,7 +18,7 @@ await build({
       }));
     },
   }],
-  define: {'process.env.NODE_ENV':'"development"','process.env.EXPO_PUBLIC_API_BASE_URL':JSON.stringify(`http://127.0.0.1:${port}`),'process.env.EXPO_PUBLIC_MAP_STYLE_URL':'undefined','__DEV__':'true'},
+  define: {'global':'globalThis','process.env.NODE_ENV':'"development"','process.env.EXPO_PUBLIC_API_BASE_URL':JSON.stringify(`http://127.0.0.1:${port}`),'process.env.EXPO_PUBLIC_MAP_STYLE_URL':'undefined','__DEV__':'true'},
 });
 const html = '<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>L4 / L5 / L7 isolated test</title><style>html,body,#root{margin:0;height:100%;}*{box-sizing:border-box}</style><div id="root"></div><script src="/bundle.js"></script></html>';
 // Demo-only in-memory configuration for manual previews. Fictional data; resets

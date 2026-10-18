@@ -10,6 +10,9 @@ define deployment steps or external-service operating contracts; see
 | Localization | `react-i18next` | Bilingual flows with structured translation resources |
 | Offline metadata | Expo SQLite | Transactional, restart-safe drafts and queue state |
 | Offline images | App-private local files | Durable media without storing image blobs in SQLite |
+| Design tokens and fonts | `theme/` with `@expo-google-fonts` (Plus Jakarta Sans, Work Sans, Fredoka) | One source for colors, type, spacing, radius, shadows and motion; the font families are loaded in `App.js` (see [`design/DESIGN.md`](design/DESIGN.md)) |
+| Icons and vector drawing | `lucide-react-native` on `react-native-svg` | One icon family behind `components/ui/Icon.js`; also draws the report pin and the camera gradients |
+| UI regression harness | Playwright with an esbuild bundle of `react-native-web` (`tests/ui/`) | Fast checks of the screens' structure, roles and texts. It cannot see the native layer of React Native; overlays, keyboard and the real map are verified on a development build |
 | Map renderer | `@maplibre/maplibre-react-native` | Native vector-map rendering and interaction |
 | Map provider | MapTiler Cloud (target); OpenFreeMap (interim) | Hosted online styles and vector tiles. OpenFreeMap liberty is the interim default (no key); `EXPO_PUBLIC_MAP_STYLE_URL` switches to MapTiler without code changes |
 | Runtime detection | `expo-constants` | `executionEnvironment === 'storeClient'` means Expo Go; `services/mapAvailability.js` then hides the native map and the screen lazily requires MapLibre only when available |

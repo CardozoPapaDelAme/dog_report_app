@@ -1,5 +1,5 @@
 import {
-  CLUSTER_RADIUS_MAX_PX, CLUSTER_RADIUS_MIN_PX, INCIDENT_SEVERITY_ORDER, INCIDENT_TYPES, PIN_ZOOM_THRESHOLD,
+  reportsToHeatmapGeoJSON, CLUSTER_RADIUS_MAX_PX, CLUSTER_RADIUS_MIN_PX, INCIDENT_SEVERITY_ORDER, INCIDENT_TYPES, PIN_ZOOM_THRESHOLD,
   SEVERITY_COLORS, ZOOM_RADIUS_BANDS, clusterRadiusMetersForZoom, clusterRadiusPx, isInViewport, queryModeForZoom,
   readClusters, readPublicReports, reportsInCluster, severityColor, severityLevel, viewportFromBounds, viewportToQuery,
 } from './publicMap.js';
@@ -133,4 +133,15 @@ Deno.test('clusterRadiusMetersForZoom rejects a non-numeric zoom', () => {
   assert(clusterRadiusMetersForZoom(Number.NaN) === null);
   assert(clusterRadiusMetersForZoom(undefined) === null);
   assert(clusterRadiusMetersForZoom(12) === 250);
+});
+
+Deno.test('reportsToHeatmapGeoJSON weights each report by severity and skips malformed ones', () => {
+  const snapshot = JSON.stringify([report]);
+  const grave = { ...report, report_id: 'r2', incident_type: 'ataque_humano' };
+  const collection = reportsToHeatmapGeoJSON([report, grave, { ...report, approximate_location: null }, null]);
+  assert(collection.type === 'FeatureCollection' && collection.features.length === 2);
+  assert(collection.features[0].properties.weight === 1 && collection.features[1].properties.weight === 3);
+  assert(collection.features[0].geometry.coordinates[0] === -107.6 && collection.features[0].geometry.coordinates[1] === 27.75, 'lng,lat order');
+  assert(JSON.stringify([report]) === snapshot, 'input not mutated');
+  assert(reportsToHeatmapGeoJSON(null).features.length === 0 && reportsToHeatmapGeoJSON([]).features.length === 0);
 });

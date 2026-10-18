@@ -1,45 +1,19 @@
-# Test cases para el socio formador
+# Casos de prueba — Aceptación con el socio formador
 
-Cinco casos principales con escenario, pasos y resultados (`TC-CLIENTE-01` a
-`TC-CLIENTE-05`), en el formato Given / When / Then. Sesión del 15 de octubre de
-2026, con el equipo operando el teléfono y el socio formador dictaminando.
+Estado: casos ejecutados en la sesión del 18 de octubre de 2026; el resultado y
+las observaciones del socio están en `docs/testing/ACCEPTANCE.md`. Convenciones:
+`docs/testing/README.md`. Casos base: `TC-ACEPTACION-01`, `05`, `06`, `08`, `09` y
+`11` de `docs/testing/ACCEPTANCE.md`. Valores exactos en
+`docs/testing/data/aceptacion-entradas.json`.
 
-| Campo | Valor (se llena el día de la sesión) |
-|---|---|
-| Fecha, hora y zona | |
-| Build / commit de `main` instalado | |
-| Dispositivo y versión de iOS (iPhone) | |
-| Entorno | Staging (no producción) |
-| Opera el teléfono | |
-| Socio formador | |
-
-## Condiciones de entrada
-
-1. Build nativo instalado en un iPhone físico (no Expo Go ni simulador), apuntando a
-   staging, con el teléfono dentro del geofence de prueba descrito en
-   `docs/DEPLOYMENT.md`; ubicación y cámara permitidas. Instalación por development
-   build o TestFlight: confirmarla antes de la sesión.
-2. Cuentas de Asociación y de Administrator disponibles; las credenciales se teclean
-   en el momento y no se escriben en Git ni en capturas.
-3. Al menos tres reportes de prueba, de categorías distintas, ya aprobados por el
-   Administrator, para que el mapa y el panel tengan contenido.
-4. Imagen de un perro (impresa o en otra pantalla). Sin personas, placas ni
-   domicilios en cuadro.
-5. Aviso: la sesión alfa (`docs/testing/ALPHA.md`) se hizo en Android; en iPhone real
-   no se han ejecutado estos flujos. Hacer un ensayo previo, en especial cámara y
-   validación de foto (TC-CLIENTE-01), modo avión (02) y guardar/compartir CSV y
-   XLSX (04). En iOS el modo avión se activa desde el Centro de control.
-6. Duración estimada: 45 a 60 minutos. Orden: 01, 02, 05, 03, 04.
-
-Valores exactos a escribir: `docs/testing/data/aceptacion-entradas.json` (claves
-`acept-01-reporte-con-foto`, `acept-05-sin-red`, `acept-08-panel-periodo`,
-`acept-09-exportacion`, `acept-11-moderacion`). Casos base:
-`docs/testing/ACCEPTANCE.md` y `docs/testing/cases/alpha.md`.
+Formato Given / When / Then, con escenario, pasos, entrada, resultado esperado y
+postcondiciones. Cinco casos de negocio, todos de tipo `normal`; los límites y
+excepciones ya los cubren `docs/testing/cases/reportero.md` y
+`docs/testing/cases/mapa-y-roles.md`.
 
 ## TC-CLIENTE-01 · Crear un reporte con foto
 
 Requerimientos: HU-01, HU-02, HU-03, HU-06, HU-07; RF01, RF02, RF03, RF06, RF07.
-Base: `TC-ACEPTACION-01`.
 
 | Campo | Contenido |
 |---|---|
@@ -52,7 +26,7 @@ Base: `TC-ACEPTACION-01`.
 
 ## TC-CLIENTE-02 · Reportar sin conexión y sincronizar
 
-Requerimientos: HU-01, HU-05; RF01, RF05, RNF12. Base: `TC-ACEPTACION-05`.
+Requerimientos: HU-01, HU-05; RF01, RF05, RNF12.
 
 | Campo | Contenido |
 |---|---|
@@ -66,7 +40,6 @@ Requerimientos: HU-01, HU-05; RF01, RF05, RNF12. Base: `TC-ACEPTACION-05`.
 ## TC-CLIENTE-03 · Consultar zonas de riesgo en el mapa
 
 Requerimientos: HU-10, HU-11, HU-12, HU-13, HU-14; RF10–RF14, RNF13.
-Base: `TC-ACEPTACION-06`.
 
 | Campo | Contenido |
 |---|---|
@@ -80,7 +53,6 @@ Base: `TC-ACEPTACION-06`.
 ## TC-CLIENTE-04 · Consultar y exportar datos de la Asociación
 
 Requerimientos: HU-15, HU-16, HU-17; RF15, RF16, RF17.
-Base: `TC-ACEPTACION-08` y `TC-ACEPTACION-09`.
 
 | Campo | Contenido |
 |---|---|
@@ -93,7 +65,7 @@ Base: `TC-ACEPTACION-08` y `TC-ACEPTACION-09`.
 
 ## TC-CLIENTE-05 · Ocultar un reporte con una justificación
 
-Requerimientos: HU-18, HU-19, HU-20; RF18, RF19, RF20. Base: `TC-ACEPTACION-11`.
+Requerimientos: HU-18, HU-19, HU-20; RF18, RF19, RF20.
 
 | Campo | Contenido |
 |---|---|
@@ -103,26 +75,3 @@ Requerimientos: HU-18, HU-19, HU-20; RF18, RF19, RF20. Base: `TC-ACEPTACION-11`.
 | Input | Cuenta: Administrator. Reporte de prueba identificado. Motivo: Prueba de aceptación: ocultar. |
 | Expected output | Reporte oculto y ausente del mapa actualizado. En moderación se reconoce como oculto y ofrece la opción de restaurarlo. |
 | Post-conditions | El reporte conserva su contenido; ocultarlo no es borrarlo definitivamente y la acción es reversible. |
-
-## Resultados y conformidad del socio
-
-Registrar: pasó, no pasó o bloqueado. Agregar la observación del socio. Completar
-únicamente con resultados observados.
-
-| Caso | Resultado | Observación del socio |
-|---|---|---|
-| 01 Reporte con foto | | |
-| 02 Sin conexión y sincronización | | |
-| 03 Mapa y zonas de riesgo | | |
-| 04 Panel y exportación | | |
-| 05 Moderación con motivo | | |
-
-| Veredicto (marcar uno) | Observaciones y condiciones | Fecha / nombre / firma |
-|---|---|---|
-| ☐ Aceptado ☐ Aceptado con observaciones ☐ Rechazado | | |
-
-## Registro posterior
-
-Cada caso ejecutado se registra como fila `RUN-<n>` nueva en `docs/testing/TEST_LOG.md`.
-Un caso que no pase abre un `INC-<n>` en `docs/testing/INCIDENTS.md` y su ticket de bug
-en Jira. No se registran resultados que no se hayan observado.

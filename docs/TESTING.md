@@ -50,7 +50,7 @@ per-suite summary (passed / failed / skipped). It exits non-zero if any suite fa
 | Deno (mobile + backend) | `npm run test:deno` | Every `*.test.js` under `models`, `services`, `controllers`, `hooks`, `i18n`, `scripts` and `supabase/functions/api`, except files that import `node:test` |
 | `node:test` | `npm run test:node` | The `*.test.js` files that import `node:test` (they may import npm packages Deno does not resolve, such as `xlsx`) |
 | Playwright (UI) | `npm run test:e2e` | `tests/ui/*.spec.js` against the local preview server (needs `npx playwright install chromium` once) |
-| PostgreSQL/PostGIS | `npm run test:postgres` | The six database suites; needs Docker and is **not** part of `npm test` |
+| PostgreSQL/PostGIS | `npm run test:postgres` | The seven database suites; needs Docker and is **not** part of `npm test` |
 
 Files are routed by content: a new test that imports `node:test` goes to the
 `node:test` suite automatically, so no list needs maintaining
@@ -61,7 +61,7 @@ per suite (the flag and public-map suites create cluster-level roles, so cluster
 cannot be shared), creates the fixed-name database, runs the suite and removes the
 container (`scripts/test-postgres.mjs`). Pass suite names to run a subset:
 `npm run test:postgres -- zone flag` (`configuration`, `zone`, `duplicate`, `flag`,
-`publicMap`, `report`). A suite that Deno reports as skipped counts as a failure. On
+`publicMap`, `report`, `demoSeed`). A suite that Deno reports as skipped counts as a failure. On
 Apple-silicon hosts the image runs emulated and is slower.
 
 `.github/workflows/tests.yml` runs on every pull request and on pushes to `main`,
@@ -208,6 +208,7 @@ or retry state through spies/fakes before any live-project exercise.
   return the same approximate point.
 - Confirm cluster queries honor the documented viewport and the 2,000/5,000 report
   cap rather than scanning unbounded history.
+- `reportsToHeatmapGeoJSON` weights public reports by severity and keeps only the 50 m approximate positions; the compass shows only while `|bearing| > 1°` and resets to north (manual device check, MapLibre rotation is not simulated).
 - Test online loading under the RNF02 prototype target and explicit offline UX.
 
 Executable L3 API coverage:
@@ -825,3 +826,19 @@ variance 120 on 224 px are provisional), and colour accuracy on real photos
 - UI-proven (Playwright): the suite pins `locale: 'es-MX'`; `tests/ui/language.spec.js` checks the Asociación dashboard in English with labelled date-filter controls.
 - Static convention: every `Pressable`/`TextInput` in `screens/` and `components/` has `accessibilityRole` and a label (text child or `accessibilityLabel`); radios/checkboxes/selects expose `accessibilityState`; photo previews are labelled; standalone spinners carry a loading label; modals set `accessibilityViewIsModal`.
 - Manual (not proven): a TalkBack/VoiceOver pass on a development build, and layout with longer English strings. Run it before release.
+
+## UI redesign regression (TD-134)
+
+The visual redesign (see [`redesign/README.md`](redesign/README.md)) is protected by the existing UI specs plus new ones. All run with `npx playwright test` (109 passing at the end of TD-134: the 88 of the previous baseline and 21 new). The test contract the redesign must keep is in [`redesign/CONTRACT.md`](redesign/CONTRACT.md), including the changes made to `tests/`.
+
+| Spec | What it protects |
+|---|---|
+| `tests/ui/uiKit.spec.js` (`?ui-kit`) | Shared components in `components/ui/`: render without page errors with roles and 44 pt targets, loading/disabled buttons do not fire `onPress`, fields forward `nativeID` and chips expose selected state, a sheet closes on outside tap without a second "Cerrar", numbers use tabular figures in Work Sans |
+| `tests/ui/reportFormPicker.spec.js` | Incident picker sheet (closes on outside tap, keeps the choice), photo thumbnail opening the full photo, empty tile without a photo |
+| `tests/ui/cameraNotice.spec.js` | The rejection notice disappears by itself after five seconds and tapping it dismisses it earlier |
+| `tests/ui/publicMapFocus.spec.js`, `tests/ui/publicMapPhoto.spec.js` | Cluster focus on the next band, compact card, report photo opened full size |
+| `tests/ui/duplicatesPagination.spec.js`, `tests/ui/associationPagination.spec.js` | Duplicates paginate three suggestions at a time and the selection survives changing page; the canonical control shows its own word and a single page shows no pager; the Asociación mobile list shows five reports per page with the total complete, few reports show no pager and export stays enabled, and choosing the start date opens the end date calendar automatically |
+| `tests/ui/noRemovedStyleApis.spec.js` | App code never uses `StyleSheet.absoluteFillObject`, which does not exist in React Native 0.86 (react-native-web still has it, so the web harness cannot catch it) |
+
+Boundary: the web harness does not render the native layer. Stacked sheets (`SheetHost`), overlay positioning, keyboard avoidance, safe areas and the native map are verified on an iPhone development build; Android and large-text layouts were not verified.
+
