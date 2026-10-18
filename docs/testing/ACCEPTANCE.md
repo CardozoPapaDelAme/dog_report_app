@@ -151,3 +151,25 @@ Registrar cada ejecución en `docs/testing/TEST_LOG.md`. Ante una falla, abrir
 inmediatamente incidente en `docs/testing/INCIDENTS.md` y bug en Jira. El
 veredicto del equipo y el resultado técnico de un caso son registros distintos;
 no se registran resultados que no se hayan observado.
+
+## Sesión con el socio formador (2026-10-18)
+
+Los casos `TC-CLIENTE-01` a `TC-CLIENTE-05` (`docs/testing/cases/aceptacion-socio.md`)
+se ejecutaron con el socio formador el 18 de octubre de 2026. Reporte de la sesión:
+`docs/testing/data/aceptacion/2026-10-18/reporte-aceptacion-socio.pdf`. Esta sesión
+reemplaza la conformidad por equivalencia de la sección Conformidad: el veredicto
+del socio es **aceptado con observaciones**.
+
+| Caso | Resultado | Observación del socio |
+|---|---|---|
+| TC-CLIENTE-01 Crear un reporte con foto | pasó | — |
+| TC-CLIENTE-02 Reportar sin conexión y sincronizar | pasó | — |
+| TC-CLIENTE-03 Consultar zonas de riesgo en el mapa | pasó | Los íconos de patitas deben verse desde antes, sin hacer mucho zoom. |
+| TC-CLIENTE-04 Consultar y exportar datos de la Asociación | pasó | La cuenta de Administrador también debe poder descargar los datos. |
+| TC-CLIENTE-05 Ocultar un reporte con una justificación | pasó | — |
+
+Las dos observaciones son solicitudes de cambio, no fallas de los casos: no abren
+`INC-<n>`. La segunda (exportación para Administrator) contradice la regla vigente de
+`AGENTS.md` (el Administrator no hereda BI/exportación) y requeriría una aclaración
+aprobada en `docs/product/APPROVED-CLARIFICATIONS.md` antes de implementarse. En esta
+sesión no se agregaron filas `RUN-<n>` a `docs/testing/TEST_LOG.md`.
