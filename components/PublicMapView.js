@@ -10,7 +10,7 @@ import { Camera, GeoJSONSource, Layer, Map, ViewAnnotation } from '@maplibre/map
 
 import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, clusterRadiusPx, reportsToHeatmapGeoJSON, severityLevel } from '../models/publicMap.js';
 import { colors, fontFamily } from '../theme/index.js';
-import { PinGlyph } from './ui/index.js';
+import { FadeIn, PinGlyph } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
 
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
@@ -109,6 +109,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             lngLat={[longitude, latitude]}
             onPress={() => onSelectCluster?.(cluster)}
           >
+            <FadeIn>
             <View style={[styles.halo, { width: radius * 2 + 14, height: radius * 2 + 14, borderRadius: radius + 7, backgroundColor: `${colors.severity[severityLevel(cluster.highest_severity)]}33` }]}>
               <View
                 accessible
@@ -125,6 +126,7 @@ const PublicMapView = forwardRef(function PublicMapView({
                 <Text style={styles.clusterText}>{cluster.report_count}</Text>
               </View>
             </View>
+            </FadeIn>
           </ViewAnnotation>
         );
       }) : null}
@@ -138,6 +140,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             lngLat={[longitude, latitude]}
             onPress={() => onSelectReport?.(report)}
           >
+            <FadeIn>
             <View
               accessible
               accessibilityRole="button"
@@ -146,6 +149,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             >
               <PinGlyph color={colors.severity[severityLevel(report.incident_type)]} flagged={Boolean(report.has_flags)} />
             </View>
+            </FadeIn>
           </ViewAnnotation>
         );
       }) : null}

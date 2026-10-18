@@ -79,8 +79,10 @@ Deno.test('ERI9 loader: switches to pins at zoom 15, loads once and filters by v
   loader.setRegion({ zoom: 14, bounds });
   await fire();
   loader.setRegion({ zoom: 15, bounds });
-  assert(loader.getState().mode === 'pins' && loader.getState().clusters.length === 0);
+  // The previous clusters stay on screen until the pins arrive.
+  assert(loader.getState().mode === 'pins' && loader.getState().dataMode === 'clusters' && loader.getState().clusters.length === 1);
   await fire();
+  assert(loader.getState().dataMode === 'pins' && loader.getState().clusters.length === 0);
   assert(calls.reports.length === 1 && calls.clusters.length === 1);
   assert(loader.getState().phase === 'ready' && loader.getState().reports.length === 2);
   loader.setRegion({ zoom: 18, bounds: [9, 27.7, 11, 27.8] });
@@ -88,8 +90,9 @@ Deno.test('ERI9 loader: switches to pins at zoom 15, loads once and filters by v
   loader.setRegion({ zoom: 18, bounds: [50, 27.7, 51, 27.8] });
   assert(loader.getState().phase === 'empty');
   loader.setRegion({ zoom: 10, bounds });
-  assert(loader.getState().mode === 'clusters' && loader.getState().reports.length === 0);
+  assert(loader.getState().mode === 'clusters' && loader.getState().dataMode === 'pins' && loader.getState().reports.length === 2);
   await fire();
+  assert(loader.getState().dataMode === 'clusters' && loader.getState().reports.length === 0);
   assert(calls.clusters.length === 2 && loader.getState().phase === 'ready');
 });
 
@@ -131,4 +134,14 @@ Deno.test('ERI9 loader: pins errors retry the reports request; dispose stops eve
   assert(timers[timers.length - 1].cancelled);
   await tick();
   assert(changes.length === count && calls.clusters.length === 0);
+});
+
+Deno.test('ERI9 loader: a failed mode switch drops the stale markers instead of showing the wrong mode', async () => {
+  const { loader, fire } = harness({ getReports: () => Promise.reject(Object.assign(new Error('boom'), { code: 'http_error', status: 500 })) });
+  loader.setRegion({ zoom: 14, bounds });
+  await fire();
+  loader.setRegion({ zoom: 15, bounds });
+  await fire();
+  const state = loader.getState();
+  assert(state.phase === 'error' && state.dataMode === 'pins' && state.clusters.length === 0 && state.reports.length === 0);
 });
