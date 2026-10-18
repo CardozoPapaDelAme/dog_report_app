@@ -65,7 +65,7 @@ const PublicMapView = forwardRef(function PublicMapView({
   const mapRef = useRef(null);
   const cameraRef = useRef(null);
 
-  const heatmapData = useMemo(() => reportsToHeatmapGeoJSON(clusters), [clusters]);
+  const heatmapData = useMemo(() => reportsToHeatmapGeoJSON(heatmapReports), [heatmapReports]);
   const heatmap = viewMode === 'heatmap';
 
   useImperativeHandle(ref, () => ({

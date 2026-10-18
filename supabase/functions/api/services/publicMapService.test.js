@@ -33,7 +33,9 @@ function fakeSql() {
 }
 
 Deno.test("public map domain resolves balanced zoom radii", () => {
-  assertEquals(clusterRadiusForZoom(0), 50000);
+  assertEquals(clusterRadiusForZoom(0), 1000000);
+  assertEquals(clusterRadiusForZoom(3), 200000);
+  assertEquals(clusterRadiusForZoom(6), 50000);
   assertEquals(clusterRadiusForZoom(8), 20000);
   assertEquals(clusterRadiusForZoom(9), 5000);
   assertEquals(clusterRadiusForZoom(12), 1500);
