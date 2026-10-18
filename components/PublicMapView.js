@@ -13,6 +13,10 @@ import { colors, fontFamily } from '../theme/index.js';
 import { FadeIn, PinGlyph } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
 
+/** Entrance stagger between markers, capped so a large batch does not take long to appear. */
+const STAGGER_MS = 45;
+const MAX_STAGGER_MS = 360;
+
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
 // Renders exactly what the server returned; no client-side clustering.
 /**
@@ -99,7 +103,7 @@ const PublicMapView = forwardRef(function PublicMapView({
           <Layer type="heatmap" id="heatmap-layer" paint={HEATMAP_PAINT} />
         </GeoJSONSource>
       ) : null}
-      {mode === 'clusters' && !heatmap ? clusters.map((cluster) => {
+      {mode === 'clusters' && !heatmap ? clusters.map((cluster, index) => {
         const radius = clusterRadiusPx(cluster.report_count);
         const { longitude, latitude } = cluster.approximate_location;
         return (
@@ -109,7 +113,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             lngLat={[longitude, latitude]}
             onPress={() => onSelectCluster?.(cluster)}
           >
-            <FadeIn>
+            <FadeIn delay={Math.min(index * STAGGER_MS, MAX_STAGGER_MS)}>
             <View style={[styles.halo, { width: radius * 2 + 14, height: radius * 2 + 14, borderRadius: radius + 7, backgroundColor: `${colors.severity[severityLevel(cluster.highest_severity)]}33` }]}>
               <View
                 accessible
@@ -130,7 +134,7 @@ const PublicMapView = forwardRef(function PublicMapView({
           </ViewAnnotation>
         );
       }) : null}
-      {mode === 'pins' && !heatmap ? reports.map((report) => {
+      {mode === 'pins' && !heatmap ? reports.map((report, index) => {
         const { longitude, latitude } = report.approximate_location;
         return (
           <ViewAnnotation
@@ -140,7 +144,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             lngLat={[longitude, latitude]}
             onPress={() => onSelectReport?.(report)}
           >
-            <FadeIn>
+            <FadeIn delay={Math.min(index * STAGGER_MS, MAX_STAGGER_MS)}>
             <View
               accessible
               accessibilityRole="button"
