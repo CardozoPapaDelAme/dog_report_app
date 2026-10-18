@@ -13,10 +13,13 @@ export const MAX_ZOOM = 22;
 export const HEATMAP_MAX_ZOOM = 15;
 
 // Mirrors supabase/functions/api/domain/publicMap.js (parity asserted in models/publicMap.test.js).
+// Radii track the on-screen scale (about 20-45 px per cluster), so low zooms merge nearby clusters instead of stacking them.
 export const ZOOM_RADIUS_BANDS = Object.freeze([
-  { min: 0, max: 8, radiusMeters: 1000 },
-  { min: 9, max: 11, radiusMeters: 500 },
-  { min: 12, max: 14, radiusMeters: 250 },
+  { min: 0, max: 6, radiusMeters: 50000 },
+  { min: 7, max: 8, radiusMeters: 20000 },
+  { min: 9, max: 10, radiusMeters: 5000 },
+  { min: 11, max: 12, radiusMeters: 1500 },
+  { min: 13, max: 14, radiusMeters: 400 },
   { min: 15, max: 16, radiusMeters: 100 },
   { min: 17, max: 22, radiusMeters: 50 },
 ]);

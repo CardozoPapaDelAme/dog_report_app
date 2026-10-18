@@ -37,13 +37,16 @@ export const PUBLIC_CLUSTER_MIN_ZOOM = 0;
 export const PUBLIC_CLUSTER_MAX_ZOOM = 22;
 
 /**
- * Cluster radius in meters for each inclusive map zoom range.
+ * Cluster radius in meters for each inclusive map zoom range. Radii follow the on-screen scale (roughly
+ * 20-45 px at Chihuahua's latitude) so low zooms merge nearby clusters instead of drawing them stacked.
  * @type {ReadonlyArray<{min: number, max: number, radiusMeters: number}>}
  */
 export const ZOOM_RADIUS_BANDS = Object.freeze([
-  { min: 0, max: 8, radiusMeters: 1000 },
-  { min: 9, max: 11, radiusMeters: 500 },
-  { min: 12, max: 14, radiusMeters: 250 },
+  { min: 0, max: 6, radiusMeters: 50000 },
+  { min: 7, max: 8, radiusMeters: 20000 },
+  { min: 9, max: 10, radiusMeters: 5000 },
+  { min: 11, max: 12, radiusMeters: 1500 },
+  { min: 13, max: 14, radiusMeters: 400 },
   { min: 15, max: 16, radiusMeters: 100 },
   { min: 17, max: 22, radiusMeters: 50 },
 ]);

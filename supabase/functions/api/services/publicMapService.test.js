@@ -33,9 +33,11 @@ function fakeSql() {
 }
 
 Deno.test("public map domain resolves balanced zoom radii", () => {
-  assertEquals(clusterRadiusForZoom(0), 1000);
-  assertEquals(clusterRadiusForZoom(9), 500);
-  assertEquals(clusterRadiusForZoom(12), 250);
+  assertEquals(clusterRadiusForZoom(0), 50000);
+  assertEquals(clusterRadiusForZoom(8), 20000);
+  assertEquals(clusterRadiusForZoom(9), 5000);
+  assertEquals(clusterRadiusForZoom(12), 1500);
+  assertEquals(clusterRadiusForZoom(14), 400);
   assertEquals(clusterRadiusForZoom(15), 100);
   assertEquals(clusterRadiusForZoom(22), 50);
 });
@@ -108,7 +110,7 @@ Deno.test("public map service caps cluster input and fills six type counts", asy
 
   const clusters = await service.listClusters({ zoom: 12, limit: 9000 });
 
-  assert(input.radiusMeters === 250, "zoom 12 should use the 250m radius");
+  assert(input.radiusMeters === 1500, "zoom 12 should use the 1500m radius");
   assert(input.limit === 5000, "service should cap cluster input defensively");
   assert(
     INCIDENT_TYPES.every((type) =>
