@@ -18,6 +18,7 @@ import { useDraftAutoSync } from './hooks/useDraftAutoSync.js';
 import { useLogin } from './hooks/useLogin.js';
 import { useReportDraftFlow } from './hooks/useReportDraftFlow.js';
 import AssociationDashboardScreen from './screens/associationDashboardScreen.js';
+import AdminDataExportScreen from './screens/AdminDataExportScreen.js';
 import CameraScreen from './screens/CameraScreen.js';
 import CommandCenterScreen from './screens/CommandCenterScreen.js';
 import ConfigurationScreen from './screens/ConfigurationScreen.js';
@@ -134,12 +135,10 @@ export default function App() {
     );
   } else if (login.session && screen === 'dataExport') {
     content = (
-      <AssociationDashboardScreen
+      <AdminDataExportScreen
         accessToken={login.session.accessToken}
-        displayName={login.session.profile.displayName}
         onBack={() => setScreen('moderation')}
-        onLogout={login.logout}
-        pending={login.pending}
+        logoutPending={login.pending}
       />
     );
   } else if (login.session && screen === 'duplicates') {

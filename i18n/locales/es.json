@@ -294,6 +294,12 @@
       "request_failed": "No pudimos completar la solicitud. Revisa la conexión e inténtalo de nuevo."
     }
   },
+  "adminExport": {
+    "title": "Exportar datos",
+    "subtitle": "Consulta los reportes aceptados y descárgalos en CSV o Excel. Es la misma información que recibe la Asociación, sin datos de moderación.",
+    "exportTitle": "Descargar",
+    "forbidden": "Esta cuenta no tiene acceso a la exportación de datos."
+  },
   "commandCenter": {
     "title": "Command Center",
     "exportData": "Exportar datos"

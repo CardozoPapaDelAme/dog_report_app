@@ -14,6 +14,7 @@ import CameraScreen from '../../screens/CameraScreen.js';
 import NativePublicMapView from '../../components/PublicMapView.js';
 import ReportFormScreen from '../../screens/ReportFormScreen.js';
 import AssociationDashboardScreen from '../../screens/associationDashboardScreen.js';
+import AdminDataExportScreen from '../../screens/AdminDataExportScreen.js';
 import LoginScreen from '../../screens/loginScreen.js';
 import { summarizeReportDraftQueue } from '../../models/reportDraft.js';
 import { buildReportPayload } from '../../models/reportPayload.js';
@@ -366,6 +367,8 @@ function Fixture() {
     ? ReportFixture
     : params.has('association') || params.has('association-preview')
       ? AssociationDashboardScreen
+    : params.has('admin-export')
+      ? AdminDataExportScreen
     : params.has('command-center')
       ? CommandCenterScreen
     : params.has('duplicates')
@@ -386,7 +389,7 @@ function Fixture() {
       <button onClick={()=>setVisible(true)}>Abrir formulario de prueba</button>
     </div>
     <SafeAreaProvider>{visible ? <Screen accessToken={token} onBack={()=>setVisible(false)} onLogout={()=>setToken(null)}
-      {...(params.has('tools') ? { onOpenDuplicates: () => {}, onOpenZoneSets: () => {}, onOpenConfiguration: () => {} } : {})}
+      {...(params.has('tools') ? { onOpenDuplicates: () => {}, onOpenZoneSets: () => {}, onOpenConfiguration: () => {}, onOpenDataExport: () => {} } : {})}
       {...(params.has('association-preview') ? { getPage: previewAssociationPage, displayName: 'Vista de demostración' } : {})} /> : <p>Formulario cerrado</p>}</SafeAreaProvider>
   </div>;
 }
