@@ -112,12 +112,12 @@ const camera: CamKey[] = [
   {f: S.zone + 238, ...zoneDetail},
   ...whip(E.zone, zoneDetail, assocTop),
   // association: top for the period taps, then the list
-  {f: S.assoc + 146, ...assocTop},
-  {f: S.assoc + 162, ...assocList},
+  {f: S.assoc + 170, ...assocTop},
+  {f: S.assoc + 186, ...assocList},
   ...whip(E.assoc, assocList, adminTop),
   // admin: top for the taps, then the thresholds
-  {f: S.admin + 150, ...adminTop},
-  {f: S.admin + 170, ...adminEnd},
+  {f: S.admin + 170, ...adminTop},
+  {f: S.admin + 190, ...adminEnd},
   {f: E.admin + 18, ...adminEnd, ty: adminEnd.ty + 1300, e: easeIn},
 ];
 
@@ -202,8 +202,8 @@ export const Promo: React.FC<PromoProps> = ({cameraSource}) => {
             <Clip
               src="assoc-c.mp4"
               taps={[
-                {x: 78, y: 319, at: 47},
-                {x: 201, y: 319, at: 116},
+                {x: 78, y: 319, at: 53},
+                {x: 201, y: 319, at: 131},
               ]}
             />
           </Sequence>
@@ -211,9 +211,9 @@ export const Promo: React.FC<PromoProps> = ({cameraSource}) => {
             <Clip
               src="admin-c.mp4"
               taps={[
-                {x: 50, y: 297, at: 49},
-                {x: 105, y: 89, at: 122},
-                {x: 352, y: 297, at: 152},
+                {x: 50, y: 297, at: 52},
+                {x: 105, y: 89, at: 131},
+                {x: 352, y: 297, at: 161},
               ]}
             />
           </Sequence>
@@ -241,15 +241,15 @@ export const Promo: React.FC<PromoProps> = ({cameraSource}) => {
       <FloatChip at={S.zone + 252} dur={36} x={1075} y={230} label="Foto, tipo y fecha" icon={<PinIcon size={34} color="#ffffff" />} tone="forest" anchor="right" />
 
       <NotifCard at={S.assoc + 6} dur={34} x={1075} y={940} icon={<CheckIcon size={40} />} title="{n} reportes aceptados" sub="Últimos 30 días" value={67} accent="ok" />
-      <FloatChip at={S.assoc + 48} dur={46} x={1075} y={230} label="Últimos 7 días" tone="white" anchor="right" />
-      <NotifCard at={S.assoc + 70} dur={44} x={1075} y={940} icon={<CheckIcon size={40} />} title="{n} reportes aceptados" sub="Últimos 7 días" value={10} accent="ok" />
-      <FloatChip at={S.assoc + 117} dur={36} x={1075} y={230} label="Últimos 30 días" tone="white" anchor="right" />
+      <FloatChip at={S.assoc + 54} dur={46} x={1075} y={230} label="Últimos 7 días" tone="white" anchor="right" />
+      <NotifCard at={S.assoc + 76} dur={46} x={1075} y={940} icon={<CheckIcon size={40} />} title="{n} reportes aceptados" sub="Últimos 7 días" value={10} accent="ok" />
+      <FloatChip at={S.assoc + 132} dur={36} x={1075} y={230} label="Últimos 30 días" tone="white" anchor="right" />
 
       <FloatChip at={S.admin + 6} dur={26} x={1075} y={900} label="Moderación" icon={<ShieldIcon size={34} color="#ffffff" />} tone="forest" anchor="right" />
-      <FloatChip at={S.admin + 50} dur={42} x={1075} y={230} label="Duplicados" tone="signal" anchor="right" />
-      <NotifCard at={S.admin + 70} dur={46} x={1075} y={940} icon={<PinIcon size={40} color="#ffffff" />} title="Reportes conectados" sub="Sugerencia 1 · 3 reportes" accent="warn" />
-      <FloatChip at={S.admin + 123} dur={26} x={1075} y={230} label="Volver" tone="white" anchor="right" />
-      <FloatChip at={S.admin + 153} dur={46} x={1075} y={900} label="Umbrales" tone="forest" anchor="right" />
+      <FloatChip at={S.admin + 53} dur={42} x={1075} y={230} label="Duplicados" tone="signal" anchor="right" />
+      <NotifCard at={S.admin + 66} dur={52} x={1075} y={940} icon={<PinIcon size={40} color="#ffffff" />} title="Reportes conectados" sub="Sugerencia 1 · 3 reportes" accent="warn" />
+      <FloatChip at={S.admin + 132} dur={26} x={1075} y={230} label="Volver" tone="white" anchor="right" />
+      <FloatChip at={S.admin + 162} dur={46} x={1075} y={900} label="Umbrales" tone="forest" anchor="right" />
 
       <Sequence name="Closing" {...range(scenes.closing)}>
         <Closing />

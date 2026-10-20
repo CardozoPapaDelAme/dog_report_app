@@ -1,11 +1,38 @@
 {
-  "hook": {"from": 0, "to": 2.5},
-  "camera": {"from": 2.5, "to": 10},
-  "types": {"from": 10, "to": 14.5},
-  "form": {"from": 14.5, "to": 23.3},
-  "map": {"from": 23.3, "to": 30.5},
-  "zone": {"from": 30.5, "to": 40.3},
-  "association": {"from": 40.3, "to": 47.1},
-  "admin": {"from": 47.1, "to": 54.4},
-  "closing": {"from": 54.4, "to": 56.4}
+  "hook": {
+    "from": 0,
+    "to": 2.5
+  },
+  "camera": {
+    "from": 2.5,
+    "to": 10
+  },
+  "types": {
+    "from": 10,
+    "to": 14.5
+  },
+  "form": {
+    "from": 14.5,
+    "to": 23.3
+  },
+  "map": {
+    "from": 23.3,
+    "to": 30.5
+  },
+  "zone": {
+    "from": 30.5,
+    "to": 40.3
+  },
+  "association": {
+    "from": 40.3,
+    "to": 48.8
+  },
+  "admin": {
+    "from": 48.8,
+    "to": 57.4
+  },
+  "closing": {
+    "from": 57.4,
+    "to": 59.4
+  }
 }

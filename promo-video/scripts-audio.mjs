@@ -142,25 +142,25 @@ whoosh(ASSOC - 0.5, 0.5, true);
 whoosh(ASSOC + 0.05, 0.55, false);
 // association: count cards, period taps, checklist ticks
 pop(ASSOC + fr(6), 700, 0.15);
-click(ASSOC + fr(47));
-pop(ASSOC + fr(50), 640, 0.13);
+click(ASSOC + fr(53));
+pop(ASSOC + fr(56), 640, 0.13);
 pop(ASSOC + fr(40), 980, 0.11);
 pop(ASSOC + fr(54), 1100, 0.11);
-pop(ASSOC + fr(70), 700, 0.14);
-click(ASSOC + fr(116));
-pop(ASSOC + fr(119), 640, 0.13);
+pop(ASSOC + fr(76), 700, 0.14);
+click(ASSOC + fr(131));
+pop(ASSOC + fr(134), 640, 0.13);
 // whip + circle wipe to dark (association -> admin)
 whoosh(ADMIN - 0.5, 0.5, true);
 whoosh(ADMIN + 0.15, 0.55, false);
 // admin: three taps, cards
 pop(ADMIN + fr(6), 640, 0.13);
-click(ADMIN + fr(49));
-pop(ADMIN + fr(52), 640, 0.13);
-pop(ADMIN + fr(72), 760, 0.14);
-click(ADMIN + fr(122));
-pop(ADMIN + fr(125), 640, 0.13);
-click(ADMIN + fr(152));
-pop(ADMIN + fr(155), 640, 0.13);
+click(ADMIN + fr(52));
+pop(ADMIN + fr(55), 640, 0.13);
+pop(ADMIN + fr(68), 760, 0.14);
+click(ADMIN + fr(131));
+pop(ADMIN + fr(134), 640, 0.13);
+click(ADMIN + fr(161));
+pop(ADMIN + fr(164), 640, 0.13);
 // exit + closing
 whoosh(CLOSING - 0.4, 0.6, false);
 ding(CLOSING + 0.1, [72, 76, 79, 84]);
