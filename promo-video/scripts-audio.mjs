@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const SR = 44100;
 const scenes = JSON.parse(fs.readFileSync('src/scenes.json', 'utf8'));
 const DUR = scenes.closing.to;
-const N = SR * DUR;
+const N = Math.round(SR * DUR);
 const L = new Float32Array(N);
 const R = new Float32Array(N);
 
@@ -142,25 +142,25 @@ whoosh(ASSOC - 0.5, 0.5, true);
 whoosh(ASSOC + 0.05, 0.55, false);
 // association: count cards, period taps, checklist ticks
 pop(ASSOC + fr(6), 700, 0.15);
-click(ASSOC + fr(53));
-pop(ASSOC + fr(56), 640, 0.13);
+click(ASSOC + fr(93));
+pop(ASSOC + fr(96), 640, 0.13);
 pop(ASSOC + fr(40), 980, 0.11);
 pop(ASSOC + fr(54), 1100, 0.11);
-pop(ASSOC + fr(76), 700, 0.14);
-click(ASSOC + fr(131));
-pop(ASSOC + fr(134), 640, 0.13);
+pop(ASSOC + fr(118), 700, 0.14);
+click(ASSOC + fr(231));
+pop(ASSOC + fr(234), 640, 0.13);
 // whip + circle wipe to dark (association -> admin)
 whoosh(ADMIN - 0.5, 0.5, true);
 whoosh(ADMIN + 0.15, 0.55, false);
 // admin: three taps, cards
 pop(ADMIN + fr(6), 640, 0.13);
-click(ADMIN + fr(52));
-pop(ADMIN + fr(55), 640, 0.13);
-pop(ADMIN + fr(68), 760, 0.14);
-click(ADMIN + fr(131));
-pop(ADMIN + fr(134), 640, 0.13);
-click(ADMIN + fr(161));
-pop(ADMIN + fr(164), 640, 0.13);
+click(ADMIN + fr(92));
+pop(ADMIN + fr(95), 640, 0.13);
+pop(ADMIN + fr(130), 760, 0.14);
+click(ADMIN + fr(231));
+pop(ADMIN + fr(234), 640, 0.13);
+click(ADMIN + fr(291));
+pop(ADMIN + fr(294), 640, 0.13);
 // exit + closing
 whoosh(CLOSING - 0.4, 0.6, false);
 ding(CLOSING + 0.1, [72, 76, 79, 84]);
