@@ -5,7 +5,7 @@ const geometry={type:'Polygon',coordinates:[[[0,0],[1,0],[1,1],[0,0]]]};
 const canonical={type:'MultiPolygon',coordinates:[geometry.coordinates]};
 const checksum=createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
 const zone={id,environment:'staging',version:2,name:'Zona de prueba',source_uri:'https://example.test/zona.geojson',source_version:'v2',source_sha256:checksum,geometry:canonical,status:'draft'};
-const configuration={id:'config-1',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30};
+const configuration={id:'config-1',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30,photo_dog_probability_min:0.2};
 const field=(page,key)=>page.getByTestId(`zone-${key}`);
 const pageErrors=new WeakMap();
 test.beforeEach(({page})=>{const errors=[];pageErrors.set(page,errors);page.on('pageerror',(error)=>errors.push(error.message));});

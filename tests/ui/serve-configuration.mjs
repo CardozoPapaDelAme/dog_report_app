@@ -24,8 +24,8 @@ const html = '<!doctype html><html lang="es"><meta charset="utf-8"><meta name="v
 // Demo-only in-memory configuration for manual previews. Fictional data; resets
 // when this process stops. Playwright tests intercept these routes before they
 // reach the server.
-let configuration = { id:'demo-config-1',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30,change_note:'Configuración ficticia inicial de demostración' };
-const configurationFields = ['flag_auto_hide_threshold','duplicate_radius_meters','duplicate_time_window_minutes','trust_high_threshold','trust_medium_threshold','gps_accuracy_max_meters','report_rate_limit_per_hour','flag_rate_limit_per_hour'];
+let configuration = { id:'demo-config-1',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30,photo_dog_probability_min:0.2,change_note:'Configuración ficticia inicial de demostración' };
+const configurationFields = ['flag_auto_hide_threshold','duplicate_radius_meters','duplicate_time_window_minutes','trust_high_threshold','trust_medium_threshold','gps_accuracy_max_meters','report_rate_limit_per_hour','flag_rate_limit_per_hour','photo_dog_probability_min'];
 const json = (res, status, payload) => {
   res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
   res.end(JSON.stringify(payload));
