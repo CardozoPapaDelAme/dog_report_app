@@ -9,6 +9,8 @@ export const PHOTO_VALIDATION_TIMEOUT_MS = 8000;
 // A slow device may need longer than the validation timeout to load the model;
 // only a load pending longer than this is treated as hung and dropped.
 export const MODEL_LOAD_HUNG_MS = 60000;
+// Reading the cached thresholds is local; past this budget the built-in defaults apply.
+export const THRESHOLDS_TIMEOUT_MS = 1000;
 
 // Orchestrates one validation; never throws. Failures fail open as `model_error`.
 /**
@@ -22,7 +24,9 @@ export const MODEL_LOAD_HUNG_MS = 60000;
  * @param {import('./photoValidationAvailability.js').PhotoValidationAvailability} options.availability
  * @param {(uri: string) => Promise<*>} options.getPixels - Decodes the photo into model pixels.
  * @param {() => *} options.loadModel - Returns the (possibly cached) model or a promise of it.
- * @param {(input: {model: *, pixels: *}) => *} options.classify - Produces the validation result.
+ * @param {(input: {model: *, pixels: *, thresholds?: object}) => *} options.classify - Produces the validation result.
+ * @param {() => Promise<object | undefined>} [options.getThresholds] - Photo validation thresholds; failures or
+ *   a slow answer fall back to `undefined` (the built-in defaults) and never fail the validation.
  * @param {(error: unknown) => void} [options.onError] - Reports any failure.
  * @param {(error: unknown) => void} [options.onModelFailure] - Called when the model load failed or is hung.
  * @param {() => number | null} [options.loadPendingMs] - Age of the pending model load.
@@ -36,6 +40,7 @@ export async function runPhotoValidationFlow({
   getPixels,
   loadModel,
   classify,
+  getThresholds = async () => undefined,
   onError = () => {},
   // Called when the model load failed, or has been pending longer than
   // `hungMs`, so the caller can drop the cached load and retry on the next photo.
@@ -44,6 +49,7 @@ export async function runPhotoValidationFlow({
   loadPendingMs = () => null,
   hungMs = MODEL_LOAD_HUNG_MS,
   timeoutMs = PHOTO_VALIDATION_TIMEOUT_MS,
+  thresholdsTimeoutMs = THRESHOLDS_TIMEOUT_MS,
 }) {
   if (!availability.available) {
     return { status: 'skipped', reason: availability.skipped };
@@ -61,8 +67,10 @@ export async function runPhotoValidationFlow({
         throw loadError;
       });
       modelPromise.catch(() => {});
-      const [pixels, model] = await Promise.all([getPixels(uri), modelPromise]);
-      return classify({ model, pixels });
+      const [pixels, model, thresholds] = await Promise.all([
+        getPixels(uri), modelPromise, readThresholds(getThresholds, thresholdsTimeoutMs),
+      ]);
+      return classify({ model, pixels, thresholds });
     })(), timeoutMs);
   } catch (error) {
     onError(error);
@@ -81,5 +89,14 @@ function loadIsHung(loadPendingMs, hungMs) {
     return Number.isFinite(pending) && pending > hungMs;
   } catch {
     return false;
+  }
+}
+
+/** Resolves the thresholds or `undefined` (defaults) on any failure or timeout; never rejects. */
+async function readThresholds(getThresholds, timeoutMs) {
+  try {
+    return await withTimeout(Promise.resolve().then(getThresholds), timeoutMs);
+  } catch {
+    return undefined;
   }
 }

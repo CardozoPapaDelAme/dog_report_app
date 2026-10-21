@@ -142,3 +142,15 @@ Deno.test('pendingSinceMs tracks the clock and clears once settled', async () =>
   await Promise.resolve();
   assert(loader.pendingSinceMs() === null);
 });
+
+Deno.test('thresholds are passed to classify; failures and slow reads fall back to undefined', async () => {
+  const loader = createLazyModelLoader(async () => 'model');
+  const seen = [];
+  const classify = ({ thresholds }) => { seen.push(thresholds); return { status: 'accepted' }; };
+  await run(loader, { classify, getThresholds: async () => ({ dogProbability: 0.5, blurVariance: 80 }) });
+  await run(loader, { classify, getThresholds: async () => { throw new Error('storage'); } });
+  await run(loader, { classify, getThresholds: () => new Promise(() => {}), thresholdsTimeoutMs: 5 });
+  await run(loader, { classify });
+  assert(seen[0].dogProbability === 0.5, 'thresholds injected');
+  assert(seen[1] === undefined && seen[2] === undefined && seen[3] === undefined, 'defaults otherwise');
+});
