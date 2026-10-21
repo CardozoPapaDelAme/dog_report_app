@@ -205,6 +205,7 @@ CREATE TABLE public.config_versions (
   gps_accuracy_max_meters NUMERIC(7,2) NOT NULL CHECK (gps_accuracy_max_meters BETWEEN 5 AND 500),
   report_rate_limit_per_hour INTEGER NOT NULL CHECK (report_rate_limit_per_hour BETWEEN 1 AND 500),
   flag_rate_limit_per_hour INTEGER NOT NULL CHECK (flag_rate_limit_per_hour BETWEEN 1 AND 1000),
+  photo_dog_probability_min NUMERIC(4,3) NOT NULL DEFAULT 0.200 CHECK (photo_dog_probability_min BETWEEN 0 AND 1),
   fingerprint_retention_days INTEGER NOT NULL DEFAULT 30 CHECK (fingerprint_retention_days = 30),
   public_retention_days INTEGER NOT NULL DEFAULT 90 CHECK (public_retention_days = 90),
   business_retention_days INTEGER NOT NULL DEFAULT 1826 CHECK (business_retention_days BETWEEN 1825 AND 1827),

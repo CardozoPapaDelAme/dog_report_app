@@ -17,6 +17,7 @@ export const CONFIGURATION_RULES = Object.freeze({
   gps_accuracy_max_meters: { min: 5, max: 500, decimals: 2 },
   report_rate_limit_per_hour: { min: 1, max: 500, decimals: 0 },
   flag_rate_limit_per_hour: { min: 1, max: 1000, decimals: 0 },
+  photo_dog_probability_min: { min: 0, max: 1, decimals: 3 },
 });
 
 /**
@@ -43,6 +44,7 @@ export class ConfigurationError extends Error {
  * @property {number} gps_accuracy_max_meters
  * @property {number} report_rate_limit_per_hour
  * @property {number} flag_rate_limit_per_hour
+ * @property {number} photo_dog_probability_min - Minimum on-device AI dog probability, 0 to 1.
  * @property {string} change_note - Non-blank note of 1 to 1000 characters.
  */
 /**

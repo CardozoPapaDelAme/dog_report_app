@@ -4,12 +4,12 @@ export const configuration = {
   id:'config-1', environment:'staging', version:1, is_active:true,
   flag_auto_hide_threshold:5, duplicate_radius_meters:150, duplicate_time_window_minutes:120,
   trust_high_threshold:0.8, trust_medium_threshold:0.5, gps_accuracy_max_meters:50,
-  report_rate_limit_per_hour:10, flag_rate_limit_per_hour:30, change_note:'Previous reason',
+  report_rate_limit_per_hour:10, flag_rate_limit_per_hour:30, photo_dog_probability_min:0.2, change_note:'Previous reason',
 };
 function assert(value, message='Assertion failed') { if (!value) throw new Error(message); }
 const validDraft=()=>({...configurationToDraft(configuration),change_note:'Reviewed thresholds'});
-Deno.test('FAB-4 MODEL: all eight numeric rules match FAB-1, every limit and precision is enforced',()=>{
-  assert(CONFIGURATION_FIELDS.length===8);
+Deno.test('FAB-4 MODEL: all nine numeric rules match FAB-1, every limit and precision is enforced',()=>{
+  assert(CONFIGURATION_FIELDS.length===9);
   for(const {key,group:_group,...rule} of CONFIGURATION_FIELDS) {
     assert(JSON.stringify(rule)===JSON.stringify(CONFIGURATION_RULES[key]),key);
     for(const bad of ['', 'abc','0x10','1e2','Infinity',String(rule.min-1),String(rule.max+1)]) {
@@ -30,7 +30,7 @@ Deno.test('FAB-4 MODEL: all eight numeric rules match FAB-1, every limit and pre
 Deno.test('FAB-4 MODEL: payload uses numbers, accepts decimal comma and matches server validation',()=>{
   const result=validateConfigurationDraft({...validDraft(),trust_high_threshold:'0,825',gps_accuracy_max_meters:'12,25'});
   assert(result.payload.trust_high_threshold===0.825 && result.payload.gps_accuracy_max_meters===12.25);
-  assert(Object.keys(result.payload).length===9);
+  assert(Object.keys(result.payload).length===10);
   validateConfiguration(result.payload);
   assert(validateConfigurationDraft({...validDraft(),trust_medium_threshold:'0.8'}).errors.trust_medium_threshold.key==='trustOrder');
 });

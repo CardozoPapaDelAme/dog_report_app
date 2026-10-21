@@ -10,6 +10,7 @@ export function validConfiguration(overrides = {}) {
     gps_accuracy_max_meters: 50,
     report_rate_limit_per_hour: 10,
     flag_rate_limit_per_hour: 30,
+    photo_dog_probability_min: 0.2,
     change_note: 'Adjust thresholds after review',
     ...overrides,
   };
