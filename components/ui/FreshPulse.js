@@ -9,8 +9,8 @@ import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-nat
 const RINGS = 3;
 const RING_GAP_MS = 450;
 const RING_MS = 1300;
-/** Times the ring sequence plays before stopping. */
-const CYCLES = 3;
+/** Times the ring sequence plays before stopping (about 11 s, the screen removes the highlight at 10 s). */
+const CYCLES = 5;
 
 /**
  * @param {object} props

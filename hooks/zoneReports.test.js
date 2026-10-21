@@ -1,4 +1,4 @@
-import { loadZoneReports } from './zoneReports.js';
+import { loadNewestZoneReport, loadZoneReports } from './zoneReports.js';
 
 function assert(value, message = 'Assertion failed') { if (!value) throw new Error(message); }
 const cluster = { approximate_location: { longitude: -107.64, latitude: 27.75 } };
@@ -39,4 +39,14 @@ Deno.test('recent reports: newest first with limit 100, empty and failure phases
   assert(offline.phase === 'offline');
   const failed = await loadRecentReports({}, { fetchReports: async () => { throw new Error('x'); } });
   assert(failed.phase === 'error');
+});
+
+Deno.test('newest zone report: the most recent report inside the cluster, or null', async () => {
+  const newest = await loadNewestZoneReport({ cluster, zoom: 13 }, {
+    fetchReports: async () => [near('old', '2026-09-01T00:00:00Z'), far, near('new', '2026-10-21T17:02:00Z'), near('mid', '2026-10-01T00:00:00Z')],
+  });
+  assert(newest?.report_id === 'new', `expected 'new', got ${newest?.report_id}`);
+  assert(await loadNewestZoneReport({ cluster, zoom: 13 }, { fetchReports: async () => [far] }) === null);
+  const failed = await loadNewestZoneReport({ cluster, zoom: 13 }, { fetchReports: async () => { throw Object.assign(new Error('x'), { code: 'network_unavailable' }); } });
+  assert(failed === null);
 });
