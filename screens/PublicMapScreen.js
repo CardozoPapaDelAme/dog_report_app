@@ -6,9 +6,9 @@
  * Creel.
  */
 import * as Location from 'expo-location';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton, Banner, FadeIn, Icon, IconButton, MapCompass, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
@@ -30,6 +30,8 @@ const MODE_SWITCH_HEIGHT = 40 * 2 + 2 + 3 * 2;
 /** How long a new report keeps its toast and its highlighted marker. */
 const FRESH_TOAST_MS = 10000;
 const NO_IDS = [];
+/** Share of the window height covered by the report detail sheet; the focused pin is centered above it. */
+const REPORT_SHEET_SHARE = 0.68;
 /** How long the "switch to clusters to zoom further" hint stays on screen. */
 const HEATMAP_HINT_MS = 5000;
 const LOCATION_TIMEOUT_MS = 3000;
@@ -270,11 +272,21 @@ function NativeMapScreen({ onBack }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const map = usePublicMap();
+  const { height: windowHeight } = useWindowDimensions();
   // A new report brought in by the auto refresh keeps its toast and highlighted marker for FRESH_TOAST_MS.
   // The timer is independent of the loader: the next refresh empties `freshIds` before the time is up.
   const [fresh, setFresh] = useState(null);
   const freshTimer = useRef(null);
   const clearFresh = useCallback(() => { clearTimeout(freshTimer.current); setFresh(null); }, []);
+  // After opening a new report its own pin keeps the rings for FRESH_TOAST_MS, so the audience can follow it.
+  const [trailId, setTrailId] = useState(null);
+  const trailTimer = useRef(null);
+  const followPin = useCallback((reportId) => {
+    clearTimeout(trailTimer.current);
+    setTrailId(reportId);
+    trailTimer.current = setTimeout(() => setTrailId(null), FRESH_TOAST_MS);
+  }, []);
+  useEffect(() => () => clearTimeout(trailTimer.current), []);
   useEffect(() => {
     if (map.freshIds.length === 0) return;
     const ids = new Set(map.freshIds);
@@ -351,13 +363,15 @@ function NativeMapScreen({ onBack }) {
       if (target.cluster) selectCluster(target.cluster);
       return;
     }
+    // The report sheet covers most of the screen: keep the pin in the visible strip above it.
     setFocus({
       ...report.approximate_location,
       zoom: Math.max(PIN_ZOOM_THRESHOLD + 1, map.region?.zoom ?? 0),
-      padding: { bottom: CLUSTER_CARD_PADDING + insets.bottom },
+      padding: { bottom: Math.round(windowHeight * REPORT_SHEET_SHARE) },
     });
     selectReport(report);
-  }, [clearFresh, insets.bottom, map.region, selectCluster, selectReport]);
+    followPin(report.report_id);
+  }, [clearFresh, followPin, map.region, selectCluster, selectReport, windowHeight]);
 
   // Tapping the highlighted cluster goes straight to the new report instead of the cluster card.
   const pressCluster = useCallback((cluster) => {
@@ -376,6 +390,7 @@ function NativeMapScreen({ onBack }) {
   else if (activePhase === 'error') banner = { text: t('map.error'), retry: true, danger: true };
   else if (activePhase === 'empty') banner = { text: t('map.empty') };
   const showFresh = Boolean(fresh) && viewMode !== 'heatmap' && !banner;
+  const highlightIds = useMemo(() => (trailId ? [...(fresh?.ids ?? NO_IDS), trailId] : (fresh?.ids ?? NO_IDS)), [fresh, trailId]);
 
   return (
     <View style={styles.root}>
@@ -395,7 +410,7 @@ function NativeMapScreen({ onBack }) {
             onRegionChange={handleRegionChange}
             onSelectCluster={pressCluster}
             onSelectReport={selectReport}
-            freshIds={fresh?.ids ?? NO_IDS}
+            freshIds={highlightIds}
           />
         ) : (
           <View style={styles.centered}><ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /></View>

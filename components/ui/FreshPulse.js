@@ -18,9 +18,11 @@ const CYCLES = 5;
  * @param {number} props.pad - Extra space on each side; the rings grow until they fill it.
  * @param {string} props.color - Ring color.
  * @param {import('react').ReactNode} props.children - The marker, centered in the square.
+ * @param {{x: number, y: number, width: number, height: number}} [props.center] - Overlay mode for anchored markers
+ *   (pins): the box keeps the marker's own size and the rings, centered at `x`/`y`, overflow it instead.
  * @returns {JSX.Element}
  */
-export default function FreshPulse({ size, pad, color, children }) {
+export default function FreshPulse({ size, pad, color, children, center }) {
   const box = size + pad * 2;
   const rings = useRef(Array.from({ length: RINGS }, () => new Animated.Value(0))).current;
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -41,15 +43,21 @@ export default function FreshPulse({ size, pad, color, children }) {
     return () => { cancelled = true; animation?.stop(); };
   }, [rings]);
 
+  // Overlay mode: rings are absolutely placed around `center` and may overflow the marker's own box.
+  const at = (diameter) => (center ? { left: center.x - diameter / 2, top: center.y - diameter / 2 } : null);
+  const frame = center
+    ? { width: center.width, height: center.height, overflow: 'visible' }
+    : { width: box, height: box, alignItems: 'center', justifyContent: 'center' };
+
   return (
-    <View style={{ width: box, height: box, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={frame}>
       {reduceMotion ? (
-        <View pointerEvents="none" style={[styles.ring, { width: size + pad, height: size + pad, borderRadius: (size + pad) / 2, borderColor: color }]} />
+        <View pointerEvents="none" style={[styles.ring, at(size + pad), { width: size + pad, height: size + pad, borderRadius: (size + pad) / 2, borderColor: color }]} />
       ) : rings.map((ring, index) => (
         <Animated.View
           key={index}
           pointerEvents="none"
-          style={[styles.ring, {
+          style={[styles.ring, at(size), {
             width: size, height: size, borderRadius: size / 2, borderColor: color,
             opacity: ring.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.95, 0] }),
             transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [1, box / size] }) }],

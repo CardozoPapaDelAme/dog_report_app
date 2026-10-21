@@ -18,6 +18,10 @@ const STAGGER_MS = 45;
 const MAX_STAGGER_MS = 360;
 /** Room around a freshly published cluster for its attention rings. */
 const FRESH_PAD = 42;
+/** PinGlyph box (48 x 62) and the diameter of its round head. */
+const PIN_WIDTH = 48;
+const PIN_HEIGHT = 62;
+const PIN_HEAD = 46;
 
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
 // Renders exactly what the server returned; no client-side clustering.
@@ -36,7 +40,7 @@ const FRESH_PAD = 42;
  * @param {(region: {zoom: number, bounds: number[]}) => void} [props.onRegionChange] - Called after load and each move.
  * @param {(cluster: import('../models/publicMap.js').MapCluster) => void} [props.onSelectCluster]
  * @param {(report: import('../models/publicMap.js').PublicReport) => void} [props.onSelectReport]
- * @param {string[]} [props.freshIds] - Cluster ids just published by an auto refresh; they get attention rings.
+ * @param {string[]} [props.freshIds] - Cluster or report ids to highlight with attention rings (new or just opened).
  * @returns {JSX.Element}
  */
 // Soft, wide blobs that merge where reports overlap and saturate to red in dense areas.
@@ -54,6 +58,16 @@ const HEATMAP_PAINT = {
 function FreshFrame({ fresh, size, children }) {
   if (!fresh) return children;
   return <FreshPulse size={size} pad={FRESH_PAD} color={colors.signal}>{children}</FreshPulse>;
+}
+
+/** Highlights a fresh or just-opened pin with rings around its head, keeping the pin's bottom anchor in place. */
+function PinFrame({ fresh, children }) {
+  if (!fresh) return children;
+  return (
+    <FreshPulse size={PIN_HEAD} pad={FRESH_PAD} color={colors.signal} center={{ x: PIN_WIDTH / 2, y: PIN_HEAD / 2, width: PIN_WIDTH, height: PIN_HEIGHT }}>
+      {children}
+    </FreshPulse>
+  );
 }
 
 const PublicMapView = forwardRef(function PublicMapView({
@@ -158,6 +172,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             onPress={() => onSelectReport?.(report)}
           >
             <FadeIn delay={Math.min(index * STAGGER_MS, MAX_STAGGER_MS)}>
+            <PinFrame fresh={fresh.has(report.report_id)}>
             <View
               accessible
               accessibilityRole="button"
@@ -166,6 +181,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             >
               <PinGlyph color={colors.severity[severityLevel(report.incident_type)]} flagged={Boolean(report.has_flags)} />
             </View>
+            </PinFrame>
             </FadeIn>
           </ViewAnnotation>
         );
