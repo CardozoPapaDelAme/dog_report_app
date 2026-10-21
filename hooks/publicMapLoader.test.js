@@ -14,7 +14,7 @@ function harness(overrides = {}) {
   const timers = [];
   const calls = { clusters: [], reports: [] };
   const fake = {
-    schedule: (fn) => { const t = { fn, cancelled: false }; timers.push(t); return t; },
+    schedule: (fn, ms) => { const t = { fn, ms, cancelled: false }; timers.push(t); return t; },
     cancel: (t) => { t.cancelled = true; },
   };
   const loader = createPublicMapLoader({
@@ -144,4 +144,107 @@ Deno.test('ERI9 loader: a failed mode switch drops the stale markers instead of 
   await fire();
   const state = loader.getState();
   assert(state.phase === 'error' && state.dataMode === 'pins' && state.clusters.length === 0 && state.reports.length === 0);
+});
+
+const REFRESH = 5000;
+const live = (timers) => timers.filter((t) => !t.cancelled);
+const fireRefresh = async (timers) => {
+  const t = live(timers).filter((x) => x.ms === REFRESH).pop();
+  assert(t, 'expected a pending refresh timer');
+  t.cancelled = true;
+  t.fn();
+  await tick();
+};
+
+Deno.test('ERI9 loader: auto refresh is off unless refreshMs is set', async () => {
+  const { loader, timers, fire } = harness();
+  loader.setRegion({ zoom: 10, bounds });
+  await fire();
+  assert(loader.getState().phase === 'ready' && live(timers).length === 0);
+});
+
+Deno.test('ERI9 loader: auto refresh reloads the same region silently and keeps refreshing', async () => {
+  let id = 'c1';
+  const phases = [];
+  const { loader, timers, calls, fire } = harness({
+    refreshMs: REFRESH,
+    getClusters: (args) => { calls.clusters.push(args); return Promise.resolve([cluster(id)]); },
+    onChange: (state) => phases.push(state.phase),
+  });
+  loader.setRegion({ zoom: 11, bounds });
+  await fire();
+  assert(live(timers).some((t) => t.ms === REFRESH), 'a refresh is scheduled after the first load');
+  id = 'new-report';
+  const before = phases.length;
+  await fireRefresh(timers);
+  assert(calls.clusters.length === 2 && calls.clusters[1].zoom === 11 && calls.clusters[1].viewport.minLongitude === -107.7);
+  assert(!phases.slice(before).includes('loading'), 'a refresh never shows the loading state');
+  assert(loader.getState().phase === 'ready' && loader.getState().clusters[0].cluster_id === 'new-report');
+  assert(live(timers).filter((t) => t.ms === REFRESH).length === 1, 'exactly one next refresh is scheduled');
+});
+
+Deno.test('ERI9 loader: a failed refresh keeps the markers on screen and tries again later', async () => {
+  let fail = false;
+  const { loader, timers, fire } = harness({
+    refreshMs: REFRESH,
+    getClusters: () => fail ? Promise.reject(Object.assign(new Error('x'), { code: 'network_unavailable' })) : Promise.resolve([cluster('c1')]),
+  });
+  loader.setRegion({ zoom: 11, bounds });
+  await fire();
+  fail = true;
+  await fireRefresh(timers);
+  const state = loader.getState();
+  assert(state.phase === 'ready' && state.clusters.length === 1 && state.error === null);
+  assert(live(timers).some((t) => t.ms === REFRESH), 'the next refresh is still scheduled');
+});
+
+Deno.test('ERI9 loader: moving the map wins over an in-flight refresh', async () => {
+  const pending = [];
+  const { loader, timers, fire } = harness({
+    refreshMs: REFRESH,
+    getClusters: () => new Promise((resolve) => pending.push(resolve)),
+  });
+  loader.setRegion({ zoom: 8, bounds });
+  await fire();
+  pending[0]([cluster('first')]);
+  await tick();
+  await fireRefresh(timers);
+  loader.setRegion({ zoom: 9, bounds });
+  assert(live(timers).every((t) => t.ms !== REFRESH), 'moving the map cancels the pending refresh');
+  await fire();
+  pending[2]([cluster('region')]);
+  await tick();
+  pending[1]([cluster('refresh')]);
+  await tick();
+  assert(loader.getState().clusters[0].cluster_id === 'region');
+});
+
+Deno.test('ERI9 loader: refresh in pin mode reloads reports and keeps the viewport filter', async () => {
+  let list = [pin('r1'), pin('far', 10)];
+  const { loader, timers, calls, fire } = harness({
+    refreshMs: REFRESH,
+    getReports: (args) => { calls.reports.push(args); return Promise.resolve(list); },
+  });
+  loader.setRegion({ zoom: 16, bounds });
+  await fire();
+  list = [pin('r1'), pin('r2'), pin('far', 10)];
+  await fireRefresh(timers);
+  assert(calls.reports.length === 2 && loader.getState().reports.length === 3 && loader.getState().phase === 'ready');
+  loader.setRegion({ zoom: 18, bounds: [50, 27.7, 51, 27.8] });
+  assert(calls.reports.length === 2 && loader.getState().phase === 'empty');
+  assert(live(timers).some((t) => t.ms === REFRESH), 'a local re-filter keeps the refresh running');
+});
+
+Deno.test('ERI9 loader: pause stops refreshing, resume refreshes at once, dispose cancels', async () => {
+  const { loader, timers, calls, fire } = harness({ refreshMs: REFRESH });
+  loader.setRegion({ zoom: 11, bounds });
+  await fire();
+  loader.pause();
+  assert(live(timers).length === 0, 'paused: nothing scheduled');
+  assert(loader.resume() === true);
+  await tick();
+  assert(calls.clusters.length === 2 && loader.getState().phase === 'ready');
+  assert(live(timers).some((t) => t.ms === REFRESH));
+  loader.dispose();
+  assert(live(timers).length === 0);
 });
