@@ -248,3 +248,39 @@ Deno.test('ERI9 loader: pause stops refreshing, resume refreshes at once, dispos
   loader.dispose();
   assert(live(timers).length === 0);
 });
+
+Deno.test('ERI9 loader: a refresh marks only the markers that were not on screen as fresh', async () => {
+  let list = [cluster('a'), cluster('b')];
+  const { loader, timers, fire } = harness({ refreshMs: REFRESH, getClusters: () => Promise.resolve(list) });
+  loader.setRegion({ zoom: 11, bounds });
+  await fire();
+  assert(loader.getState().freshIds.length === 0, 'the first load is not fresh');
+  list = [cluster('a'), cluster('b'), cluster('new')];
+  await fireRefresh(timers);
+  const fresh = loader.getState().freshIds;
+  assert(fresh.length === 1 && fresh[0] === 'new', `expected ['new'], got ${JSON.stringify(fresh)}`);
+  await fireRefresh(timers);
+  assert(loader.getState().freshIds.length === 0, 'an unchanged refresh clears the fresh marks');
+});
+
+Deno.test('ERI9 loader: moving the map never marks markers as fresh', async () => {
+  let list = [cluster('a')];
+  const { loader, fire } = harness({ refreshMs: REFRESH, getClusters: () => Promise.resolve(list) });
+  loader.setRegion({ zoom: 11, bounds });
+  await fire();
+  list = [cluster('z')];
+  loader.setRegion({ zoom: 12, bounds });
+  await fire();
+  assert(loader.getState().clusters[0].cluster_id === 'z' && loader.getState().freshIds.length === 0);
+});
+
+Deno.test('ERI9 loader: in pin mode a refresh marks new report ids as fresh', async () => {
+  let list = [pin('r1')];
+  const { loader, timers, fire } = harness({ refreshMs: REFRESH, getReports: () => Promise.resolve(list) });
+  loader.setRegion({ zoom: 16, bounds });
+  await fire();
+  list = [pin('r1'), pin('r2')];
+  await fireRefresh(timers);
+  const fresh = loader.getState().freshIds;
+  assert(fresh.length === 1 && fresh[0] === 'r2', `expected ['r2'], got ${JSON.stringify(fresh)}`);
+});

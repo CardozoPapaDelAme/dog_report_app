@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton, Banner, Icon, IconButton, MapCompass, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
+import { AppButton, Banner, FadeIn, Icon, IconButton, MapCompass, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 import RecentReportsList from '../components/RecentReportsList';
@@ -26,6 +26,8 @@ import { isNativeMapAvailableAtRuntime } from '../services/mapRuntime.js';
 
 /** Height of the vertical mode switch (two 40 pt options, 2 pt gap, 3 pt padding); the compass sits right under it. */
 const MODE_SWITCH_HEIGHT = 40 * 2 + 2 + 3 * 2;
+/** How long the new-report toast stays on screen. */
+const FRESH_TOAST_MS = 4500;
 /** How long the "switch to clusters to zoom further" hint stays on screen. */
 const HEATMAP_HINT_MS = 5000;
 const LOCATION_TIMEOUT_MS = 3000;
@@ -266,6 +268,16 @@ function NativeMapScreen({ onBack }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const map = usePublicMap();
+  // Shows "New report on the map" for a few seconds after an auto refresh brings in new markers.
+  const [freshVisible, setFreshVisible] = useState(false);
+  const freshTimer = useRef(null);
+  useEffect(() => {
+    if (map.freshIds.length === 0) return;
+    setFreshVisible(true);
+    clearTimeout(freshTimer.current);
+    freshTimer.current = setTimeout(() => setFreshVisible(false), FRESH_TOAST_MS);
+  }, [map.freshIds]);
+  useEffect(() => () => clearTimeout(freshTimer.current), []);
   const initialCenter = useInitialCenter();
   // `selectedCluster` keeps the zoom at the moment of the tap: the zone list resolves membership with it.
   const [selectedCluster, setSelectedCluster] = useState(null);
@@ -332,6 +344,7 @@ function NativeMapScreen({ onBack }) {
   if (activePhase === 'offline') banner = { text: t('map.offline'), retry: true };
   else if (activePhase === 'error') banner = { text: t('map.error'), retry: true, danger: true };
   else if (activePhase === 'empty') banner = { text: t('map.empty') };
+  const showFresh = freshVisible && viewMode !== 'heatmap' && !banner;
 
   return (
     <View style={styles.root}>
@@ -351,6 +364,7 @@ function NativeMapScreen({ onBack }) {
             onRegionChange={handleRegionChange}
             onSelectCluster={selectCluster}
             onSelectReport={selectReport}
+            freshIds={map.freshIds}
           />
         ) : (
           <View style={styles.centered}><ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /></View>
@@ -383,6 +397,16 @@ function NativeMapScreen({ onBack }) {
               </Pressable>
             ) : null}
           </View>
+        </View>
+      ) : null}
+      {showFresh ? (
+        <View pointerEvents="none" accessibilityRole="alert" style={[styles.freshSlot, { top: insets.top + 64 }]}>
+          <FadeIn>
+            <View style={styles.freshToast}>
+              <Icon name="map" size={20} color={colors.forestDeep} />
+              <Text style={styles.freshText}>{t('map.newReport')}</Text>
+            </View>
+          </FadeIn>
         </View>
       ) : null}
       {zoomHint ? (
@@ -445,6 +469,9 @@ const styles = StyleSheet.create({
   fallbackContent: { padding: spacing.lg, gap: spacing.xl },
   hintSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
   bannerSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
+  freshSlot: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  freshToast: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.signal, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 6 },
+  freshText: { color: colors.forestDeep, fontFamily: fontFamily.bold, fontSize: 16 },
   banner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.lg, backgroundColor: 'rgba(2,26,6,0.9)', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   bannerText: { flex: 1, gap: 2 },
   bannerTitle: { fontFamily: fontFamily.label, fontSize: 15, lineHeight: 20, color: colors.onPrimary },

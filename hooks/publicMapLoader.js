@@ -17,7 +17,12 @@ const initialState = Object.freeze({
   // `mode` follows the zoom; `dataMode` is what `clusters`/`reports` currently hold, so the previous markers stay
   // on screen until the new mode's data arrives instead of leaving an empty map.
   mode: 'clusters', dataMode: 'clusters', region: null, clusters: [], reports: [], error: null,
+  // Ids (cluster_id or report_id) that a silent refresh brought in and were not on screen before; empty otherwise.
+  freshIds: [],
 });
+
+const idsOf = (dataMode, clusters, reports) =>
+  (dataMode === 'pins' ? reports.map((report) => report.report_id) : clusters.map((cluster) => cluster.cluster_id));
 
 // Plain state machine: debounced region loads, mode switch, stale-response protection, retry.
 /**
@@ -34,6 +39,7 @@ const initialState = Object.freeze({
  *   pause: () => void, resume: () => boolean,
  *   dispose: () => void, getState: () => {phase: 'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'offline',
  *   mode: 'clusters' | 'pins', dataMode: 'clusters' | 'pins', region: {zoom: number, viewport: import('../models/publicMap.js').Viewport} | null,
+ *   freshIds: string[],
  *   clusters: import('../models/publicMap.js').MapCluster[],
  *   reports: import('../models/publicMap.js').PublicReport[], error: Error | null}}}
  *   `setRegion` returns `false` for an invalid zoom or bounds; `retry` returns `false` before any region.
@@ -66,23 +72,27 @@ export function createPublicMapLoader({
   async function fetchRegion({ silent }) {
     const current = ++epoch;
     const { mode, region } = state;
-    if (!silent) set({ phase: 'loading', error: null });
+    // Only a silent refresh of the same mode can reveal new markers; a first load or a region change cannot.
+    const comparable = silent && state.dataMode === mode && (state.phase === 'ready' || state.phase === 'empty');
+    const before = new Set(comparable ? idsOf(state.dataMode, state.clusters, state.reports) : []);
+    const fresh = (ids) => (comparable ? ids.filter((id) => !before.has(id)) : []);
+    if (!silent) set({ phase: 'loading', error: null, freshIds: [] });
     try {
       if (mode === 'pins') {
         const reports = await getReports({});
         if (current !== epoch || disposed) return;
         pinsLoaded = true;
         const visible = reports.filter((report) => isInViewport(report.approximate_location, region.viewport));
-        set({ reports, clusters: [], dataMode: 'pins', phase: visible.length ? 'ready' : 'empty', error: null });
+        set({ reports, clusters: [], dataMode: 'pins', phase: visible.length ? 'ready' : 'empty', error: null, freshIds: fresh(idsOf('pins', [], reports)) });
       } else {
         const clusters = await getClusters({ zoom: region.zoom, viewport: region.viewport });
         if (current !== epoch || disposed) return;
-        set({ clusters, reports: [], dataMode: 'clusters', phase: clusters.length ? 'ready' : 'empty', error: null });
+        set({ clusters, reports: [], dataMode: 'clusters', phase: clusters.length ? 'ready' : 'empty', error: null, freshIds: fresh(idsOf('clusters', clusters, [])) });
       }
     } catch (error) {
       if (current !== epoch || disposed) return;
       if (!silent) {
-        set({ clusters: [], reports: [], dataMode: mode, phase: error?.code === 'network_unavailable' ? 'offline' : 'error', error });
+        set({ clusters: [], reports: [], dataMode: mode, phase: error?.code === 'network_unavailable' ? 'offline' : 'error', error, freshIds: [] });
       }
     }
     if (current === epoch) scheduleRefresh();
@@ -105,12 +115,12 @@ export function createPublicMapLoader({
       // Reports are not viewport-scoped: re-filter locally instead of refetching on pan.
       epoch += 1;
       const visible = state.reports.filter((report) => isInViewport(report.approximate_location, viewport));
-      set({ phase: visible.length ? 'ready' : 'empty' });
+      set({ phase: visible.length ? 'ready' : 'empty', freshIds: [] });
       scheduleRefresh();
       return true;
     }
     epoch += 1; // invalidate any in-flight response for the previous region
-    set({ phase: 'loading', error: null });
+    set({ phase: 'loading', error: null, freshIds: [] });
     timer = schedule(() => { timer = null; load(); }, debounceMs);
     return true;
   }

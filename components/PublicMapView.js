@@ -10,12 +10,14 @@ import { Camera, GeoJSONSource, Layer, Map, ViewAnnotation } from '@maplibre/map
 
 import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, clusterRadiusPx, reportsToHeatmapGeoJSON, severityLevel } from '../models/publicMap.js';
 import { colors, fontFamily } from '../theme/index.js';
-import { FadeIn, PinGlyph } from './ui/index.js';
+import { FadeIn, FreshPulse, PinGlyph } from './ui/index.js';
 import { getMapStyleUrl } from '../services/mapConfig.js';
 
 /** Entrance stagger between markers, capped so a large batch does not take long to appear. */
 const STAGGER_MS = 45;
 const MAX_STAGGER_MS = 360;
+/** Room around a freshly published cluster for its attention rings. */
+const FRESH_PAD = 42;
 
 // MapLibre React Native v11: Map + Camera + ViewAnnotation.
 // Renders exactly what the server returned; no client-side clustering.
@@ -34,6 +36,7 @@ const MAX_STAGGER_MS = 360;
  * @param {(region: {zoom: number, bounds: number[]}) => void} [props.onRegionChange] - Called after load and each move.
  * @param {(cluster: import('../models/publicMap.js').MapCluster) => void} [props.onSelectCluster]
  * @param {(report: import('../models/publicMap.js').PublicReport) => void} [props.onSelectReport]
+ * @param {string[]} [props.freshIds] - Cluster ids just published by an auto refresh; they get attention rings.
  * @returns {JSX.Element}
  */
 // Soft, wide blobs that merge where reports overlap and saturate to red in dense areas.
@@ -46,6 +49,12 @@ const HEATMAP_PAINT = {
   'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'],
     0, 'rgba(76,175,80,0)', 0.12, 'rgba(76,175,80,0.55)', 0.3, '#9ccc3c', 0.5, colors.signal, 0.72, '#ff9800', 1, '#e53935'],
 };
+
+/** Wraps a just-published cluster in attention rings; any other marker renders unchanged. */
+function FreshFrame({ fresh, size, children }) {
+  if (!fresh) return children;
+  return <FreshPulse size={size} pad={FRESH_PAD} color={colors.signal}>{children}</FreshPulse>;
+}
 
 const PublicMapView = forwardRef(function PublicMapView({
   mode,
@@ -60,12 +69,14 @@ const PublicMapView = forwardRef(function PublicMapView({
   onRegionChange,
   onSelectCluster,
   onSelectReport,
+  freshIds = [],
 }, ref) {
   const { t } = useTranslation();
   const mapRef = useRef(null);
   const cameraRef = useRef(null);
 
   const heatmapData = useMemo(() => reportsToHeatmapGeoJSON(heatmapReports), [heatmapReports]);
+  const fresh = useMemo(() => new Set(freshIds), [freshIds]);
   const heatmap = viewMode === 'heatmap';
 
   useImperativeHandle(ref, () => ({
@@ -114,6 +125,7 @@ const PublicMapView = forwardRef(function PublicMapView({
             onPress={() => onSelectCluster?.(cluster)}
           >
             <FadeIn delay={Math.min(index * STAGGER_MS, MAX_STAGGER_MS)}>
+            <FreshFrame fresh={fresh.has(cluster.cluster_id)} size={radius * 2 + 14}>
             <View style={[styles.halo, { width: radius * 2 + 14, height: radius * 2 + 14, borderRadius: radius + 7, backgroundColor: `${colors.severity[severityLevel(cluster.highest_severity)]}33` }]}>
               <View
                 accessible
@@ -130,6 +142,7 @@ const PublicMapView = forwardRef(function PublicMapView({
                 <Text style={styles.clusterText}>{cluster.report_count}</Text>
               </View>
             </View>
+            </FreshFrame>
             </FadeIn>
           </ViewAnnotation>
         );
