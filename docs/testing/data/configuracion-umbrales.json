@@ -1,5 +1,5 @@
 {
-  "purpose": "Límites de los ocho umbrales configurables y de la nota de auditoría (aclaración #5, RF21, RF23)",
+  "purpose": "Límites de los nueve umbrales configurables y de la nota de auditoría (aclaración #5, RF21, RF23)",
   "origin": "sintético; los límites se copian del contrato, no se inventan",
   "cases": [
     "TC-CONFIGURACION-01",
@@ -52,6 +52,11 @@
       "min": 1,
       "max": 1000,
       "decimals": 0
+    },
+    "photo_dog_probability_min": {
+      "min": 0,
+      "max": 1,
+      "decimals": 3
     }
   },
   "representative": {
@@ -62,7 +67,8 @@
     "trust_medium_threshold": 0.5,
     "gps_accuracy_max_meters": 50,
     "report_rate_limit_per_hour": 10,
-    "flag_rate_limit_per_hour": 30
+    "flag_rate_limit_per_hour": 30,
+    "photo_dog_probability_min": 0.2
   },
   "invalid_examples": [
     "min - 1",
