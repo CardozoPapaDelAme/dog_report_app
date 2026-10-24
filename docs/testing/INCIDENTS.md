@@ -10,6 +10,7 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 
 | ID | Fecha | Caso o suite CI | Ejecución del test log | Severidad | Módulo | Jira | Estado | Responsable | Corrección y verificación |
 |---|---|---|---|---|---|---|---|---|---|
+| INC-4 | 2026-10-24 | Validación de infraestructura (Etapa 5) | k6 y `curl` sobre staging | alta | API / BASE DE DATOS | No aplica: corregido el mismo día con PR #91 | corregido | Operador técnico | Commit `0fb3f76` (PR #91); k6 0 % de errores con 2 a 25 usuarios en staging; se cierra al fusionar en `main` |
 | INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | TD-129 | cerrado | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
 | INC-3 | 2026-10-11 | TC-UAT-02 | RUN-126 | media | MAPA / UAT | No aplica: hallazgo UAT, sin defecto confirmado | cerrado | Ricardo Becerra Bitar | RUN-133 pasó con fixture público; se conserva la dificultad de navegación como hallazgo de usabilidad |
 | INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | TD-130 | cerrado | Erick Herrera | Correctivo `f18ba0b` (PR #64); verificado en Android real en RUN-137 |
@@ -122,6 +123,28 @@ que pruebe la corrección y deje evidencia vinculada.
 | Solución | El guion de UAT conserva la instrucción de usar un fixture público, sintético y visible para TC-UAT-02. |
 | Commit o PR correctivo | No aplica: no se confirmó defecto de producto. |
 | Verificación y cierre | RUN-133 pasó el 2026-10-11 en 176 s sin ayuda, con un fixture público visible. Se cierra como incidente de preparación de la prueba; el hallazgo de usabilidad queda registrado en `docs/testing/UAT.md`. |
+
+### INC-4 — Peticiones que tocan la base se quedan sin respuesta bajo concurrencia
+
+| Campo | Detalle |
+|---|---|
+| Fecha y hora con zona | 2026-10-24 07:50 UTC |
+| Caso o suite CI | Validación de infraestructura de la Etapa 5 (`docs/deployment/INFRA-VALIDATION.md`); script `tests/load/public-read.js` |
+| Ejecución que lo originó | Corridas k6 de 10 y 25 usuarios virtuales del 2026-10-24 (`docs/deployment/INFRA-VALIDATION.md`, sección 4) |
+| Severidad y justificación | alta: en producción una parte de las lecturas del mapa no respondería; en staging se puede reintentar |
+| Módulo | API / BASE DE DATOS |
+| Entorno y commit | staging `dcvihomkxkutkckmjvmp`, Function `api` v116 = `32a4183`; k6 v2.3.0 y `curl` desde la VPS |
+| Precondiciones y datos | Datos actuales de staging; solo lecturas públicas |
+| Pasos para reproducir | 1. `VUS=10 DURATION=60s k6 run tests/load/public-read.js`; 2. o 40 `curl` a `/health`, 10 en paralelo, límite 20 s |
+| Resultado esperado | Todas las lecturas `2xx` en pocos segundos |
+| Resultado obtenido | 36 % de fallas por tiempo límite con 10 usuarios, 67 % con 5 y 12 % con 25 (por rachas, no proporcional a la carga); 5/40 `curl` sin respuesta; una ruta sin base respondió 30/30 |
+| Evidencia | `docs/deployment/INFRA-VALIDATION.md`, sección 5 |
+| Ticket de bug en Jira | Pendiente; responsable: operador técnico |
+| Estado y responsable | corregido (pendiente de fusionar PR #91); operador técnico |
+| Diagnóstico | Supavisor en modo transacción y la librería `postgres` con pipeline de consultas concurrentes sobre una sola conexión (`max: 1` en `supabase/functions/api/infrastructure/db.js`); aviso `25001 there is already a transaction in progress` |
+| Solución | Cola por instancia (una operación a la vez) y tiempo límite de 10 s con reconexión |
+| Commit o PR correctivo | `0fb3f76`, PR #91 |
+| Verificación y cierre | 2026-10-24 08:23–08:27 UTC en staging: k6 con 2, 5, 10 y 25 usuarios, 0 % de errores (91, 200, 326 y 733 peticiones); sin `25001` ni `5xx` en logs |
 
 ## Anexo histórico (T11)
 

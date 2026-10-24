@@ -15,6 +15,7 @@ del entregable (D10) solo resume y enlaza a `docs/deployment/` y `docs/manuals/`
 | Punto de la entrega | Archivo | Tarea |
 |---|---|---|
 | Planeación de la migración del software | `docs/deployment/MIGRATION-PLAN.md` | D1 |
+| Implantación y cumplimiento de requerimientos (criterio de la rúbrica) | `docs/deployment/IMPLEMENTATION.md` | D1 |
 | Validación de infraestructura (health/check) | `docs/deployment/INFRA-VALIDATION.md` | D2 |
 | Monitoreo de infraestructura (dashboards de la nube) | `docs/deployment/MONITORING.md`, `examples/python_health/` | D3 |
 | Garantía de calidad de servicio (SLA) | `docs/deployment/SLA.md`, `docs/deployment/BACKUP-LOG.md` | D4, D5 |
@@ -99,7 +100,7 @@ flowchart LR
 - **Aceptación:** PR fusionado con la CI en verde.
 
 ## D1 · Plan de migración del software (despliegue)
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D0.
 - **Objetivo:** el plan formal de cómo se lleva el sistema de un entorno a otro
   (local → staging → producción), qué se migra, en qué orden, cómo se verifica y
@@ -140,7 +141,7 @@ flowchart LR
   evidencia (salida de comandos sin secretos); enlazado desde `docs/DEPLOYMENT.md`.
 
 ## D2 · Validación de infraestructura (health/check)
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D1 (usa sus entornos y su procedimiento).
 - **Objetivo:** demostrar que la infraestructura desplegada está sana, con un
   checklist ejecutado y un health check automatizable.
@@ -176,7 +177,7 @@ flowchart LR
   contra staging y su test pasa en la CI; ejecución registrada.
 
 ## D3 · Monitoreo de infraestructura (dashboards de la nube)
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D2 (el health check que se monitorea).
 - **Objetivo:** ver en tiempo real si el sistema está arriba y cómo usa sus
   recursos, con alertas, y cubrir RNF25 (hoy "monitor real pendiente" en
@@ -216,7 +217,7 @@ flowchart LR
   RNF25 completa.
 
 ## D4 · Garantía de calidad de servicio (SLA)
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D3 (datos del monitor), D5 (respaldo ejecutado).
 - **Objetivo:** el acuerdo de nivel de servicio del sistema, con cada compromiso
   medido o justificado.
@@ -252,7 +253,7 @@ flowchart LR
   justificado); números coherentes con `NON-FUNCTIONAL.md` y D3.
 
 ## D5 · Respaldo ensayado (cada 7 días)
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D0.
 - **Objetivo:** que el respaldo del SLA sea real: ejecutar por primera vez el
   runbook de exportación y dejar el calendario semanal.
@@ -275,7 +276,7 @@ flowchart LR
   restauración ensayada o justificada; calendario semanal definido.
 
 ## D6 · Manual de usuario — Reportero público
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D0.
 - **Objetivo:** que cualquier persona sepa usar la app para reportar perros y
   consultar el mapa.
@@ -302,7 +303,7 @@ flowchart LR
   nombres de archivos en el texto para el usuario).
 
 ## D7 · Manual de usuario — Personal autorizado, introducción y FAQ
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D0.
 - **Objetivo:** cubrir a la Asociación de Hoteles de Chihuahua y al Administrator, y
   las partes generales del manual.
@@ -339,7 +340,7 @@ flowchart LR
   funciones de personal con sus 4 partes y capturas; coherente en estilo con D6.
 
 ## D8 · Manual técnico
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D3 (sección Monitoreo), D9 (sección Instalación).
 - **Objetivo:** el documento para desarrollador, administrador técnico,
   mantenimiento, soporte y operación.
@@ -375,7 +376,7 @@ flowchart LR
   contra los archivos del repo; diagramas enlazados.
 
 ## D9 · Manual de instalación
-- **Estado:** pendiente
+- **Estado:** en curso (rama `docs/etapa5-despliegue`, 2026-10-24)
 - **Depende de:** D0.
 - **Objetivo:** que alguien sin contexto deje el sistema funcionando. El flujo
   principal es la **versión de desarrollo** (build de desarrollo de Expo); Expo Go
