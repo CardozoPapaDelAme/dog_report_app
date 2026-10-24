@@ -1,7 +1,7 @@
 # Registro de respaldos
 
-Estado: calendario definido; primera exportación completa ejecutada y verificada el
-2026-10-24; restauración pendiente de ensayo. Guía de la tarea:
+Estado: calendario definido; primera exportación completa y primer ensayo de
+restauración ejecutados y verificados el 2026-10-24. Guía de la tarea:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D5.
 
 Procedimiento: `docs/DEPLOYMENT.md` ("Milestone export and restore runbook").
@@ -51,4 +51,18 @@ se dañaron, y guarda todo cifrado fuera de Supabase.
 
 | Fecha (UTC) | Proyecto destino (aislado) | Respaldo usado | Verificaciones | Duración (RTO) | Resultado |
 |---|---|---|---|---|---|
-| — | Segundo proyecto Free (cuota: hasta 2 proyectos activos) | Primera exportación completa | Conteos por tabla, RLS y grants, login por rol, smoke check, manifiesto de fotos | Sin medir | **No ensayada:** depende de la primera exportación. Se ensaya en un proyecto Free aislado que se borra al terminar. |
+| 2026-10-24 16:52 | Segundo proyecto Free aislado (`dogreport-restore-test`, misma región), creado para el ensayo | Exportación del 2026-10-24 16:20 (SHA-256 verificados antes de usarla) | Conteos de las 13 tablas de `public` iguales al origen (94 reportes, 17 fotos); RLS 13/13; `app_backend` sin `BYPASSRLS`; bucket `approved-photos` privado; PostGIS y pgcrypto; 4 cuentas de Auth; 18/18 objetos con SHA-256 idéntico al manifiesto; cada `photo_assets` con su objeto | ≈ 3 min (crear el proyecto ≈ 1 min, base 38 s, fotos 6 s) | **Correcta para datos y fotos.** No incluye desplegar la Function ni sus secretos en el destino (≈ 5 min más, ver ensayo de despliegue en `docs/deployment/INFRA-VALIDATION.md`). Hallazgos abajo. |
+
+### Hallazgos del ensayo (2026-10-24)
+
+1. `<respaldo>/roles.sql` trae `GRANT SET ON PARAMETER "log_min_messages" TO
+   "supabase_realtime_admin"`, un permiso del proveedor que un proyecto nuevo ya
+   tiene y que el usuario `postgres` no puede volver a otorgar. Se restaura con una
+   copia de `<respaldo>/roles.sql` sin esa línea.
+2. El dump no incluye el historial de migraciones (`supabase_migrations`). En el
+   proyecto restaurado hay que marcarlas como aplicadas con
+   `supabase migration repair --status applied <versión>` antes del siguiente
+   `supabase db push`.
+3. El rol `app_backend` se restaura sin contraseña: hay que asignarle una nueva y
+   actualizar el secreto `APP_BACKEND_DATABASE_URL` de la Function.
+
