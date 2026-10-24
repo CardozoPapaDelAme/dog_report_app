@@ -15,6 +15,7 @@ del entregable (D10) solo resume y enlaza a `docs/deployment/` y `docs/manuals/`
 | Punto de la entrega | Archivo | Tarea |
 |---|---|---|
 | Planeación de la migración del software | `docs/deployment/MIGRATION-PLAN.md` | D1 |
+| Implantación y cumplimiento de requerimientos (criterio de la rúbrica) | `docs/deployment/IMPLEMENTATION.md` | D1 |
 | Validación de infraestructura (health/check) | `docs/deployment/INFRA-VALIDATION.md` | D2 |
 | Monitoreo de infraestructura (dashboards de la nube) | `docs/deployment/MONITORING.md`, `examples/python_health/` | D3 |
 | Garantía de calidad de servicio (SLA) | `docs/deployment/SLA.md`, `docs/deployment/BACKUP-LOG.md` | D4, D5 |
