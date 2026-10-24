@@ -598,6 +598,8 @@
     "back": "Volver a la cámara",
     "loading": "Cargando el mapa",
     "empty": "No hay reportes en esta zona",
+    "newReport": "Nuevo reporte en el mapa",
+    "newReportOpen": "Toca para verlo",
     "error": "No pudimos cargar el mapa.",
     "retry": "Reintentar",
     "offline": "El mapa no está disponible sin conexión",

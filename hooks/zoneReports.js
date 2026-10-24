@@ -31,6 +31,20 @@ export async function loadZoneReports({ cluster, zoom }, { fetchReports = getPub
   }
 }
 
+// "New report on the map" target: the most recent public report inside a cluster. Never throws.
+/**
+ * @param {object} query
+ * @param {import('../models/publicMap.js').MapCluster} query.cluster
+ * @param {number} query.zoom - Map zoom at which the cluster was drawn.
+ * @param {object} [dependencies]
+ * @param {typeof getPublicReports} [dependencies.fetchReports=getPublicReports] - Network call.
+ * @returns {Promise<import('../models/publicMap.js').PublicReport | null>} `null` when empty or on failure.
+ */
+export async function loadNewestZoneReport({ cluster, zoom }, dependencies = {}) {
+  const { phase, reports } = await loadZoneReports({ cluster, zoom }, dependencies);
+  return phase === 'ready' ? reports[0] : null;
+}
+
 /** Default number of reports in the recent-reports fallback list. */
 export const RECENT_REPORTS_LIMIT = 100;
 

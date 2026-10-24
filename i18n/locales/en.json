@@ -592,6 +592,8 @@
     "back": "Back to camera",
     "loading": "Loading the map",
     "empty": "No reports in this area",
+    "newReport": "New report on the map",
+    "newReportOpen": "Tap to view",
     "error": "We could not load the map.",
     "retry": "Retry",
     "offline": "The map is not available offline",

@@ -6,12 +6,12 @@
  * Creel.
  */
 import * as Location from 'expo-location';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton, Banner, Icon, IconButton, MapCompass, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
+import { AppButton, Banner, FadeIn, Icon, IconButton, MapCompass, PhotoViewer, Sheet, SheetHost } from '../components/ui/index.js';
 import { colors, fontFamily, layout, radius, spacing, type } from '../theme/index.js';
 
 import RecentReportsList from '../components/RecentReportsList';
@@ -19,13 +19,19 @@ import ReportFlagSheet from '../components/ReportFlagSheet';
 import ZoneReportsSheet from '../components/ZoneReportsSheet';
 import { usePublicHeatmapReports } from '../hooks/usePublicHeatmapReports.js';
 import { usePublicMap } from '../hooks/usePublicMap.js';
-import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, ZOOM_RADIUS_BANDS, isInViewport, severityLevel } from '../models/publicMap.js';
+import { HEATMAP_MAX_ZOOM, INCIDENT_TYPES, MAX_ZOOM, PIN_ZOOM_THRESHOLD, ZOOM_RADIUS_BANDS, isInViewport, severityLevel } from '../models/publicMap.js';
+import { loadNewestZoneReport } from '../hooks/zoneReports.js';
 import { getApiBaseUrl } from '../services/apiClient.js';
 import { CREEL_CENTER, INITIAL_ZOOM, MAP_ATTRIBUTION_TEXT } from '../services/mapConfig.js';
 import { isNativeMapAvailableAtRuntime } from '../services/mapRuntime.js';
 
 /** Height of the vertical mode switch (two 40 pt options, 2 pt gap, 3 pt padding); the compass sits right under it. */
 const MODE_SWITCH_HEIGHT = 40 * 2 + 2 + 3 * 2;
+/** How long a new report keeps its toast and its highlighted marker. */
+const FRESH_TOAST_MS = 10000;
+const NO_IDS = [];
+/** Share of the window height covered by the report detail sheet; the focused pin is centered above it. */
+const REPORT_SHEET_SHARE = 0.68;
 /** How long the "switch to clusters to zoom further" hint stays on screen. */
 const HEATMAP_HINT_MS = 5000;
 const LOCATION_TIMEOUT_MS = 3000;
@@ -266,6 +272,31 @@ function NativeMapScreen({ onBack }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const map = usePublicMap();
+  const { height: windowHeight } = useWindowDimensions();
+  // A new report brought in by the auto refresh keeps its toast and highlighted marker for FRESH_TOAST_MS.
+  // The timer is independent of the loader: the next refresh empties `freshIds` before the time is up.
+  const [fresh, setFresh] = useState(null);
+  const freshTimer = useRef(null);
+  const clearFresh = useCallback(() => { clearTimeout(freshTimer.current); setFresh(null); }, []);
+  // After opening a new report its own pin keeps the rings for FRESH_TOAST_MS, so the audience can follow it.
+  const [trailId, setTrailId] = useState(null);
+  const trailTimer = useRef(null);
+  const followPin = useCallback((reportId) => {
+    clearTimeout(trailTimer.current);
+    setTrailId(reportId);
+    trailTimer.current = setTimeout(() => setTrailId(null), FRESH_TOAST_MS);
+  }, []);
+  useEffect(() => () => clearTimeout(trailTimer.current), []);
+  useEffect(() => {
+    if (map.freshIds.length === 0) return;
+    const ids = new Set(map.freshIds);
+    const report = map.dataMode === 'pins' ? map.reports.find((item) => ids.has(item.report_id)) : null;
+    const cluster = map.dataMode === 'clusters' ? map.clusters.find((item) => ids.has(item.cluster_id)) : null;
+    setFresh({ ids: map.freshIds, report, cluster, zoom: map.region?.zoom ?? INITIAL_ZOOM });
+    clearTimeout(freshTimer.current);
+    freshTimer.current = setTimeout(() => setFresh(null), FRESH_TOAST_MS);
+  }, [map.freshIds]);
+  useEffect(() => () => clearTimeout(freshTimer.current), []);
   const initialCenter = useInitialCenter();
   // `selectedCluster` keeps the zoom at the moment of the tap: the zone list resolves membership with it.
   const [selectedCluster, setSelectedCluster] = useState(null);
@@ -322,6 +353,32 @@ function NativeMapScreen({ onBack }) {
   // Opening a report closes the cluster card so only one panel is on screen.
   const selectReport = useCallback((report) => { setSelectedCluster(null); setSelectedReport(report); }, []);
 
+  // Zooms to the new report as a single pin and opens its detail. A cluster is resolved to its newest member;
+  // if that lookup fails the regular cluster card opens instead.
+  const openFresh = useCallback(async (target) => {
+    if (!target) return;
+    clearFresh();
+    const report = target.report ?? (target.cluster ? await loadNewestZoneReport({ cluster: target.cluster, zoom: target.zoom }) : null);
+    if (!report) {
+      if (target.cluster) selectCluster(target.cluster);
+      return;
+    }
+    // The report sheet covers most of the screen: keep the pin in the visible strip above it.
+    setFocus({
+      ...report.approximate_location,
+      zoom: Math.max(PIN_ZOOM_THRESHOLD + 1, map.region?.zoom ?? 0),
+      padding: { bottom: Math.round(windowHeight * REPORT_SHEET_SHARE) },
+    });
+    selectReport(report);
+    followPin(report.report_id);
+  }, [clearFresh, followPin, map.region, selectCluster, selectReport, windowHeight]);
+
+  // Tapping the highlighted cluster goes straight to the new report instead of the cluster card.
+  const pressCluster = useCallback((cluster) => {
+    if (fresh?.ids.includes(cluster.cluster_id)) openFresh({ cluster, zoom: map.region?.zoom ?? INITIAL_ZOOM });
+    else selectCluster(cluster);
+  }, [fresh, map.region, openFresh, selectCluster]);
+
   const visibleReports = map.mode === 'pins' && map.region
     ? map.reports.filter((report) => isInViewport(report.approximate_location, map.region.viewport))
     : map.reports;
@@ -332,6 +389,8 @@ function NativeMapScreen({ onBack }) {
   if (activePhase === 'offline') banner = { text: t('map.offline'), retry: true };
   else if (activePhase === 'error') banner = { text: t('map.error'), retry: true, danger: true };
   else if (activePhase === 'empty') banner = { text: t('map.empty') };
+  const showFresh = Boolean(fresh) && viewMode !== 'heatmap' && !banner;
+  const highlightIds = useMemo(() => (trailId ? [...(fresh?.ids ?? NO_IDS), trailId] : (fresh?.ids ?? NO_IDS)), [fresh, trailId]);
 
   return (
     <View style={styles.root}>
@@ -349,8 +408,9 @@ function NativeMapScreen({ onBack }) {
             initialZoom={INITIAL_ZOOM}
             focus={focus}
             onRegionChange={handleRegionChange}
-            onSelectCluster={selectCluster}
+            onSelectCluster={pressCluster}
             onSelectReport={selectReport}
+            freshIds={highlightIds}
           />
         ) : (
           <View style={styles.centered}><ActivityIndicator accessibilityLabel={t('common.loading')} color={colors.primary} /></View>
@@ -383,6 +443,24 @@ function NativeMapScreen({ onBack }) {
               </Pressable>
             ) : null}
           </View>
+        </View>
+      ) : null}
+      {showFresh ? (
+        <View pointerEvents="box-none" style={[styles.freshSlot, { bottom: insets.bottom + 44 }]}>
+          <FadeIn>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${t('map.newReport')}. ${t('map.newReportOpen')}`}
+              onPress={() => openFresh(fresh)}
+              hitSlop={8}
+              style={({ pressed }) => [styles.freshToast, pressed && styles.freshToastPressed]}
+            >
+              <Icon name="map" size={20} color={colors.forestDeep} />
+              <Text style={styles.freshText}>{t('map.newReport')}</Text>
+              <Text style={styles.freshAction}>{t('map.newReportOpen')}</Text>
+              <Icon name="forward" size={18} color={colors.forestDeep} />
+            </Pressable>
+          </FadeIn>
         </View>
       ) : null}
       {zoomHint ? (
@@ -445,6 +523,11 @@ const styles = StyleSheet.create({
   fallbackContent: { padding: spacing.lg, gap: spacing.xl },
   hintSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
   bannerSlot: { position: 'absolute', left: spacing.lg, right: spacing.lg },
+  freshSlot: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  freshToast: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.signal, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 6 },
+  freshText: { color: colors.forestDeep, fontFamily: fontFamily.bold, fontSize: 16 },
+  freshAction: { color: colors.forestDeep, fontFamily: fontFamily.semibold, fontSize: 14, textDecorationLine: 'underline' },
+  freshToastPressed: { opacity: 0.8 },
   banner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.lg, backgroundColor: 'rgba(2,26,6,0.9)', paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   bannerText: { flex: 1, gap: 2 },
   bannerTitle: { fontFamily: fontFamily.label, fontSize: 15, lineHeight: 20, color: colors.onPrimary },

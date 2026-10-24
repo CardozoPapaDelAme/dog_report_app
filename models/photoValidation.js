@@ -12,9 +12,10 @@ export const DEFAULT_DOG_CLASS_RANGE = Object.freeze({
   basis: 'ImageNet-1k zero-based fallback; verify against bundled labels before release',
 });
 
+// Tuned to accept more real-world photos (mixed-breed street dogs, distance, low light).
 export const DEFAULT_PHOTO_VALIDATION_THRESHOLDS = Object.freeze({
-  dogProbability: 0.3,
-  blurVariance: 120,
+  dogProbability: 0.2,
+  blurVariance: 80,
 });
 
 const DOG_START_MARKERS = ['chihuahua'];
