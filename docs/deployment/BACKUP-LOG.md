@@ -1,7 +1,7 @@
 # Registro de respaldos
 
-Estado: calendario definido; primera exportación pendiente de las credenciales del
-operador (2026-10-24). Guía de la tarea:
+Estado: calendario definido; primera exportación completa ejecutada y verificada el
+2026-10-24; restauración pendiente de ensayo. Guía de la tarea:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D5.
 
 Procedimiento: `docs/DEPLOYMENT.md` ("Milestone export and restore runbook").
@@ -45,7 +45,7 @@ se dañaron, y guarda todo cifrado fuera de Supabase.
 
 | Fecha (UTC) | Operador | Versiones (supabase/psql/docker) | Migración actual | Archivos y SHA-256 | Objetos de Storage | Duración | Resultado |
 |---|---|---|---|---|---|---|---|
-| 2026-10-24 | Operador técnico (asistido) | supabase: no instalado / psql: no instalado / docker 29.2.1 | `20261021120000` | — | 18 objetos (10 MB) según la base | — | **No ejecutada:** la VPS del equipo no tiene la sesión de la CLI de Supabase ni la cadena de conexión de la base; queda para la primera corrida del calendario con las credenciales del operador. |
+| 2026-10-24 16:20 | Operador técnico (asistido) | supabase 2.122.0 / psql: no instalado (`pg_dump` del contenedor `supabase/postgres:17.6.1.166`) / docker 29.2.1 | `20261021120000` | roles 481 B `e40ed7ba…`; esquema 70 KB `eee22e6e…`; datos 1.8 MB `d5db9e25…`; manifiesto de fotos `0db49d73…` | 18/18 objetos (10.9 MB): tamaños iguales a `storage.objects` | ≈ 3 min | **Correcta.** Conteos por tabla del dump iguales a la base en las 13 tablas de `public` (p. ej. 94 reportes, 17 fotos). Hecha con la sesión de la CLI (`--linked`), sin escribir la cadena de conexión. Guardada en la VPS del equipo, fuera del repo, con permisos solo del propietario; **cifrado pendiente** (falta la frase de paso del operador). |
 
 ## Restauraciones
 
