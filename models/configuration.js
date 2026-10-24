@@ -18,8 +18,9 @@ export const CONFIGURATION_FIELDS = Object.freeze([
   { key: 'gps_accuracy_max_meters', group: 'location', min: 5, max: 500, decimals: 2 },
   { key: 'report_rate_limit_per_hour', group: 'limits', min: 1, max: 500, decimals: 0 },
   { key: 'flag_rate_limit_per_hour', group: 'limits', min: 1, max: 1000, decimals: 0 },
+  { key: 'photo_dog_probability_min', group: 'photo', min: 0, max: 1, decimals: 3 },
 ]);
-export const CONFIGURATION_GROUPS = ['flags', 'duplicates', 'trust', 'location', 'limits'];
+export const CONFIGURATION_GROUPS = ['flags', 'duplicates', 'trust', 'location', 'limits', 'photo'];
 const FIELD_KEYS = new Set([...CONFIGURATION_FIELDS.map(({ key }) => key), 'change_note']);
 const DECIMAL = /^-?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/;
 

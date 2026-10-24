@@ -372,7 +372,8 @@
       "duplicates": "Potential duplicates",
       "trust": "Trust levels",
       "location": "Location accuracy",
-      "limits": "Hourly limits"
+      "limits": "Hourly limits",
+      "photo": "AI dog detection"
     },
     "fields": {
       "flag_auto_hide_threshold": "Flags required to hide a report",
@@ -382,7 +383,8 @@
       "trust_medium_threshold": "Medium trust threshold",
       "gps_accuracy_max_meters": "Maximum GPS accuracy (m)",
       "report_rate_limit_per_hour": "Reports per hour",
-      "flag_rate_limit_per_hour": "Flags per hour"
+      "flag_rate_limit_per_hour": "Flags per hour",
+      "photo_dog_probability_min": "Minimum dog probability"
     },
     "help": {
       "flag_auto_hide_threshold": "Flags from distinct origins that trigger review.",
@@ -392,7 +394,8 @@
       "trust_medium_threshold": "Must be lower than the high trust threshold.",
       "gps_accuracy_max_meters": "Less accurate positions require report review.",
       "report_rate_limit_per_hour": "Maximum new reports per origin in one hour.",
-      "flag_rate_limit_per_hour": "Maximum flags per origin in one hour."
+      "flag_rate_limit_per_hour": "Maximum flags per origin in one hour.",
+      "photo_dog_probability_min": "Lower values make the AI accept a dog more easily; higher values make it stricter."
     },
     "integerHint": "{{min}}–{{max}} · whole number",
     "decimalHint": "{{min}}–{{max}} · up to {{decimals}} decimal places",

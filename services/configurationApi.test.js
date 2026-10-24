@@ -1,6 +1,6 @@
 import { getConfiguration, publishConfiguration } from './configurationApi.js';
 import { configurationToDraft, validateConfigurationDraft } from '../models/configuration.js';
-const configuration={id:'config-1',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30};
+const configuration={id:'config-1',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30,photo_dog_probability_min:0.2};
 function assert(value,message='Assertion failed'){if(!value)throw new Error(message);}
 Deno.test('FAB-4 API: GET and complete POST use the existing prefix and Bearer session',async()=>{
   const calls=[];

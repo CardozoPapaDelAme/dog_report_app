@@ -11,7 +11,7 @@ calls belong to [`API.md`](API.md).
 |---|---|
 | `profiles` | Multiple active individual accounts with one sibling role each |
 | `zone_sets`, `zones` | Immutable source/version metadata and geofence geometry |
-| `config_versions` | Typed thresholds with one active version per environment |
+| `config_versions` | Typed thresholds (including the publicly readable photo dog-probability minimum) with one active version per environment |
 | `reports` | Immutable submitted content plus server-controlled state and derived signals |
 | `photo_assets` | Sanitized-image processing, approval/rejection, and purge lifecycle; maximum one per report/source hash |
 | `report_flags` | Public flags with temporary hashed-origin signal |
@@ -141,8 +141,9 @@ mandatory when GPU/vector support is absent.
 ## Typed configuration and zones
 
 Configuration versions validate flag threshold, duplicate radius/window, trust
-bands, GPS accuracy, public report/flag rates, and fixed retention periods. L1
-accepts eight numeric thresholds plus one required `change_note`:
+bands, GPS accuracy, public report/flag rates, the on-device minimum dog
+probability, and fixed retention periods. L1
+accepts nine numeric thresholds plus one required `change_note`:
 
 | Field | Inclusive range | Precision |
 |---|---|---|
@@ -154,6 +155,7 @@ accepts eight numeric thresholds plus one required `change_note`:
 | `gps_accuracy_max_meters` | 5–500 | At most 2 decimal places, meters |
 | `report_rate_limit_per_hour` | 1–500 | Integer |
 | `flag_rate_limit_per_hour` | 1–1000 | Integer |
+| `photo_dog_probability_min` | 0–1 | At most 3 decimal places; minimum dog probability of the on-device AI model (default 0.200, backfilled on existing versions) |
 | `change_note` | 1–1000 Unicode characters | Nonblank string |
 
 These limits mirror `config_versions` in `db/schema.sql`. Reject excess decimal
