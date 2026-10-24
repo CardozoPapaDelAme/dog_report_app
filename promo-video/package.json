@@ -1,0 +1,20 @@
+{
+  "name": "promo-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render src/index.ts Promo renders/promo.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.537",
+    "@remotion/google-fonts": "^4.0.537",
+    "@remotion/media": "4.0.537",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.537",
+    "typescript": "^7.0.2"
+  }
+}

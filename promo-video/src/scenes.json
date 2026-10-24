@@ -1,0 +1,38 @@
+{
+  "hook": {
+    "from": 0,
+    "to": 2.5
+  },
+  "camera": {
+    "from": 2.5,
+    "to": 10
+  },
+  "types": {
+    "from": 10,
+    "to": 14.5
+  },
+  "form": {
+    "from": 14.5,
+    "to": 23.3
+  },
+  "map": {
+    "from": 23.3,
+    "to": 30.5
+  },
+  "zone": {
+    "from": 30.5,
+    "to": 40.3
+  },
+  "association": {
+    "from": 40.3,
+    "to": 53.8
+  },
+  "admin": {
+    "from": 53.8,
+    "to": 67.4
+  },
+  "closing": {
+    "from": 67.4,
+    "to": 69.4
+  }
+}

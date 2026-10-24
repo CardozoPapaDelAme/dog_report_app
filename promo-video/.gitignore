@@ -1,0 +1,20 @@
+# Dependencies and tooling
+node_modules/
+.agents/
+.claude/
+
+# Outputs (regenerable) and redundant raw copies kept locally
+renders/
+material/*.mov
+material/v1-obsoleto/
+
+# Generated audio (run `node scripts-audio.mjs`) and unused intermediate clips/screenshots
+public/promo-audio.wav
+public/map-a.mp4
+public/map-b.mp4
+public/assoc-a.mp4
+public/admin-a.mp4
+public/img/shot-*.png
+
+.DS_Store
+*.log
