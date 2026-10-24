@@ -21,7 +21,7 @@ mide y con qué evidencia.
 | Disponibilidad | 80 % mensual (≈ 292 días/año) | Monitor programado (GitHub Actions) cada 15 min | Sección 2: monitor activo desde el 2026-10-24, primera corrida correcta; 0.05 % de respuestas `5xx` en 24 h |
 | Capacidad | 25 usuarios simultáneos sin errores | k6 con usuarios virtuales | Sección 3: 733/733 correctas con 25 usuarios, p95 2,143 ms (tras corregir INC-4) |
 | Privacidad | No se almacenan datos personales del reportero | Revisión del diseño y del esquema | Sección 4 |
-| Respaldo | Cada 7 días | Registro de exportaciones | Sección 5: primera exportación completa y verificada el 2026-10-24; restauración sin ensayar |
+| Respaldo | Cada 7 días | Registro de exportaciones | Sección 5: exportación completa y restauración ensayada el 2026-10-24 (≈ 3 min) |
 | Respuesta a incidentes | Primera respuesta ≤ 24 horas | Registro de incidentes | Sección 6 |
 
 ## 1. Tiempo de respuesta de funciones críticas
@@ -125,14 +125,16 @@ Fuentes: `docs/deployment/BACKUP-LOG.md`, RNF14 y RNF18.
   fuera del repositorio y de Supabase, porque el plan Free no incluye respaldos
   automáticos (RNF18).
 - **RPO del prototipo** (cuántos datos se pueden perder como máximo): 7 días.
-  **RTO del prototipo** (cuánto tarda volver a operar): sin medir hasta ensayar una
-  restauración.
+  **RTO del prototipo** (cuánto tarda volver a operar): ≈ 3 minutos para la base y
+  las fotos en un proyecto nuevo (ensayo del 2026-10-24), más unos 5 minutos para
+  desplegar la Function y sus secretos; menos de 15 minutos en total.
 - **Producción** exige RPO ≤ 24 h y RTO ≤ 4 h demostrados (RNF14); requiere
   respaldos diarios o un plan de pago, y no se ha demostrado.
 - **Evidencia:** calendario y registro en `docs/deployment/BACKUP-LOG.md`. La
   primera exportación completa se hizo el 2026-10-24 en unos 3 minutos: roles,
-  esquema, datos y las 18 fotos, con conteos y tamaños iguales a la base. Falta
-  cifrarla y ensayar la restauración para medir el RTO.
+  esquema, datos y las 18 fotos, con conteos y tamaños iguales a la base. La
+  restauración se ensayó el mismo día en un proyecto aislado: datos y fotos idénticos
+  al origen. Falta cifrar las copias.
 
 ## 6. Respuesta a incidentes
 

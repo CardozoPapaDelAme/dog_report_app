@@ -180,8 +180,8 @@ data into a test project unless it is explicitly approved and de-identified.
 ## Milestone export and restore runbook
 
 Free does **not** provide automatic backups. This runbook is the required,
-rehearsable prototype procedure; it has not been executed or proven by this
-documentation change. Run it from an encrypted, operator-controlled directory
+rehearsable prototype procedure; its first rehearsal is recorded at the end of
+this section. Run it from an encrypted, operator-controlled directory
 outside the repository. Every value in angle brackets is a placeholder. Keep
 `DATABASE_URL`, `TARGET_DATABASE_URL`, tokens, backup files, and manifests out of
 Git and shell history where practical.
@@ -267,7 +267,11 @@ Git and shell history where practical.
    securely remove temporary decrypted material according to the operator policy.
 
 A milestone is not considered restorable until this procedure succeeds and its
-evidence is recorded. This document does not claim that rehearsal has occurred.
+evidence is recorded. The first rehearsal (2026-10-24, database and Storage
+objects, without the Function) is recorded in
+[`deployment/BACKUP-LOG.md`](deployment/BACKUP-LOG.md), with three findings: drop
+the provider-owned `GRANT SET ON PARAMETER` line from `<backup>/roles.sql`, repair the
+migration history, and set a new `app_backend` password.
 A public production launch remains gated on a plan or backup mechanism that
 demonstrably satisfies the required RPO/RTO.
 
