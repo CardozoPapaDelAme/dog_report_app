@@ -1,0 +1,47 @@
+name: Staging monitor
+
+# Synthetic monitoring of the staging deployment (Stage 5). Runs the smoke check
+# every 15 minutes; a failed run is the alert (GitHub notifies by email) and each
+# run's summary keeps the per-check latency as evidence.
+# See docs/deployment/MONITORING.md.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-monitor
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Smoke check (staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run smoke check
+        env:
+          API_BASE_URL: https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -o pipefail
+          node scripts/smoke.mjs | tee smoke.txt
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo '### Staging smoke check'
+            echo '```'
+            cat smoke.txt 2>/dev/null || echo 'No output.'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
