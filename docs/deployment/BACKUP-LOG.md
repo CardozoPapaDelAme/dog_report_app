@@ -1,6 +1,6 @@
 # Registro de respaldos
 
-Estado: esqueleto (D0, TD-138). Responsable: D5 (TD-143). Guía completa de la tarea:
+Estado: esqueleto. Tarea: D5. Guía completa de la tarea:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D5.
 
 Procedimiento: `docs/DEPLOYMENT.md` ("Milestone export and restore runbook").

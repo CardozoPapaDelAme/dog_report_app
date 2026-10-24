@@ -1,6 +1,6 @@
 # Plan de migración del software (despliegue)
 
-Estado: esqueleto (D0, TD-138). Responsable: D1 (TD-139). Guía completa de la tarea:
+Estado: esqueleto. Tarea: D1. Guía completa de la tarea:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D1.
 
 Producción sigue bloqueada (fail-closed) hasta que la Asociación de Hoteles de

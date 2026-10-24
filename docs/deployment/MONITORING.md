@@ -1,6 +1,6 @@
 # Monitoreo de infraestructura
 
-Estado: esqueleto (D0, TD-138). Responsable: D3 (TD-141). Guía completa de la tarea:
+Estado: esqueleto. Tarea: D3. Guía completa de la tarea:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D3. Cubre RNF25.
 
 Capturas en `docs/deployment/img/`, sin claves, correos ni IDs sensibles.

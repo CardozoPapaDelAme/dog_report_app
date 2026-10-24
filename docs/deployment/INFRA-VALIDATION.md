@@ -1,6 +1,6 @@
 # Validación de infraestructura (health/check)
 
-Estado: esqueleto (D0, TD-138). Responsable: D2 (TD-140). Guía completa de la tarea:
+Estado: esqueleto. Tarea: D2. Guía completa de la tarea:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D2.
 
 ## 1. Health check del backend

@@ -1,6 +1,6 @@
 # Manual de instalación
 
-Estado: esqueleto (D0, TD-138). Responsable: D9 (TD-147). Guía completa:
+Estado: esqueleto. Tarea: D9. Guía completa:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D9.
 
 El flujo principal es la **versión de desarrollo** (build de desarrollo de Expo).

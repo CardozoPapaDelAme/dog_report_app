@@ -1,6 +1,6 @@
 # Acuerdo de nivel de servicio (SLA)
 
-Estado: esqueleto (D0, TD-138). Responsable: D4 (TD-142). Guía completa de la tarea:
+Estado: esqueleto. Tarea: D4. Guía completa de la tarea:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D4.
 
 Sistema en Fase 1 sobre Supabase managed Free: el proveedor no ofrece SLA en este

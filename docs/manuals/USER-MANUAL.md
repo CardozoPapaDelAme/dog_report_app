@@ -1,7 +1,7 @@
 # Manual de usuario
 
-Estado: esqueleto (D0, TD-138). Responsables: D6 (TD-144, reportero público) y D7
-(TD-145, personal autorizado, introducción, prerrequisitos y FAQ). Guía completa:
+Estado: esqueleto. Tareas: D6 (reportero público) y D7 (personal autorizado,
+introducción, prerrequisitos y FAQ). Guía completa:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D6 y D7.
 
 Escrito para usuarios no técnicos: los textos de los botones van tal como aparecen

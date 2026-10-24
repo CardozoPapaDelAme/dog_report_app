@@ -56,7 +56,7 @@ relationships.
 - [`testing/README.md`](testing/README.md) — shared testing conventions and templates (T1)
 - [`testing/BACKLOG.md`](testing/BACKLOG.md) — Stage 4 testing backlog: tasks T1–T14, owners P1–P5, Jira keys
 - [`testing/cases/aceptacion-socio.md`](testing/cases/aceptacion-socio.md) — casos TC-CLIENTE ejecutados con el socio formador
-- [`deployment/BACKLOG.md`](deployment/BACKLOG.md) — Stage 5 deployment backlog: tasks D0–D10, owners, Jira keys
+- [`deployment/BACKLOG.md`](deployment/BACKLOG.md) — Stage 5 deployment backlog: tasks D0–D10
 - [`deployment/MIGRATION-PLAN.md`](deployment/MIGRATION-PLAN.md), [`deployment/INFRA-VALIDATION.md`](deployment/INFRA-VALIDATION.md), [`deployment/MONITORING.md`](deployment/MONITORING.md), [`deployment/SLA.md`](deployment/SLA.md), [`deployment/BACKUP-LOG.md`](deployment/BACKUP-LOG.md) — Stage 5 migration plan, health/check, monitoring, SLA and backup log
 - [`manuals/USER-MANUAL.md`](manuals/USER-MANUAL.md), [`manuals/TECHNICAL-MANUAL.md`](manuals/TECHNICAL-MANUAL.md), [`manuals/INSTALLATION.md`](manuals/INSTALLATION.md) — user, technical and installation manuals (Spanish)
 - [`DIAGRAM-READINESS.md`](DIAGRAM-READINESS.md) — diagram handoff and review checklist

@@ -1,6 +1,6 @@
 # Manual técnico
 
-Estado: esqueleto (D0, TD-138). Responsable: D8 (TD-146). Guía completa:
+Estado: esqueleto. Tarea: D8. Guía completa:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D8.
 
 Audiencias: desarrollador, administrador técnico (sysadmin), mantenimiento,

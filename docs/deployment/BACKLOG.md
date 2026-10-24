@@ -44,14 +44,7 @@ personales) · respaldo cada 7 días · respuesta a incidentes en 24 horas.
 
 ## Cómo usar este backlog
 
-- **Jira:** epic **TD-12 "Etapa 5 - Despliegue"**. Cada tarea tiene un ID fijo
-  (`D0`…`D10`) y un campo `Jira:` con su clave. El ticket copia objetivo, fuentes,
-  alcance y aceptación de la tarea.
-- **Ramas:** se nombran con la clave de Jira y las iniciales
-  (`TD-139-JP-plan-migracion`). La clave va también en cada commit y en el título
-  del PR para que Jira enlace la rama, los commits y el PR al ticket. Un agente
-  que trabaje en esa rama busca la clave en este archivo y resuelve exactamente
-  esa tarea.
+- **IDs:** cada tarea tiene un ID fijo (`D0`…`D10`).
 - **Estado:** `pendiente` → `en curso` → `hecho`. Una tarea pasa a `hecho` solo con
   su PR fusionado y su aceptación cumplida; el PR se anota como evidencia.
 - **Orden:** se respetan las dependencias (**Depende de**). Las tareas sin
@@ -80,18 +73,6 @@ personales) · respaldo cada 7 días · respuesta a incidentes en 24 horas.
   `promo-video/material/` ya tiene capturas recientes de casi todas las pantallas
   (sirven de base o de referencia).
 
-## Asignación
-
-| Integrante | Tareas | Por qué (afinidad con etapas 3 y 4) |
-|---|---|---|
-| Juan Pablo De León Gómez | D0, D1 | CI (T2), despliegues |
-| Alan Ruiz Silva | D2, D3, D5 | Lo más técnico: esqueleto del backend y `GET /health` (TD-80); health check, monitoreo y respaldo en la infraestructura real |
-| Ricardo Becerra Bitar | D4, D8 | Pruebas no funcionales y k6 (T9); el manual técnico reúne documentación existente |
-| Erick Herrera Luna | D6, D9 | Pantallas del reportero, alfa en dispositivo (T7) |
-| Fabián Fuentes | D7, D10 | Configuración, zonas y duplicados; Google Doc de la Etapa 4 (T13) |
-
-El equipo puede reasignar; si lo hace, actualizar esta tabla y el responsable en Jira.
-
 ### Dependencias
 
 ```mermaid
@@ -107,19 +88,18 @@ flowchart LR
 ---
 
 ## D0 · Backlog y esqueletos de la Etapa 5
-- **Persona:** Juan Pablo · **Estado:** en curso · **Jira:** TD-138
+- **Estado:** en curso
 - **Depende de:** nada.
-- **Objetivo:** que el equipo tenga tickets claros y documentos con estructura para
-  solo juntar información.
+- **Objetivo:** que cada tarea tenga una guía clara y documentos con estructura
+  para solo juntar información.
 - **Alcance:** este backlog; esqueletos de `docs/deployment/` y `docs/manuals/`;
   navegación en `docs/README.md` y `AGENTS.md`; la comprobación de rutas
   (`scripts/check-doc-paths.mjs`) también revisa `docs/deployment/` y
-  `docs/manuals/`; tickets D1–D10 en Jira con responsable y enlaces de bloqueo.
-- **Aceptación:** PR fusionado con la CI en verde; `parent = TD-12` en Jira muestra
-  D0–D10; cada clave aparece en este archivo.
+  `docs/manuals/`.
+- **Aceptación:** PR fusionado con la CI en verde.
 
 ## D1 · Plan de migración del software (despliegue)
-- **Persona:** Juan Pablo · **Estado:** pendiente · **Jira:** TD-139
+- **Estado:** pendiente
 - **Depende de:** D0.
 - **Objetivo:** el plan formal de cómo se lleva el sistema de un entorno a otro
   (local → staging → producción), qué se migra, en qué orden, cómo se verifica y
@@ -160,7 +140,7 @@ flowchart LR
   evidencia (salida de comandos sin secretos); enlazado desde `docs/DEPLOYMENT.md`.
 
 ## D2 · Validación de infraestructura (health/check)
-- **Persona:** Alan · **Estado:** pendiente · **Jira:** TD-140
+- **Estado:** pendiente
 - **Depende de:** D1 (usa sus entornos y su procedimiento).
 - **Objetivo:** demostrar que la infraestructura desplegada está sana, con un
   checklist ejecutado y un health check automatizable.
@@ -196,7 +176,7 @@ flowchart LR
   contra staging y su test pasa en la CI; ejecución registrada.
 
 ## D3 · Monitoreo de infraestructura (dashboards de la nube)
-- **Persona:** Alan · **Estado:** pendiente · **Jira:** TD-141
+- **Estado:** pendiente
 - **Depende de:** D2 (el health check que se monitorea).
 - **Objetivo:** ver en tiempo real si el sistema está arriba y cómo usa sus
   recursos, con alertas, y cubrir RNF25 (hoy "monitor real pendiente" en
@@ -236,7 +216,7 @@ flowchart LR
   RNF25 completa.
 
 ## D4 · Garantía de calidad de servicio (SLA)
-- **Persona:** Ricardo · **Estado:** pendiente · **Jira:** TD-142
+- **Estado:** pendiente
 - **Depende de:** D3 (datos del monitor), D5 (respaldo ejecutado).
 - **Objetivo:** el acuerdo de nivel de servicio del sistema, con cada compromiso
   medido o justificado.
@@ -272,7 +252,7 @@ flowchart LR
   justificado); números coherentes con `NON-FUNCTIONAL.md` y D3.
 
 ## D5 · Respaldo ensayado (cada 7 días)
-- **Persona:** Alan · **Estado:** pendiente · **Jira:** TD-143
+- **Estado:** pendiente
 - **Depende de:** D0.
 - **Objetivo:** que el respaldo del SLA sea real: ejecutar por primera vez el
   runbook de exportación y dejar el calendario semanal.
@@ -295,7 +275,7 @@ flowchart LR
   restauración ensayada o justificada; calendario semanal definido.
 
 ## D6 · Manual de usuario — Reportero público
-- **Persona:** Erick · **Estado:** pendiente · **Jira:** TD-144
+- **Estado:** pendiente
 - **Depende de:** D0.
 - **Objetivo:** que cualquier persona sepa usar la app para reportar perros y
   consultar el mapa.
@@ -322,7 +302,7 @@ flowchart LR
   nombres de archivos en el texto para el usuario).
 
 ## D7 · Manual de usuario — Personal autorizado, introducción y FAQ
-- **Persona:** Fabián · **Estado:** pendiente · **Jira:** TD-145
+- **Estado:** pendiente
 - **Depende de:** D0.
 - **Objetivo:** cubrir a la Asociación de Hoteles de Chihuahua y al Administrator, y
   las partes generales del manual.
@@ -359,7 +339,7 @@ flowchart LR
   funciones de personal con sus 4 partes y capturas; coherente en estilo con D6.
 
 ## D8 · Manual técnico
-- **Persona:** Ricardo · **Estado:** pendiente · **Jira:** TD-146
+- **Estado:** pendiente
 - **Depende de:** D3 (sección Monitoreo), D9 (sección Instalación).
 - **Objetivo:** el documento para desarrollador, administrador técnico,
   mantenimiento, soporte y operación.
@@ -395,7 +375,7 @@ flowchart LR
   contra los archivos del repo; diagramas enlazados.
 
 ## D9 · Manual de instalación
-- **Persona:** Erick · **Estado:** pendiente · **Jira:** TD-147
+- **Estado:** pendiente
 - **Depende de:** D0.
 - **Objetivo:** que alguien sin contexto deje el sistema funcionando. El flujo
   principal es la **versión de desarrollo** (build de desarrollo de Expo); Expo Go
@@ -427,7 +407,7 @@ flowchart LR
   por alguien fuera del autor; sin secretos.
 
 ## D10 · Entregable final (Google Doc)
-- **Persona:** Fabián · **Estado:** pendiente · **Jira:** TD-148
+- **Estado:** pendiente
 - **Depende de:** D4, D6, D7, D8 (y por ellas todas las demás).
 - **Objetivo:** el documento que se entrega, con una sección por punto de la etapa.
 - **Fuentes a reutilizar:** el Google Doc de la Etapa 4 (T13 en
