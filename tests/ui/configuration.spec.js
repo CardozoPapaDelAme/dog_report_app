@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-const configuration = { id:'config-1',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30,change_note:'Configuración inicial' };
+const configuration = { id:'config-1',environment:'staging',version:1,is_active:true,flag_auto_hide_threshold:5,duplicate_radius_meters:150,duplicate_time_window_minutes:120,trust_high_threshold:0.8,trust_medium_threshold:0.5,gps_accuracy_max_meters:50,report_rate_limit_per_hour:10,flag_rate_limit_per_hour:30,photo_dog_probability_min:0.2,change_note:'Configuración inicial' };
 const response = (config=configuration) => ({data:{configuration:config,zone_set:null}});
 const field = (page,key) => page.getByTestId(`configuration-${key}`);
 const pageErrors = new WeakMap();
@@ -13,19 +13,19 @@ async function mock(page, handler) {
 }
 async function ready(page) {await page.goto('/');await expect(page.getByText('Versión 1 activa')).toBeVisible();}
 
-test('loads eight values, identifies GPS range and publishes the complete typed payload',async({page},info)=>{
+test('loads nine values, identifies GPS range and publishes the complete typed payload',async({page},info)=>{
   let posts=0;
   await mock(page,async(route)=>{
     if(route.request().method()==='GET') return route.fulfill({json:response()});
     posts++;
     const input=route.request().postDataJSON();
-    expect(Object.keys(input)).toHaveLength(9);
+    expect(Object.keys(input)).toHaveLength(10);
     expect(input.gps_accuracy_max_meters).toBe(12.25);
     expect(input.change_note).toBe('Ajuste revisado');
     await route.fulfill({status:201,json:response({...configuration,...input,id:'config-2',version:2})});
   });
   await ready(page);
-  await expect(page.locator('input')).toHaveCount(8);
+  await expect(page.locator('input')).toHaveCount(9);
   await expect(field(page,'change_note')).toHaveValue('');
   await field(page,'gps_accuracy_max_meters').fill('501');
   await field(page,'change_note').fill('Ajuste revisado');

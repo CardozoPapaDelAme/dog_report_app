@@ -8,7 +8,8 @@ const input = {
   flag_auto_hide_threshold: 5, duplicate_radius_meters: 150,
   duplicate_time_window_minutes: 120, trust_high_threshold: 0.8,
   trust_medium_threshold: 0.5, gps_accuracy_max_meters: 50,
-  report_rate_limit_per_hour: 10, flag_rate_limit_per_hour: 30, change_note: 'Review',
+  report_rate_limit_per_hour: 10, flag_rate_limit_per_hour: 30,
+  photo_dog_probability_min: 0.2, change_note: 'Review',
 };
 const state = {
   configuration: {

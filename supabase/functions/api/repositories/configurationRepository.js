@@ -78,7 +78,8 @@ export async function insertConfigurationVersion(tx, { environment, actorId, val
       environment, version, is_active, flag_auto_hide_threshold,
       duplicate_radius_meters, duplicate_time_window_minutes,
       trust_high_threshold, trust_medium_threshold, gps_accuracy_max_meters,
-      report_rate_limit_per_hour, flag_rate_limit_per_hour, change_note, created_by
+      report_rate_limit_per_hour, flag_rate_limit_per_hour,
+      photo_dog_probability_min, change_note, created_by
     ) VALUES (
       ${environment},
       (SELECT COALESCE(MAX(version), 0) + 1 FROM public.config_versions WHERE environment = ${environment}),
@@ -86,6 +87,7 @@ export async function insertConfigurationVersion(tx, { environment, actorId, val
       ${values.duplicate_time_window_minutes}, ${values.trust_high_threshold},
       ${values.trust_medium_threshold}, ${values.gps_accuracy_max_meters},
       ${values.report_rate_limit_per_hour}, ${values.flag_rate_limit_per_hour},
+      ${values.photo_dog_probability_min},
       ${values.change_note}, ${actorId}
     ) RETURNING id
   `;

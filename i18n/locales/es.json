@@ -378,7 +378,8 @@
       "duplicates": "Posibles duplicados",
       "trust": "Niveles de confianza",
       "location": "Precisión de ubicación",
-      "limits": "Límites por hora"
+      "limits": "Límites por hora",
+      "photo": "Detección de perro (IA)"
     },
     "fields": {
       "flag_auto_hide_threshold": "Denuncias para ocultar un reporte",
@@ -388,7 +389,8 @@
       "trust_medium_threshold": "Umbral de confianza media",
       "gps_accuracy_max_meters": "Precisión GPS máxima (m)",
       "report_rate_limit_per_hour": "Reportes por hora",
-      "flag_rate_limit_per_hour": "Denuncias por hora"
+      "flag_rate_limit_per_hour": "Denuncias por hora",
+      "photo_dog_probability_min": "Probabilidad mínima de perro"
     },
     "help": {
       "flag_auto_hide_threshold": "Cantidad de denuncias de orígenes distintos que activa la revisión.",
@@ -398,7 +400,8 @@
       "trust_medium_threshold": "Debe ser menor que el umbral de confianza alta.",
       "gps_accuracy_max_meters": "Una menor precisión requiere revisión del reporte.",
       "report_rate_limit_per_hour": "Máximo de nuevos reportes por origen en una hora.",
-      "flag_rate_limit_per_hour": "Máximo de denuncias por origen en una hora."
+      "flag_rate_limit_per_hour": "Máximo de denuncias por origen en una hora.",
+      "photo_dog_probability_min": "Valores más bajos hacen que la IA acepte al perro más fácil; valores más altos la hacen más estricta."
     },
     "integerHint": "De {{min}} a {{max}} · número entero",
     "decimalHint": "De {{min}} a {{max}} · hasta {{decimals}} decimales",

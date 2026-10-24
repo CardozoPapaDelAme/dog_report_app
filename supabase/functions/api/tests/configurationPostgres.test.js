@@ -83,7 +83,8 @@ Deno.test({
       const input = { flag_auto_hide_threshold: 6, duplicate_radius_meters: 150,
         duplicate_time_window_minutes: 120, trust_high_threshold: 0.8,
         trust_medium_threshold: 0.5, gps_accuracy_max_meters: 50,
-        report_rate_limit_per_hour: 10, flag_rate_limit_per_hour: 30, change_note: 'Integration test' };
+        report_rate_limit_per_hour: 10, flag_rate_limit_per_hour: 30,
+  photo_dog_probability_min: 0.2, change_note: 'Integration test' };
       const backend = { begin: (operation) => sql.begin(async (tx) => {
         await tx`SET LOCAL ROLE app_backend`;
         return operation(tx);

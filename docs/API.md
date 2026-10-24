@@ -38,6 +38,7 @@ blocker; neither contract silently overrides the other.
 | `POST /reports/:report_id/flags` | anonymous public reporter | 201 | FlagService |
 | `GET /public/reports` | public | 200 | PublicMapService |
 | `GET /public/clusters` | public | 200 | PublicMapService |
+| `GET /public/photo-validation` | public | 200 | PhotoValidationService |
 | `GET /reports/:report_id/photo-status` | submitting origin | 200 | PhotoService |
 | `POST /reports/:report_id/photo` | submitting origin | 201/200 replay | PhotoService |
 | `GET /reports/:report_id/photo` | public or authenticated | 200/302 | PhotoService |
@@ -132,6 +133,22 @@ requires either all viewport values or none. It returns `ClusterView[]` with
 `cluster_id`, `report_count`, stable approximate location, `highest_severity`, and
 `type_counts` containing all six incident keys including zeros. Input is most
 recent first and defaults to 2,000 reports.
+
+### Photo validation threshold
+
+`GET /public/photo-validation` (also `/api/public/photo-validation`) is anonymous,
+accepts no query parameters (`400 invalid_request` otherwise) and reads the active
+configuration version of the deployment environment in an anonymous transaction.
+It returns `200 { "data": { "version": 3, "photo_dog_probability_min": 0.2 } }`
+with JSON numbers and `X-Request-Id`. It never exposes `change_note`, `created_by`
+or any other configuration field. Failures: `503 configuration_unavailable` (no
+active version) and `503 dependency_unavailable` (connection failure). Other
+methods return `405` with `Allow: GET`.
+
+Phones cache the value (`expo-secure-store`) and validate photos with the last
+fetched value, then the cached one, then the built-in default (0.2). The refresh
+runs in the background and never blocks or fails a capture; validation itself stays
+on-device (RNF08). The sharpness (blur) threshold is not configurable.
 
 ## Photo lifecycle
 
@@ -303,9 +320,10 @@ Unknown failures return a generic 500 without SQL. Unsupported methods return
 ### Configuration (FAB-1 / L1)
 
 `GET /admin/configuration` accepts no body or query parameters and returns `200`.
-`POST /admin/configuration` accepts a complete JSON object with **eight numeric
-thresholds plus `change_note` (nine fields total)** and returns `201`. The earlier
-“nine values” wording includes the note; there is no ninth numeric threshold.
+`POST /admin/configuration` accepts a complete JSON object with **nine numeric
+thresholds plus `change_note` (ten fields total)** and returns `201`. The ninth
+numeric threshold, `photo_dog_probability_min`, is the minimum dog probability of
+the on-device AI model; it is also served publicly by `GET /public/photo-validation`.
 Exact ranges and decimal precision are listed in
 [`DATA-MODEL.md`](DATA-MODEL.md#typed-configuration-and-zones) and enforced by
 [`../db/schema.sql`](../db/schema.sql).
@@ -320,12 +338,13 @@ Exact ranges and decimal precision are listed in
   "gps_accuracy_max_meters": 50,
   "report_rate_limit_per_hour": 10,
   "flag_rate_limit_per_hour": 30,
+  "photo_dog_probability_min": 0.2,
   "change_note": "Adjust thresholds after Administrator review"
 }
 ```
 
 Both responses use `{ "data": { "configuration": { ... }, "zone_set": null } }`.
-`configuration` contains `id`, `environment`, `version`, `is_active`, all nine
+`configuration` contains `id`, `environment`, `version`, `is_active`, all ten
 request fields, the five server-controlled `*_retention_days` fields,
 `created_by`, and UTC `created_at`. Numeric thresholds are JSON numbers.
 `zone_set`, when an active set exists in the same environment, contains `id`,

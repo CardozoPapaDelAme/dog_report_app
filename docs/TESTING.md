@@ -505,8 +505,9 @@ The mobile screen follows `screens/ConfigurationScreen.js` →
 `hooks/useConfiguration.js` → `services/configurationApi.js` → existing
 `services/apiClient.js`. `models/configuration.js` owns editable strings, numeric
 conversion and local validation. Tests check every numeric rule against FAB-1.
-The contract remains **eight numeric thresholds plus change_note**, not nine
-numeric settings. No API, SQL or migration change is required.
+The contract is **nine numeric thresholds plus change_note** (the ninth,
+`photo_dog_probability_min`, was added with the photo threshold feature, see
+`docs/API.md`).
 
 Run model, adapter, FAB-1 integration and backend regression tests:
 
