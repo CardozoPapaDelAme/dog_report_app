@@ -40,16 +40,55 @@ valores de la columna "Hoy" se leyeron el 2026-10-24 por la API de administraci�
 
 | Dashboard | Qué muestra | Hoy (staging) | Umbral de alerta | Acción | Captura |
 |---|---|---|---|---|---|
-| Usage (BD, Storage, egress, invocaciones) | Consumo del mes frente a la cuota Free: 500 MB de BD, 1 GB de Storage, 5 GB de egress, 500k invocaciones. | BD 21 MB (4 %); Storage 10 MB en 18 objetos (1 %); ≈ 5.9k invocaciones en 24 h (≈ 177k/mes proyectadas, 35 %). | 80 % de cualquier cuota. | Revisar qué lo provoca (carga de prueba, bucle de la app), borrar datos de prueba, o plan de pago. | Pendiente |
-| Edge Functions → `api` | Invocaciones, errores por código, tiempo de ejecución y logs de cada petición. | 5,909 invocaciones en 24 h; 3 respuestas `5xx` (0.05 %); tiempo de ejecución p50 515 ms, p95 1,095 ms. | `5xx` > 1 % en una hora, o p95 > 3,000 ms. | Abrir los logs filtrando por código; ver la sección 6. | Pendiente |
-| Database (Query Performance, conexiones) | Consultas más lentas y más frecuentes, conexiones abiertas. | 12 conexiones de 60. | Conexiones > 48 (80 %) o una consulta frecuente > 1 s. | Revisar la consulta en Query Performance; índices; INC-4. | Pendiente |
-| Auth | Inicios de sesión correctos y fallidos del personal. | Signup deshabilitado (`422`); 4 cuentas de personal (3 Administrator, 1 Asociación). | Más de 10 fallos seguidos de una cuenta, o un usuario nuevo inesperado. | Bloquear la cuenta y rotar su contraseña (`docs/DEPLOYMENT.md`, "Incident priorities"). | Pendiente |
-| Advisors (Security / Performance) | Configuración insegura o lenta detectada por Supabase. | 1 WARN aceptado (protección de contraseñas filtradas, solo Pro); 13 INFO aceptados. | Cualquier hallazgo nuevo de nivel WARN o ERROR. | Corregir con una migración y volver a correr los advisors. | Pendiente |
+| Usage (BD, Storage, egress, invocaciones) | Consumo del mes frente a la cuota Free: 500 MB de BD, 1 GB de Storage, 5 GB de egress, 500k invocaciones. | BD 21 MB (4 %); Storage 10 MB en 18 objetos (1 %); ≈ 5.9k invocaciones en 24 h (≈ 177k/mes proyectadas, 35 %). | 80 % de cualquier cuota. | Revisar qué lo provoca (carga de prueba, bucle de la app), borrar datos de prueba, o plan de pago. | Figura 3 |
+| Edge Functions → `api` | Invocaciones, errores por código, tiempo de ejecución y logs de cada petición. | 5,909 invocaciones en 24 h; 3 respuestas `5xx` (0.05 %); tiempo de ejecución p50 515 ms, p95 1,095 ms. | `5xx` > 1 % en una hora, o p95 > 3,000 ms. | Abrir los logs filtrando por código; ver la sección 6. | Figuras 1 y 2 |
+| Database (Query Performance, conexiones) | Consultas más lentas y más frecuentes, conexiones abiertas. | 12 conexiones de 60. | Conexiones > 48 (80 %) o una consulta frecuente > 1 s. | Revisar la consulta en Query Performance; índices; INC-4. | Figuras 4 y 5 |
+| Auth | Inicios de sesión correctos y fallidos del personal. | Signup deshabilitado (`422`); 4 cuentas de personal (3 Administrator, 1 Asociación). | Más de 10 fallos seguidos de una cuenta, o un usuario nuevo inesperado. | Bloquear la cuenta y rotar su contraseña (`docs/DEPLOYMENT.md`, "Incident priorities"). | No incluida |
+| Advisors (Security / Performance) | Configuración insegura o lenta detectada por Supabase. | 1 WARN aceptado (protección de contraseñas filtradas, solo Pro); 13 INFO aceptados. | Cualquier hallazgo nuevo de nivel WARN o ERROR. | Corregir con una migración y volver a correr los advisors. | Figura 1 («Advisor found no issues») |
 
-**Capturas pendientes:** se toman con la cuenta del equipo en el dashboard (la VPS no
-tiene sesión), tapando claves y correos, y se guardan en `docs/deployment/img/` en
-PNG con los nombres `01-usage`, `02-edge-functions`, `03-query-performance`,
-`04-auth` y `05-advisors`.
+### Capturas (2026-10-24, alrededor de las 19:00 UTC)
+
+Tomadas por el equipo en el dashboard del proyecto `Wildogscanner` (staging) y en
+GitHub, sin claves ni cadenas de conexión a la vista.
+
+**Figura 1. Resumen del proyecto.** Estado *Healthy*; en la última hora, 130
+peticiones con 96.9 % de éxito y 0 errores en Edge Functions; CPU 2 %, RAM 56 %,
+9 de 60 conexiones; «Advisor found no issues». «Last backup: No backups» se refiere
+a los respaldos automáticos de Supabase, que el plan Free no incluye; los respaldos
+del equipo son manuales y viven fuera de Supabase (`docs/deployment/BACKUP-LOG.md`).
+
+![Resumen del proyecto en Supabase](docs/deployment/img/01-resumen-proyecto.png)
+
+**Figura 2. Logs de la Function `api`.** Arranques de la Function en 50 a 77 ms
+durante la última hora.
+
+![Logs de la Function api](docs/deployment/img/02-logs-api.png)
+
+**Figura 3. Uso de la organización en el ciclo de facturación** (18 oct – 18 nov
+2026, todos los proyectos): base 0.038 de 0.5 GB (8 %), Storage 0.009 de 1 GB
+(< 1 %), egress 0.502 de 5 GB (10 %), 14,293 de 500,000 invocaciones (3 %); ninguna
+cuota excedida.
+
+![Uso de la organización](docs/deployment/img/03-uso.png)
+
+**Figura 4. Query Performance.** 99.99 % de aciertos de caché. La consulta principal
+de la API (`visible_reports`, rol `app_backend`) lleva 12,670 llamadas con 14 ms de
+promedio y 172 ms de máximo, muy por debajo del umbral de 1 s.
+
+![Query Performance](docs/deployment/img/04-query-performance.png)
+
+**Figura 5. Recursos de la base.** Memoria usada 390 MB y CPU 1.34 % en la última
+hora. El panel marca el compromiso de memoria (1.18 GB, cerca del límite de 1.4 GB
+de la instancia nano) como *problematic*; se vigila en la revisión semanal.
+
+![Recursos de la base](docs/deployment/img/05-database.png)
+
+**Figura 6. Corridas del monitor programado** (sección 2): las tres corridas en
+verde, la tercera lanzada sola por el horario (*Scheduled*).
+
+![Corridas del monitor en GitHub](docs/deployment/img/06-monitor-github.png)
+
+Faltan capturas de Auth; sus datos de la tabla salen de la API de administración.
 
 ## 2. Monitor programado (GitHub Actions)
 
@@ -92,6 +131,9 @@ OK       GET /public/reports    200  967 ms
 OK       POST /auth/v1/signup   422  304 ms
 Resultado: OK
 ```
+
+La segunda corrida, también a mano, salió correcta, y la tercera ya la lanzó el
+horario de GitHub (*Scheduled*), también en verde (figura 6).
 
 ### Extensión opcional: UptimeRobot
 
