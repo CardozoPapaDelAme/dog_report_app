@@ -20,7 +20,7 @@ zona geográfica (geofence), como exige `AGENTS.md`.
 | Autenticación | Registro público deshabilitado (`422 signup_disabled`); 4 cuentas de personal provisionadas a mano: 3 Administrator y 1 de la Asociación. | `docs/deployment/INFRA-VALIDATION.md`, sección 2 |
 | Zona geográfica | Conjunto de zonas **TEST ONLY** activo (Creel + Chihuahua, Delicias y Meoqui), auditado y no aprobado por la Asociación. | `docs/DEPLOYMENT.md`, "Current staging test geofence" |
 | App móvil | Build nativo de Expo (no Expo Go). Probada en un Samsung SM-S918B con Android 16 (prueba alfa) y en el simulador de iPhone con iOS 27. Distribución interna a Android con el APK del perfil `preview` de EAS. | `docs/testing/ALPHA.md`, `docs/REVIEWING.md`, `docs/manuals/INSTALLATION.md` |
-| Monitoreo y operación | Smoke check (`npm run smoke`), monitor sintético en Python, SLA y procedimiento de incidentes. | `docs/deployment/MONITORING.md`, `docs/deployment/SLA.md` |
+| Monitoreo y operación | Monitor programado activo cada 15 min (GitHub Actions con el smoke check), monitor sintético en Python, SLA y procedimiento de incidentes. | `docs/deployment/MONITORING.md`, `docs/deployment/SLA.md` |
 
 ## 2. Aceptación del cliente
 
@@ -63,7 +63,7 @@ Fuente: `docs/TRACEABILITY.md`, "Matriz de verificación de Etapa 4".
 | RNF15 | Inspección del proyecto administrado | Proyecto, plan Free, cuotas y uso inspeccionados (`docs/deployment/MONITORING.md`) |
 | RNF16 | Smoke HTTPS/TLS del despliegue | HTTP → 301 a HTTPS; TLS 1.3, certificado válido |
 | RNF19, RNF20 | Catálogos, RLS y grants del proyecto vigente | Checklist sobre staging: RLS 13/13, sin grants móviles, `app_backend` `NOBYPASSRLS` |
-| RNF25 | Monitoreo real | Smoke check, monitor Python y tabla de señales |
+| RNF25 | Monitoreo real | Monitor programado activo desde el 2026-10-24 (primera corrida correcta), smoke check y tabla de señales |
 
 - **Siguen pendientes:** el ensayo de restauración (RNF14, RNF18; la primera exportación
   completa ya se hizo, ver `docs/deployment/BACKUP-LOG.md`), medición

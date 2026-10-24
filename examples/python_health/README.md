@@ -3,8 +3,9 @@
 Small FastAPI service that probes the deployed API's public endpoints, measures
 each latency against the SLA threshold and answers one JSON report. It is not
 part of the product backend (Hono Edge Function in `supabase/functions/api`).
-An external uptime service (UptimeRobot) polls its `GET /health`, so a failure
-in any component becomes a single alert. See `docs/deployment/MONITORING.md`.
+It is an optional extension: the active monitor is the scheduled GitHub Actions
+smoke check. If deployed, an external uptime service (UptimeRobot) can poll its
+`GET /health`, so a failure in any component becomes a single alert. See `docs/deployment/MONITORING.md`.
 
 ```sh
 cd examples/python_health
