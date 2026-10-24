@@ -27,7 +27,8 @@
     "test:public-map-ui": "playwright test publicMap.spec.js",
     "test:admin-ui": "playwright test",
     "test:duplicates-ui": "playwright test duplicateManagement.spec.js",
-    "test:docs": "node scripts/check-doc-paths.mjs"
+    "test:docs": "node scripts/check-doc-paths.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/fredoka": "^0.4.1",
