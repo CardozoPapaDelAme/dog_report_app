@@ -84,9 +84,9 @@ personales) · respaldo cada 7 días · respuesta a incidentes en 24 horas.
 
 | Integrante | Tareas | Por qué (afinidad con etapas 3 y 4) |
 |---|---|---|
-| Juan Pablo De León Gómez | D0, D1, D3 | CI (T2), health check en Python (TD-131), despliegues |
-| Alan Ruiz Silva | D2, D8 | Esqueleto del backend y `GET /health` (TD-80), Command Center |
-| Ricardo Becerra Bitar | D4, D5 | Pruebas no funcionales y k6 (T9) |
+| Juan Pablo De León Gómez | D0, D1 | CI (T2), despliegues |
+| Alan Ruiz Silva | D2, D3, D5 | Lo más técnico: esqueleto del backend y `GET /health` (TD-80); health check, monitoreo y respaldo en la infraestructura real |
+| Ricardo Becerra Bitar | D4, D8 | Pruebas no funcionales y k6 (T9); el manual técnico reúne documentación existente |
 | Erick Herrera Luna | D6, D9 | Pantallas del reportero, alfa en dispositivo (T7) |
 | Fabián Fuentes | D7, D10 | Configuración, zonas y duplicados; Google Doc de la Etapa 4 (T13) |
 
@@ -196,7 +196,7 @@ flowchart LR
   contra staging y su test pasa en la CI; ejecución registrada.
 
 ## D3 · Monitoreo de infraestructura (dashboards de la nube)
-- **Persona:** Juan Pablo · **Estado:** pendiente · **Jira:** TD-141
+- **Persona:** Alan · **Estado:** pendiente · **Jira:** TD-141
 - **Depende de:** D2 (el health check que se monitorea).
 - **Objetivo:** ver en tiempo real si el sistema está arriba y cómo usa sus
   recursos, con alertas, y cubrir RNF25 (hoy "monitor real pendiente" en
@@ -272,7 +272,7 @@ flowchart LR
   justificado); números coherentes con `NON-FUNCTIONAL.md` y D3.
 
 ## D5 · Respaldo ensayado (cada 7 días)
-- **Persona:** Ricardo · **Estado:** pendiente · **Jira:** TD-143
+- **Persona:** Alan · **Estado:** pendiente · **Jira:** TD-143
 - **Depende de:** D0.
 - **Objetivo:** que el respaldo del SLA sea real: ejecutar por primera vez el
   runbook de exportación y dejar el calendario semanal.
@@ -359,7 +359,7 @@ flowchart LR
   funciones de personal con sus 4 partes y capturas; coherente en estilo con D6.
 
 ## D8 · Manual técnico
-- **Persona:** Alan · **Estado:** pendiente · **Jira:** TD-146
+- **Persona:** Ricardo · **Estado:** pendiente · **Jira:** TD-146
 - **Depende de:** D3 (sección Monitoreo), D9 (sección Instalación).
 - **Objetivo:** el documento para desarrollador, administrador técnico,
   mantenimiento, soporte y operación.
