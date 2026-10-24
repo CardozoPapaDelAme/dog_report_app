@@ -4,13 +4,13 @@
  *
  * Invoked as `npm run test:docs` (`node scripts/check-doc-paths.mjs`) and as the `docs`
  * suite of `scripts/test-all.mjs`. Scans `docs/TRACEABILITY.md` and every file under
- * `docs/testing/` (except `docs/testing/BACKLOG.md`) for repository file citations and
- * reports those that are not repo-rooted or do not exist. Sets exit code 1 when any error
+ * `docs/testing/`, `docs/deployment/` and `docs/manuals/` (except the stage backlogs) for
+ * repository file citations and reports those that are not repo-rooted or do not exist. Sets exit code 1 when any error
  * is found.
  *
  * @module scripts/check-doc-paths
  */
-// Repository file citations in traceability and Stage 4 docs must stay valid.
+// Repository file citations in traceability, Stage 4 and Stage 5 docs must stay valid.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +18,9 @@ import { fileURLToPath } from 'node:url';
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const extensions = 'js|jsx|mjs|cjs|ts|tsx|json|sql|md|ya?ml|pdf|png|jpe?g|webp|mp4|csv|tsv|txt|toml|tflite|xlsx|zip|html|env|example';
 const rootedFileCitation = /(?<![\w/])(?:\.{1,2}\/|\/)?(?:[\w@.-]+\/)+[\w@.-]+\.[a-zA-Z][a-zA-Z\d_-]*(?![\w.])/g;
+// Backlogs cite wrong names and future files on purpose.
+const excludedDocuments = new Set(['docs/testing/BACKLOG.md', 'docs/deployment/BACKLOG.md']);
+const scannedDirectories = ['docs/testing', 'docs/deployment', 'docs/manuals'];
 const fileCitation = new RegExp(`(?<![\\w/])(?:\\.{1,2}/|/)?(?:[\\w@.-]+/)*[\\w@.-]+\\.(?:${extensions})(?![\\w.])`, 'g');
 
 /**
@@ -31,12 +34,14 @@ function documents(root) {
   function walk(dir) {
     for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
       const path = `${dir}/${entry.name}`;
-      if (path === 'docs/testing/BACKLOG.md') continue;
+      if (excludedDocuments.has(path)) continue;
       if (entry.isDirectory()) walk(path);
       else if (entry.isFile()) paths.push(path);
     }
   }
-  walk('docs/testing');
+  for (const dir of scannedDirectories) {
+    if (existsSync(join(root, dir))) walk(dir);
+  }
   return paths.sort();
 }
 

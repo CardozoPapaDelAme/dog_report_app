@@ -42,6 +42,17 @@ test('backlog is the only document excluded; nested docs and JSON citations are 
   assert.equal(checkDocumentPaths(root).errors.length, 2);
 });
 
+test('stage 5 deployment docs and manuals are checked; their backlog is excluded', (t) => {
+  const root = fixture(t);
+  mkdirSync(join(root, 'docs/deployment'));
+  mkdirSync(join(root, 'docs/manuals'));
+  writeFileSync(join(root, 'docs/deployment/BACKLOG.md'), '`scripts/future.mjs`');
+  writeFileSync(join(root, 'docs/deployment/SLA.md'), '`models/missing.js`');
+  writeFileSync(join(root, 'docs/manuals/INSTALLATION.md'), '`models/real.test.js`\n`scripts/missing.mjs`');
+  const errors = checkDocumentPaths(root).errors;
+  assert.deepEqual(errors.map(x => x.doc), ['docs/deployment/SLA.md', 'docs/manuals/INSTALLATION.md']);
+});
+
 test('URLs, contract fields and parameterized templates are not concrete file citations', (t) => {
   const root = fixture(t, 'https://example.test/missing.js\n[source](https://example.test/file.md)\n`details.cantidad_aprox`\n`docs/testing/cases/<modulo>.md`\n`docs/testing/data/*.json`');
   assert.equal(checkDocumentPaths(root).errors.length, 0);
