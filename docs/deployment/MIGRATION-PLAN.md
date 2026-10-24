@@ -29,7 +29,7 @@ Fuentes: `supabase/migrations/`, `db/schema.sql`, `supabase/config.toml`,
 |---|---|---|---|
 | Migraciones SQL (12, en orden: `20260908232749_initial_target_schema` … `20261021120000_add_photo_validation_thresholds`) | `supabase/migrations/` | `supabase db push --dry-run`, revisión, y luego `supabase db push`. Nunca se aplica `db/schema.sql` completo sobre una base existente. | La lista de migraciones remotas coincide con la carpeta (12/12); advisors de seguridad y rendimiento sin hallazgos nuevos. |
 | Function `api` (Hono, un solo backend) | `supabase/functions/api/index.js` y `supabase/functions/api/deno.json` | `supabase functions deploy api --use-api` desde el commit aprobado. | Los archivos desplegados coinciden con el commit (SHA-256); `npm run smoke` en verde. |
-| Secretos de la Function (solo nombres) | `supabase/functions/api/infrastructure/config.js` | `supabase secrets set` desde un archivo fuera de Git: `APP_BACKEND_DATABASE_URL`, `JWT_SECRET`, `INTERNAL_RETENTION_SECRET`, `EXPECTED_SUPABASE_PROJECT_REF`, `EXPECTED_DEPLOYMENT_ENVIRONMENT`, `APPROVED_PHOTOS_BUCKET`. `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` los inyecta el proveedor. `ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE` **no** se define en producción. | `supabase secrets list` muestra los nombres (nunca valores); rutas de administración responden sin `503 preflight_mismatch`. |
+| Secretos de la Function (solo nombres) | `supabase/functions/api/infrastructure/config.js` | `supabase secrets set` desde un archivo fuera de Git: `APP_BACKEND_DATABASE_URL`, `INTERNAL_RETENTION_SECRET`, `EXPECTED_SUPABASE_PROJECT_REF`, `EXPECTED_DEPLOYMENT_ENVIRONMENT`, `APPROVED_PHOTOS_BUCKET`; `JWT_SECRET` es opcional (respaldo de la verificación por JWKS). `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` los inyecta el proveedor. `ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE` **no** se define en producción. | `supabase secrets list` muestra los nombres (nunca valores); rutas de administración responden sin `503 preflight_mismatch`. |
 | Bucket privado `approved-photos` y políticas | Migraciones de Storage en `supabase/migrations/` | Lo crean las migraciones; las políticas se verifican contra el esquema de Storage instalado. | `storage.buckets.public = false`. |
 | Cuentas de Asociación y Administrator | `docs/SECURITY.md` ("Provisioning runbook") | Alta manual por el operador técnico en Auth + perfil con su rol. El registro público queda deshabilitado. | `POST /auth/v1/signup` responde `422 signup_disabled`; `GET /me` con cada cuenta devuelve su rol. |
 | Metadata de entorno | `public.deployment_metadata` | Migración/registro con `environment = production` en el proyecto nuevo. | Coincide con el secreto `EXPECTED_DEPLOYMENT_ENVIRONMENT`. |
@@ -111,7 +111,7 @@ Fuentes: `docs/DEPLOYMENT.md` ("Milestone export and restore runbook"),
 | Cuotas del plan Free (500 MB BD, 1 GB Storage, 5 GB egress, 500k invocaciones) | Servicio degradado al llegar al límite. | Monitoreo de Usage con umbral al 80 %; hoy staging usa 21 MB de BD, 10 MB de Storage y ≈ 5.9k invocaciones/día. |
 | Pausa por inactividad del plan Free | API inaccesible hasta reactivar el proyecto. | El monitor externo llama cada 5 min, lo que mantiene actividad y alerta si se pausa. |
 | Sin respaldos automáticos en Free | Pérdida de datos ante un error. | Exportación semanal manual (`docs/deployment/BACKUP-LOG.md`). |
-| Peticiones colgadas bajo concurrencia (INC-4, `docs/deployment/INFRA-VALIDATION.md`) | Algunas lecturas que tocan la base no responden. | Corregir el pool de conexiones antes de producción y repetir la prueba de capacidad. |
+| Peticiones colgadas bajo concurrencia (INC-4, `docs/deployment/INFRA-VALIDATION.md`) | Algunas lecturas que tocan la base no responden. | Corregido (PR #91, 0 % de errores con 25 usuarios en staging); el commit desplegado a producción debe incluirlo. |
 | Cuentas de tiendas (Apple/Google) | No se puede publicar en tiendas. | Fuera de alcance de la Fase 1: distribución interna por enlace (APK `preview`). |
 
 ## 7. Cronograma
@@ -145,9 +145,8 @@ agendadas ese día.
 ## 8. Ensayo sobre staging
 
 Ensayo del 2026-10-24 sobre staging (`dcvihomkxkutkckmjvmp`), commit `32a4183`
-(`main`). En esta máquina no hay Supabase CLI ni sesión de CLI, así que los pasos que
-la requieren se verificaron por la API de administración de Supabase (servidor MCP)
-y se marcan así.
+(`main`). Los primeros pasos se verificaron por la API de administración de Supabase
+(servidor MCP); después se repitieron con la CLI de Supabase 2.122.0 (`npx supabase`).
 
 | Fecha | Operador | Versión de Supabase CLI | Commit desplegado | Paso | Resultado |
 |---|---|---|---|---|---|
@@ -155,4 +154,5 @@ y se marcan así.
 | 2026-10-24 07:49 UTC | Operador técnico (asistido) | sin CLI | `32a4183` | 6 Estado de la base (RLS, `app_backend`, grants, bucket, extensiones) | **Pasó.** Ver checklist en `docs/deployment/INFRA-VALIDATION.md`. |
 | 2026-10-24 07:52 UTC | Operador técnico (asistido) | sin CLI | `32a4183` | 8 Function `api` desplegada = commit | **Pasó.** Versión 116 ACTIVE; 83/83 archivos desplegados idénticos (SHA-256) a `supabase/functions/api/` en `32a4183`. |
 | 2026-10-24 07:50 UTC | Operador técnico (asistido) | sin CLI | `32a4183` | 8 `npm run smoke` (3 corridas) | **Pasó.** Ver registro en `docs/deployment/INFRA-VALIDATION.md`. |
-| 2026-10-24 | — | — | — | 5 `supabase db push --dry-run` y 8 `supabase functions deploy api --use-api` con la CLI | **Pendiente:** requiere la sesión de CLI del operador (token de acceso), que no está en esta máquina. |
+| 2026-10-24 08:23 UTC | Operador técnico (asistido) | 2.122.0 | `0fb3f76` (corrección de INC-4, PR #91) | 8 `supabase functions deploy api --use-api` | **Pasó.** "Deployed Functions."; smoke check OK; k6 0 % de errores con 2 a 25 usuarios. Reversión probada como procedimiento: volver a desplegar `main`. |
+| 2026-10-24 08:30 UTC | Operador técnico (asistido) | 2.122.0 | — | 3 y 5 `supabase link --project-ref dcvihomkxkutkckmjvmp` y `supabase db push --dry-run` | **Pasó.** "Remote database is up to date."; ninguna migración pendiente. |

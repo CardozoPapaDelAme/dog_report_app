@@ -1,6 +1,6 @@
 # Validación de infraestructura (health/check)
 
-Estado: ejecutada sobre staging el 2026-10-24, con un incidente abierto (INC-4).
+Estado: ejecutada sobre staging el 2026-10-24. El incidente INC-4 se corrigió y verificó el mismo día (PR #91).
 Guía de la tarea: [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D2.
 
 Validar la infraestructura es comprobar, con evidencia, que cada pieza desplegada
@@ -51,7 +51,7 @@ servidor MCP (consultas SQL de solo lectura, advisors y listado de Functions).
 | `app_backend` `NOBYPASSRLS` sin objetos propios | `pg_roles` y dueños en `pg_class` | `rolbypassrls = false`, 0 objetos | **Cumple.** `bypassrls=false`, `superuser=false`, 0 objetos propios. | 2026-10-24 | Operador técnico (asistido) |
 | Grants móviles vacíos | `information_schema.role_table_grants` para `anon` y `authenticated` en `public` | Ninguno | **Cumple.** Ningún grant. | 2026-10-24 | Operador técnico (asistido) |
 | Bucket aprobado privado | `storage.buckets` | `approved-photos` con `public = false` | **Cumple.** `approved-photos`, `public=false` (18 objetos, 10 MB). | 2026-10-24 | Operador técnico (asistido) |
-| Secretos requeridos presentes (solo nombres) | `supabase secrets list` | Los 6 nombres de `docs/deployment/MIGRATION-PLAN.md` | **Cumple de forma indirecta:** la base responde con `app_backend` y la configuración pública se lee por entorno (`GET /public/photo-validation` → 200, versión 4). `supabase secrets list` queda **pendiente** (sin sesión de CLI en la VPS). | 2026-10-24 | Operador técnico (asistido) |
+| Secretos requeridos presentes (solo nombres) | `supabase secrets list` | Los 6 nombres de `docs/deployment/MIGRATION-PLAN.md` | **Cumple.** `supabase secrets list` (CLI 2.122.0, 08:20 UTC) muestra `APP_BACKEND_DATABASE_URL`, `INTERNAL_RETENTION_SECRET`, `EXPECTED_SUPABASE_PROJECT_REF`, `EXPECTED_DEPLOYMENT_ENVIRONMENT` y `APPROVED_PHOTOS_BUCKET`, más los que inyecta el proveedor (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`). `JWT_SECRET` es opcional (la verificación usa JWKS) y no está definido. `ALLOW_REPORTS_WITHOUT_ACTIVE_GEOFENCE` está definido, lo cual es válido solo en staging. | 2026-10-24 | Operador técnico (asistido) |
 | Signup público deshabilitado (`422 signup_disabled`) | `POST /auth/v1/signup` con la clave publicable (script de humo) | `422 signup_disabled` | **Cumple.** `422 signup_disabled` en 3/3 corridas. | 2026-10-24 | Operador técnico (asistido) |
 | Advisors de seguridad y rendimiento | Advisors de Supabase | Sin hallazgos críticos | **Cumple con observaciones.** Seguridad: 1 WARN `auth_leaked_password_protection` (función del plan Pro; aceptado en `docs/SECURITY.md`). Rendimiento: 10 INFO de llaves foráneas sin índice y 3 INFO de índices sin uso (aceptados por el bajo volumen, `docs/DEPLOYMENT.md`). | 2026-10-24 | Operador técnico (asistido) |
 | HTTPS/TLS | `curl` por HTTP y `openssl s_client` | HTTP redirige a HTTPS; certificado válido | **Cumple.** HTTP → `301` a HTTPS; TLS 1.3 (`TLS_AES_256_GCM_SHA384`), certificado de Google Trust Services válido hasta 2026-11-24 (renovación automática del proveedor). | 2026-10-24 | Operador técnico (asistido) |
@@ -109,6 +109,9 @@ habilitado, error de red, omisión sin clave, lectura de variables y formato.
 | 2026-10-24 07:50:13 UTC | staging | `32a4183` | `npm run smoke` | Pasó | 306 / 430 / 428 / 218 ms. |
 | 2026-10-24 07:56 UTC | staging | `32a4183` | Monitor Python (`examples/python_health/`) | Pasó (`up`) | api_database 894 ms, public_clusters 504 ms, public_reports 510 ms. |
 | 2026-10-24 07:50–07:55 UTC | staging | `32a4183` | k6 y `curl` en paralelo | **Falló:** ver INC-4 | Peticiones colgadas bajo concurrencia. |
+| 2026-10-24 08:21 UTC | staging | `32a4183` | k6, 10 usuarios (antes del fix) | **Falló** | 161 peticiones, 4.97 % sin respuesta (60 s). |
+| 2026-10-24 08:23 UTC | staging | `0fb3f76` | `supabase functions deploy api --use-api` + smoke check | Pasó | Despliegue del fix de INC-4; health 1,073 ms (arranque en frío), clusters 446 ms, reports 440 ms, signup 390 ms. |
+| 2026-10-24 08:23–08:27 UTC | staging | `0fb3f76` | k6 con 2, 5, 10 y 25 usuarios | Pasó | 0 % de errores en 91, 200, 326 y 733 peticiones; p95 449 / 1,053 / 1,800 / 2,143 ms. |
 
 ## 5. Incidente INC-4 — Peticiones que tocan la base se quedan sin respuesta
 
@@ -124,8 +127,10 @@ Registrado también en `docs/testing/INCIDENTS.md`.
 | Resultado obtenido | k6 con 10 usuarios: 33 peticiones, **36 % fallidas** por tiempo límite de 60 s. Con 25 usuarios: 206 peticiones, 12 % fallidas. Con 5 usuarios (08:01 UTC): 9 peticiones, 67 % fallidas; con 2 usuarios (08:00 UTC): 89/89 correctas. Es decir, no crece con la carga: aparece por rachas. `curl` 10 en paralelo: 5 de 40 sin respuesta a los 20 s; en secuencia: 1 de 15. Una ruta que **no** toca la base (`/no-existe` → 404) respondió 30/30 en paralelo. |
 | Evidencia | Logs de la Function: las peticiones que sí llegaron terminaron en ≤ 2.8 s y hubo 3 respuestas `503` en `/health`; las colgadas no aparecen como terminadas. La conexión TLS se establece (≈ 0.05 s) pero no llega el primer byte. |
 | Diagnóstico | Los logs de la Function registran el aviso de PostgreSQL `25001 there is already a transaction in progress` (2 veces entre 07:50 y 08:04 UTC): una transacción se abre sobre una conexión que ya tenía otra abierta. **Hipótesis pendiente de confirmar:** el cliente de PostgreSQL de la Function usa una sola conexión por instancia (`max: 1` en `supabase/functions/api/infrastructure/db.js`) a través de Supavisor, sin tiempo límite por consulta. Si esa conexión queda en mal estado (por ejemplo, una transacción que no se cerró), las peticiones de esa instancia esperan indefinidamente. Tras unos minutos sin carga el servicio vuelve a responder 12/12 (08:03 UTC). |
-| Solución propuesta | Agregar un tiempo límite por consulta y reconexión al detectar la conexión caída; evaluar `max` > 1; repetir k6 con 10 y 25 usuarios. Cambio de backend con su propia prueba y despliegue. |
-| Estado y responsable | Abierto; operador técnico del equipo. |
+| Causa confirmada | Supavisor atiende a la Function en **modo transacción** (`mode: :transaction` en sus logs) y la librería `postgres` manda en *pipeline* las consultas concurrentes de una instancia por su única conexión; Supavisor no maneja ese pipeline entre transacciones. Se confirmó porque al eliminar el pipeline desaparecieron las fallas y el aviso `25001`. |
+| Solución | PR #91, commit `0fb3f76`: `supabase/functions/api/infrastructure/db.js` pone en cola las operaciones de cada instancia (una consulta o transacción a la vez) y agrega un tiempo límite de 10 s que responde `503 database_unavailable`, descarta la conexión y abre una nueva. 5 pruebas nuevas; suites Deno (402) y PostgreSQL (7/7) en verde. |
+| Verificación y cierre | Desplegado en staging el 2026-10-24 08:23 UTC. k6 antes: 5 % a 67 % de fallas con 5 a 25 usuarios; después: **0 %** con 2, 5, 10 y 25 usuarios (p95 ≤ 2,143 ms). Sin avisos `25001` ni respuestas `5xx` en los logs de 08:23 a 08:28 UTC. |
+| Estado y responsable | Corregido en staging; se cierra al fusionar el PR #91 en `main`. Operador técnico del equipo. |
 
-Este incidente es el motivo de que la capacidad comprometida en el SLA sea la
-medida sin errores (`docs/deployment/SLA.md`, sección 3).
+Con la corrección, la capacidad comprometida en el SLA sube a 25 usuarios
+simultáneos (`docs/deployment/SLA.md`, sección 3).

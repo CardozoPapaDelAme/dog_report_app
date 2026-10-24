@@ -19,7 +19,7 @@ mide y con qué evidencia.
 |---|---|---|---|
 | Tiempo de respuesta de funciones críticas | API: p95 ≤ 3,000 ms; mapa visible < 5,000 ms; envío de reporte < 5,000 ms | k6, `npm run smoke`, monitor Python, logs de la Function | Sección 1: p95 de lecturas 648–1,095 ms; mapa 3,800 ms; envío 2,380 ms |
 | Disponibilidad | 80 % mensual (≈ 292 días/año) | UptimeRobot cada 5 min | Sección 2: monitor pendiente de alta; 0.05 % de respuestas `5xx` en 24 h |
-| Capacidad | 2 usuarios simultáneos garantizados sin errores; meta 25 tras corregir INC-4 | k6 con usuarios virtuales | Sección 3: 2 usuarios 89/89 correctas; 5–25 usuarios con fallas (INC-4) |
+| Capacidad | 25 usuarios simultáneos sin errores | k6 con usuarios virtuales | Sección 3: 733/733 correctas con 25 usuarios, p95 2,143 ms (tras corregir INC-4) |
 | Privacidad | No se almacenan datos personales del reportero | Revisión del diseño y del esquema | Sección 4 |
 | Respaldo | Cada 7 días | Registro de exportaciones | Sección 5: primera exportación pendiente (sin credenciales en la VPS) |
 | Respuesta a incidentes | Primera respuesta ≤ 24 horas | Registro de incidentes | Sección 6 |
@@ -48,7 +48,7 @@ eligió 3,000 ms porque lo medido (p95 ≈ 1,100 ms) deja margen para la red cel
 Creel y para los arranques en frío de la Function.
 
 **Exclusiones:** el primer acceso tras un periodo sin uso (arranque en frío), la red
-del teléfono del usuario y las peticiones afectadas por INC-4 mientras siga abierto.
+del teléfono del usuario.
 
 ## 2. Disponibilidad
 
@@ -81,12 +81,16 @@ Fuentes: `docs/deployment/MONITORING.md`, `docs/DEPLOYMENT.md`.
 | 2026-10-24 08:01 | 5 | 9 | 67 % | 60,000 ms (tiempo límite) | Falló (INC-4) |
 | 2026-10-24 07:50 | 10 | 33 | 36 % | 60,000 ms (tiempo límite) | Falló (INC-4) |
 | 2026-10-24 07:51 | 25 | 206 | 12 % | 60,000 ms (tiempo límite) | Falló (INC-4) |
+| 2026-10-24 08:23 (con la corrección de INC-4) | 2 | 91 | 0 % | 449 ms | Pasó |
+| 2026-10-24 08:24 (con la corrección) | 5 | 200 | 0 % | 1,053 ms | Pasó |
+| 2026-10-24 08:25 (con la corrección) | 10 | 326 | 0 % | 1,800 ms | Pasó |
+| 2026-10-24 08:26 (con la corrección) | 25 | 733 | 0 % | 2,143 ms | Pasó |
 
-- **Objetivo comprometido hoy:** **2 usuarios simultáneos** sin errores, que es lo
-  demostrado. Es suficiente para la operación inicial en Creel (reportes esporádicos
-  y consulta del mapa), pero no para un pico de turistas.
-- **Meta tras corregir INC-4:** 25 usuarios simultáneos con 0 % de errores y p95 ≤
-  3,000 ms, verificada repitiendo esta tabla.
+- **Objetivo comprometido:** **25 usuarios simultáneos** con 0 % de errores y p95 ≤
+  3,000 ms, que es lo demostrado tras corregir INC-4 (PR #91). Las primeras corridas
+  con 5 a 25 usuarios fallaron por INC-4 y se conservan en la tabla como evidencia.
+- **Más allá de 25:** sin medir; se prueba antes de una temporada alta de turismo,
+  cuidando la cuota de invocaciones.
 - **Límites del plan Free** que acotan la capacidad: 500k invocaciones al mes (hoy se
   proyectan ≈ 177k), 500 MB de base (21 MB usados), 1 GB de Storage (10 MB usados),
   5 GB de egress y 60 conexiones a PostgreSQL (12 en uso).
@@ -156,5 +160,5 @@ responsable, y avisar a la Asociación si la afecta.
 - **Vigencia:** Fase 1 (prototipo en staging y primera operación), desde el
   2026-10-24 hasta el paso a producción o un cambio de plan del proveedor.
 - **Revisión:** mensual por el equipo, con los datos de UptimeRobot, los dashboards
-  de Supabase y el registro de incidentes; y obligatoria al cerrar INC-4 (para subir
-  la capacidad comprometida) y antes de producción (para RPO/RTO).
+  de Supabase y el registro de incidentes; y obligatoria antes de producción (para
+  RPO/RTO).

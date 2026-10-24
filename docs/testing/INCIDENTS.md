@@ -10,7 +10,7 @@ Ordenar por severidad y estado al consolidar. INC-n es consecutivo global.
 
 | ID | Fecha | Caso o suite CI | Ejecución del test log | Severidad | Módulo | Jira | Estado | Responsable | Corrección y verificación |
 |---|---|---|---|---|---|---|---|---|---|
-| INC-4 | 2026-10-24 | Validación de infraestructura (Etapa 5) | k6 y `curl` sobre staging | alta | API / BASE DE DATOS | Pendiente (operador técnico) | abierto | Operador técnico | Diagnóstico y solución propuesta en `docs/deployment/INFRA-VALIDATION.md`, sección 5 |
+| INC-4 | 2026-10-24 | Validación de infraestructura (Etapa 5) | k6 y `curl` sobre staging | alta | API / BASE DE DATOS | No aplica: corregido el mismo día con PR #91 | corregido | Operador técnico | Commit `0fb3f76` (PR #91); k6 0 % de errores con 2 a 25 usuarios en staging; se cierra al fusionar en `main` |
 | INC-1 | 2026-10-10 | TC-MODERACION-07 | RUN-48 | media | MODERACION | TD-129 | cerrado | Alan Ruiz | Commit `313f045`; verificado en RUN-82 |
 | INC-3 | 2026-10-11 | TC-UAT-02 | RUN-126 | media | MAPA / UAT | No aplica: hallazgo UAT, sin defecto confirmado | cerrado | Ricardo Becerra Bitar | RUN-133 pasó con fixture público; se conserva la dificultad de navegación como hallazgo de usabilidad |
 | INC-2 | 2026-10-11 | TC-ALPHA-14 | RUN-96 | baja | REPORTE / PRIVACIDAD | TD-130 | cerrado | Erick Herrera | Correctivo `f18ba0b` (PR #64); verificado en Android real en RUN-137 |
@@ -140,11 +140,11 @@ que pruebe la corrección y deje evidencia vinculada.
 | Resultado obtenido | 36 % de fallas por tiempo límite con 10 usuarios, 67 % con 5 y 12 % con 25 (por rachas, no proporcional a la carga); 5/40 `curl` sin respuesta; una ruta sin base respondió 30/30 |
 | Evidencia | `docs/deployment/INFRA-VALIDATION.md`, sección 5 |
 | Ticket de bug en Jira | Pendiente; responsable: operador técnico |
-| Estado y responsable | abierto; operador técnico |
-| Diagnóstico | Aviso `25001 there is already a transaction in progress` en los logs de la Function. Hipótesis: una sola conexión por instancia (`max: 1` en `supabase/functions/api/infrastructure/db.js`) sin tiempo límite por consulta |
-| Solución | Pendiente: tiempo límite por consulta, reconexión y evaluar `max` > 1 |
-| Commit o PR correctivo | Abierto |
-| Verificación y cierre | Repetir k6 con 10 y 25 usuarios sin errores |
+| Estado y responsable | corregido (pendiente de fusionar PR #91); operador técnico |
+| Diagnóstico | Supavisor en modo transacción y la librería `postgres` con pipeline de consultas concurrentes sobre una sola conexión (`max: 1` en `supabase/functions/api/infrastructure/db.js`); aviso `25001 there is already a transaction in progress` |
+| Solución | Cola por instancia (una operación a la vez) y tiempo límite de 10 s con reconexión |
+| Commit o PR correctivo | `0fb3f76`, PR #91 |
+| Verificación y cierre | 2026-10-24 08:23–08:27 UTC en staging: k6 con 2, 5, 10 y 25 usuarios, 0 % de errores (91, 200, 326 y 733 peticiones); sin `25001` ni `5xx` en logs |
 
 ## Anexo histórico (T11)
 
