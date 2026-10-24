@@ -287,6 +287,14 @@ Monitor database/storage/egress/Function usage against Free quotas, API latency 
 errors, Auth failures, Postgres connections/slow queries, image outcomes, retention
 lag, complete milestone-export age, security audit volume, and project pause state.
 
+Stage 5 records the migration plan, infrastructure validation, monitoring setup,
+service-level commitments and backup runs in
+[`deployment/MIGRATION-PLAN.md`](deployment/MIGRATION-PLAN.md),
+[`deployment/INFRA-VALIDATION.md`](deployment/INFRA-VALIDATION.md),
+[`deployment/MONITORING.md`](deployment/MONITORING.md),
+[`deployment/SLA.md`](deployment/SLA.md) and
+[`deployment/BACKUP-LOG.md`](deployment/BACKUP-LOG.md).
+
 ## Incident priorities
 
 1. Protect and rotate secrets; deactivate compromised profiles/sessions.
