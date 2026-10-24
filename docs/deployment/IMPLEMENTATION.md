@@ -65,7 +65,8 @@ Fuente: `docs/TRACEABILITY.md`, "Matriz de verificación de Etapa 4".
 | RNF19, RNF20 | Catálogos, RLS y grants del proyecto vigente | Checklist sobre staging: RLS 13/13, sin grants móviles, `app_backend` `NOBYPASSRLS` |
 | RNF25 | Monitoreo real | Smoke check, monitor Python y tabla de señales |
 
-- **Siguen pendientes:** respaldo y restauración ensayados (RNF14, RNF18), medición
+- **Siguen pendientes:** el ensayo de restauración (RNF14, RNF18; la primera exportación
+  completa ya se hizo, ver `docs/deployment/BACKUP-LOG.md`), medición
   en teléfono físico y en iPhone real (RNF02, RNF05), y las inspecciones restantes
   que lista `docs/TRACEABILITY.md`.
 

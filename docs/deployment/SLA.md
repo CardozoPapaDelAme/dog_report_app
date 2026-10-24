@@ -21,7 +21,7 @@ mide y con qué evidencia.
 | Disponibilidad | 80 % mensual (≈ 292 días/año) | UptimeRobot cada 5 min | Sección 2: monitor pendiente de alta; 0.05 % de respuestas `5xx` en 24 h |
 | Capacidad | 25 usuarios simultáneos sin errores | k6 con usuarios virtuales | Sección 3: 733/733 correctas con 25 usuarios, p95 2,143 ms (tras corregir INC-4) |
 | Privacidad | No se almacenan datos personales del reportero | Revisión del diseño y del esquema | Sección 4 |
-| Respaldo | Cada 7 días | Registro de exportaciones | Sección 5: primera exportación pendiente (sin credenciales en la VPS) |
+| Respaldo | Cada 7 días | Registro de exportaciones | Sección 5: primera exportación completa y verificada el 2026-10-24; restauración sin ensayar |
 | Respuesta a incidentes | Primera respuesta ≤ 24 horas | Registro de incidentes | Sección 6 |
 
 ## 1. Tiempo de respuesta de funciones críticas
@@ -129,8 +129,9 @@ Fuentes: `docs/deployment/BACKUP-LOG.md`, RNF14 y RNF18.
 - **Producción** exige RPO ≤ 24 h y RTO ≤ 4 h demostrados (RNF14); requiere
   respaldos diarios o un plan de pago, y no se ha demostrado.
 - **Evidencia:** calendario y registro en `docs/deployment/BACKUP-LOG.md`. La
-  primera exportación está pendiente porque la VPS del equipo no tiene la sesión de
-  la CLI de Supabase ni la cadena de conexión de la base.
+  primera exportación completa se hizo el 2026-10-24 en unos 3 minutos: roles,
+  esquema, datos y las 18 fotos, con conteos y tamaños iguales a la base. Falta
+  cifrarla y ensayar la restauración para medir el RTO.
 
 ## 6. Respuesta a incidentes
 
