@@ -1,8 +1,9 @@
 # Monitoreo de infraestructura
 
-Estado: mecanismos definidos y probados sobre staging (2026-10-24); faltan las
-capturas de los dashboards y dar de alta UptimeRobot y el servicio Python con las
-cuentas del equipo (marcado "pendiente" abajo). Guía de la tarea:
+Estado: monitoreo automático **activo** sobre staging desde el 2026-10-24 (monitor
+programado en GitHub Actions cada 15 minutos, sección 2). Faltan las capturas de los
+dashboards; UptimeRobot y el servicio Python en Render son extensiones opcionales
+(marcadas "opcional" abajo). Guía de la tarea:
 [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D3. Cubre RNF25.
 
 Capturas en `docs/deployment/img/`, sin claves, correos ni IDs sensibles.
@@ -14,17 +15,17 @@ gratuitos consume. Se usan cuatro mecanismos complementarios:
 | Mecanismo | Pregunta que responde | Quién avisa |
 |---|---|---|
 | Dashboards de Supabase | ¿Cuánto se usa y dónde están los errores? | Revisión del operador (Free no envía alertas de uso) |
-| UptimeRobot | ¿Está arriba ahora mismo? | Correo automático a los responsables |
-| Monitor sintético en Python | ¿Responden todas las piezas y a tiempo? | UptimeRobot, al recibir un `503` |
+| Monitor programado (GitHub Actions, **activo**) | ¿Está arriba ahora mismo y responde a tiempo? | Correo automático de GitHub cuando una corrida falla |
 | Script de humo (`npm run smoke`) | ¿Quedó bien el despliegue que acabo de hacer? | El operador, al ejecutarlo |
+| Monitor sintético en Python (opcional) | ¿Responden todas las piezas y a tiempo, en un solo JSON? | UptimeRobot, al recibir un `503` |
+| UptimeRobot (opcional) | Segunda vigilancia externa cada 5 min | Correo automático a los responsables |
 
 ```mermaid
 flowchart LR
-  UR[UptimeRobot<br/>cada 5 min] -->|GET /health| API[Edge Function api]
-  UR -->|GET /health| PY[Monitor Python<br/>servicio gratuito]
-  PY -->|/health, /public/clusters, /public/reports| API
+  GH[GitHub Actions<br/>cada 15 min] -->|/health, /public/clusters, /public/reports| API[Edge Function api]
+  GH -->|POST /auth/v1/signup| AUTH[Supabase Auth]
   API --> DB[(PostgreSQL / PostGIS)]
-  UR -->|alerta por correo| OP[Operador técnico]
+  GH -->|correo si falla| OP[Operador técnico]
   OP -->|revisión semanal| DASH[Dashboards de Supabase]
 ```
 
@@ -50,27 +51,54 @@ tiene sesión), tapando claves y correos, y se guardan en `docs/deployment/img/`
 PNG con los nombres `01-usage`, `02-edge-functions`, `03-query-performance`,
 `04-auth` y `05-advisors`.
 
-## 2. Monitor de disponibilidad (UptimeRobot)
+## 2. Monitor programado (GitHub Actions)
 
-UptimeRobot (plan gratuito) llama a una URL cada 5 minutos y envía un correo cuando deja de responder y otro cuando se recupera. Es externo a
-Supabase, así que avisa aunque el proyecto completo esté caído o pausado.
+El workflow `.github/workflows/staging-monitor.yml` corre `scripts/smoke.mjs`
+contra staging **cada 15 minutos** desde el 2026-10-24. También se puede lanzar a
+mano (Actions → Staging monitor → Run workflow). Corre en la infraestructura de
+GitHub, fuera de Supabase, así que avisa aunque el proyecto completo esté caído o
+pausado.
 
-| Monitor | Tipo | URL | Intervalo | Condición de "arriba" |
-|---|---|---|---|---|
-| API Dog Report (staging) | HTTP(s) – Keyword | `https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api/health` | 5 min | Responde y contiene la palabra `"up"` |
-| Monitor sintético (Python) | HTTP(s) | `https://<servicio>/health` (sección 3) | 5 min | Código `200` (un `503` = componente caído) |
-
-- **Contactos de alerta:** correo de los responsables de operación.
-- **Página de estado pública:** UptimeRobot → Status Pages, con los dos monitores;
-  su enlace se anota en la tabla de abajo y en el SLA.
-- **Consumo de cuota:** 1 invocación cada 5 min ≈ 8.6k/mes (2 % de la cuota Free);
-  además mantiene el proyecto activo, lo que evita la pausa por inactividad.
-
-| Dato | Valor |
+| Chequeo | Condición de "arriba" |
 |---|---|
-| Fecha de alta de los monitores | Pendiente (requiere la cuenta del equipo) |
-| Enlace de la página de estado | Pendiente |
-| Primera alerta de prueba recibida | Pendiente |
+| `GET /health` | `200` y `data.database == "up"` (la API llega a la base) |
+| `GET /public/clusters` | `200` con una lista |
+| `GET /public/reports` | `200` con una lista |
+| `POST /auth/v1/signup` | `422 signup_disabled` (el registro público sigue bloqueado) |
+
+- **Alerta:** si un chequeo falla, la corrida termina en rojo y GitHub envía un correo
+  de "workflow run failed" a la cuenta que creó el workflow; el historial de corridas
+  es el registro de disponibilidad.
+- **Evidencia por corrida:** el resumen de cada corrida guarda la latencia de cada
+  chequeo.
+- **Llave:** solo la llave publicable, en el secreto del repositorio
+  `STAGING_SUPABASE_PUBLISHABLE_KEY`; ningún secreto del servidor.
+- **Consumo de cuota:** 3 invocaciones de la Function por corrida ≈ 8.6k/mes (2 % de
+  la cuota Free); además mantiene el proyecto activo, lo que evita la pausa por
+  inactividad.
+- **Límites conocidos:** GitHub puede retrasar unos minutos las corridas programadas
+  en horas de carga, y desactiva los workflows programados de un repositorio público
+  tras 60 días sin actividad (se reactiva con un clic).
+- **Apagarlo:** Actions → Staging monitor → Disable workflow.
+
+**Primera corrida (2026-10-24 16:33 UTC):**
+[run 40112072316](https://github.com/CardozoPapaDelAme/dog_report_app/actions/runs/40112072316),
+resultado correcto:
+
+```text
+OK       GET /health            200  1048 ms
+OK       GET /public/clusters   200  1137 ms
+OK       GET /public/reports    200  967 ms
+OK       POST /auth/v1/signup   422  304 ms
+Resultado: OK
+```
+
+### Extensión opcional: UptimeRobot
+
+Si el equipo quiere una segunda vigilancia cada 5 minutos con página de estado
+pública, UptimeRobot (plan gratuito) puede vigilar
+`https://dcvihomkxkutkckmjvmp.supabase.co/functions/v1/api/health` (tipo Keyword,
+palabra `"up"`) y el monitor Python de la sección 3. No está dado de alta.
 
 ## 3. Health check en Python
 
@@ -108,18 +136,18 @@ Respuesta real contra staging (2026-10-24 07:56 UTC):
 **Despliegue:** en un servicio web gratuito (Render): raíz
 `examples/python_health`, build: instalar con pip
 `examples/python_health/requirements.txt`, arranque
-`uvicorn app:app --host 0.0.0.0 --port $PORT`. URL pública: **pendiente** (requiere
-la cuenta del equipo en Render).
+`uvicorn app:app --host 0.0.0.0 --port $PORT`. Opcional: no está desplegado; el monitor programado de la sección 2 ya
+cubre los mismos chequeos.
 
 ## 4. Qué se monitorea (RNF25)
 
 | Señal | Herramienta | Frecuencia | Umbral | Responsable |
 |---|---|---|---|---|
 | Cuotas Free | Dashboard Usage | Semanal (manual) | 80 % de cualquier cuota | Operador técnico |
-| Errores de la API | UptimeRobot + monitor Python; dashboard Edge Functions | Cada 5 min (automático) / semanal | Un chequeo fallido; `5xx` > 1 % por hora | Operador técnico |
-| Latencia | Monitor Python (`latency_ms`); `npm run smoke` tras cada despliegue | Cada 5 min | > 3,000 ms (estado `slow`) | Operador técnico |
+| Errores de la API | Monitor programado (GitHub Actions); dashboard Edge Functions | Cada 15 min (automático) / semanal | Un chequeo fallido; `5xx` > 1 % por hora | Operador técnico |
+| Latencia | Monitor programado (latencia por chequeo); `npm run smoke` tras cada despliegue | Cada 15 min | > 3,000 ms (estado `slow`) | Operador técnico |
 | Conexiones a PostgreSQL | Dashboard Database | Semanal (manual) | > 48 de 60 | Operador técnico |
-| Pausa del proyecto | UptimeRobot (deja de responder) | Cada 5 min | Cualquier caída > 10 min | Operador técnico |
+| Pausa del proyecto | Monitor programado (deja de responder) | Cada 15 min | Cualquier caída > 10 min | Operador técnico |
 | Retención y scheduler | Logs de `POST /internal/retention/run` | Semanal (manual) | Sin corrida exitosa en 7 días | Operador técnico |
 | Antigüedad de la última exportación | `docs/deployment/BACKUP-LOG.md` | Semanal (manual) | > 7 días | Operador técnico |
 | Volumen de auditoría | Consulta de conteo sobre `audit_log` | Semanal (manual) | Pico inesperado de acciones de administración | Administrator |
@@ -133,9 +161,9 @@ automáticas, por eso las señales marcadas "manual" van en la revisión semanal
 
 Fuentes: `docs/DEPLOYMENT.md` ("Incident priorities"), `docs/deployment/SLA.md`.
 
-1. **Recepción:** UptimeRobot envía el correo a los responsables de operación.
+1. **Recepción:** GitHub envía el correo de la corrida fallida del monitor programado.
 2. **Confirmación (≤ 1 h en horario hábil):** el operador corre `npm run smoke` y
-   abre la respuesta del monitor Python para ver qué componente falla.
+   abre el resumen de la corrida fallida para ver qué chequeo falla.
 3. **Clasificación:** se asigna severidad con la tabla de `docs/testing/INCIDENTS.md`
    y se abre el incidente con su plantilla.
 4. **Escalamiento:** si en 4 h no hay diagnóstico, se avisa al resto del equipo de
@@ -148,7 +176,7 @@ Fuentes: `docs/DEPLOYMENT.md` ("Incident priorities"), `docs/deployment/SLA.md`.
 
 | Síntoma | Cómo se identifica | Causa probable | Solución |
 |---|---|---|---|
-| Todo caído; UptimeRobot y monitor Python en rojo | `npm run smoke` falla en las cuatro llamadas | Proyecto pausado por inactividad o incidente del proveedor | Reactivar el proyecto en el dashboard; revisar `https://status.supabase.com`. |
+| Todo caído; el monitor programado en rojo en sus cuatro chequeos | `npm run smoke` falla en las cuatro llamadas | Proyecto pausado por inactividad o incidente del proveedor | Reactivar el proyecto en el dashboard; revisar `https://status.supabase.com`. |
 | `/health` responde `503 database_unavailable` | Componente `api_database` en `down` | Base no disponible o conexión rechazada | Revisar Database → conexiones; revisar el secreto `APP_BACKEND_DATABASE_URL`; reintentar. |
 | Peticiones sin respuesta hasta el tiempo límite | Monitor Python con `ReadTimeout` | Una operación de base excedió 10 s (desde la corrección de INC-4 la API responde `503` y reconecta sola) | Reintentar; si se repite, revisar consultas lentas en Query Performance y el estado de Supavisor. |
 | Rutas de administración responden `503 preflight_mismatch` | La app del Administrator no carga configuración | `EXPECTED_DEPLOYMENT_ENVIRONMENT` ausente o distinto de `deployment_metadata.environment` | Corregir el secreto con `supabase secrets set` y verificar. |

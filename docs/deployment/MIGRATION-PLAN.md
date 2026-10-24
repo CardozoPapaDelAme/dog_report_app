@@ -109,7 +109,7 @@ Fuentes: `docs/DEPLOYMENT.md` ("Milestone export and restore runbook"),
 |---|---|---|
 | Geofence sin aprobar | Producción no acepta reportes (fail-closed). | Es bloqueante: no hay despliegue hasta la aprobación. |
 | Cuotas del plan Free (500 MB BD, 1 GB Storage, 5 GB egress, 500k invocaciones) | Servicio degradado al llegar al límite. | Monitoreo de Usage con umbral al 80 %; hoy staging usa 21 MB de BD, 10 MB de Storage y ≈ 5.9k invocaciones/día. |
-| Pausa por inactividad del plan Free | API inaccesible hasta reactivar el proyecto. | El monitor externo llama cada 5 min, lo que mantiene actividad y alerta si se pausa. |
+| Pausa por inactividad del plan Free | API inaccesible hasta reactivar el proyecto. | El monitor programado (GitHub Actions) llama cada 15 min, lo que mantiene actividad y alerta si se pausa. |
 | Sin respaldos automáticos en Free | Pérdida de datos ante un error. | Exportación semanal manual (`docs/deployment/BACKUP-LOG.md`). |
 | Peticiones colgadas bajo concurrencia (INC-4, `docs/deployment/INFRA-VALIDATION.md`) | Algunas lecturas que tocan la base no responden. | Corregido (PR #91, 0 % de errores con 25 usuarios en staging); el commit desplegado a producción debe incluirlo. |
 | Cuentas de tiendas (Apple/Google) | No se puede publicar en tiendas. | Fuera de alcance de la Fase 1: distribución interna por enlace (APK `preview`). |

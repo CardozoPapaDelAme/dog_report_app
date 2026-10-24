@@ -17,8 +17,8 @@ mide y con qué evidencia.
 
 | Compromiso | Objetivo | Medición | Evidencia |
 |---|---|---|---|
-| Tiempo de respuesta de funciones críticas | API: p95 ≤ 3,000 ms; mapa visible < 5,000 ms; envío de reporte < 5,000 ms | k6, `npm run smoke`, monitor Python, logs de la Function | Sección 1: p95 de lecturas 648–1,095 ms; mapa 3,800 ms; envío 2,380 ms |
-| Disponibilidad | 80 % mensual (≈ 292 días/año) | UptimeRobot cada 5 min | Sección 2: monitor pendiente de alta; 0.05 % de respuestas `5xx` en 24 h |
+| Tiempo de respuesta de funciones críticas | API: p95 ≤ 3,000 ms; mapa visible < 5,000 ms; envío de reporte < 5,000 ms | k6, `npm run smoke` (también cada 15 min en el monitor programado), logs de la Function | Sección 1: p95 de lecturas 648–1,095 ms; mapa 3,800 ms; envío 2,380 ms |
+| Disponibilidad | 80 % mensual (≈ 292 días/año) | Monitor programado (GitHub Actions) cada 15 min | Sección 2: monitor activo desde el 2026-10-24, primera corrida correcta; 0.05 % de respuestas `5xx` en 24 h |
 | Capacidad | 25 usuarios simultáneos sin errores | k6 con usuarios virtuales | Sección 3: 733/733 correctas con 25 usuarios, p95 2,143 ms (tras corregir INC-4) |
 | Privacidad | No se almacenan datos personales del reportero | Revisión del diseño y del esquema | Sección 4 |
 | Respaldo | Cada 7 días | Registro de exportaciones | Sección 5: primera exportación completa y verificada el 2026-10-24; restauración sin ensayar |
@@ -55,15 +55,16 @@ del teléfono del usuario.
 Fuentes: `docs/deployment/MONITORING.md`, `docs/DEPLOYMENT.md`.
 
 - **Métrica:** porcentaje del mes en que `GET /functions/v1/api/health` responde
-  correctamente, medido por UptimeRobot cada 5 minutos.
+  correctamente: porcentaje de corridas correctas del monitor programado de GitHub
+  Actions, que la revisa cada 15 minutos.
 - **Objetivo:** **80 % mensual**, equivalente a unos 292 días al año (≈ 144 horas de
   caída permitidas por mes de 30 días). Es una meta de "mejor esfuerzo" coherente con
   RNF01: el 99.9 % queda como meta futura con un plan de pago.
 - **Evidencia hoy:** en las últimas 24 h solo 3 de 5,909 peticiones (0.05 %)
   respondieron `5xx`; la validación de infraestructura pasó
-  (`docs/deployment/INFRA-VALIDATION.md`). El porcentaje mensual oficial empieza a
-  contar cuando se dé de alta el monitor de UptimeRobot (pendiente, requiere la cuenta
-  del equipo); su página de estado pública será la evidencia.
+  (`docs/deployment/INFRA-VALIDATION.md`). El monitor programado está activo desde
+  el 2026-10-24 (primera corrida correcta); el porcentaje mensual se calcula con su
+  historial de corridas en GitHub Actions.
 - **Exclusiones:** pausa del proyecto por inactividad del plan Free, mantenimientos e
   incidentes del proveedor (`https://status.supabase.com`), y ventanas de despliegue
   avisadas con 24 h de anticipación.
@@ -150,7 +151,8 @@ responsable, y avisar a la Asociación si la afecta.
 | Baja | ≤ 24 h | Siguiente versión | Defecto menor de presentación o documentación (INC-2). |
 
 - **Canal:** la Asociación reporta al responsable técnico por el canal acordado con
-  el equipo; las alertas automáticas llegan por correo desde UptimeRobot.
+  el equipo; las alertas automáticas llegan por correo desde GitHub cuando falla una corrida
+  del monitor programado.
 - **Horario:** días hábiles de 9:00 a 18:00 (hora de Chihuahua); fuera de ese horario
   el plazo empieza a contar el siguiente día hábil, salvo incidentes críticos.
 - **Responsable de guardia:** el operador técnico del equipo; registro y seguimiento
@@ -160,6 +162,6 @@ responsable, y avisar a la Asociación si la afecta.
 
 - **Vigencia:** Fase 1 (prototipo en staging y primera operación), desde el
   2026-10-24 hasta el paso a producción o un cambio de plan del proveedor.
-- **Revisión:** mensual por el equipo, con los datos de UptimeRobot, los dashboards
+- **Revisión:** mensual por el equipo, con el historial del monitor programado, los dashboards
   de Supabase y el registro de incidentes; y obligatoria antes de producción (para
   RPO/RTO).

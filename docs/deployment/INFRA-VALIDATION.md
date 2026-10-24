@@ -25,14 +25,15 @@ obtiene una conexión a PostgreSQL y ejecuta una consulta (`SELECT 1`) con el lo
 **Qué no valida:** Storage (el bucket es privado y el health check no tiene
 credenciales para él), Auth, el job de retención, que el geofence esté activo ni el
 rendimiento de consultas reales. Esas señales se cubren con el script de humo
-(sección 3), el monitor sintético en Python y los dashboards de Supabase
+(sección 3), que también corre cada 15 minutos como monitor programado, y los
+dashboards de Supabase
 (`docs/deployment/MONITORING.md`).
 
 **Decisión sobre ampliar la respuesta:** no se agregan `version` ni `latency_ms` al
 contrato. La versión desplegada se verifica comparando los archivos desplegados con
 el commit (checklist, último punto), lo que es más fuerte que un campo
-autodeclarado, y la latencia se mide desde fuera (script de humo, monitor Python,
-UptimeRobot), que es la que vive el usuario. Así `docs/API.md` no cambia.
+autodeclarado, y la latencia se mide desde fuera (script de humo y monitor
+programado), que es la que vive el usuario. Así `docs/API.md` no cambia.
 
 ## 2. Checklist de infraestructura
 

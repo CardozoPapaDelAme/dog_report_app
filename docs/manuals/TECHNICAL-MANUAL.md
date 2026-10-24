@@ -98,7 +98,8 @@ Puntos clave:
   secreto del servidor viaja al teléfono.
 - **Servicios externos:** EAS (compilación e instalación por enlace), OpenFreeMap
   (mapa interino sin llave; MapTiler es el objetivo, `docs/INTEGRATIONS.md`) y un
-  monitor HTTP externo de disponibilidad (`docs/deployment/MONITORING.md`).
+  GitHub Actions, que corre el monitor programado de disponibilidad cada 15 minutos
+  (`docs/deployment/MONITORING.md`).
 
 ### 3.2 Entornos
 
