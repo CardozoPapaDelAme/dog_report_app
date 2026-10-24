@@ -40,16 +40,19 @@ valores de la columna "Hoy" se leyeron el 2026-10-24 por la API de administraci�
 
 | Dashboard | Qué muestra | Hoy (staging) | Umbral de alerta | Acción | Captura |
 |---|---|---|---|---|---|
-| Usage (BD, Storage, egress, invocaciones) | Consumo del mes frente a la cuota Free: 500 MB de BD, 1 GB de Storage, 5 GB de egress, 500k invocaciones. | BD 21 MB (4 %); Storage 10 MB en 18 objetos (1 %); ≈ 5.9k invocaciones en 24 h (≈ 177k/mes proyectadas, 35 %). | 80 % de cualquier cuota. | Revisar qué lo provoca (carga de prueba, bucle de la app), borrar datos de prueba, o plan de pago. | Pendiente |
-| Edge Functions → `api` | Invocaciones, errores por código, tiempo de ejecución y logs de cada petición. | 5,909 invocaciones en 24 h; 3 respuestas `5xx` (0.05 %); tiempo de ejecución p50 515 ms, p95 1,095 ms. | `5xx` > 1 % en una hora, o p95 > 3,000 ms. | Abrir los logs filtrando por código; ver la sección 6. | Pendiente |
-| Database (Query Performance, conexiones) | Consultas más lentas y más frecuentes, conexiones abiertas. | 12 conexiones de 60. | Conexiones > 48 (80 %) o una consulta frecuente > 1 s. | Revisar la consulta en Query Performance; índices; INC-4. | Pendiente |
-| Auth | Inicios de sesión correctos y fallidos del personal. | Signup deshabilitado (`422`); 4 cuentas de personal (3 Administrator, 1 Asociación). | Más de 10 fallos seguidos de una cuenta, o un usuario nuevo inesperado. | Bloquear la cuenta y rotar su contraseña (`docs/DEPLOYMENT.md`, "Incident priorities"). | Pendiente |
-| Advisors (Security / Performance) | Configuración insegura o lenta detectada por Supabase. | 1 WARN aceptado (protección de contraseñas filtradas, solo Pro); 13 INFO aceptados. | Cualquier hallazgo nuevo de nivel WARN o ERROR. | Corregir con una migración y volver a correr los advisors. | Pendiente |
+| Usage (BD, Storage, egress, invocaciones) | Consumo del mes frente a la cuota Free: 500 MB de BD, 1 GB de Storage, 5 GB de egress, 500k invocaciones. | BD 21 MB (4 %); Storage 10 MB en 18 objetos (1 %); ≈ 5.9k invocaciones en 24 h (≈ 177k/mes proyectadas, 35 %). | 80 % de cualquier cuota. | Revisar qué lo provoca (carga de prueba, bucle de la app), borrar datos de prueba, o plan de pago. | Figura 3 |
+| Edge Functions → `api` | Invocaciones, errores por código, tiempo de ejecución y logs de cada petición. | 5,909 invocaciones en 24 h; 3 respuestas `5xx` (0.05 %); tiempo de ejecución p50 515 ms, p95 1,095 ms. | `5xx` > 1 % en una hora, o p95 > 3,000 ms. | Abrir los logs filtrando por código; ver la sección 6. | Figuras 1 y 2 |
+| Database (Query Performance, conexiones) | Consultas más lentas y más frecuentes, conexiones abiertas. | 12 conexiones de 60. | Conexiones > 48 (80 %) o una consulta frecuente > 1 s. | Revisar la consulta en Query Performance; índices; INC-4. | Figuras 4 y 5 |
+| Auth | Inicios de sesión correctos y fallidos del personal. | Signup deshabilitado (`422`); 4 cuentas de personal (3 Administrator, 1 Asociación). | Más de 10 fallos seguidos de una cuenta, o un usuario nuevo inesperado. | Bloquear la cuenta y rotar su contraseña (`docs/DEPLOYMENT.md`, "Incident priorities"). | No incluida |
+| Advisors (Security / Performance) | Configuración insegura o lenta detectada por Supabase. | 1 WARN aceptado (protección de contraseñas filtradas, solo Pro); 13 INFO aceptados. | Cualquier hallazgo nuevo de nivel WARN o ERROR. | Corregir con una migración y volver a correr los advisors. | Figura 1 |
 
-**Capturas pendientes:** se toman con la cuenta del equipo en el dashboard (la VPS no
-tiene sesión), tapando claves y correos, y se guardan en `docs/deployment/img/` en
-PNG con los nombres `01-usage`, `02-edge-functions`, `03-query-performance`,
-`04-auth` y `05-advisors`.
+**Capturas:** tomadas por el equipo el 2026-10-24 (alrededor de las 19:00 UTC) y
+pegadas solo en el documento de entrega de la Etapa 5 (Google Doc, sección
+"Monitoreo de infraestructura computacional", figuras 1 a 6); no se guardan en el
+repositorio. Muestran el resumen del proyecto, los logs de la Function `api`, el uso
+de la organización, Query Performance, los recursos de la base y las corridas del
+monitor programado. No hay captura de Auth; sus datos salen de la API de
+administración.
 
 ## 2. Monitor programado (GitHub Actions)
 
@@ -92,6 +95,9 @@ OK       GET /public/reports    200  967 ms
 OK       POST /auth/v1/signup   422  304 ms
 Resultado: OK
 ```
+
+La primera corrida lanzada por el horario (*Scheduled*) fue el 2026-10-24 a las
+18:59 UTC y salió correcta.
 
 ### Extensión opcional: UptimeRobot
 
