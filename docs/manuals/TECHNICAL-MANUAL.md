@@ -337,16 +337,17 @@ subconjunto: `npm run test:postgres -- zone flag`. No forma parte de `npm test`.
 ## 9. Contacto
 
 Integrantes y roles tomados de `docs/testing/PLAN.md` ("Personas y roles", Etapa 4).
-Los canales de contacto no están documentados en el repositorio y no se publican
+Para dudas sobre el prototipo, o si el socio formador lo selecciona, se contacta al
+equipo por su correo institucional del Tecnológico de Monterrey. No se publican
 teléfonos personales en Git.
 
-| Integrante | Rol en el proyecto | Responsabilidad | Canal |
+| Integrante | Rol en el proyecto | Responsabilidad | Correo |
 |---|---|---|---|
-| Fabián Fuentes | Developer; coordinación de documentación y trazabilidad | Plan de pruebas, convenciones y entregables documentales | Pendiente |
-| Juan Pablo De León Gómez | Developer; QA | Suite completa y CI, pruebas alfa y regresión | Pendiente |
-| Erick Herrera Luna | Developer; QA | Flujo del reportero público e incidentes | Pendiente |
-| Alan Ruiz Silva | Developer; QA | Mapa y roles, consolidación de resultados, aceptación | Pendiente |
-| Ricardo Becerra Bitar | Developer; QA | Seguridad, sesión, pruebas no funcionales y de carga | Pendiente |
+| Fabián Zahir Fuentes González | Developer; coordinación de documentación y trazabilidad | Plan de pruebas, convenciones y entregables documentales | A01569349@tec.mx |
+| Juan Pablo De León Gómez | Developer; QA | Suite completa y CI, pruebas alfa y regresión | A01563998@tec.mx |
+| Erick Humberto Herrera Luna | Developer; QA | Flujo del reportero público e incidentes | A01563965@tec.mx |
+| Alan Ruiz Silva | Developer; QA | Mapa y roles, consolidación de resultados, aceptación | A01563582@tec.mx |
+| Ricardo Becerra Bitar | Developer; QA | Seguridad, sesión, pruebas no funcionales y de carga | A01564070@tec.mx |
 
 Responsables de operación de la Etapa 5 (guardia del monitoreo, despliegues):
 pendiente de asignar por el equipo.
