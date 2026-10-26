@@ -112,7 +112,7 @@ formulario. La foto es opcional, pero ayuda a que el reporte sea más confiable.
 
 **Pantalla.**
 
-![Cámara](docs/manuals/img/01-camara.png)
+![Cámara](img/01-camara.png)
 
 En la captura la vista de la cámara aparece negra porque se tomó en un
 simulador, que no tiene cámara; en un teléfono real se ve lo que enfoca la
@@ -152,7 +152,7 @@ cámara). El reporte se envía y se revisa igual que uno con foto.
 
 **Pantalla.**
 
-![Formulario sin foto](docs/manuals/img/02-formulario-sin-foto.png)
+![Formulario sin foto](img/02-formulario-sin-foto.png)
 
 **Elementos de la pantalla.**
 
@@ -176,9 +176,9 @@ categoría (tipo de incidente) elegida. La ubicación se toma del GPS del teléf
 
 **Pantallas.**
 
-![Selector de tipo de incidente](docs/manuals/img/03-tipo-de-incidente.png)
+![Selector de tipo de incidente](img/03-tipo-de-incidente.png)
 
-![Formulario lleno](docs/manuals/img/04-formulario-lleno.png)
+![Formulario lleno](img/04-formulario-lleno.png)
 
 **Elementos de la pantalla.**
 
@@ -274,9 +274,9 @@ días**. Para proteger la privacidad, la ubicación de cada reporte es
 
 **Pantallas.**
 
-![Mapa en modo Grupos](docs/manuals/img/05-mapa-grupos.png)
+![Mapa en modo Grupos](img/05-mapa-grupos.png)
 
-![Mapa en modo Calor](docs/manuals/img/06-mapa-calor.png)
+![Mapa en modo Calor](img/06-mapa-calor.png)
 
 **Elementos de la pantalla.**
 
@@ -312,15 +312,15 @@ Desde ahí se puede ver la lista de reportes de la zona y el detalle de cada uno
 
 **Pantallas.**
 
-![Resumen de la zona](docs/manuals/img/07-mapa-zona.png)
+![Resumen de la zona](img/07-mapa-zona.png)
 
-![Reportes de la zona](docs/manuals/img/08-reportes-de-la-zona.png)
+![Reportes de la zona](img/08-reportes-de-la-zona.png)
 
-![Detalle de un reporte con foto](docs/manuals/img/09-detalle-reporte.png)
+![Detalle de un reporte con foto](img/09-detalle-reporte.png)
 
-![Detalle de un reporte desde el mapa](docs/manuals/img/10-detalle-pin.png)
+![Detalle de un reporte desde el mapa](img/10-detalle-pin.png)
 
-![Foto ampliada](docs/manuals/img/11-foto-ampliada.png)
+![Foto ampliada](img/11-foto-ampliada.png)
 
 **Elementos de la pantalla.**
 
@@ -356,7 +356,7 @@ automáticamente del mapa hasta que un Administrator lo revise.
 
 **Pantalla.**
 
-![Denunciar reporte](docs/manuals/img/12-denunciar.png)
+![Denunciar reporte](img/12-denunciar.png)
 
 **Elementos de la pantalla.**
 
@@ -400,7 +400,7 @@ conserva al cerrar la app hasta que la persona toca «Cerrar sesión».
 
 **Pantalla.**
 
-![Inicio de sesión](docs/manuals/img/13-login.png)
+![Inicio de sesión](img/13-login.png)
 
 **Elementos de la pantalla.**
 
@@ -433,9 +433,9 @@ reportes del periodo elegido. No muestra información interna de moderación.
 
 **Pantallas.**
 
-![Panel de la Asociación](docs/manuals/img/14-panel-asociacion.png)
+![Panel de la Asociación](img/14-panel-asociacion.png)
 
-![Lista de reportes de la Asociación](docs/manuals/img/15-reportes-asociacion.png)
+![Lista de reportes de la Asociación](img/15-reportes-asociacion.png)
 
 **Elementos de la pantalla.**
 
@@ -499,7 +499,7 @@ cola de moderación cargados en el teléfono y da acceso a las demás herramient
 
 **Pantalla.**
 
-![Command Center](docs/manuals/img/16-command-center.png)
+![Command Center](img/16-command-center.png)
 
 **Elementos de la pantalla.**
 
@@ -541,7 +541,7 @@ auditoría (el historial de quién hizo qué y cuándo).
 
 **Pantalla.**
 
-![Cola de moderación](docs/manuals/img/17-moderacion.png)
+![Cola de moderación](img/17-moderacion.png)
 
 **Elementos de la pantalla.**
 
@@ -583,7 +583,7 @@ sigue haciéndose en el teléfono.
 
 **Pantalla.**
 
-![Umbrales de revisión](docs/manuals/img/18-umbrales.png)
+![Umbrales de revisión](img/18-umbrales.png)
 
 **Elementos de la pantalla.**
 
@@ -629,9 +629,9 @@ historial se conservan.
 
 **Pantallas.**
 
-![Mapa de zonas](docs/manuals/img/19-zonas.png)
+![Mapa de zonas](img/19-zonas.png)
 
-![Datos del borrador de zona](docs/manuals/img/20-zonas-borrador.png)
+![Datos del borrador de zona](img/20-zonas-borrador.png)
 
 **Elementos de la pantalla.**
 
@@ -678,7 +678,7 @@ los umbrales de 5.6), pero nunca los resuelve solo. El Administrator decide:
 
 **Pantalla.**
 
-![Gestión de duplicados](docs/manuals/img/21-duplicados.png)
+![Gestión de duplicados](img/21-duplicados.png)
 
 **Elementos de la pantalla.**
 
@@ -717,7 +717,7 @@ igual que el Panel de la Asociación (ver 5.2 y 5.3).
 
 **Pantalla.**
 
-![Exportar datos](docs/manuals/img/22-exportar-datos.png)
+![Exportar datos](img/22-exportar-datos.png)
 
 **Elementos de la pantalla.**
 

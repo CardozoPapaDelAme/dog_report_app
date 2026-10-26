@@ -76,3 +76,14 @@ test('a command template does not hide a concrete missing file beside its parame
   const root = fixture(t, '`node scripts/missing.mjs <option>`');
   assert.deepEqual(checkDocumentPaths(root).errors.map(x => x.path), ['scripts/missing.mjs']);
 });
+
+test('image embeds resolve from the document directory, as GitHub renders them', (t) => {
+  const root = fixture(t);
+  mkdirSync(join(root, 'docs/manuals/img'), { recursive: true });
+  writeFileSync(join(root, 'docs/manuals/img/shot.png'), '');
+  writeFileSync(join(root, 'docs/manuals/USER-MANUAL.md'),
+    '![ok](img/shot.png)\n![rooted](docs/manuals/img/shot.png)\n![missing](img/none.png)\n![outside](../../../x.png)');
+  const errors = checkDocumentPaths(root).errors;
+  assert.deepEqual(errors.map(x => x.line), [2, 3, 4]);
+  assert.match(errors[0].reason, /relativa al documento/);
+});
