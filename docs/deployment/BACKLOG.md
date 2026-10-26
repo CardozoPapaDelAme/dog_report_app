@@ -62,7 +62,7 @@ personales) · respaldo cada 7 días · respuesta a incidentes en 24 horas.
   dashboards: tapar claves, correos y IDs sensibles antes de subirlas.
 - **Rutas:** en `docs/deployment/` y `docs/manuals/` (salvo este backlog) escribir
   siempre la ruta completa desde la raíz del repo, también en los enlaces
-  Markdown (`[x](docs/DEPLOYMENT.md)`). `npm run test:docs` lo comprueba en la CI
+  Markdown (`[x](/docs/DEPLOYMENT.md)`). `npm run test:docs` lo comprueba en la CI
   y falla si se cita un archivo que no existe: no citar un archivo antes de crearlo.
 - **Evidencia, no promesas:** no inventar mediciones ni resultados. Lo que no se
   pudo medir se marca "sin medir" con la razón (igual que en la Etapa 4).

@@ -1,7 +1,7 @@
 # Manual de instalación
 
 Guía completa de la tarea:
-[`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D9.
+[`docs/deployment/BACKLOG.md`](/docs/deployment/BACKLOG.md), D9.
 
 Este manual explica cómo dejar funcionando las tres partes del sistema: la **app
 móvil**, el **back end** (la API en Supabase) y la **base de datos**. Está pensado

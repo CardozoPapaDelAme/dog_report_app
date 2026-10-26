@@ -1,7 +1,7 @@
 # Convenciones y plantillas de pruebas
 
 Base documental de T1 / TD-114 para todo el equipo. El alcance y los responsables
-están en [docs/testing/BACKLOG.md](docs/testing/BACKLOG.md). Los enlaces de estos
+están en [docs/testing/BACKLOG.md](/docs/testing/BACKLOG.md). Los enlaces de estos
 archivos se escriben desde la raíz del repositorio; al navegar en GitHub, resolver
 esas rutas desde la raíz, no desde el directorio del documento.
 

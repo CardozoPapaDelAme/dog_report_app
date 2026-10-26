@@ -19,7 +19,7 @@ Notas para leer el manual:
   app**.
 
 Para quien mantiene este manual (no es necesario para usar la app): guía de la
-tarea en [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D6 y D7;
+tarea en [`docs/deployment/BACKLOG.md`](/docs/deployment/BACKLOG.md), D6 y D7;
 textos tomados de `i18n/locales/es.json`; capturas en `docs/manuals/img/`.
 
 ## 1. Introducción
@@ -82,7 +82,7 @@ flowchart TD
 | Requisito | Detalle |
 |---|---|
 | Teléfono | Android 8.0 o más reciente, o iPhone con iOS 13 o más reciente. |
-| Instalación | La app instalada en el teléfono (ver [`docs/manuals/INSTALLATION.md`](docs/manuals/INSTALLATION.md)). |
+| Instalación | La app instalada en el teléfono (ver [`docs/manuals/INSTALLATION.md`](/docs/manuals/INSTALLATION.md)). |
 | Permiso de **cámara** | La app lo pide al abrirse por primera vez. Sin él se puede reportar sin foto, ver el mapa y entrar como personal. |
 | Permiso de **ubicación** | Necesario para guardar dónde ocurrió el reporte. Sin él la app muestra «Necesitamos permiso de ubicación para registrar dónde ocurrió el reporte.» |
 | Internet | **Opcional para reportar**: sin conexión el reporte se guarda en el teléfono y se envía solo cuando vuelve la señal. **Necesario** para ver el mapa, denunciar y para todas las funciones de personal. |

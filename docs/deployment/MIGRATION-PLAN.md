@@ -1,7 +1,7 @@
 # Plan de migración del software (despliegue)
 
 Estado: completo para la Fase 1 (2026-10-24). Guía de la tarea:
-[`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D1.
+[`docs/deployment/BACKLOG.md`](/docs/deployment/BACKLOG.md), D1.
 
 Este plan describe cómo se lleva el sistema de un entorno a otro (local → staging →
 producción): qué se migra, en qué orden, cómo se verifica cada paso y cómo se

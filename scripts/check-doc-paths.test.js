@@ -17,12 +17,21 @@ function fixture(t, trace = '') {
 
 test('valid root paths resolve from the repo regardless of the document directory', (t) => {
   const root = fixture(t, '`models/real.test.js`');
-  writeFileSync(join(root, 'docs/testing/nested/case.md'), '[test](models/real.test.js#test)');
+  writeFileSync(join(root, 'docs/testing/nested/case.md'), '[test](/models/real.test.js#test)');
   assert.equal(checkDocumentPaths(root).errors.length, 0);
 });
 
+test('links without a leading slash fail because GitHub resolves them from the document directory', (t) => {
+  const root = fixture(t, '[ok](/models/real.test.js)');
+  writeFileSync(join(root, 'docs/testing/nested/case.md'), '[test](models/real.test.js)\n[missing](/models/missing.js)');
+  const errors = checkDocumentPaths(root).errors;
+  assert.deepEqual(errors.map(x => [x.doc, x.line]), [['docs/testing/nested/case.md', 1], ['docs/testing/nested/case.md', 2]]);
+  assert.match(errors[0].reason, /empezar con \//);
+  assert.equal(errors[1].reason, 'archivo inexistente');
+});
+
 test('missing paths in code, plain prose, fenced examples and links fail with source lines', (t) => {
-  const root = fixture(t, '`models/missing.test.js`\nmodels/absent.js\n```sh\nnode scripts/missing.mjs\n```\n[missing](docs/testing/missing.md)');
+  const root = fixture(t, '`models/missing.test.js`\nmodels/absent.js\n```sh\nnode scripts/missing.mjs\n```\n[missing](/docs/testing/missing.md)');
   const result = checkDocumentPaths(root);
   assert.deepEqual(result.errors.map(x => x.line), [1, 2, 4, 6]);
 });
@@ -59,7 +68,7 @@ test('URLs, contract fields and parameterized templates are not concrete file ci
 });
 
 test('encoded filenames and file citations to directories are handled correctly', (t) => {
-  const root = fixture(t, '[file](docs/testing/My%20file.md)\n`docs/testing/pretend.js`');
+  const root = fixture(t, '[file](/docs/testing/My%20file.md)\n`docs/testing/pretend.js`');
   writeFileSync(join(root, 'docs/testing/My file.md'), '');
   mkdirSync(join(root, 'docs/testing/pretend.js'));
   assert.deepEqual(checkDocumentPaths(root).errors.map(x => x.path), ['docs/testing/pretend.js']);

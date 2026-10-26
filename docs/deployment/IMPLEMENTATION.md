@@ -2,7 +2,7 @@
 
 Estado: implantado en staging y aceptado por el socio formador con observaciones,
 ya atendidas (2026-10-24). Complementa a
-[`docs/deployment/MIGRATION-PLAN.md`](docs/deployment/MIGRATION-PLAN.md): aquel
+[`docs/deployment/MIGRATION-PLAN.md`](/docs/deployment/MIGRATION-PLAN.md): aquel
 documento dice cómo se despliega; este dice qué quedó implantado y cómo cumple lo
 que pidió el cliente.
 

@@ -48,7 +48,8 @@ function documents(root) {
 /**
  * Checks every file citation (Markdown link targets and inline path-like tokens) in the
  * scanned documents. A citation is valid when it is repository-rooted (no `./`, `../`,
- * absolute path or `.`/`..` segment) and points to an existing file. Image embeds are
+ * absolute path or `.`/`..` segment) and points to an existing file; Markdown link
+ * targets carry a leading `/`, which GitHub resolves from the repo root. Image embeds are
  * the exception: they must be relative to the document and stay inside the repository,
  * because GitHub resolves them from the document directory.
  *
@@ -81,11 +82,18 @@ export function checkDocumentPaths(root = repositoryRoot) {
         }
       }
       const linkSource = source.replace(/!\[[^\]]*\]\([^)]*\)/g, '');
-      // Links are always rooted at the repo, even when Markdown is nested.
+      // Links start with `/` so GitHub resolves them from the repo root, even when the
+      // Markdown is nested.
       for (const match of linkSource.matchAll(/\]\(<?([^\s)]+)>?\)/g)) {
         const target = match[1].replace(/>$/, '');
         if (/^(?:[a-z][a-z\d+.-]*:|#)/i.test(target) || /[<>{}*]/.test(target)) continue;
-        candidates.add(decodeURIComponent(target.split('#')[0]));
+        const path = decodeURIComponent(target.split('#')[0]);
+        if (path.startsWith('/') && !path.startsWith('//')) {
+          candidates.add(path.slice(1));
+        } else {
+          citations++;
+          errors.push({ doc, line: index + 1, path, reason: 'el enlace debe empezar con / (ruta desde la raíz del repo)' });
+        }
       }
       const text = linkSource
         .replace(/https?:\/\/[^\s`<>)]*/g, '')
