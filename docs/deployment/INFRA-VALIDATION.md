@@ -1,7 +1,7 @@
 # Validación de infraestructura (health/check)
 
 Estado: ejecutada sobre staging el 2026-10-24. El incidente INC-4 se corrigió y verificó el mismo día (PR #91).
-Guía de la tarea: [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D2.
+Guía de la tarea: [`docs/deployment/BACKLOG.md`](/docs/deployment/BACKLOG.md), D2.
 
 Validar la infraestructura es comprobar, con evidencia, que cada pieza desplegada
 (base de datos, API, almacenamiento de fotos, autenticación y red) está en el estado

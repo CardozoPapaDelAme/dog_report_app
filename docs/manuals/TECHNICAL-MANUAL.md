@@ -1,7 +1,7 @@
 # Manual técnico
 
 Guía completa de la tarea:
-[`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D8.
+[`docs/deployment/BACKLOG.md`](/docs/deployment/BACKLOG.md), D8.
 
 Audiencias: desarrollador, administrador técnico (sysadmin), mantenimiento,
 soporte y operación.
@@ -69,7 +69,7 @@ Fuentes: `docs/architecture/OVERVIEW.md`, `docs/INTEGRATIONS.md`,
 
 ### 3.1 Diagrama de despliegue
 
-Diagrama completo (Mermaid): [`docs/diagrams/deployment.md`](docs/diagrams/deployment.md).
+Diagrama completo (Mermaid): [`docs/diagrams/deployment.md`](/docs/diagrams/deployment.md).
 
 ```mermaid
 flowchart LR
@@ -359,15 +359,15 @@ Fuentes: `docs/diagrams/README.md`, `docs/diagrams/erd.md`,
 
 | Diagrama | Archivo |
 |---|---|
-| Arquitectura (forma actual y fronteras) | [`docs/architecture/OVERVIEW.md`](docs/architecture/OVERVIEW.md) |
-| Despliegue | [`docs/diagrams/deployment.md`](docs/diagrams/deployment.md) |
-| Entidad-relación (ERD) | [`docs/diagrams/erd.md`](docs/diagrams/erd.md) |
-| Secuencia: inicio de sesión | [`docs/diagrams/sequences/Login.md`](docs/diagrams/sequences/Login.md) |
-| Secuencia: creación de reportes | [`docs/diagrams/sequences/creacionreportes.md`](docs/diagrams/sequences/creacionreportes.md) |
-| Secuencia: mapa de reportes | [`docs/diagrams/sequences/Mapareportes.md`](docs/diagrams/sequences/Mapareportes.md) |
-| Secuencia: detalle de zona con denuncia | [`docs/diagrams/sequences/detallezonacondenuncia.md`](docs/diagrams/sequences/detallezonacondenuncia.md) |
-| Secuencia: moderación del Administrador | [`docs/diagrams/sequences/admin-moderation.md`](docs/diagrams/sequences/admin-moderation.md) |
-| Secuencia: Command Center | [`docs/diagrams/sequences/commandcenter.md`](docs/diagrams/sequences/commandcenter.md) |
-| Secuencia: panel de la Asociación | [`docs/diagrams/sequences/dashboardasociacion.md`](docs/diagrams/sequences/dashboardasociacion.md) |
-| Secuencia: fusionar reporte duplicado | [`docs/diagrams/sequences/fusionarreporte.md`](docs/diagrams/sequences/fusionarreporte.md) |
-| Secuencia: gestión de duplicados (conservar reporte) | [`docs/diagrams/sequences/gestionduplicados-conservarreporte.md`](docs/diagrams/sequences/gestionduplicados-conservarreporte.md) |
+| Arquitectura (forma actual y fronteras) | [`docs/architecture/OVERVIEW.md`](/docs/architecture/OVERVIEW.md) |
+| Despliegue | [`docs/diagrams/deployment.md`](/docs/diagrams/deployment.md) |
+| Entidad-relación (ERD) | [`docs/diagrams/erd.md`](/docs/diagrams/erd.md) |
+| Secuencia: inicio de sesión | [`docs/diagrams/sequences/Login.md`](/docs/diagrams/sequences/Login.md) |
+| Secuencia: creación de reportes | [`docs/diagrams/sequences/creacionreportes.md`](/docs/diagrams/sequences/creacionreportes.md) |
+| Secuencia: mapa de reportes | [`docs/diagrams/sequences/Mapareportes.md`](/docs/diagrams/sequences/Mapareportes.md) |
+| Secuencia: detalle de zona con denuncia | [`docs/diagrams/sequences/detallezonacondenuncia.md`](/docs/diagrams/sequences/detallezonacondenuncia.md) |
+| Secuencia: moderación del Administrador | [`docs/diagrams/sequences/admin-moderation.md`](/docs/diagrams/sequences/admin-moderation.md) |
+| Secuencia: Command Center | [`docs/diagrams/sequences/commandcenter.md`](/docs/diagrams/sequences/commandcenter.md) |
+| Secuencia: panel de la Asociación | [`docs/diagrams/sequences/dashboardasociacion.md`](/docs/diagrams/sequences/dashboardasociacion.md) |
+| Secuencia: fusionar reporte duplicado | [`docs/diagrams/sequences/fusionarreporte.md`](/docs/diagrams/sequences/fusionarreporte.md) |
+| Secuencia: gestión de duplicados (conservar reporte) | [`docs/diagrams/sequences/gestionduplicados-conservarreporte.md`](/docs/diagrams/sequences/gestionduplicados-conservarreporte.md) |

@@ -4,7 +4,7 @@ Estado: monitoreo automático **activo** sobre staging desde el 2026-10-24 (moni
 programado en GitHub Actions cada 15 minutos, sección 2). Faltan las capturas de los
 dashboards; UptimeRobot y el servicio Python en Render son extensiones opcionales
 (marcadas "opcional" abajo). Guía de la tarea:
-[`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D3. Cubre RNF25.
+[`docs/deployment/BACKLOG.md`](/docs/deployment/BACKLOG.md), D3. Cubre RNF25.
 
 Capturas en `docs/deployment/img/`, sin claves, correos ni IDs sensibles.
 

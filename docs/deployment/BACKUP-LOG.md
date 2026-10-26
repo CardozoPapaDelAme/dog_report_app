@@ -2,7 +2,7 @@
 
 Estado: calendario definido; primera exportación completa y primer ensayo de
 restauración ejecutados y verificados el 2026-10-24. Guía de la tarea:
-[`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D5.
+[`docs/deployment/BACKLOG.md`](/docs/deployment/BACKLOG.md), D5.
 
 Procedimiento: `docs/DEPLOYMENT.md` ("Milestone export and restore runbook").
 Los dumps, objetos, manifiestos y cadenas de conexión viven fuera del repositorio,

@@ -6,7 +6,7 @@ carga k6 contra staging (RUN-145).
 Convenciones: `docs/testing/README.md`. Cada ejecutor agrega sus filas; T12 / TD-125
 consolida el resumen. Los ejemplos de formato no cuentan como ejecuciones.
 La versión en tabla única con el formato del curso, una fila por caso ejecutado,
-está en [`docs/testing/TEST_LOG_CONSOLIDADO.md`](docs/testing/TEST_LOG_CONSOLIDADO.md).
+está en [`docs/testing/TEST_LOG_CONSOLIDADO.md`](/docs/testing/TEST_LOG_CONSOLIDADO.md).
 
 T8 / TD-121 tiene protocolo y casos en `docs/testing/UAT.md` y
 `docs/testing/cases/uat.md`. Hay diez ejecuciones de usuarios generales

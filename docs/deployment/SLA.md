@@ -1,7 +1,7 @@
 # Acuerdo de nivel de servicio (SLA)
 
 Estado: vigente para la Fase 1 desde el 2026-10-24, con mediciones sobre staging.
-Guía de la tarea: [`docs/deployment/BACKLOG.md`](docs/deployment/BACKLOG.md), D4.
+Guía de la tarea: [`docs/deployment/BACKLOG.md`](/docs/deployment/BACKLOG.md), D4.
 
 Sistema en Fase 1 sobre Supabase managed Free: el proveedor no ofrece SLA en este
 plan. Los compromisos de este documento son del equipo, con las exclusiones
