@@ -48,7 +48,9 @@ function documents(root) {
 /**
  * Checks every file citation (Markdown link targets and inline path-like tokens) in the
  * scanned documents. A citation is valid when it is repository-rooted (no `./`, `../`,
- * absolute path or `.`/`..` segment) and points to an existing file.
+ * absolute path or `.`/`..` segment) and points to an existing file. Image embeds are
+ * the exception: they must be relative to the document and stay inside the repository,
+ * because GitHub resolves them from the document directory.
  *
  * @param {string} [root=repositoryRoot] Repository root directory.
  * @returns {{files: number, citations: number, errors: Array<{doc: string, line: number, path: string, reason: string}>}}
@@ -64,13 +66,28 @@ export function checkDocumentPaths(root = repositoryRoot) {
     const lines = content.split(/\r?\n/);
     for (const [index, source] of lines.entries()) {
       const candidates = new Set();
+      // Image embeds resolve from the document directory, the way GitHub renders them.
+      for (const match of source.matchAll(/!\[[^\]]*\]\(<?([^\s)>]+)>?\)/g)) {
+        const path = decodeURIComponent(match[1].split('#')[0]);
+        if (/^[a-z][a-z\d+.-]*:/i.test(path)) continue;
+        citations++;
+        const target = resolve(root, dirname(doc), path);
+        const inside = !isAbsolute(path) && !relative(root, target).startsWith('..');
+        if (!inside || !existsSync(target) || !statSync(target).isFile()) {
+          const fromRoot = resolve(root, path);
+          const misrooted = inside && existsSync(fromRoot) && statSync(fromRoot).isFile();
+          errors.push({ doc, line: index + 1, path,
+            reason: !inside || misrooted ? 'usar ruta relativa al documento' : 'archivo inexistente' });
+        }
+      }
+      const linkSource = source.replace(/!\[[^\]]*\]\([^)]*\)/g, '');
       // Links are always rooted at the repo, even when Markdown is nested.
-      for (const match of source.matchAll(/\]\(<?([^\s)]+)>?\)/g)) {
+      for (const match of linkSource.matchAll(/\]\(<?([^\s)]+)>?\)/g)) {
         const target = match[1].replace(/>$/, '');
         if (/^(?:[a-z][a-z\d+.-]*:|#)/i.test(target) || /[<>{}*]/.test(target)) continue;
         candidates.add(decodeURIComponent(target.split('#')[0]));
       }
-      const text = source
+      const text = linkSource
         .replace(/https?:\/\/[^\s`<>)]*/g, '')
         // Parameters/globs are format examples, not concrete file citations.
         .replace(/`([^`]*)`/g, (_, code) => '`' + code.split(/\s+/)
